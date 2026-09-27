@@ -36,5 +36,9 @@
   - **Correção de Upload Maior que Download na Play Store:** Corrigida a distorção onde downloads na Google Play Store exibiam altas taxas de upload, que na verdade eram blocos do instalador sendo gravados em disco (`wchar`) durante o processo de download e descompactação de pacotes APK.
   - **Fallback Robusto para Métricas Globais do Dispositivo:** Implementada leitura de `/proc/net/dev` como contingência para garantir telemetria global ininterrupta de Download e Upload na aba Desempenho.
 
-
-
+- **Indicador de Progresso Ondulado Material Expressive no Reprodutor de Mídia (`NowPlayingWidget`):**
+  - **Linha Ondulada Orgânica e Fluida:** Substituído o indicador linear estático padrão pela autêntica linha ondulada/sinusoidal com física e estética do Material Expressive / Android 13+.
+  - **Animação Contínua e Achatamento Inteligente ao Pausar:** Enquanto a música toca, a onda se move suavemente de forma contínua com atenuação orgânica nas pontas; ao pausar ou ao buscar (scrubbing), a onda transiciona suavemente com animação de mola (*spring*) para uma elegante linha reta com pontas arredondadas.
+  - **Controle de Busca Interativo por Toque e Arraste (Scrubbing):** Adicionado suporte para tocar ou arrastar ao longo da barra de progresso para avançar ou retroceder a música diretamente da tela inicial, com cabeçote de reprodução estilizado em pílula e achatamento em tempo real sob o dedo.
+  - **Correção de Recorte Vertical (Clipping):** Ajustadas as dimensões e alterada a restrição de altura do card para `heightIn(min = heightDp.dp)`, impedindo que a barra de progresso fosse empurrada para fora dos limites do card ou cortada pelo fundo arredondado.
+  - **Suporte a Transmissões e Rádios ao Vivo (Duração Indeterminada):** Corrigido o sumiço do indicador quando a duração da mídia é desconhecida ou zero (`durationMs <= 0L`), exibindo a onda expressiva contínua ao longo de toda a extensão do bloco.

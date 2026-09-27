@@ -5,15 +5,32 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -76,7 +93,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import dev.victorialauncher.R
 import androidx.compose.ui.res.stringResource
 
@@ -285,30 +305,25 @@ fun NowPlayingWidget(
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val current = nowPlaying
 
-    val isEditModePlaceholder = current == null || (!listenerEnabled && editMode)
-
-    val scope = rememberCoroutineScope()
-    val dismissX = remember(current?.controller?.sessionToken) { Animatable(0f) }
-    val dismissThresholdPx = with(LocalDensity.current) { 120.dp.toPx() }
-
-    // Artwork size matches the app icon size, title text matches the app label text size
-    val artSize = iconSizeDp.dp
+    // Artwork size scales with card height, title and artist text scale with app label settings
+    val artSize = (heightDp * 0.52f).coerceIn(28f, iconSizeDp.toFloat()).dp
     val titleSp = labelSizeSp.sp
     val artistSp = (labelSizeSp - 2).coerceAtLeast(10).sp
-    val controlSize = (heightDp * 0.42f).coerceIn(18f, 64f).dp
+    val controlSize = (heightDp * 0.38f).coerceIn(18f, 48f).dp
 
-    if (isEditModePlaceholder) {
+    if (current == null) {
+        if (!editMode) return
         Surface(
             modifier = modifier
                 .fillMaxWidth()
-                .height(heightDp.dp),
+                .heightIn(min = heightDp.dp),
             color = contentColor.copy(alpha = 0.08f),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 8.dp),
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.Center,
             ) {
                 Row(
@@ -398,20 +413,25 @@ fun NowPlayingWidget(
                         }
                     }
                 }
-                Spacer(Modifier.height(6.dp))
-                androidx.compose.material3.LinearProgressIndicator(
-                    progress = { 0.45f },
+                Spacer(Modifier.height(4.dp))
+                MaterialExpressiveWavyProgressIndicator(
+                    progress = 0.45f,
+                    isPlaying = true,
+                    isIndeterminate = false,
+                    color = contentColor.copy(alpha = 0.85f),
+                    trackColor = contentColor.copy(alpha = 0.20f),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(3.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = contentColor.copy(alpha = 0.85f),
-                    trackColor = contentColor.copy(alpha = 0.15f),
+                        .height(14.dp),
                 )
             }
         }
         return
     }
+
+    val scope = rememberCoroutineScope()
+    val dismissX = remember(current.controller.sessionToken) { Animatable(0f) }
+    val dismissThresholdPx = with(LocalDensity.current) { 120.dp.toPx() }
 
     var currentPosition by remember(current.controller.sessionToken, current.positionMs, current.lastUpdateTime) {
         mutableStateOf(current.positionMs)
@@ -428,14 +448,15 @@ fun NowPlayingWidget(
         }
     }
 
-    val progressFraction = if (current.durationMs > 0L) {
+    val isIndeterminate = current.durationMs <= 0L
+    val progressFraction = if (!isIndeterminate) {
         (currentPosition.toFloat() / current.durationMs.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(heightDp.dp)
+            .heightIn(min = heightDp.dp)
             .offset { IntOffset(dismissX.value.roundToInt(), 0) }
             .graphicsLayer { alpha = (1f - (dismissX.value / (dismissThresholdPx * 2.5f))).coerceIn(0f, 1f) }
             .draggable(
@@ -458,8 +479,8 @@ fun NowPlayingWidget(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 6.dp),
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             verticalArrangement = Arrangement.Center,
         ) {
             val artBox: @Composable () -> Unit = {
@@ -566,18 +587,23 @@ fun NowPlayingWidget(
                     controlsRow()
                 }
             }
-            if (current.durationMs > 0L) {
-                Spacer(Modifier.height(6.dp))
-                androidx.compose.material3.LinearProgressIndicator(
-                    progress = { progressFraction },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = contentColor.copy(alpha = 0.85f),
-                    trackColor = contentColor.copy(alpha = 0.15f),
-                )
-            }
+
+            Spacer(Modifier.height(4.dp))
+            MaterialExpressiveWavyProgressIndicator(
+                progress = progressFraction,
+                isPlaying = current.isPlaying,
+                isIndeterminate = isIndeterminate,
+                color = contentColor.copy(alpha = 0.85f),
+                trackColor = contentColor.copy(alpha = 0.20f),
+                onSeek = if (!isIndeterminate) { fraction ->
+                    val targetMs = (fraction * current.durationMs).toLong()
+                    currentPosition = targetMs
+                    runCatching { current.controller.transportControls.seekTo(targetMs) }
+                } else null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(14.dp),
+            )
         }
     }
 }
@@ -592,5 +618,157 @@ private fun RowScope.TransportButton(
 ) {
     IconButton(onClick = onClick, modifier = Modifier.size(size)) {
         Icon(icon, contentDescription = description, tint = tint, modifier = Modifier.size(size * 0.7f))
+    }
+}
+
+/**
+ * Material Expressive / Android 13+ undulating wavy squiggly progress indicator.
+ * Displays a smooth sine wave along the active track that flattens into a sleek line when paused or scrubbed,
+ * and supports direct interactive seeking via tap and drag.
+ */
+@Composable
+fun MaterialExpressiveWavyProgressIndicator(
+    progress: Float,
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier,
+    isIndeterminate: Boolean = false,
+    color: Color = MaterialTheme.colorScheme.primary,
+    trackColor: Color = color.copy(alpha = 0.20f),
+    strokeWidth: Dp = 3.5.dp,
+    waveLength: Dp = 26.dp,
+    amplitude: Dp = 3.5.dp,
+    onSeek: ((Float) -> Unit)? = null,
+) {
+    var dragFraction by remember { mutableStateOf<Float?>(null) }
+    val effectiveFraction = (dragFraction ?: progress).coerceIn(0f, 1f)
+
+    // Smooth transition: active wave when playing, straight line when paused or scrubbing
+    val targetAmplitude = if (isPlaying && dragFraction == null) 1f else 0f
+    val waveAmplitudeFactor by animateFloatAsState(
+        targetValue = targetAmplitude,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "waveAmplitude",
+    )
+
+    // Continuous wave phase animation while playing
+    val infiniteTransition = rememberInfiniteTransition(label = "wavePhaseTransition")
+    val animatedPhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "wavePhase",
+    )
+
+    val density = LocalDensity.current
+    val strokePx = with(density) { strokeWidth.toPx() }
+    val waveLengthPx = with(density) { waveLength.toPx() }
+    val maxAmplitudePx = with(density) { amplitude.toPx() }
+
+    val gestureModifier = if (onSeek != null) {
+        Modifier.pointerInput(onSeek) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                down.consume()
+                val totalWidth = size.width.toFloat()
+                if (totalWidth <= 0f) return@awaitEachGesture
+
+                var currentFraction = (down.position.x / totalWidth).coerceIn(0f, 1f)
+                dragFraction = currentFraction
+
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (!change.pressed) {
+                        change.consume()
+                        break
+                    }
+                    change.consume()
+                    currentFraction = (change.position.x / totalWidth).coerceIn(0f, 1f)
+                    dragFraction = currentFraction
+                }
+
+                onSeek(currentFraction)
+                dragFraction = null
+            }
+        }
+    } else {
+        Modifier
+    }
+
+    Canvas(
+        modifier = modifier
+            .then(gestureModifier)
+    ) {
+        val width = size.width
+        val height = size.height
+        val midY = height / 2f
+        val stroke = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round)
+
+        val progressX = if (isIndeterminate) width else (width * effectiveFraction).coerceIn(0f, width)
+
+        // 1. Unplayed background track (dimmed straight line)
+        if (!isIndeterminate && progressX < width) {
+            val trackStartX = if (progressX <= 0f) 0f else progressX
+            drawLine(
+                color = trackColor,
+                start = Offset(trackStartX, midY),
+                end = Offset(width, midY),
+                strokeWidth = strokePx,
+                cap = StrokeCap.Round,
+            )
+        }
+
+        // 2. Played wavy track
+        if (progressX > 0f) {
+            val currentAmplitude = maxAmplitudePx * waveAmplitudeFactor
+
+            if (currentAmplitude <= 0.1f) {
+                // Flattened straight line when paused or scrubbing
+                drawLine(
+                    color = color,
+                    start = Offset(0f, midY),
+                    end = Offset(progressX, midY),
+                    strokeWidth = strokePx,
+                    cap = StrokeCap.Round,
+                )
+            } else {
+                val path = Path()
+                path.moveTo(0f, midY)
+
+                val step = 3f
+                var x = 0f
+                val k = (2 * PI / waveLengthPx).toFloat()
+
+                while (x <= progressX) {
+                    val distToEdge = min(x, progressX - x)
+                    val envelope = (distToEdge / (waveLengthPx * 0.4f)).coerceIn(0f, 1f)
+                    val y = midY + currentAmplitude * envelope * sin(k * x - animatedPhase)
+                    path.lineTo(x, y)
+                    x += step
+                }
+                path.lineTo(progressX, midY)
+
+                drawPath(path = path, color = color, style = stroke)
+            }
+
+            // 3. Thumb indicator (Material Expressive rounded pill)
+            if (!isIndeterminate) {
+                val thumbWidth = 4.dp.toPx()
+                val thumbHeight = 12.dp.toPx()
+                val thumbX = progressX.coerceIn(thumbWidth / 2f, (width - thumbWidth / 2f).coerceAtLeast(thumbWidth / 2f))
+                drawRoundRect(
+                    color = color,
+                    topLeft = Offset(thumbX - thumbWidth / 2f, midY - thumbHeight / 2f),
+                    size = Size(thumbWidth, thumbHeight),
+                    cornerRadius = CornerRadius(thumbWidth / 2f, thumbWidth / 2f),
+                )
+            }
+        }
     }
 }
