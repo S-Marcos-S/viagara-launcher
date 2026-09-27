@@ -358,7 +358,7 @@ private fun StatsContentList(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(
-                            text = if (showAppBreakdown) "Consumo por App no Gráfico" else "Histórico de Consumo (MB)",
+                            text = "Histórico de Consumo",
                             fontSize = 14.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorScheme.onSurface,

@@ -45,7 +45,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
@@ -904,20 +903,16 @@ private fun PerformanceScreen(
                 history = netRxHistory,
                 chartColor = Color(0xFF06B6D4),
                 actionButton = {
-                    IconButton(
-                        onClick = onNavigateToNetworkStats,
+                    Text(
+                        text = "Ver mais",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF06B6D4),
                         modifier = Modifier
-                            .size(30.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF06B6D4).copy(alpha = 0.16f)),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Monitor de Rede Detalhado",
-                            tint = Color(0xFF06B6D4),
-                            modifier = Modifier.size(17.dp),
-                        )
-                    }
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable(onClick = onNavigateToNetworkStats)
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                    )
                 },
             ) {
                 Row(
@@ -1458,18 +1453,22 @@ private fun PerformanceResourceCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = headline,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = accentColor,
-                    fontFamily = FontFamily.Monospace,
-                    maxLines = 1,
-                )
-                if (actionButton != null) {
-                    Spacer(Modifier.width(6.dp))
-                    actionButton()
+                Spacer(Modifier.width(8.dp))
+                Column(
+                    horizontalAlignment = Alignment.End,
+                ) {
+                    Text(
+                        text = headline,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = accentColor,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                    )
+                    if (actionButton != null) {
+                        Spacer(Modifier.height(1.dp))
+                        actionButton()
+                    }
                 }
             }
 
