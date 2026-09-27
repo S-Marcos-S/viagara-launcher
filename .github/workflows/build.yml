@@ -56,7 +56,7 @@ jobs:
               -validity 10000 \
               -storepass android \
               -keypass android \
-              -dname "CN=VictoriaLauncher, OU=Dev, O=Victoria, C=BR"
+              -dname "CN=ViagraLauncher, OU=Dev, O=Viagra, C=BR"
             cat > keystore.properties <<EOF
           storeFile=release.keystore
           storePassword=android
@@ -76,26 +76,26 @@ jobs:
         run: |
           mkdir -p artifacts
           if [ -f app/build/outputs/apk/release/app-release.apk ]; then
-            cp app/build/outputs/apk/release/app-release.apk artifacts/victoria-launcher-release.apk
+            cp app/build/outputs/apk/release/app-release.apk artifacts/viagra-launcher-release.apk
           elif [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
-            cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/victoria-launcher-release.apk
+            cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/viagra-launcher-release.apk
           fi
           if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
-            cp app/build/outputs/apk/debug/app-debug.apk artifacts/victoria-launcher-debug.apk
+            cp app/build/outputs/apk/debug/app-debug.apk artifacts/viagra-launcher-debug.apk
           fi
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: victoria-launcher-release
-          path: artifacts/victoria-launcher-release.apk
+          name: viagra-launcher-release
+          path: artifacts/viagra-launcher-release.apk
           retention-days: 30
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: victoria-launcher-debug
-          path: artifacts/victoria-launcher-debug.apk
+          name: viagra-launcher-debug
+          path: artifacts/viagra-launcher-debug.apk
           retention-days: 30
 
       - name: Detect Version and Check for New Release
@@ -121,15 +121,15 @@ jobs:
           awk 'BEGIN{p=1} /^---/{p=0} p{print}' CHANGELOG_LATEST.md > RELEASE_NOTES.md
 
           if [ ! -s RELEASE_NOTES.md ]; then
-            echo "### Victoria Launcher ${{ steps.version_check.outputs.TAG_NAME }}" > RELEASE_NOTES.md
+            echo "### Viagra Launcher ${{ steps.version_check.outputs.TAG_NAME }}" > RELEASE_NOTES.md
             echo "Atualizações e melhorias de estabilidade." >> RELEASE_NOTES.md
           fi
 
           cat >> RELEASE_NOTES.md <<EOF
 
           ### Direct APK Download
-          - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-release.apk)
-          - [Download Debug APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-debug.apk)
+          - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/viagra-launcher-release.apk)
+          - [Download Debug APK](https://github.com/${{ github.repository }}/releases/download/latest/viagra-launcher-debug.apk)
 
           Built automatically from commit \`${{ github.sha }}\`.
           EOF
@@ -139,12 +139,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version_check.outputs.TAG_NAME }}
-          name: "Victoria Launcher ${{ steps.version_check.outputs.TAG_NAME }}"
+          name: "Viagra Launcher ${{ steps.version_check.outputs.TAG_NAME }}"
           body_path: RELEASE_NOTES.md
           prerelease: false
           files: |
-            artifacts/victoria-launcher-release.apk
-            artifacts/victoria-launcher-debug.apk
+            artifacts/viagra-launcher-release.apk
+            artifacts/viagra-launcher-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -153,12 +153,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "Victoria Launcher - Latest APKs (${{ steps.version_check.outputs.TAG_NAME }})"
+          name: "Viagra Launcher - Latest APKs (${{ steps.version_check.outputs.TAG_NAME }})"
           body_path: RELEASE_NOTES.md
           prerelease: false
           files: |
-            artifacts/victoria-launcher-release.apk
-            artifacts/victoria-launcher-debug.apk
+            artifacts/viagra-launcher-release.apk
+            artifacts/viagra-launcher-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

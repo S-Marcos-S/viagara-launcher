@@ -78,7 +78,7 @@ object UpdateManager {
     private const val KEY_DOWNLOADED_VERSION_NAME = "downloaded_version_name"
     private const val KEY_DOWNLOADED_COMMIT_SHA = "downloaded_commit_sha"
 
-    private const val GITHUB_REPO = "S-Marcos-S/victoria-launcher"
+    private const val GITHUB_REPO = "S-Marcos-S/viagra-launcher"
     private const val RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=5"
     private const val FALLBACK_RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases/tags/latest"
 
@@ -341,7 +341,7 @@ object UpdateManager {
                         }
 
                         if (apkUrl.isNullOrBlank()) {
-                            apkUrl = "https://github.com/$GITHUB_REPO/releases/download/latest/victoria-launcher-release.apk"
+                            apkUrl = "https://github.com/$GITHUB_REPO/releases/download/latest/viagra-launcher-release.apk"
                         }
 
                         val isNewerVersion = chosenVersion != null && isVersionGreater(chosenVersion, currentVersion)

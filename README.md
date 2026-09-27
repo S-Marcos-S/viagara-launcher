@@ -1,8 +1,8 @@
-# Victoria Launcher
+# Viagra Launcher
 
 Um launcher minimalista e elegante para Android baseado em lista — uma alternativa de código aberto inspirada no [Niagara Launcher](https://niagaralauncher.app).
 
-![Victoria Launcher](docs/banner.png)
+![Viagra Launcher](docs/banner.png)
 
 ---
 
@@ -23,9 +23,9 @@ Um launcher minimalista e elegante para Android baseado em lista — uma alterna
 
 ## 📥 Instalação / Download
 
-Baixe a versão mais recente em formato APK diretamente na seção de **[Releases](https://github.com/S-Marcos-S/victoria-launcher/releases)** deste repositório.
+Baixe a versão mais recente em formato APK diretamente na seção de **[Releases](https://github.com/S-Marcos-S/viagra-launcher/releases)** deste repositório.
 
-Após instalar, defina o Victoria Launcher como inicializador padrão:
+Após instalar, defina o Viagra Launcher como inicializador padrão:
 **Configurações → Aplicativos → Aplicativos padrão → App de início (Home)**.
 
 > **Requisitos:** Android 8.0 (API 26) ou superior.
