@@ -104,14 +104,43 @@ object AppRootInspector {
             }
             val uid = appInfo?.uid ?: 0
 
-            // High-performance unified shell inspection script
+            val dlManagerUid: Int? = if (packageName == "com.android.vending") {
+                runCatching {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        pm.getPackageInfo("com.android.providers.downloads", PackageManager.PackageInfoFlags.of(0)).applicationInfo?.uid
+                    } else {
+                        @Suppress("DEPRECATION")
+                        pm.getPackageInfo("com.android.providers.downloads", 0).applicationInfo?.uid
+                    }
+                }.getOrNull()
+            } else null
+
+            val extraPackageName: String? = if (packageName == "com.android.vending") "com.android.providers.downloads" else null
+
+            val topGrep = if (extraPackageName != null) "grep -e \"$packageName\" -e \"$extraPackageName\"" else "grep \"$packageName\""
+            val psGrep = if (extraPackageName != null) "grep -e \"$packageName\" -e \"$extraPackageName\"" else "grep \"$packageName\""
+
+            val dlmNetStatsScript = if (dlManagerUid != null) {
+                """
+                echo "===NET_STATS_DLM==="
+                dumpsys netstats detail 2>/dev/null | grep "uid=$dlManagerUid" || dumpsys netstats 2>/dev/null | grep "uid=$dlManagerUid"
+                echo "===UID_STAT_DLM==="
+                cat /proc/uid_stat/$dlManagerUid/tcp_rcv 2>/dev/null
+                echo "---TX---"
+                cat /proc/uid_stat/$dlManagerUid/tcp_snd 2>/dev/null
+                """.trimIndent()
+            } else ""
+
+            val dlmConnFilter = if (dlManagerUid != null) " -e \"$dlManagerUid\"" else ""
+
+            // High-performance unified shell inspection script without toybox-incompatible regexes (\b, \s, \d)
             val shellScript = """
                 echo "===PIDS==="
                 pidof $packageName 2>/dev/null || pgrep -f $packageName 2>/dev/null
                 echo "===TOP==="
-                top -b -n 1 -q 2>/dev/null | grep -E "$packageName\b|$packageName:"
+                top -b -n 1 -q 2>/dev/null | $topGrep
                 echo "===PS==="
-                ps -A -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null | grep -E "$packageName\b|$packageName:"
+                ps -A -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null | $psGrep
                 echo "===SMAPS==="
                 for p in ${'$'}(pidof $packageName 2>/dev/null || pgrep -f $packageName 2>/dev/null); do
                     echo "---PID:${'$'}p---"
@@ -119,19 +148,21 @@ object AppRootInspector {
                     cat /proc/${'$'}p/status 2>/dev/null | grep -E "^(VmRSS|RssAnon|RssFile):"
                 done
                 echo "===MEMINFO==="
-                dumpsys meminfo $packageName 2>/dev/null | grep -E "TOTAL PSS|TOTAL      PSS|TOTAL:|Dalvik Heap|Native Heap|EGL mtrack|GL mtrack|Graphics|TOTAL RSS|Total PSS by process:|[0-9,]+K:\s+$packageName"
+                dumpsys meminfo $packageName 2>/dev/null | grep -E "TOTAL PSS|TOTAL      PSS|TOTAL:|Dalvik Heap|Native Heap|EGL mtrack|GL mtrack|Graphics|TOTAL RSS|Total PSS by process:|[0-9,]+K: *$packageName"
                 echo "===NET_STATS==="
-                dumpsys netstats detail 2>/dev/null | grep -E "uid=$uid\b" || dumpsys netstats 2>/dev/null | grep -E "uid=$uid\b"
+                dumpsys netstats detail 2>/dev/null | grep "uid=$uid" || dumpsys netstats 2>/dev/null | grep "uid=$uid"
+                echo "===UID_STAT==="
                 cat /proc/uid_stat/$uid/tcp_rcv 2>/dev/null
                 echo "---TX---"
                 cat /proc/uid_stat/$uid/tcp_snd 2>/dev/null
+                $dlmNetStatsScript
                 echo "===CONNECTIONS==="
-                ss -tupn 2>/dev/null | grep -E "$packageName|$uid\b" || netstat -tlpn 2>/dev/null | grep -E "$packageName|$uid\b"
+                ss -tupn 2>/dev/null | grep -e "$packageName" -e "$uid"$dlmConnFilter || netstat -tlpn 2>/dev/null | grep -e "$packageName" -e "$uid"$dlmConnFilter
                 echo "===ACTIVITIES==="
                 dumpsys window 2>/dev/null | grep -E "mCurrentFocus|mFocusedApp"
                 dumpsys activity activities 2>/dev/null | grep -E "topResumedActivity|mResumedActivity"
                 echo "===SERVICES==="
-                dumpsys activity services $packageName 2>/dev/null | grep -E "ServiceRecord\{|app=ProcessRecord"
+                dumpsys activity services $packageName 2>/dev/null | grep -E "ServiceRecord|app=ProcessRecord"
             """.trimIndent()
 
             val rawOutput = runSuCommand(shellScript).getOrDefault("")
@@ -146,10 +177,10 @@ object AppRootInspector {
                 .distinct()
 
             val topText = sections["TOP"] ?: ""
-            val topProcesses = parseTopOutput(topText, packageName)
+            val topProcesses = parseTopOutput(topText, packageName, extraPackageName)
 
             val psText = sections["PS"] ?: ""
-            val psProcesses = parsePsOutput(psText, packageName)
+            val psProcesses = parsePsOutput(psText, packageName, extraPackageName)
 
             val processes = mutableListOf<ProcessDetail>()
             topProcesses.forEach { processes.add(it) }
@@ -201,21 +232,60 @@ object AppRootInspector {
 
             // 4. Network stats
             val netStatsText = sections["NET_STATS"] ?: ""
-            var (rxBytes, txBytes) = parseNetstatsOutput(netStatsText, uid)
+            val (nsRx, nsTx) = parseNetstatsOutput(netStatsText, uid)
 
-            // Android TrafficStats API integration
             val tsRx = TrafficStats.getUidRxBytes(uid)
             val tsTx = TrafficStats.getUidTxBytes(uid)
-            if (tsRx > 0L) rxBytes = maxOf(rxBytes, tsRx)
-            if (tsTx > 0L) txBytes = maxOf(txBytes, tsTx)
+
+            var rxBytes = when {
+                tsRx > 0L -> tsRx
+                nsRx > 0L -> nsRx
+                else -> 0L
+            }
+            var txBytes = when {
+                tsTx > 0L -> tsTx
+                nsTx > 0L -> nsTx
+                else -> 0L
+            }
 
             // Legacy /proc/uid_stat fallback
             if (rxBytes == 0L && txBytes == 0L) {
-                val netParts = netStatsText.split("---TX---")
-                val legacyRx = netParts.getOrNull(0)?.trim()?.toLongOrNull() ?: 0L
-                val legacyTx = netParts.getOrNull(1)?.trim()?.toLongOrNull() ?: 0L
+                val uidStatText = sections["UID_STAT"] ?: ""
+                val netParts = uidStatStatFallback(uidStatText)
+                val legacyRx = netParts.first
+                val legacyTx = netParts.second
                 if (legacyRx > 0L) rxBytes = legacyRx
                 if (legacyTx > 0L) txBytes = legacyTx
+            }
+
+            // Download Provider fallback for Play Store (dual-UID tracking)
+            var dlmRxBytes = 0L
+            var dlmTxBytes = 0L
+            if (dlManagerUid != null) {
+                val dlmNetStatsText = sections["NET_STATS_DLM"] ?: ""
+                val (dlmNsRx, dlmNsTx) = parseNetstatsOutput(dlmNetStatsText, dlManagerUid)
+                val tsDlmRx = TrafficStats.getUidRxBytes(dlManagerUid)
+                val tsDlmTx = TrafficStats.getUidTxBytes(dlManagerUid)
+
+                dlmRxBytes = when {
+                    tsDlmRx > 0L -> tsDlmRx
+                    dlmNsRx > 0L -> dlmNsRx
+                    else -> 0L
+                }
+                dlmTxBytes = when {
+                    tsDlmTx > 0L -> tsDlmTx
+                    dlmNsTx > 0L -> dlmNsTx
+                    else -> 0L
+                }
+
+                if (dlmRxBytes == 0L && dlmTxBytes == 0L) {
+                    val dlmUidStatText = sections["UID_STAT_DLM"] ?: ""
+                    val dlmParts = uidStatStatFallback(dlmUidStatText)
+                    val legacyRx = dlmParts.first
+                    val legacyTx = dlmParts.second
+                    if (legacyRx > 0L) dlmRxBytes = legacyRx
+                    if (legacyTx > 0L) dlmTxBytes = legacyTx
+                }
             }
 
             // Real-time transfer speed calculation
@@ -234,6 +304,35 @@ object AppRootInspector {
                 }
             }
             lastNetSnapshots[packageName] = NetSnapshot(now, rxBytes, txBytes)
+
+            if (dlManagerUid != null) {
+                val dlmKey = "$packageName:dlm"
+                val prevDlmSample = lastNetSnapshots[dlmKey]
+                var dlmRxSpeedBps = 0L
+                var dlmTxSpeedBps = 0L
+                if (prevDlmSample != null) {
+                    val deltaMs = now - prevDlmSample.timestamp
+                    if (deltaMs in 500..30000) {
+                        val deltaSec = deltaMs / 1000.0
+                        val dRx = dlmRxBytes - prevDlmSample.rxBytes
+                        val dTx = dlmTxBytes - prevDlmSample.txBytes
+                        if (dRx > 0) dlmRxSpeedBps = (dRx / deltaSec).toLong()
+                        if (dTx > 0) dlmTxSpeedBps = (dTx / deltaSec).toLong()
+                    }
+                }
+                lastNetSnapshots[dlmKey] = NetSnapshot(now, dlmRxBytes, dlmTxBytes)
+
+                if (dlmRxSpeedBps > 0) {
+                    rxSpeedBps += dlmRxSpeedBps
+                }
+                if (dlmTxSpeedBps > 0) {
+                    txSpeedBps += dlmTxSpeedBps
+                }
+                if (rxBytes == 0L && dlmRxBytes > 0L) {
+                    rxBytes = dlmRxBytes
+                    txBytes = dlmTxBytes
+                }
+            }
 
             // 5. Active connections
             val connText = sections["CONNECTIONS"] ?: ""
@@ -344,18 +443,52 @@ object AppRootInspector {
         return map.mapValues { it.value.toString().trim() }
     }
 
-    fun parseTopOutput(text: String, packageName: String): List<ProcessDetail> {
+    private fun uidStatStatFallback(text: String): Pair<Long, Long> {
+        val parts = text.split("---TX---")
+        val rx = parts.getOrNull(0)?.trim()?.toLongOrNull() ?: 0L
+        val tx = parts.getOrNull(1)?.trim()?.toLongOrNull() ?: 0L
+        return Pair(rx, tx)
+    }
+
+    fun isPackageProcess(cmd: String, packageName: String): Boolean {
+        if (!cmd.contains(packageName)) return false
+        return cmd.split(Regex("\\s+")).any { token ->
+            val clean = token.substringAfterLast("/")
+            val stripped = clean.substringAfterLast("=")
+                .removeSurrounding("[", "]")
+                .removeSurrounding("(", ")")
+            stripped == packageName || stripped.startsWith("$packageName:")
+        }
+    }
+
+    fun parseTopOutput(text: String, packageName: String, extraPackageName: String? = null): List<ProcessDetail> {
         val list = mutableListOf<ProcessDetail>()
+        val timeRegex = Regex("^\\d+:\\d+.*")
         text.lineSequence().forEach { line ->
             val tokens = line.trim().split(Regex("\\s+"))
-            // Standard toybox top: PID, USER, PR, NI, VIRT, RES, SHR, S, %CPU, %MEM, TIME+, ARGS...
-            if (tokens.size >= 12) {
+            if (tokens.size >= 5) {
                 val pid = tokens[0].toIntOrNull()
-                val user = tokens[1]
-                val cpu = tokens[8].replace("%", "").toDoubleOrNull()
-                val mem = tokens[9].replace("%", "").toDoubleOrNull()
-                val cmd = tokens.drop(11).joinToString(" ")
-                if (pid != null && cpu != null && (cmd.contains(packageName) || cmd.contains("$packageName:"))) {
+                val user = tokens.getOrNull(1) ?: "unknown"
+                val timeIdx = tokens.indexOfFirst { timeRegex.matches(it) }
+
+                val (cpu, mem, cmd) = if (timeIdx in 2..(tokens.size - 2)) {
+                    val cpuVal = tokens[timeIdx - 2].replace("%", "").toDoubleOrNull()
+                    val memVal = tokens[timeIdx - 1].replace("%", "").toDoubleOrNull()
+                    val cmdVal = tokens.drop(timeIdx + 1).joinToString(" ")
+                    Triple(cpuVal, memVal, cmdVal)
+                } else if (tokens.size >= 12) {
+                    val cpuVal = tokens[8].replace("%", "").toDoubleOrNull()
+                    val memVal = tokens[9].replace("%", "").toDoubleOrNull()
+                    val cmdVal = tokens.drop(11).joinToString(" ")
+                    Triple(cpuVal, memVal, cmdVal)
+                } else {
+                    Triple(null, null, "")
+                }
+
+                val matchesApp = isPackageProcess(cmd, packageName) ||
+                        (extraPackageName != null && isPackageProcess(cmd, extraPackageName))
+
+                if (pid != null && cpu != null && matchesApp) {
                     list.add(
                         ProcessDetail(
                             pid = pid,
@@ -371,7 +504,7 @@ object AppRootInspector {
         return list
     }
 
-    fun parsePsOutput(text: String, packageName: String): List<ProcessDetail> {
+    fun parsePsOutput(text: String, packageName: String, extraPackageName: String? = null): List<ProcessDetail> {
         val list = mutableListOf<ProcessDetail>()
         text.lineSequence().forEach { line ->
             val tokens = line.trim().split(Regex("\\s+"))
@@ -382,7 +515,9 @@ object AppRootInspector {
                     val cpu = tokens.getOrNull(2)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
                     val mem = tokens.getOrNull(3)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
                     val cmd = tokens.drop(4).joinToString(" ")
-                    if (cmd.contains(packageName) || cmd.contains("$packageName:")) {
+                    val matchesApp = isPackageProcess(cmd, packageName) ||
+                            (extraPackageName != null && isPackageProcess(cmd, extraPackageName))
+                    if (matchesApp) {
                         list.add(
                             ProcessDetail(
                                 pid = pid,
@@ -506,14 +641,25 @@ object AppRootInspector {
     }
 
     fun isAppInForeground(activitiesText: String, packageName: String): Boolean {
-        return activitiesText.lineSequence().any { line ->
-            val lower = line.lowercase(Locale.ROOT)
-            val isFocusLine = lower.contains("mcurrentfocus") ||
-                    lower.contains("mfocusedapp") ||
-                    lower.contains("topresumedactivity") ||
-                    lower.contains("mresumedactivity")
-            isFocusLine && line.contains(packageName)
+        var foundFocusLine = false
+        for (line in activitiesText.lineSequence()) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("mCurrentFocus") || trimmed.startsWith("mFocusedApp")) {
+                foundFocusLine = true
+                if (trimmed.contains("$packageName/") || trimmed.contains("$packageName}") || trimmed.contains(" $packageName ")) {
+                    return true
+                }
+            }
         }
+        if (foundFocusLine) return false
+
+        for (line in activitiesText.lineSequence()) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("topResumedActivity=")) {
+                return trimmed.contains("$packageName/")
+            }
+        }
+        return false
     }
 
     private fun extractTopActivity(text: String, packageName: String): String? {

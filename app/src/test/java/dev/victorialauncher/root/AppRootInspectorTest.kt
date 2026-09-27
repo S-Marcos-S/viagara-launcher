@@ -185,4 +185,49 @@ class AppRootInspectorTest {
         assertEquals("ESTABLISHED", connections[0].state)
         assertEquals("142.250.190.46:443", connections[0].remoteAddress)
     }
+
+    @Test
+    fun `isPackageProcess correctly matches package and subprocess names`() {
+        assertTrue(AppRootInspector.isPackageProcess("com.android.vending", "com.android.vending"))
+        assertTrue(AppRootInspector.isPackageProcess("com.android.vending:download_service", "com.android.vending"))
+        assertTrue(AppRootInspector.isPackageProcess("/system/bin/app_process --nice-name=com.android.vending", "com.android.vending"))
+        assertTrue(AppRootInspector.isPackageProcess("[com.android.vending]", "com.android.vending"))
+
+        assertFalse(AppRootInspector.isPackageProcess("com.android.vending.other", "com.android.vending"))
+        assertFalse(AppRootInspector.isPackageProcess("com.google.android.vending", "com.android.vending"))
+    }
+
+    @Test
+    fun `parseTopOutput captures extraPackageName when provided`() {
+        val sampleTop = """
+            24192 root 10 -10 17G 207M 123M S 13.5 2.1 35:54.31 com.android.vending
+            25000 root 10 -10 2G   80M  40M S  5.0 0.8  5:12.34 com.android.providers.downloads
+            12345 root 10 -10 1G   50M  20M S  0.0 0.5  1:00.00 com.other.app
+        """.trimIndent()
+
+        val procs = AppRootInspector.parseTopOutput(
+            text = sampleTop,
+            packageName = "com.android.vending",
+            extraPackageName = "com.android.providers.downloads",
+        )
+
+        assertEquals(2, procs.size)
+        assertEquals(24192, procs[0].pid)
+        assertEquals(25000, procs[1].pid)
+        assertEquals(5.0, procs[1].cpuPercent, 0.01)
+    }
+
+    @Test
+    fun `isAppInForeground rejects background apps that are in recents while another app is focused`() {
+        val activitiesTextWithLauncherFocusedAndPlayStoreInRecents = """
+            mCurrentFocus=Window{abcdef u0 dev.victorialauncher/dev.victorialauncher.MainActivity}
+            mFocusedApp=ActivityRecord{123456 u0 dev.victorialauncher/dev.victorialauncher.MainActivity t10}
+            topResumedActivity=ActivityRecord{123456 u0 dev.victorialauncher/dev.victorialauncher.MainActivity t10}
+            Task{id=42 mResumedActivity=ActivityRecord{999999 u0 com.android.vending/com.google.android.finsky.activities.MainActivity t5}}
+        """.trimIndent()
+
+        // Play Store is in recent tasks, but Victoria Launcher has the focus window
+        assertFalse(AppRootInspector.isAppInForeground(activitiesTextWithLauncherFocusedAndPlayStoreInRecents, "com.android.vending"))
+        assertTrue(AppRootInspector.isAppInForeground(activitiesTextWithLauncherFocusedAndPlayStoreInRecents, "dev.victorialauncher"))
+    }
 }
