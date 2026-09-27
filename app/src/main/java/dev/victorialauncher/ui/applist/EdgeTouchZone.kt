@@ -52,6 +52,10 @@ fun EdgeTouchZone(
             .pointerInput(letters, band, hapticsEnabled, fromLeft) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
+                    if (state.active) {
+                        down.consume()
+                        return@awaitEachGesture
+                    }
                     down.consume()
                     state.begin(side)
 
@@ -84,7 +88,7 @@ fun EdgeTouchZone(
                             state.markScrubbing()
                         }
                         report(change.position.x, change.position.y)
-                        change.consume()
+                        event.changes.forEach { it.consume() }
                     }
                     val releasedOnStar = letters.getOrNull(lastIndex) == SCRUBBER_STAR
                     if (releasedOnStar) {

@@ -210,6 +210,7 @@ fun AppListScreen(
     // meant that on release the unfiltered list was briefly parked back at A.
     val scrubRowIndex = remember(model, scrubLetter) {
         val letter = scrubLetter ?: return@remember -1
+        if (letter == SCRUBBER_STAR) return@remember 0
         model.letterIndex.firstOrNull { it.first == letter }?.second ?: -1
     }
 
@@ -339,21 +340,32 @@ fun AppListScreen(
         if (compensate > 0f) listState.dispatchRawDelta(-compensate)
     }
 
-    LaunchedEffect(scrubLetter) {
-        if (scrubLetter == SCRUBBER_STAR) {
-            listState.scrollToItem(0)
-        }
-    }
+    val currentScrubRowIndex by rememberUpdatedState(scrubRowIndex)
+    val isScrubbing by rememberUpdatedState(scrubbing)
 
-    LaunchedEffect(scrubRowIndex, model) {
-        if (scrubRowIndex < 0) return@LaunchedEffect
-        listState.scrollToItem(scrubRowIndex)
-        // The next letter's header ends this section. Walking the rows to find it copied the
-        // whole tail of the list on every one of the ~26 letter changes in a gesture.
-        val end = model.letterIndex.firstOrNull { it.second > scrubRowIndex }?.second ?: model.rows.size
-        highlightRange = scrubRowIndex until end
-        // This placement is fresh, so the next drag is the one that retires it.
-        userDragged = false
+    LaunchedEffect(model) {
+        var lastScrolledIndex = -1
+        while (true) {
+            val targetIndex = snapshotFlow {
+                if (userDragged || currentScrubRowIndex < 0) {
+                    lastScrolledIndex = -1
+                }
+                currentScrubRowIndex
+            }.first { it >= 0 && it != lastScrolledIndex }
+
+            listState.scrollToItem(targetIndex)
+            lastScrolledIndex = targetIndex
+            val end = model.letterIndex.firstOrNull { it.second > targetIndex }?.second ?: model.rows.size
+            highlightRange = targetIndex until end
+            userDragged = false
+
+            // Throttling during active scrubbing prevents flooding the UI thread with
+            // 20+ instantaneous full LazyColumn layout passes per second.
+            // When the finger pauses or lifts (isScrubbing = false), this throttle does not wait.
+            if (isScrubbing) {
+                delay(30L)
+            }
+        }
     }
 
     val scope = rememberCoroutineScope()
@@ -539,7 +551,8 @@ fun AppListScreen(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(listConnection)
-            .pointerInput(doubleTapToLock, listState) {
+            .pointerInput(doubleTapToLock, listState, scrub.active) {
+                if (scrub.active) return@pointerInput
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
                     val start = down.position
@@ -674,6 +687,7 @@ fun AppListScreen(
                             onLongPress = { _ -> appMenuFor = row.app },
                             startPadding = rowStart,
                             endPadding = rowEnd,
+                            enabled = !scrub.active,
                         )
                     }
                 }
@@ -686,7 +700,7 @@ fun AppListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .graphicsLayer { alpha = othersAlpha }
-                        .clickable(onClick = onOpenSettings)
+                        .clickable(enabled = !scrub.active, onClick = onOpenSettings)
                         .heightIn(min = MIN_ROW_HEIGHT)
                         .padding(horizontal = 28.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -726,6 +740,26 @@ fun AppListScreen(
                     )
                 ),
         )
+      }
+
+      // Block all secondary touches on the list while scrubbing the alphabet,
+      // mirroring Niagara Launcher's modal scrub behavior and preventing accidental app launches.
+      if (scrub.active) {
+          Box(
+              modifier = Modifier
+                  .fillMaxSize()
+                  .pointerInput(Unit) {
+                      awaitEachGesture {
+                          val down = awaitFirstDown(requireUnconsumed = false)
+                          down.consume()
+                          while (true) {
+                              val event = awaitPointerEvent()
+                              event.changes.forEach { it.consume() }
+                              if (event.changes.none { it.pressed }) break
+                          }
+                      }
+                  },
+          )
       }
 
       if (showAlphabet) {
@@ -1016,6 +1050,7 @@ private fun AppRow(
     onNotificationClick: (dev.victorialauncher.notification.AppNotificationItem) -> Unit = {},
     startPadding: Dp = 20.dp,
     endPadding: Dp = 20.dp,
+    enabled: Boolean = true,
 ) {
     // Same press treatment as the home screen: the stock ripple all but vanishes against a
     // wallpaper, and without any feedback a tap that did register reads as one that didn't.
@@ -1028,7 +1063,7 @@ private fun AppRow(
             .fillMaxWidth()
             // Ahead of the inset, so the long-press menu is still placed against the
             // whole row rather than 20dp to the left of the finger.
-            .recordTouchPosition(touchPosition)
+            .then(if (enabled) Modifier.recordTouchPosition(touchPosition) else Modifier)
             .padding(
                 start = (startPadding - 8.dp).coerceAtLeast(0.dp),
                 end = (endPadding - 8.dp).coerceAtLeast(0.dp),
@@ -1040,6 +1075,7 @@ private fun AppRow(
             .combinedClickable(
                 interactionSource = interaction,
                 indication = null,
+                enabled = enabled,
                 onClick = onLaunch,
                 onLongClick = {
                     onLongPress(
@@ -1082,6 +1118,7 @@ private fun AppRow(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
+                            enabled = enabled,
                             onClick = { onNotificationClick(notification) },
                         ),
                 )
