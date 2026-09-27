@@ -288,7 +288,6 @@ object AppRootInspector {
             val (sockRx, sockTx) = parseSocketBytes(connText)
 
             // Process IO Syscall Telemetry (rchar / wchar)
-            val smapsText = sections["SMAPS"] ?: ""
             val (ioRead, ioWrite) = parseProcIo(smapsText)
 
             val combinedNetRx = appNetRx + dlmNetRx
@@ -370,7 +369,6 @@ object AppRootInspector {
             }
 
             // 5. Active connections
-            val connText = sections["CONNECTIONS"] ?: ""
             val activeConnections = parseConnections(connText)
 
             // 6. Active services
