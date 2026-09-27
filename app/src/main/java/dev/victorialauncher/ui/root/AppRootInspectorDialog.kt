@@ -81,6 +81,8 @@ import dev.victorialauncher.root.AppRootInspector
 import dev.victorialauncher.ui.common.AppIcon
 import dev.victorialauncher.ui.theme.dynamicBorderColor
 import dev.victorialauncher.ui.theme.dynamicSurfaceColor
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -130,11 +132,11 @@ fun AppRootInspectorDialog(
             refreshData(showIndicator = false)
             return@LaunchedEffect
         }
-        while (kotlinx.coroutines.isActive) {
+        while (isActive) {
             val result = AppRootInspector.inspectApp(context, app.packageName)
             inspectionData = result.getOrNull()
             isLoading = false
-            kotlinx.coroutines.delay(2000L)
+            delay(2000L)
         }
     }
 
