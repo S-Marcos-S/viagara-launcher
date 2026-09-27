@@ -48,6 +48,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -57,6 +59,10 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VisibilityOff
+import android.widget.Toast
+import dev.victorialauncher.root.AppLogCaptureService
+import dev.victorialauncher.root.AppUninstallManager
+import dev.victorialauncher.ui.common.ConfirmUninstallDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -174,6 +180,8 @@ fun AppListScreen(
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
     var rootInspectorFor by remember { mutableStateOf<AppInfo?>(null) }
+    var confirmUninstallFor by remember { mutableStateOf<AppInfo?>(null) }
+    val context = LocalContext.current
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     // The gesture handlers below outlive the composition that created them, so they must not
@@ -801,6 +809,20 @@ fun AppListScreen(
                             onClick = { rootInspectorFor = app },
                         )
                     )
+                    val isCurrentlyCapturing = AppLogCaptureService.isCapturingApp(app.packageName)
+                    add(
+                        dev.victorialauncher.ui.common.AppMenuItem(
+                            title = stringResource(if (isCurrentlyCapturing) R.string.action_stop_save_logs else R.string.action_capture_logs),
+                            icon = Icons.Filled.BugReport,
+                            onClick = {
+                                if (isCurrentlyCapturing) {
+                                    AppLogCaptureService.saveLog(context)
+                                } else {
+                                    AppLogCaptureService.startCapture(context, app.packageName, displayName(app))
+                                }
+                            },
+                        )
+                    )
                 }
                 add(
                     dev.victorialauncher.ui.common.AppMenuItem(
@@ -831,6 +853,38 @@ fun AppListScreen(
                         isDestructive = true,
                     )
                 )
+                if (app.packageName != context.packageName) {
+                    add(
+                        dev.victorialauncher.ui.common.AppMenuItem(
+                            title = stringResource(R.string.action_uninstall),
+                            icon = Icons.Filled.DeleteForever,
+                            onClick = {
+                                val isRoot = AppUninstallManager.isRootAvailable()
+                                val isSystem = AppUninstallManager.isSystemApp(context, app.packageName)
+                                if (isRoot) {
+                                    if (isSystem) {
+                                        confirmUninstallFor = app
+                                    } else {
+                                        val appName = displayName(app)
+                                        Toast.makeText(context, context.getString(R.string.uninstall_toast_progress, appName), Toast.LENGTH_SHORT).show()
+                                        scope.launch {
+                                            val result = AppUninstallManager.uninstallViaRoot(app.packageName)
+                                            if (result.isSuccess) {
+                                                Toast.makeText(context, context.getString(R.string.uninstall_toast_success, appName), Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                val error = result.exceptionOrNull()?.message ?: ""
+                                                Toast.makeText(context, context.getString(R.string.uninstall_toast_failed, appName, error), Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    AppUninstallManager.uninstallStandard(context, app.packageName)
+                                }
+                            },
+                            isDestructive = true,
+                        )
+                    )
+                }
             }
 
             dev.victorialauncher.ui.common.AppMenuDialog(
@@ -838,6 +892,35 @@ fun AppListScreen(
                 displayName = displayName(app),
                 onDismissRequest = { appMenuFor = null },
                 items = menuItems,
+            )
+        }
+
+        confirmUninstallFor?.let { target ->
+            val isSystem = remember(target.packageName) { AppUninstallManager.isSystemApp(context, target.packageName) }
+            val isRoot = remember { AppUninstallManager.isRootAvailable() }
+            ConfirmUninstallDialog(
+                app = target,
+                displayName = displayName(target),
+                isSystemApp = isSystem,
+                onDismissRequest = { confirmUninstallFor = null },
+                onConfirm = {
+                    confirmUninstallFor = null
+                    val appName = displayName(target)
+                    if (isRoot) {
+                        Toast.makeText(context, context.getString(R.string.uninstall_toast_progress, appName), Toast.LENGTH_SHORT).show()
+                        scope.launch {
+                            val result = AppUninstallManager.uninstallViaRoot(target.packageName)
+                            if (result.isSuccess) {
+                                Toast.makeText(context, context.getString(R.string.uninstall_toast_success, appName), Toast.LENGTH_SHORT).show()
+                            } else {
+                                val error = result.exceptionOrNull()?.message ?: ""
+                                Toast.makeText(context, context.getString(R.string.uninstall_toast_failed, appName, error), Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        AppUninstallManager.uninstallStandard(context, target.packageName)
+                    }
+                },
             )
         }
 

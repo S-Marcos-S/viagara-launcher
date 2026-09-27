@@ -1,15 +1,14 @@
-### 🚀 Novidades e Correções da Versão 0.59.27
+### 🚀 Novidades e Melhorias da Versão 0.59.28
 
-- **Correção Definitiva de Detecção de Processos & Falsos Positivos em Segundo Plano:**
-  - Corrigido o problema em que aplicativos inativos ou fechados apareciam erroneamente como "EM SEGUNDO PLANO".
-  - O script de inspeção e os analisadores de processos agora filtram estritamente comandos de interpretadores (`su`, `sh`, `bash`, `toybox`, `grep`) e validam que os PIDs e argumentos pertençam legitimamente ao UID do aplicativo inspecionado.
-  - Aplicativos que não possuem processos em execução agora são corretamente identificados com o status **PARADO / INATIVO**.
+- **Captura e Gravação de Logs (Logcat) por Aplicativo com Root:**
+  - Adicionada a nova opção **"Capturar logs (Root)"** ao clicar e segurar em qualquer aplicativo (na Tela Inicial, na Gaveta de Apps e dentro de Pastas Flutuantes). Disponível exclusivamente para usuários com acesso root.
+  - **Filtro Específico e Isolado:** Captura estritamente os logs do aplicativo alvo através do seu UID e PIDs dedicados, descartando ruídos de outros aplicativos ou serviços do sistema operacional.
+  - **Notificação de Gravação em Andamento:** Ao iniciar a gravação, uma notificação contínua é exibida permitindo **Salvar log** ou **Apagar** (descartar).
+  - **Salvamento Direto na Pasta Downloads:** Ao salvar, o arquivo `.txt` do log é gerado em `Downloads/` com indexação imediata no armazenamento do dispositivo. A notificação de gravação é automaticamente substituída por uma nova notificação de conclusão informando o caminho do arquivo e oferecendo ações rápidas para **Compartilhar**, **Ver arquivo** ou **Apagar**.
+  - **Detecção Automática de Falhas (Crash Catch):** Caso o aplicativo gravado sofra um erro fatal (`FATAL EXCEPTION`, `SIGSEGV`, `SIGABRT` ou encerramento inesperado), o log é salvo automaticamente no mesmo instante e o usuário é notificado com as opções de compartilhamento e análise imediata.
 
-- **Velocidade de Download e Upload em Tempo Real em Local Separado:**
-  - Adicionado painel dedicado e destacado para as taxas instantâneas de transferência de rede (**Download** e **Upload**).
-  - Indicadores ao vivo com badges dinâmicos (`AO VIVO` / `INATIVO`) e formatação em alta precisão (`↓ 3.8 MB/s` e `↑ 210 KB/s`).
-
-- **Consumo de Dados Nativo com Seletor de Período (Hoje / 7 Dias / Total):**
-  - Implementada integração direta com o sistema nativo de estatísticas de rede do Android (`NetworkStatsManager` via `PACKAGE_USAGE_STATS`), garantindo medição precisa e oficial do consumo de dados (Wi-Fi + Dados Móveis).
-  - Adicionado seletor interativo em abas ("Hoje", "7 Dias" e "Total"), permitindo alternar instantaneamente para ver quanto o app consumiu no dia de hoje, na última semana ou no total acumulado.
-  - Aba "Rede" atualizada com detalhamento comparativo completo do histórico de consumo e conexões ativas.
+- **Desinstalação de Aplicativos Direto pelo Menu de Contexto:**
+  - Adicionada a opção **"Desinstalar"** ao clicar e segurar em qualquer aplicativo com confirmação e ações inteligentes.
+  - Em dispositivos com Root, o aplicativo é desinstalado silenciosamente via linha de comando (`pm uninstall` e `pm uninstall --user 0`).
+  - Para aplicativos do sistema, exibe diálogo protetor com aviso de risco de instabilidade antes de efetuar a desinstalação via root.
+  - Fallback automático para o instalador padrão do Android (`PackageInstaller`) em dispositivos sem root.

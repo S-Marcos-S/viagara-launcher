@@ -388,4 +388,36 @@
     <string name="root_inspector_no_connections">No active network connections at the moment</string>
     <string name="root_inspector_no_services">No running services</string>
     <string name="root_inspector_loading">Inspecting application via Superuser…</string>
+
+    <!-- App Uninstallation -->
+    <string name="action_uninstall">Uninstall</string>
+    <string name="dialog_uninstall_system_app_title">Uninstall system app?</string>
+    <string name="dialog_uninstall_system_app_warning">System Application</string>
+    <string name="dialog_uninstall_system_app_message">“%1$s” is a system application. Removing it may cause system instability or device malfunctions.\n\nAre you sure you want to uninstall this application via root?</string>
+    <string name="dialog_uninstall_app_title">Uninstall application?</string>
+    <string name="dialog_uninstall_app_message">Are you sure you want to uninstall “%1$s” via root?</string>
+    <string name="uninstall_toast_progress">Uninstalling %1$s…</string>
+    <string name="uninstall_toast_success">“%1$s” uninstalled successfully</string>
+    <string name="uninstall_toast_failed">Failed to uninstall %1$s: %2$s</string>
+
+    <!-- App Log Capture -->
+    <string name="action_capture_logs">Capture Logs (Root)</string>
+    <string name="action_stop_save_logs">Save Logs (Recording…)</string>
+    <string name="log_notif_channel_name">Logcat Capture</string>
+    <string name="log_notif_channel_desc">Notifications for ongoing app logcat captures and saved logs</string>
+    <string name="log_notif_recording_title">Recording logs: %1$s</string>
+    <string name="log_notif_recording_text">Capturing real-time logs via root…</string>
+    <string name="log_notif_action_save">Save log</string>
+    <string name="log_notif_action_discard">Discard</string>
+    <string name="log_notif_saved_title">Log saved successfully</string>
+    <string name="log_notif_crash_title">%1$s closed with error — Log saved</string>
+    <string name="log_notif_saved_text">Saved to Downloads/%1$s</string>
+    <string name="log_notif_action_share">Share</string>
+    <string name="log_notif_action_view">View file</string>
+    <string name="log_notif_action_delete">Delete</string>
+    <string name="log_toast_started">Log recording started for %1$s</string>
+    <string name="log_toast_saved">Log saved to Downloads/%1$s</string>
+    <string name="log_toast_discarded">Log recording discarded</string>
+    <string name="log_toast_deleted">Log file deleted</string>
+    <string name="log_toast_crash_detected">Error detected in %1$s! Log saved to Downloads</string>
 </resources>

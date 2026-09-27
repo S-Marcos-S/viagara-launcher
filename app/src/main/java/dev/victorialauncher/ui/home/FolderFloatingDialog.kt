@@ -7,6 +7,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,6 +75,7 @@ fun FolderFloatingDialog(
     onOpenApp: (AppInfo) -> Unit,
     onManageFolder: () -> Unit,
     onDismissRequest: () -> Unit,
+    onAppLongClick: ((AppInfo) -> Unit)? = null,
 ) {
     val view = LocalView.current
     DisposableEffect(view) {
@@ -228,10 +230,18 @@ fun FolderFloatingDialog(
                                 Column(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(16.dp))
-                                        .clickable {
-                                            onDismissRequest()
-                                            onOpenApp(app)
-                                        }
+                                        .combinedClickable(
+                                            onClick = {
+                                                onDismissRequest()
+                                                onOpenApp(app)
+                                            },
+                                            onLongClick = onAppLongClick?.let { callback ->
+                                                {
+                                                    onDismissRequest()
+                                                    callback(app)
+                                                }
+                                            },
+                                        )
                                         .padding(horizontal = 4.dp, vertical = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {

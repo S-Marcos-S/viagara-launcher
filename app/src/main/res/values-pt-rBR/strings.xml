@@ -341,4 +341,36 @@
     <string name="root_inspector_no_connections">Nenhuma conexão de rede ativa no momento</string>
     <string name="root_inspector_no_services">Nenhum serviço em execução</string>
     <string name="root_inspector_loading">Inspecionando aplicativo via Superusuário…</string>
+
+    <!-- Desinstalação de Aplicativos -->
+    <string name="action_uninstall">Desinstalar</string>
+    <string name="dialog_uninstall_system_app_title">Desinstalar app do sistema?</string>
+    <string name="dialog_uninstall_system_app_warning">Aplicativo do Sistema</string>
+    <string name="dialog_uninstall_system_app_message">“%1$s” é um aplicativo do sistema. Desinstalá-lo pode causar instabilidade no sistema ou mau funcionamento do dispositivo.\n\nTem certeza de que deseja desinstalar este aplicativo via root?</string>
+    <string name="dialog_uninstall_app_title">Desinstalar aplicativo?</string>
+    <string name="dialog_uninstall_app_message">Tem certeza de que deseja desinstalar “%1$s” via root?</string>
+    <string name="uninstall_toast_progress">Desinstalando %1$s…</string>
+    <string name="uninstall_toast_success">“%1$s” desinstalado com sucesso</string>
+    <string name="uninstall_toast_failed">Falha ao desinstalar %1$s: %2$s</string>
+
+    <!-- Captura de Logs de Aplicativos -->
+    <string name="action_capture_logs">Capturar logs (Root)</string>
+    <string name="action_stop_save_logs">Salvar logs (Gravando…)</string>
+    <string name="log_notif_channel_name">Captura de Logs (Logcat)</string>
+    <string name="log_notif_channel_desc">Notificações para gravações ativas de logs e arquivos salvos</string>
+    <string name="log_notif_recording_title">Gravando logs: %1$s</string>
+    <string name="log_notif_recording_text">Capturando logs em tempo real via root…</string>
+    <string name="log_notif_action_save">Salvar log</string>
+    <string name="log_notif_action_discard">Apagar</string>
+    <string name="log_notif_saved_title">Log salvo com sucesso</string>
+    <string name="log_notif_crash_title">%1$s fechou com erro — Log salvo</string>
+    <string name="log_notif_saved_text">Salvo em Downloads/%1$s</string>
+    <string name="log_notif_action_share">Compartilhar</string>
+    <string name="log_notif_action_view">Ver arquivo</string>
+    <string name="log_notif_action_delete">Apagar</string>
+    <string name="log_toast_started">Gravação de logs iniciada para %1$s</string>
+    <string name="log_toast_saved">Log salvo em Downloads/%1$s</string>
+    <string name="log_toast_discarded">Gravação de log descartada</string>
+    <string name="log_toast_deleted">Arquivo de log apagado</string>
+    <string name="log_toast_crash_detected">Erro detectado em %1$s! Log salvo na pasta Downloads</string>
 </resources>
