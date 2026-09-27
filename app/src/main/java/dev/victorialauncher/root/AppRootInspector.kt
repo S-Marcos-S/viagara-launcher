@@ -91,12 +91,8 @@ object AppRootInspector {
 
     private data class ExtendedNetSnapshot(
         val timestamp: Long,
-        val netstatsRx: Long,
-        val netstatsTx: Long,
-        val socketRx: Long,
-        val socketTx: Long,
-        val ioRx: Long,
-        val ioTx: Long,
+        val realtimeRx: Long,
+        val realtimeTx: Long,
     )
     private val lastExtendedSnapshots = ConcurrentHashMap<String, ExtendedNetSnapshot>()
 
@@ -345,6 +341,9 @@ object AppRootInspector {
             var dlmRx7Days = 0L
             var dlmTx7Days = 0L
 
+            var dlmRealtimeRx = 0L
+            var dlmRealtimeTx = 0L
+
             if (dlManagerUid != null) {
                 val dlmNetStatsText = sections["NET_STATS_DLM"] ?: ""
                 val dlmNsBreakdown = parseNetstatsOutput(dlmNetStatsText, dlManagerUid, todayStartSec, sevenDaysAgoSec)
@@ -354,6 +353,9 @@ object AppRootInspector {
 
                 val dlmUidStatText = sections["UID_STAT_DLM"] ?: ""
                 val (dlmUidRx, dlmUidTx) = uidStatStatFallback(dlmUidStatText)
+
+                dlmRealtimeRx = if (tsDlmRx >= 0L) tsDlmRx else maxOf(dlmQtagRx, dlmUidRx)
+                dlmRealtimeTx = if (tsDlmTx >= 0L) tsDlmTx else maxOf(dlmQtagTx, dlmUidTx)
 
                 dlmNetRx = maxOf(if (tsDlmRx > 0L) tsDlmRx else 0L, dlmNsBreakdown.rxTotal, dlmQtagRx, dlmUidRx)
                 dlmNetTx = maxOf(if (tsDlmTx > 0L) tsDlmTx else 0L, dlmNsBreakdown.txTotal, dlmQtagTx, dlmUidTx)
@@ -367,12 +369,16 @@ object AppRootInspector {
                 dlmTx7Days = maxOf(dlmNsBreakdown.tx7Days, nsmDlm7DaysTx)
             }
 
+            // Real-time network accounting strictly from kernel network counters (TrafficStats / qtaguid / uid_stat)
+            val appRealtimeRx = if (tsRx >= 0L) tsRx else maxOf(qtagRx, uidStatRx)
+            val appRealtimeTx = if (tsTx >= 0L) tsTx else maxOf(qtagTx, uidStatTx)
+
+            val currentRealtimeRx = appRealtimeRx + dlmRealtimeRx
+            val currentRealtimeTx = appRealtimeTx + dlmRealtimeTx
+
             // Socket Telemetry (TCP internal stats)
             val connText = sections["CONNECTIONS"] ?: ""
             val (sockRx, sockTx) = parseSocketBytes(connText)
-
-            // Process IO Syscall Telemetry (rchar / wchar)
-            val (ioRead, ioWrite) = parseProcIo(smapsText)
 
             val combinedNetRx = appNetRx + dlmNetRx
             val combinedNetTx = appNetTx + dlmNetTx
@@ -381,67 +387,46 @@ object AppRootInspector {
             val combinedRx7Days = appRx7Days + dlmRx7Days
             val combinedTx7Days = appTx7Days + dlmTx7Days
 
-            // Real-time transfer speed calculation across all telemetry layers
+            // Real-time transfer speed calculation strictly from monotonic network counters
             val prevSample = lastExtendedSnapshots[packageName]
             var rxSpeedBps = 0L
             var txSpeedBps = 0L
 
             if (prevSample != null) {
                 val deltaMs = now - prevSample.timestamp
-                if (deltaMs in 500..30000) {
+                if (deltaMs in 400..30000) {
                     val dt = deltaMs / 1000.0
 
-                    // Network counter delta
-                    val dNetRx = combinedNetRx - prevSample.netstatsRx
-                    val speedNetRx = if (dNetRx > 0) (dNetRx / dt).toLong() else 0L
+                    val dRx = currentRealtimeRx - prevSample.realtimeRx
+                    val dTx = currentRealtimeTx - prevSample.realtimeTx
 
-                    // Socket counter delta
-                    val dSockRx = sockRx - prevSample.socketRx
-                    val speedSockRx = if (dSockRx > 0) (dSockRx / dt).toLong() else 0L
-
-                    // Process IO read delta (rchar)
-                    val dIoRx = ioRead - prevSample.ioRx
-                    val speedIoRx = if (dIoRx > 0) (dIoRx / dt).toLong() else 0L
-
-                    // Best RX speed: max across socket, network counters, and process I/O
-                    rxSpeedBps = maxOf(speedSockRx, speedNetRx, speedIoRx)
-
-                    // TX (upload) delta
-                    val dNetTx = combinedNetTx - prevSample.netstatsTx
-                    val speedNetTx = if (dNetTx > 0) (dNetTx / dt).toLong() else 0L
-
-                    val dSockTx = sockTx - prevSample.socketTx
-                    val speedSockTx = if (dSockTx > 0) (dSockTx / dt).toLong() else 0L
-
-                    val dIoTx = ioWrite - prevSample.ioTx
-                    val speedIoTx = if (dIoTx > 0) (dIoTx / dt).toLong() else 0L
-
-                    txSpeedBps = maxOf(speedSockTx, speedNetTx, speedIoTx)
+                    if (dRx > 0) {
+                        rxSpeedBps = (dRx / dt).toLong()
+                    }
+                    if (dTx > 0) {
+                        txSpeedBps = (dTx / dt).toLong()
+                    }
                 }
             }
 
             lastExtendedSnapshots[packageName] = ExtendedNetSnapshot(
                 timestamp = now,
-                netstatsRx = combinedNetRx,
-                netstatsTx = combinedNetTx,
-                socketRx = sockRx,
-                socketTx = sockTx,
-                ioRx = ioRead,
-                ioTx = ioWrite,
+                realtimeRx = currentRealtimeRx,
+                realtimeTx = currentRealtimeTx,
             )
 
-            // Total Bytes to display
+            // Total Bytes to display (strictly network traffic, never disk I/O)
             val rxBytes = when {
                 combinedNetRx > 0L -> combinedNetRx
+                currentRealtimeRx > 0L -> currentRealtimeRx
                 sockRx > 0L -> sockRx
-                ioRead > 0L -> ioRead
                 else -> 0L
             }
 
             val txBytes = when {
                 combinedNetTx > 0L -> combinedNetTx
+                currentRealtimeTx > 0L -> currentRealtimeTx
                 sockTx > 0L -> sockTx
-                ioWrite > 0L -> ioWrite
                 else -> 0L
             }
 
