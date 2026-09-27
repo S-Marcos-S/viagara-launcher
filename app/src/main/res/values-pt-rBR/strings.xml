@@ -373,4 +373,25 @@
     <string name="log_toast_discarded">Gravação de log descartada</string>
     <string name="log_toast_deleted">Arquivo de log apagado</string>
     <string name="log_toast_crash_detected">Erro detectado em %1$s! Log salvo na pasta Downloads</string>
+
+    <!-- Task Manager -->
+    <string name="task_manager_title">Gerenciador de tarefas</string>
+    <string name="task_manager_tab_processes">Processos</string>
+    <string name="task_manager_tab_performance">Desempenho</string>
+    <string name="task_manager_group_foreground">Aplicativos em Primeiro Plano</string>
+    <string name="task_manager_group_background">Processos em Segundo Plano</string>
+    <string name="task_manager_group_system">Processos do Sistema</string>
+    <string name="task_manager_search_hint">Buscar apps, processos ou PID…</string>
+    <string name="task_manager_live_badge">AO VIVO</string>
+    <string name="task_manager_end_task">Finalizar tarefa</string>
+    <string name="task_manager_cpu_cores">Núcleos</string>
+    <string name="task_manager_cpu_speed">Velocidade</string>
+    <string name="task_manager_cpu_threads">Processos / Threads</string>
+    <string name="task_manager_cpu_uptime">Tempo de atividade</string>
+    <string name="task_manager_ram_used">Em uso</string>
+    <string name="task_manager_ram_available">Disponível</string>
+    <string name="task_manager_ram_zram">zRAM / Swap</string>
+    <string name="task_manager_net_download">Download</string>
+    <string name="task_manager_net_upload">Upload</string>
+    <string name="task_manager_storage_title">Armazenamento</string>
 </resources>

@@ -47,8 +47,10 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Widgets
+import dev.victorialauncher.root.AppUninstallManager
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import dev.victorialauncher.update.DownloadStatus
@@ -85,6 +87,7 @@ fun HomeOptionsBottomSheet(
     visible: Boolean,
     onDismiss: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenTaskManager: () -> Unit = {},
     onManageFavorites: () -> Unit,
     onAddWidget: () -> Unit,
     onOpenClockStyle: () -> Unit = {},
@@ -366,6 +369,15 @@ fun HomeOptionsBottomSheet(
                     label = stringResource(R.string.settings_title),
                     onClick = { onDismiss(); onOpenSettings() },
                 )
+
+                val isRoot = remember { AppUninstallManager.isRootAvailable() }
+                if (isRoot) {
+                    OptionItem(
+                        icon = Icons.Filled.Speed,
+                        label = stringResource(R.string.task_manager_title),
+                        onClick = { onDismiss(); onOpenTaskManager() },
+                    )
+                }
 
                 OptionItem(
                     icon = Icons.Filled.Image,

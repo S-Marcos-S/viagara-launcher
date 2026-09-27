@@ -420,4 +420,25 @@
     <string name="log_toast_discarded">Log recording discarded</string>
     <string name="log_toast_deleted">Log file deleted</string>
     <string name="log_toast_crash_detected">Error detected in %1$s! Log saved to Downloads</string>
+
+    <!-- Task Manager -->
+    <string name="task_manager_title">Task Manager</string>
+    <string name="task_manager_tab_processes">Processes</string>
+    <string name="task_manager_tab_performance">Performance</string>
+    <string name="task_manager_group_foreground">Foreground Apps</string>
+    <string name="task_manager_group_background">Background Processes</string>
+    <string name="task_manager_group_system">System Processes</string>
+    <string name="task_manager_search_hint">Search apps, processes or PID…</string>
+    <string name="task_manager_live_badge">LIVE</string>
+    <string name="task_manager_end_task">End Task</string>
+    <string name="task_manager_cpu_cores">Cores</string>
+    <string name="task_manager_cpu_speed">Speed</string>
+    <string name="task_manager_cpu_threads">Processes / Threads</string>
+    <string name="task_manager_cpu_uptime">Uptime</string>
+    <string name="task_manager_ram_used">In Use</string>
+    <string name="task_manager_ram_available">Available</string>
+    <string name="task_manager_ram_zram">zRAM / Swap</string>
+    <string name="task_manager_net_download">Download</string>
+    <string name="task_manager_net_upload">Upload</string>
+    <string name="task_manager_storage_title">Storage</string>
 </resources>

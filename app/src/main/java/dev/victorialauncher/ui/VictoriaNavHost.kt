@@ -638,5 +638,17 @@ fun VictoriaNavHost(
                 onBack = { navController.popBackStack() },
             )
         }
+
+        composable(
+            route = "task_manager",
+            enterTransition = { fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 8 } },
+            exitTransition = { fadeOut(tween(200)) },
+            popExitTransition = { fadeOut(tween(200)) + slideOutVertically(tween(250)) { it / 8 } },
+        ) {
+            dev.victorialauncher.ui.root.TaskManagerScreen(
+                allApps = allApps,
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
     }
 }

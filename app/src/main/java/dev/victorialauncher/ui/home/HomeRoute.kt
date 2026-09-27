@@ -640,6 +640,7 @@ fun HomeRoute(
             visible = showHomeOptions,
             onDismiss = { showHomeOptions = false },
             onOpenSettings = { showHomeOptions = false; onNavigate("settings") },
+            onOpenTaskManager = { showHomeOptions = false; onNavigate("task_manager") },
             onManageFavorites = { showHomeOptions = false; onNavigate("favorites") },
             onAddWidget = { showHomeOptions = false; widgetActions.onAddWidget() },
             onOpenClockStyle = { showHomeOptions = false; onNavigate("settings/clock") },
