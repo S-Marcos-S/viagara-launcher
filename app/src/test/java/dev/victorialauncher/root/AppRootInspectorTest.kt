@@ -230,4 +230,70 @@ class AppRootInspectorTest {
         assertFalse(AppRootInspector.isAppInForeground(activitiesTextWithLauncherFocusedAndPlayStoreInRecents, "com.android.vending"))
         assertTrue(AppRootInspector.isAppInForeground(activitiesTextWithLauncherFocusedAndPlayStoreInRecents, "dev.victorialauncher"))
     }
+
+    @Test
+    fun `parseProcIo sums rchar and wchar from process IO dumps`() {
+        val sampleIo = """
+            ---PID:12345---
+            ---IO---
+            rchar: 10485760
+            wchar: 524288
+            syscr: 100
+            syscw: 50
+            ---PID:12346---
+            ---IO---
+            rchar: 20971520
+            wchar: 1048576
+        """.trimIndent()
+
+        val (rchar, wchar) = AppRootInspector.parseProcIo(sampleIo)
+
+        assertEquals(31457280L, rchar)
+        assertEquals(1572864L, wchar)
+    }
+
+    @Test
+    fun `parseSocketBytes extracts bytes_received and bytes_acked from ss output`() {
+        val sampleSsInfo = """
+            tcp ESTAB 0 0 192.168.1.50:48210 142.250.190.46:443 users:(("com.android.vending",pid=12345,fd=42))
+                 bbr wscale:7,7 rto:200 bytes_received:5242880 bytes_acked:102400
+            tcp ESTAB 0 0 192.168.1.50:48211 142.250.190.46:443 users:(("com.android.vending",pid=12345,fd=43))
+                 bbr wscale:7,7 rto:200 bytes_received:1048576 bytes_sent:51200
+        """.trimIndent()
+
+        val (rx, tx) = AppRootInspector.parseSocketBytes(sampleSsInfo)
+
+        assertEquals(6291456L, rx)
+        assertEquals(153600L, tx)
+    }
+
+    @Test
+    fun `parseQtaguidStats extracts rx and tx bytes for target uid`() {
+        val sampleQtaguid = """
+            2 wlan0 0x0 10185 0 15000000 12000 1000000 8000
+            3 wlan0 0x123 10185 0 999999 50 999999 50
+            4 wlan0 0x0 10099 0 5000000 5000 500000 500
+        """.trimIndent()
+
+        val (rx, tx) = AppRootInspector.parseQtaguidStats(sampleQtaguid, 10185)
+
+        assertEquals(15000000L, rx)
+        assertEquals(1000000L, tx)
+    }
+
+    @Test
+    fun `parseNetstatsOutput handles indented bucket lines beneath uid header`() {
+        val sampleIndentedNetstats = """
+            uid=10185 set=DEFAULT tag=0x0
+              st=1727440000 rb=2048 rp=2 tb=1024 tp=2
+              st=1727443600 rb=4096 rp=4 tb=2048 tp=4
+            uid=10099 set=DEFAULT tag=0x0
+              st=1727440000 rb=99999 tb=99999
+        """.trimIndent()
+
+        val (rx, tx) = AppRootInspector.parseNetstatsOutput(sampleIndentedNetstats, 10185)
+
+        assertEquals(6144L, rx)
+        assertEquals(3072L, tx)
+    }
 }

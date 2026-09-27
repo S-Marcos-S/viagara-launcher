@@ -66,8 +66,16 @@ data class AppInspectionData(
 
 object AppRootInspector {
 
-    private data class NetSnapshot(val timestamp: Long, val rxBytes: Long, val txBytes: Long)
-    private val lastNetSnapshots = ConcurrentHashMap<String, NetSnapshot>()
+    private data class ExtendedNetSnapshot(
+        val timestamp: Long,
+        val netstatsRx: Long,
+        val netstatsTx: Long,
+        val socketRx: Long,
+        val socketTx: Long,
+        val ioRx: Long,
+        val ioTx: Long,
+    )
+    private val lastExtendedSnapshots = ConcurrentHashMap<String, ExtendedNetSnapshot>()
 
     /**
      * Executes an inspection script via root shell and queries PackageManager to build
@@ -120,10 +128,21 @@ object AppRootInspector {
             val topGrep = if (extraPackageName != null) "grep -e \"$packageName\" -e \"$extraPackageName\"" else "grep \"$packageName\""
             val psGrep = if (extraPackageName != null) "grep -e \"$packageName\" -e \"$extraPackageName\"" else "grep \"$packageName\""
 
+            val extraSmapsScript = if (extraPackageName != null) {
+                """
+                for p in ${'$'}(pidof $extraPackageName 2>/dev/null || pgrep -f $extraPackageName 2>/dev/null); do
+                    echo "---PID:${'$'}p---"
+                    echo "---IO---"
+                    cat /proc/${'$'}p/io 2>/dev/null
+                done
+                """.trimIndent()
+            } else ""
+
             val dlmNetStatsScript = if (dlManagerUid != null) {
                 """
                 echo "===NET_STATS_DLM==="
-                dumpsys netstats detail 2>/dev/null | grep "uid=$dlManagerUid" || dumpsys netstats 2>/dev/null | grep "uid=$dlManagerUid"
+                dumpsys netstats detail 2>/dev/null | grep -A 2 "uid=$dlManagerUid" || dumpsys netstats 2>/dev/null | grep -A 2 "uid=$dlManagerUid"
+                cat /proc/net/xt_qtaguid/stats 2>/dev/null | grep " $dlManagerUid "
                 echo "===UID_STAT_DLM==="
                 cat /proc/uid_stat/$dlManagerUid/tcp_rcv 2>/dev/null
                 echo "---TX---"
@@ -146,18 +165,22 @@ object AppRootInspector {
                     echo "---PID:${'$'}p---"
                     cat /proc/${'$'}p/smaps_rollup 2>/dev/null
                     cat /proc/${'$'}p/status 2>/dev/null | grep -E "^(VmRSS|RssAnon|RssFile):"
+                    echo "---IO---"
+                    cat /proc/${'$'}p/io 2>/dev/null
                 done
+                $extraSmapsScript
                 echo "===MEMINFO==="
                 dumpsys meminfo $packageName 2>/dev/null | grep -E "TOTAL PSS|TOTAL      PSS|TOTAL:|Dalvik Heap|Native Heap|EGL mtrack|GL mtrack|Graphics|TOTAL RSS|Total PSS by process:|[0-9,]+K: *$packageName"
                 echo "===NET_STATS==="
-                dumpsys netstats detail 2>/dev/null | grep "uid=$uid" || dumpsys netstats 2>/dev/null | grep "uid=$uid"
+                dumpsys netstats detail 2>/dev/null | grep -A 2 "uid=$uid" || dumpsys netstats 2>/dev/null | grep -A 2 "uid=$uid"
+                cat /proc/net/xt_qtaguid/stats 2>/dev/null | grep " $uid "
                 echo "===UID_STAT==="
                 cat /proc/uid_stat/$uid/tcp_rcv 2>/dev/null
                 echo "---TX---"
                 cat /proc/uid_stat/$uid/tcp_snd 2>/dev/null
                 $dlmNetStatsScript
                 echo "===CONNECTIONS==="
-                ss -tupn 2>/dev/null | grep -e "$packageName" -e "$uid"$dlmConnFilter || netstat -tlpn 2>/dev/null | grep -e "$packageName" -e "$uid"$dlmConnFilter
+                ss -t -u -p -n -e -i 2>/dev/null | grep -e "$packageName" -e "$uid"$dlmConnFilter -A 1 || ss -tupn 2>/dev/null | grep -e "$packageName" -e "$uid"$dlmConnFilter || netstat -tlpn 2>/dev/null | grep -e "$packageName" -e "$uid"$dlmConnFilter
                 echo "===ACTIVITIES==="
                 dumpsys window 2>/dev/null | grep -E "mCurrentFocus|mFocusedApp"
                 dumpsys activity activities 2>/dev/null | grep -E "topResumedActivity|mResumedActivity"
@@ -230,108 +253,120 @@ object AppRootInspector {
             val dalvikKb = if (smapsDalvik > 0L) smapsDalvik else meminfoDalvik
             val nativeKb = if (smapsNative > 0L) smapsNative else meminfoNative
 
-            // 4. Network stats
+            // 4. Network & Process I/O Telemetry
             val netStatsText = sections["NET_STATS"] ?: ""
             val (nsRx, nsTx) = parseNetstatsOutput(netStatsText, uid)
+            val (qtagRx, qtagTx) = parseQtaguidStats(netStatsText, uid)
+            val tsRx = runCatching { TrafficStats.getUidRxBytes(uid) }.getOrDefault(-1L)
+            val tsTx = runCatching { TrafficStats.getUidTxBytes(uid) }.getOrDefault(-1L)
 
-            val tsRx = TrafficStats.getUidRxBytes(uid)
-            val tsTx = TrafficStats.getUidTxBytes(uid)
+            val uidStatText = sections["UID_STAT"] ?: ""
+            val (uidStatRx, uidStatTx) = uidStatStatFallback(uidStatText)
 
-            var rxBytes = when {
-                tsRx > 0L -> tsRx
-                nsRx > 0L -> nsRx
-                else -> 0L
-            }
-            var txBytes = when {
-                tsTx > 0L -> tsTx
-                nsTx > 0L -> nsTx
-                else -> 0L
-            }
-
-            // Legacy /proc/uid_stat fallback
-            if (rxBytes == 0L && txBytes == 0L) {
-                val uidStatText = sections["UID_STAT"] ?: ""
-                val netParts = uidStatStatFallback(uidStatText)
-                val legacyRx = netParts.first
-                val legacyTx = netParts.second
-                if (legacyRx > 0L) rxBytes = legacyRx
-                if (legacyTx > 0L) txBytes = legacyTx
-            }
+            val appNetRx = maxOf(if (tsRx > 0L) tsRx else 0L, nsRx, qtagRx, uidStatRx)
+            val appNetTx = maxOf(if (tsTx > 0L) tsTx else 0L, nsTx, qtagTx, uidStatTx)
 
             // Download Provider fallback for Play Store (dual-UID tracking)
-            var dlmRxBytes = 0L
-            var dlmTxBytes = 0L
+            var dlmNetRx = 0L
+            var dlmNetTx = 0L
             if (dlManagerUid != null) {
                 val dlmNetStatsText = sections["NET_STATS_DLM"] ?: ""
                 val (dlmNsRx, dlmNsTx) = parseNetstatsOutput(dlmNetStatsText, dlManagerUid)
-                val tsDlmRx = TrafficStats.getUidRxBytes(dlManagerUid)
-                val tsDlmTx = TrafficStats.getUidTxBytes(dlManagerUid)
+                val (dlmQtagRx, dlmQtagTx) = parseQtaguidStats(dlmNetStatsText, dlManagerUid)
+                val tsDlmRx = runCatching { TrafficStats.getUidRxBytes(dlManagerUid) }.getOrDefault(-1L)
+                val tsDlmTx = runCatching { TrafficStats.getUidTxBytes(dlManagerUid) }.getOrDefault(-1L)
 
-                dlmRxBytes = when {
-                    tsDlmRx > 0L -> tsDlmRx
-                    dlmNsRx > 0L -> dlmNsRx
-                    else -> 0L
-                }
-                dlmTxBytes = when {
-                    tsDlmTx > 0L -> tsDlmTx
-                    dlmNsTx > 0L -> dlmNsTx
-                    else -> 0L
-                }
+                val dlmUidStatText = sections["UID_STAT_DLM"] ?: ""
+                val (dlmUidRx, dlmUidTx) = uidStatStatFallback(dlmUidStatText)
 
-                if (dlmRxBytes == 0L && dlmTxBytes == 0L) {
-                    val dlmUidStatText = sections["UID_STAT_DLM"] ?: ""
-                    val dlmParts = uidStatStatFallback(dlmUidStatText)
-                    val legacyRx = dlmParts.first
-                    val legacyTx = dlmParts.second
-                    if (legacyRx > 0L) dlmRxBytes = legacyRx
-                    if (legacyTx > 0L) dlmTxBytes = legacyTx
-                }
+                dlmNetRx = maxOf(if (tsDlmRx > 0L) tsDlmRx else 0L, dlmNsRx, dlmQtagRx, dlmUidRx)
+                dlmNetTx = maxOf(if (tsDlmTx > 0L) tsDlmTx else 0L, dlmNsTx, dlmQtagTx, dlmUidTx)
             }
 
-            // Real-time transfer speed calculation
+            // Socket Telemetry (TCP internal stats)
+            val connText = sections["CONNECTIONS"] ?: ""
+            val (sockRx, sockTx) = parseSocketBytes(connText)
+
+            // Process IO Syscall Telemetry (rchar / wchar)
+            val smapsText = sections["SMAPS"] ?: ""
+            val (ioRead, ioWrite) = parseProcIo(smapsText)
+
+            val combinedNetRx = appNetRx + dlmNetRx
+            val combinedNetTx = appNetTx + dlmNetTx
+
+            // Real-time transfer speed calculation across all telemetry layers
             val now = System.currentTimeMillis()
-            val prevSample = lastNetSnapshots[packageName]
+            val prevSample = lastExtendedSnapshots[packageName]
             var rxSpeedBps = 0L
             var txSpeedBps = 0L
+
             if (prevSample != null) {
                 val deltaMs = now - prevSample.timestamp
                 if (deltaMs in 500..30000) {
-                    val deltaSec = deltaMs / 1000.0
-                    val dRx = rxBytes - prevSample.rxBytes
-                    val dTx = txBytes - prevSample.txBytes
-                    if (dRx > 0) rxSpeedBps = (dRx / deltaSec).toLong()
-                    if (dTx > 0) txSpeedBps = (dTx / deltaSec).toLong()
-                }
-            }
-            lastNetSnapshots[packageName] = NetSnapshot(now, rxBytes, txBytes)
+                    val dt = deltaMs / 1000.0
 
-            if (dlManagerUid != null) {
-                val dlmKey = "$packageName:dlm"
-                val prevDlmSample = lastNetSnapshots[dlmKey]
-                var dlmRxSpeedBps = 0L
-                var dlmTxSpeedBps = 0L
-                if (prevDlmSample != null) {
-                    val deltaMs = now - prevDlmSample.timestamp
-                    if (deltaMs in 500..30000) {
-                        val deltaSec = deltaMs / 1000.0
-                        val dRx = dlmRxBytes - prevDlmSample.rxBytes
-                        val dTx = dlmTxBytes - prevDlmSample.txBytes
-                        if (dRx > 0) dlmRxSpeedBps = (dRx / deltaSec).toLong()
-                        if (dTx > 0) dlmTxSpeedBps = (dTx / deltaSec).toLong()
+                    // Network counter delta
+                    val dNetRx = combinedNetRx - prevSample.netstatsRx
+                    val speedNetRx = if (dNetRx > 0) (dNetRx / dt).toLong() else 0L
+
+                    // Socket counter delta
+                    val dSockRx = sockRx - prevSample.socketRx
+                    val speedSockRx = if (dSockRx > 0) (dSockRx / dt).toLong() else 0L
+
+                    // Process IO read delta (rchar)
+                    val dIoRx = ioRead - prevSample.ioRx
+                    val speedIoRx = if (dIoRx > 0) (dIoRx / dt).toLong() else 0L
+
+                    // Best RX speed: prioritize pure socket / netstats, fallback to IO
+                    rxSpeedBps = when {
+                        speedSockRx > 0L -> speedSockRx
+                        speedNetRx > 0L -> speedNetRx
+                        speedIoRx > 0L -> speedIoRx
+                        else -> 0L
+                    }
+
+                    // TX (upload) delta
+                    val dNetTx = combinedNetTx - prevSample.netstatsTx
+                    val speedNetTx = if (dNetTx > 0) (dNetTx / dt).toLong() else 0L
+
+                    val dSockTx = sockTx - prevSample.socketTx
+                    val speedSockTx = if (dSockTx > 0) (dSockTx / dt).toLong() else 0L
+
+                    val dIoTx = ioWrite - prevSample.ioTx
+                    val speedIoTx = if (dIoTx > 0) (dIoTx / dt).toLong() else 0L
+
+                    txSpeedBps = when {
+                        speedSockTx > 0L -> speedSockTx
+                        speedNetTx > 0L -> speedNetTx
+                        speedIoTx > 0L -> speedIoTx
+                        else -> 0L
                     }
                 }
-                lastNetSnapshots[dlmKey] = NetSnapshot(now, dlmRxBytes, dlmTxBytes)
+            }
 
-                if (dlmRxSpeedBps > 0) {
-                    rxSpeedBps += dlmRxSpeedBps
-                }
-                if (dlmTxSpeedBps > 0) {
-                    txSpeedBps += dlmTxSpeedBps
-                }
-                if (rxBytes == 0L && dlmRxBytes > 0L) {
-                    rxBytes = dlmRxBytes
-                    txBytes = dlmTxBytes
-                }
+            lastExtendedSnapshots[packageName] = ExtendedNetSnapshot(
+                timestamp = now,
+                netstatsRx = combinedNetRx,
+                netstatsTx = combinedNetTx,
+                socketRx = sockRx,
+                socketTx = sockTx,
+                ioRx = ioRead,
+                ioTx = ioWrite,
+            )
+
+            // Total Bytes to display
+            val rxBytes = when {
+                combinedNetRx > 0L -> combinedNetRx
+                sockRx > 0L -> sockRx
+                ioRead > 0L -> ioRead
+                else -> 0L
+            }
+
+            val txBytes = when {
+                combinedNetTx > 0L -> combinedNetTx
+                sockTx > 0L -> sockTx
+                ioWrite > 0L -> ioWrite
+                else -> 0L
             }
 
             // 5. Active connections
@@ -616,14 +651,64 @@ object AppRootInspector {
         return result
     }
 
+    fun parseProcIo(text: String): Pair<Long, Long> {
+        var totalRchar = 0L
+        var totalWchar = 0L
+        text.lineSequence().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.startsWith("rchar:")) {
+                totalRchar += trimmed.substringAfter("rchar:").trim().toLongOrNull() ?: 0L
+            } else if (trimmed.startsWith("wchar:")) {
+                totalWchar += trimmed.substringAfter("wchar:").trim().toLongOrNull() ?: 0L
+            }
+        }
+        return Pair(totalRchar, totalWchar)
+    }
+
+    fun parseSocketBytes(text: String): Pair<Long, Long> {
+        var totalRx = 0L
+        var totalTx = 0L
+        text.lineSequence().forEach { line ->
+            val rxMatch = Regex("bytes_received:(\\d+)").find(line)
+            if (rxMatch != null) {
+                totalRx += rxMatch.groupValues[1].toLongOrNull() ?: 0L
+            }
+            val txMatch = Regex("(?:bytes_acked|bytes_sent):(\\d+)").find(line)
+            if (txMatch != null) {
+                totalTx += txMatch.groupValues[1].toLongOrNull() ?: 0L
+            }
+        }
+        return Pair(totalRx, totalTx)
+    }
+
+    fun parseQtaguidStats(text: String, targetUid: Int): Pair<Long, Long> {
+        var totalRx = 0L
+        var totalTx = 0L
+        text.lineSequence().forEach { line ->
+            val tokens = line.trim().split(Regex("\\s+"))
+            if (tokens.size >= 8) {
+                val tag = tokens[2]
+                val uid = tokens[3].toIntOrNull()
+                if (uid == targetUid && (tag == "0x0" || tag == "0")) {
+                    totalRx += tokens[5].toLongOrNull() ?: 0L
+                    totalTx += tokens[7].toLongOrNull() ?: 0L
+                }
+            }
+        }
+        return Pair(totalRx, totalTx)
+    }
+
     fun parseNetstatsOutput(text: String, targetUid: Int): Pair<Long, Long> {
         var rxTotal = 0L
         var txTotal = 0L
+        var insideTargetUid = false
         val uidRegex = Regex("\\buid=$targetUid\\b")
 
         text.lineSequence().forEach { line ->
-            if (uidRegex.containsMatchIn(line)) {
-                // Keep base un-tagged sockets (tag=0x0 or no tag) to prevent double counting
+            if (line.contains("uid=")) {
+                insideTargetUid = uidRegex.containsMatchIn(line)
+            }
+            if (insideTargetUid) {
                 val isBaseTag = !line.contains("tag=") || line.contains("tag=0x0") || line.contains("tag=0 ")
                 if (isBaseTag) {
                     val rxMatch = Regex("(?:rxBytes|rb)=(\\d+)").find(line)
