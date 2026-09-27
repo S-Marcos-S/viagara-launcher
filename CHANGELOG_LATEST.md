@@ -13,5 +13,6 @@
   - Para aplicativos do sistema, exibe diálogo protetor com aviso de risco de instabilidade antes de efetuar a desinstalação via root.
   - Fallback automático para o instalador padrão do Android (`PackageInstaller`) em dispositivos sem root.
 
-- **Correção de Compilação:**
+- **Correções e Ajustes:**
   - Corrigida a referência da API do Android em `AppLogCaptureService` ajustando `PackageUidFlags` para `PackageManager.PackageInfoFlags.of(0)`.
+  - Corrigida a identificação de PID no parser de logcat em `AppLogCaptureService` diferenciando corretamente formatos com e sem UID integrado.

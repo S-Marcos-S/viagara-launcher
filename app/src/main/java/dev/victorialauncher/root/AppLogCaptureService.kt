@@ -123,16 +123,35 @@ class AppLogCaptureService : Service() {
 
         fun extractPidFromLine(line: String): Int? {
             val tokens = line.trim().split(Regex("\\s+"))
-            // In "MM-DD HH:MM:SS.mmm UID PID TID ..." PID is typically token index 3
-            if (tokens.size >= 4) {
+            if (tokens.size < 3) return null
+
+            // Format with UID: "date time uid pid tid priority ..."
+            // tokens[2] = UID, tokens[3] = PID, tokens[4] = TID (all 3 are numeric)
+            if (tokens.size >= 5 &&
+                tokens[2].toIntOrNull() != null &&
+                tokens[3].toIntOrNull() != null &&
+                tokens[4].toIntOrNull() != null
+            ) {
                 val candidate = tokens[3].toIntOrNull()
                 if (candidate != null && candidate > 0) return candidate
             }
-            // In "MM-DD HH:MM:SS.mmm PID TID ..." PID is token index 2
+
+            // Format without UID: "date time pid tid priority ..."
+            // tokens[2] = PID, tokens[3] = TID
+            if (tokens.size >= 4 &&
+                tokens[2].toIntOrNull() != null &&
+                tokens[3].toIntOrNull() != null
+            ) {
+                val candidate = tokens[2].toIntOrNull()
+                if (candidate != null && candidate > 0) return candidate
+            }
+
+            // Fallback for compact formats
             if (tokens.size >= 3) {
                 val candidate = tokens[2].toIntOrNull()
                 if (candidate != null && candidate > 0) return candidate
             }
+
             return null
         }
 
