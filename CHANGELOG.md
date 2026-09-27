@@ -43,6 +43,12 @@
   - **Correção de Recorte Vertical (Clipping):** Ajustadas as dimensões e alterada a restrição de altura do card para `heightIn(min = heightDp.dp)`, impedindo que a barra de progresso fosse empurrada para fora dos limites do card ou cortada pelo fundo arredondado.
   - **Suporte a Transmissões e Rádios ao Vivo (Duração Indeterminada):** Corrigido o sumiço do indicador quando a duração da mídia é desconhecida ou zero (`durationMs <= 0L`), exibindo a onda expressiva contínua ao longo de toda a extensão do bloco.
 
+- **Estabilidade Estrutural e de Quebra de Linha nos Relógios de Reflexão Diária (`DAILY_REFLECTION` e `DAILY_REFLECTION_STATS`):**
+  - **Fim da Variação de Linhas da Frase ao Mudar a Hora:** Resolvido o problema onde o bloco de horário com medição intrínseca variável (`IntrinsicSize.Min`) mudava de largura conforme os dígitos do relógio (por exemplo, "11:11" sendo mais estreito que "20:00"), alterando a largura disponível para a frase e fazendo com que ela ocupasse mais ou menos linhas ao longo do dia.
+  - **Largura Estável e Proporcional para o Horário:** O bloco do relógio agora possui largura estável calculada proporcionalmente à escala de fonte (`widthFactor` e `fontScale`), garantindo que o espaço destinado à citação permaneça 100% constante em qualquer hora do dia.
+  - **Numerais Tabulares (`fontFeatureSettings = "tnum"`):** Aplicado suporte a dígitos tabulares de largura uniforme no relógio, impedindo oscilações e saltos de caracteres na transição de minutos.
+  - **Imutabilidade Visual da Divisória e Alinhamentos:** A divisória vertical central e a estrutura completa do widget permanecem rigorosamente fixas e estáveis a cada atualização de hora ou minuto.
+
 ### Novidades e Melhorias da Versão 0.59.28
 
 - **Captura e Gravação de Logs (Logcat) por Aplicativo com Root:**

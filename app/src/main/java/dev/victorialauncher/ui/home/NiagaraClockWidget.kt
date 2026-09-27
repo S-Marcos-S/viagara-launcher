@@ -324,6 +324,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         alignRight = alignRight,
                         widthFactor = widthFactor,
+                        availableWidth = availableWidth,
                         isCompact = isCompact,
                         onClockClick = { launchClockApp(context) },
                         onDateClick = { launchCalendarApp(context) },
@@ -355,6 +356,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         alignRight = alignRight,
                         widthFactor = widthFactor,
+                        availableWidth = availableWidth,
                         isCompact = isCompact,
                         isUltraCompact = isUltraCompact,
                         onClockClick = { launchClockApp(context) },
@@ -1331,14 +1333,23 @@ private fun DailyReflectionClockContent(
     contentColor: Color,
     alignRight: Boolean,
     widthFactor: Float = 1.0f,
+    availableWidth: Dp = 0.dp,
     isCompact: Boolean = false,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onQuoteClick: () -> Unit,
 ) {
+    val density = LocalDensity.current
+    val targetClockWidth = with(density) { (134 * widthFactor).sp.toDp() }
+    val clockWidth = if (availableWidth > 0.dp) {
+        targetClockWidth.coerceAtMost(availableWidth * 0.46f)
+    } else {
+        targetClockWidth
+    }
+
     val clockBlock: @Composable () -> Unit = {
         Column(
-            modifier = Modifier.width(IntrinsicSize.Min),
+            modifier = Modifier.width(clockWidth),
             horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
         ) {
             Text(
@@ -1368,6 +1379,11 @@ private fun DailyReflectionClockContent(
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-1).sp,
                 lineHeight = (54 * widthFactor).sp,
+                style = androidx.compose.ui.text.TextStyle(
+                    fontFeatureSettings = "tnum",
+                ),
+                maxLines = 1,
+                softWrap = false,
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -1450,6 +1466,7 @@ private fun DailyReflectionStatsClockContent(
     contentColor: Color,
     alignRight: Boolean,
     widthFactor: Float = 1.0f,
+    availableWidth: Dp = 0.dp,
     isCompact: Boolean = false,
     isUltraCompact: Boolean = false,
     onClockClick: () -> Unit,
@@ -1467,6 +1484,7 @@ private fun DailyReflectionStatsClockContent(
             contentColor = contentColor,
             alignRight = alignRight,
             widthFactor = widthFactor,
+            availableWidth = availableWidth,
             isCompact = isCompact,
             onClockClick = onClockClick,
             onDateClick = onDateClick,
@@ -1843,7 +1861,7 @@ fun ClockStylePreview(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
-                        modifier = Modifier.width(IntrinsicSize.Min),
+                        modifier = Modifier.width(62.dp),
                     ) {
                         Text(
                             text = "SEX, 18 SET",
@@ -1861,6 +1879,9 @@ fun ClockStylePreview(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-1).sp,
                             lineHeight = 24.sp,
+                            style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
+                            maxLines = 1,
+                            softWrap = false,
                         )
                     }
                     Spacer(Modifier.width(6.dp))
@@ -1901,7 +1922,7 @@ fun ClockStylePreview(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(
-                            modifier = Modifier.width(IntrinsicSize.Min),
+                            modifier = Modifier.width(52.dp),
                         ) {
                             Text(
                                 text = "SEX, 18 SET",
@@ -1919,6 +1940,9 @@ fun ClockStylePreview(
                                 fontWeight = FontWeight.SemiBold,
                                 letterSpacing = (-1).sp,
                                 lineHeight = 20.sp,
+                                style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
+                                maxLines = 1,
+                                softWrap = false,
                             )
                         }
                         Spacer(Modifier.width(5.dp))
