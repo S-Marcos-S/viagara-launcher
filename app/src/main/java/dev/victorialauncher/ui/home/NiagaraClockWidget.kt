@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1339,10 +1340,10 @@ private fun DailyReflectionClockContent(
     onDateClick: () -> Unit,
     onQuoteClick: () -> Unit,
 ) {
-    val density = LocalDensity.current
-    val targetClockWidth = with(density) { (134 * widthFactor).sp.toDp() }
-    val clockWidth = if (availableWidth > 0.dp) {
-        targetClockWidth.coerceAtMost(availableWidth * 0.46f)
+    val fontScale = LocalDensity.current.fontScale
+    val targetClockWidth = (134f * widthFactor * fontScale).dp
+    val clockWidth = if (availableWidth > 0.dp && targetClockWidth > availableWidth * 0.46f) {
+        availableWidth * 0.46f
     } else {
         targetClockWidth
     }
