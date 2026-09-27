@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -1957,41 +1958,48 @@ private fun BottomDailyQuoteBlock(
     val context = LocalContext.current
     val view = LocalView.current
 
-    Column(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = contentStart, end = contentEnd)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    HapticUtil.tick(view, hapticsEnabled)
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                    clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${quote.quote}\"\n— ${quote.author}"))
-                    Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
-                },
-            )
-            .padding(vertical = 6.dp),
-        horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
+            .padding(start = contentStart, end = contentEnd),
     ) {
-        Text(
-            text = "“${quote.quote}”",
-            color = contentColor.copy(alpha = 0.9f),
-            fontSize = 15.sp,
-            fontStyle = FontStyle.Italic,
-            lineHeight = 21.sp,
-            textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
-        )
+        val widthFactor = (maxWidth / 340.dp).coerceIn(0.70f, 1.0f)
 
-        Spacer(Modifier.height(4.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {
+                        HapticUtil.tick(view, hapticsEnabled)
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                        clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${quote.quote}\"\n— ${quote.author}"))
+                        Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
+                    },
+                )
+                .padding(vertical = 6.dp),
+            horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
+        ) {
+            Text(
+                text = "“${quote.quote}”",
+                color = contentColor.copy(alpha = 0.9f),
+                fontSize = (15 * widthFactor).sp,
+                fontStyle = FontStyle.Italic,
+                lineHeight = (21 * widthFactor).sp,
+                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+            )
 
-        Text(
-            text = "— ${quote.author}",
-            color = contentColor.copy(alpha = 0.6f),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
-        )
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                text = "— ${quote.author}",
+                color = contentColor.copy(alpha = 0.6f),
+                fontSize = (13 * widthFactor).sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+            )
+        }
     }
 }

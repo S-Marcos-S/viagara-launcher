@@ -1,8 +1,10 @@
-### 🚀 Novidades e Melhorias da Versão 0.59.21
+### 🚀 Novidades e Melhorias da Versão 0.59.22
 
-- **Renderizador Rico de Markdown no Visualizador de Mudanças:**
-  - O diálogo "O que há de novo" agora interpreta e renderiza estilização completa de Markdown.
-  - Textos com `**negrito**` são exibidos com peso negrito real, em vez de mostrar asteriscos brutos.
-  - Suporte completo para *itálico*, `código inline` (com fonte monoespaçada e destaque sutil), tachado (`~~texto~~`) e links.
-  - Títulos e cabeçalhos (`###`, `##`, `#`) são destacados com tipografia e cor primária do tema.
-  - Itens de lista (`- `, `* `) e sub-itens aninhados são formatados com marcadores visuais (`•`, `◦`) e recuo estruturado.
+- **Tipografia Adaptativa e Responsiva nos Widgets:**
+  - O tamanho da fonte e espaçamentos de todos os estilos de relógio e cartões de telemetria agora se adaptam dinamicamente à largura disponível.
+  - Ao aumentar o espaçamento lateral da tela inicial, os widgets encolhem suas fontes suavemente para garantir que todos os textos caibam sem quebras inadequadas ou cortes.
+
+- **Cartões de Telemetria e Chips de Sistema Compactos:**
+  - Em espaços reduzidos, os prefixos **"RAM"** e **"ROM"** são automaticamente omitidos (ex.: exibindo diretamente `3.2G` e `64G`), preservando o tamanho legível da fonte sem precisar reduzi-la.
+  - Otimização do padding interno e do espaçamento entre os cartões, impedindo o surgimento de reticências (`...`) nas métricas de hardware.
+  - Cartões como **Monitor do Sistema**, **Minimal Specs**, **Terminal Retrô** e **Reflexão Diária com Estatísticas** agora exibem leituras completas e elegantes mesmo com margens laterais elevadas.

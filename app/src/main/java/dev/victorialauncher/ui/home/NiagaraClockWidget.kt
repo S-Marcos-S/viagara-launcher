@@ -43,6 +43,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -155,190 +156,219 @@ fun NiagaraClockWidget(
             .padding(start = startPaddingDp.dp, end = endPaddingDp.dp),
         horizontalAlignment = horizontalAlignment,
     ) {
-        when (clockStyle) {
-            ClockStyle.CLASSIC -> {
-                ClassicClockContent(
-                    timeString = timeString,
-                    dateString = dateString,
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                )
-            }
-            ClockStyle.STACKED -> {
-                StackedClockContent(
-                    hoursString = hoursString,
-                    minutesString = minutesString,
-                    dateString = dateString,
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                )
-            }
-            ClockStyle.MINIMAL -> {
-                MinimalClockContent(
-                    timeString = timeString,
-                    dateString = dateString,
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                )
-            }
-            ClockStyle.ANALOG -> {
-                AnalogClockContent(
-                    currentTime = currentTime,
-                    timeString = timeString,
-                    dateString = dateString,
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                )
-            }
-            ClockStyle.DIGITAL_CARD -> {
-                DigitalCardClockContent(
-                    timeString = timeString,
-                    dateString = dateString,
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                )
-            }
-            ClockStyle.DAY_FOCUS -> {
-                DayFocusClockContent(
-                    headerString = dayFocusHeader,
-                    timeString = timeString,
-                    dateString = dateString,
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                )
-            }
-            ClockStyle.TECH_HUD -> {
-                TechHudClockContent(
-                    timeString = timeString,
-                    dateString = dateString,
-                    stats = rememberSystemStats(currentTime),
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                    onStatsClick = { launchBatterySettings(context) },
-                )
-            }
-            ClockStyle.TECH_HUD_PRO -> {
-                TechHudProClockContent(
-                    timeString = timeString,
-                    dateString = dateString,
-                    stats = rememberSystemStats(currentTime),
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                    onBatteryStatsClick = { launchBatterySettings(context) },
-                    onStorageClick = { launchStorageSettings(context) },
-                )
-            }
-            ClockStyle.SYSTEM_MONITOR -> {
-                SystemMonitorClockContent(
-                    timeString = timeString,
-                    dateString = dateString,
-                    stats = rememberSystemStats(currentTime),
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                    onStatsClick = { launchBatterySettings(context) },
-                )
-            }
-            ClockStyle.MINIMAL_SPECS -> {
-                MinimalSpecsClockContent(
-                    timeString = timeString,
-                    dateString = dateString,
-                    stats = rememberSystemStats(currentTime),
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                    onStatsClick = { launchBatterySettings(context) },
-                )
-            }
-            ClockStyle.RETRO_TERMINAL -> {
-                RetroTerminalClockContent(
-                    timeString = timeString,
-                    dateString = dateString,
-                    stats = rememberSystemStats(currentTime),
-                    contentColor = contentColor,
-                    horizontalAlignment = horizontalAlignment,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                    onStatsClick = { launchBatterySettings(context) },
-                )
-            }
-            ClockStyle.DAILY_REFLECTION -> {
-                val dailyQuote = remember(currentTime) { DailyQuoteManager.getQuoteForToday() }
-                val compactDatePattern = if (Locale.getDefault().language == "pt") {
-                    "EEE, d 'de' MMM"
-                } else {
-                    "EEE, MMM d"
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val availableWidth = maxWidth
+            val widthFactor = (availableWidth / 340.dp).coerceIn(0.65f, 1.0f)
+            val isCompact = availableWidth < 315.dp
+            val isUltraCompact = availableWidth < 250.dp
+
+            when (clockStyle) {
+                ClockStyle.CLASSIC -> {
+                    ClassicClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
                 }
-                val compactDateString = remember(currentTime) {
-                    SimpleDateFormat(compactDatePattern, Locale.getDefault())
-                        .format(currentTime)
-                        .replace(".", "")
-                        .uppercase()
+                ClockStyle.STACKED -> {
+                    StackedClockContent(
+                        hoursString = hoursString,
+                        minutesString = minutesString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
                 }
-                DailyReflectionClockContent(
-                    timeString = timeString,
-                    compactDateString = compactDateString,
-                    quote = dailyQuote,
-                    contentColor = contentColor,
-                    alignRight = alignRight,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                    onQuoteClick = {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                        clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${dailyQuote.quote}\"\n— ${dailyQuote.author}"))
-                        Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
-                    },
-                )
-            }
-            ClockStyle.DAILY_REFLECTION_STATS -> {
-                val dailyQuote = remember(currentTime) { DailyQuoteManager.getQuoteForToday() }
-                val compactDatePattern = if (Locale.getDefault().language == "pt") {
-                    "EEE, d 'de' MMM"
-                } else {
-                    "EEE, MMM d"
+                ClockStyle.MINIMAL -> {
+                    MinimalClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
                 }
-                val compactDateString = remember(currentTime) {
-                    SimpleDateFormat(compactDatePattern, Locale.getDefault())
-                        .format(currentTime)
-                        .replace(".", "")
-                        .uppercase()
+                ClockStyle.ANALOG -> {
+                    AnalogClockContent(
+                        currentTime = currentTime,
+                        timeString = timeString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
                 }
-                DailyReflectionStatsClockContent(
-                    timeString = timeString,
-                    compactDateString = compactDateString,
-                    quote = dailyQuote,
-                    stats = rememberSystemStats(currentTime),
-                    contentColor = contentColor,
-                    alignRight = alignRight,
-                    onClockClick = { launchClockApp(context) },
-                    onDateClick = { launchCalendarApp(context) },
-                    onQuoteClick = {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                        clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${dailyQuote.quote}\"\n— ${dailyQuote.author}"))
-                        Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
-                    },
-                    onRamClick = { launchMemorySettings(context) },
-                    onBatteryClick = { launchBatterySettings(context) },
-                    onStorageClick = { launchStorageSettings(context) },
-                )
+                ClockStyle.DIGITAL_CARD -> {
+                    DigitalCardClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
+                }
+                ClockStyle.DAY_FOCUS -> {
+                    DayFocusClockContent(
+                        headerString = dayFocusHeader,
+                        timeString = timeString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
+                }
+                ClockStyle.TECH_HUD -> {
+                    TechHudClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        isCompact = isCompact,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onStatsClick = { launchBatterySettings(context) },
+                    )
+                }
+                ClockStyle.TECH_HUD_PRO -> {
+                    TechHudProClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        isCompact = isCompact,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onBatteryStatsClick = { launchBatterySettings(context) },
+                        onStorageClick = { launchStorageSettings(context) },
+                    )
+                }
+                ClockStyle.SYSTEM_MONITOR -> {
+                    SystemMonitorClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        isCompact = isCompact,
+                        isUltraCompact = isUltraCompact,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onStatsClick = { launchBatterySettings(context) },
+                    )
+                }
+                ClockStyle.MINIMAL_SPECS -> {
+                    MinimalSpecsClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        isCompact = isCompact,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onStatsClick = { launchBatterySettings(context) },
+                    )
+                }
+                ClockStyle.RETRO_TERMINAL -> {
+                    RetroTerminalClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
+                        widthFactor = widthFactor,
+                        isCompact = isCompact,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onStatsClick = { launchBatterySettings(context) },
+                    )
+                }
+                ClockStyle.DAILY_REFLECTION -> {
+                    val dailyQuote = remember(currentTime) { DailyQuoteManager.getQuoteForToday() }
+                    val compactDatePattern = if (Locale.getDefault().language == "pt") {
+                        "EEE, d 'de' MMM"
+                    } else {
+                        "EEE, MMM d"
+                    }
+                    val compactDateString = remember(currentTime) {
+                        SimpleDateFormat(compactDatePattern, Locale.getDefault())
+                            .format(currentTime)
+                            .replace(".", "")
+                            .uppercase()
+                    }
+                    DailyReflectionClockContent(
+                        timeString = timeString,
+                        compactDateString = compactDateString,
+                        quote = dailyQuote,
+                        contentColor = contentColor,
+                        alignRight = alignRight,
+                        widthFactor = widthFactor,
+                        isCompact = isCompact,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onQuoteClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                            clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${dailyQuote.quote}\"\n— ${dailyQuote.author}"))
+                            Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
+                        },
+                    )
+                }
+                ClockStyle.DAILY_REFLECTION_STATS -> {
+                    val dailyQuote = remember(currentTime) { DailyQuoteManager.getQuoteForToday() }
+                    val compactDatePattern = if (Locale.getDefault().language == "pt") {
+                        "EEE, d 'de' MMM"
+                    } else {
+                        "EEE, MMM d"
+                    }
+                    val compactDateString = remember(currentTime) {
+                        SimpleDateFormat(compactDatePattern, Locale.getDefault())
+                            .format(currentTime)
+                            .replace(".", "")
+                            .uppercase()
+                    }
+                    DailyReflectionStatsClockContent(
+                        timeString = timeString,
+                        compactDateString = compactDateString,
+                        quote = dailyQuote,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        alignRight = alignRight,
+                        widthFactor = widthFactor,
+                        isCompact = isCompact,
+                        isUltraCompact = isUltraCompact,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onQuoteClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                            clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${dailyQuote.quote}\"\n— ${dailyQuote.author}"))
+                            Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
+                        },
+                        onRamClick = { launchMemorySettings(context) },
+                        onBatteryClick = { launchBatterySettings(context) },
+                        onStorageClick = { launchStorageSettings(context) },
+                    )
+                }
             }
         }
     }
@@ -350,6 +380,7 @@ private fun ClassicClockContent(
     dateString: String,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
 ) {
@@ -357,23 +388,23 @@ private fun ClassicClockContent(
         Text(
             text = timeString,
             color = contentColor,
-            fontSize = 58.sp,
+            fontSize = (58 * widthFactor).sp,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = (-1.5).sp,
-            lineHeight = 58.sp,
+            letterSpacing = (-1.5 * widthFactor).sp,
+            lineHeight = (58 * widthFactor).sp,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height((4 * widthFactor).dp.coerceAtLeast(2.dp)))
         Text(
             text = dateString,
             color = contentColor.copy(alpha = 0.85f),
-            fontSize = 17.sp,
+            fontSize = (17 * widthFactor).sp,
             fontWeight = FontWeight.Normal,
-            lineHeight = 22.sp,
+            lineHeight = (22 * widthFactor).sp,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -390,6 +421,7 @@ private fun StackedClockContent(
     dateString: String,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
 ) {
@@ -405,23 +437,23 @@ private fun StackedClockContent(
             Text(
                 text = hoursString,
                 color = contentColor,
-                fontSize = 50.sp,
+                fontSize = (50 * widthFactor).sp,
                 fontWeight = FontWeight.ExtraBold,
-                lineHeight = 46.sp,
+                lineHeight = (46 * widthFactor).sp,
             )
             Text(
                 text = minutesString,
                 color = contentColor.copy(alpha = 0.9f),
-                fontSize = 50.sp,
+                fontSize = (50 * widthFactor).sp,
                 fontWeight = FontWeight.Light,
-                lineHeight = 46.sp,
+                lineHeight = (46 * widthFactor).sp,
             )
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height((6 * widthFactor).dp.coerceAtLeast(3.dp)))
         Text(
             text = dateString,
             color = contentColor.copy(alpha = 0.85f),
-            fontSize = 15.sp,
+            fontSize = (15 * widthFactor).sp,
             fontWeight = FontWeight.Normal,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -438,6 +470,7 @@ private fun MinimalClockContent(
     dateString: String,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
 ) {
@@ -445,21 +478,21 @@ private fun MinimalClockContent(
         Text(
             text = timeString,
             color = contentColor,
-            fontSize = 46.sp,
+            fontSize = (46 * widthFactor).sp,
             fontWeight = FontWeight.Light,
             letterSpacing = 1.sp,
-            lineHeight = 46.sp,
+            lineHeight = (46 * widthFactor).sp,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
         )
-        Spacer(modifier = Modifier.height(3.dp))
+        Spacer(modifier = Modifier.height((3 * widthFactor).dp.coerceAtLeast(2.dp)))
         Text(
             text = dateString,
             color = contentColor.copy(alpha = 0.75f),
-            fontSize = 14.sp,
+            fontSize = (14 * widthFactor).sp,
             fontWeight = FontWeight.Normal,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -477,9 +510,11 @@ private fun AnalogClockContent(
     dateString: String,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
 ) {
+    val dialSize = (84 * widthFactor).roundToInt().coerceAtLeast(54)
     Column(horizontalAlignment = horizontalAlignment) {
         Box(
             modifier = Modifier
@@ -493,7 +528,7 @@ private fun AnalogClockContent(
             AnalogDial(
                 time = currentTime,
                 tint = contentColor,
-                sizeDp = 84,
+                sizeDp = dialSize,
             )
         }
         Spacer(modifier = Modifier.height(6.dp))
@@ -508,13 +543,13 @@ private fun AnalogClockContent(
             Text(
                 text = timeString,
                 color = contentColor,
-                fontSize = 16.sp,
+                fontSize = (16 * widthFactor).sp,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = "  ·  $dateString",
                 color = contentColor.copy(alpha = 0.8f),
-                fontSize = 15.sp,
+                fontSize = (15 * widthFactor).sp,
                 fontWeight = FontWeight.Normal,
             )
         }
@@ -527,36 +562,40 @@ private fun DigitalCardClockContent(
     dateString: String,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
 ) {
     Column(horizontalAlignment = horizontalAlignment) {
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(18.dp))
+                .clip(RoundedCornerShape((18 * widthFactor).dp.coerceAtLeast(12.dp)))
                 .background(contentColor.copy(alpha = 0.08f))
-                .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(18.dp))
-                .padding(horizontal = 18.dp, vertical = 12.dp),
+                .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape((18 * widthFactor).dp.coerceAtLeast(12.dp)))
+                .padding(
+                    horizontal = (18 * widthFactor).dp.coerceAtLeast(10.dp),
+                    vertical = (12 * widthFactor).dp.coerceAtLeast(8.dp),
+                ),
         ) {
             Column(horizontalAlignment = horizontalAlignment) {
                 Text(
                     text = timeString,
                     color = contentColor,
-                    fontSize = 42.sp,
+                    fontSize = (42 * widthFactor).sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.5).sp,
-                    lineHeight = 42.sp,
+                    lineHeight = (42 * widthFactor).sp,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = onClockClick,
                     ),
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height((4 * widthFactor).dp.coerceAtLeast(2.dp)))
                 Text(
                     text = dateString,
                     color = contentColor.copy(alpha = 0.85f),
-                    fontSize = 14.sp,
+                    fontSize = (14 * widthFactor).sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -576,6 +615,7 @@ private fun DayFocusClockContent(
     dateString: String,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
 ) {
@@ -583,9 +623,9 @@ private fun DayFocusClockContent(
         Text(
             text = headerString,
             color = contentColor.copy(alpha = 0.7f),
-            fontSize = 13.sp,
+            fontSize = (13 * widthFactor).sp,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.8.sp,
+            letterSpacing = (1.8 * widthFactor).sp,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -596,10 +636,10 @@ private fun DayFocusClockContent(
         Text(
             text = timeString,
             color = contentColor,
-            fontSize = 54.sp,
+            fontSize = (54 * widthFactor).sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = (-1).sp,
-            lineHeight = 54.sp,
+            lineHeight = (54 * widthFactor).sp,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -701,6 +741,8 @@ private fun TechHudClockContent(
     stats: SystemStats,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
+    isCompact: Boolean = false,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onStatsClick: () -> Unit,
@@ -724,7 +766,7 @@ private fun TechHudClockContent(
                 Text(
                     text = "SYS // HUD",
                     color = contentColor,
-                    fontSize = 10.sp,
+                    fontSize = (10 * widthFactor).sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
                 )
@@ -733,7 +775,7 @@ private fun TechHudClockContent(
             Text(
                 text = dateString.uppercase(),
                 color = contentColor.copy(alpha = 0.7f),
-                fontSize = 12.sp,
+                fontSize = (12 * widthFactor).sp,
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 1.sp,
             )
@@ -745,10 +787,10 @@ private fun TechHudClockContent(
         Text(
             text = timeString,
             color = contentColor,
-            fontSize = 54.sp,
+            fontSize = (54 * widthFactor).sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = (-1).sp,
-            lineHeight = 54.sp,
+            lineHeight = (54 * widthFactor).sp,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -759,8 +801,9 @@ private fun TechHudClockContent(
         Spacer(Modifier.height(8.dp))
 
         // Telemetry Chips Row
+        // Quando o espaço é pouco, removemos o prefixo "RAM " ao invés de reduzir a fonte
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -768,20 +811,30 @@ private fun TechHudClockContent(
                 onClick = onStatsClick,
             ),
         ) {
+            val ramLabel = if (isCompact) {
+                "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G"
+            } else {
+                "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G"
+            }
+            val chipHPadding = if (isCompact) 4.dp else 8.dp
+
             TechChip(
                 icon = "💾",
-                label = "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G",
+                label = ramLabel,
                 contentColor = contentColor,
+                horizontalPadding = chipHPadding,
             )
             TechChip(
                 icon = "🌡️",
                 label = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
                 contentColor = contentColor,
+                horizontalPadding = chipHPadding,
             )
             TechChip(
                 icon = if (stats.isCharging) "⚡" else "🔋",
                 label = "${stats.batteryPercent}%",
                 contentColor = contentColor,
+                horizontalPadding = chipHPadding,
             )
         }
     }
@@ -822,14 +875,15 @@ private fun TechChip(
             horizontalArrangement = Arrangement.Center,
         ) {
             Text(text = icon, fontSize = iconSize)
-            Spacer(Modifier.width(3.dp))
+            Spacer(Modifier.width(2.dp))
             Text(
                 text = label,
                 color = contentColor.copy(alpha = 0.9f),
                 fontSize = fontSize,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
             )
         }
     }
@@ -843,6 +897,8 @@ private fun TechHudProClockContent(
     stats: SystemStats,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
+    isCompact: Boolean = false,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onBatteryStatsClick: () -> Unit,
@@ -867,7 +923,7 @@ private fun TechHudProClockContent(
                 Text(
                     text = "SYS // HUD PRO",
                     color = contentColor,
-                    fontSize = 10.sp,
+                    fontSize = (10 * widthFactor).sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
                 )
@@ -876,7 +932,7 @@ private fun TechHudProClockContent(
             Text(
                 text = dateString.uppercase(),
                 color = contentColor.copy(alpha = 0.7f),
-                fontSize = 12.sp,
+                fontSize = (12 * widthFactor).sp,
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 1.sp,
             )
@@ -887,15 +943,15 @@ private fun TechHudProClockContent(
         // Big HUD Time + Compact CPU Core Telemetry Badge beside the clock
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy((10 * widthFactor).dp.coerceAtLeast(6.dp)),
         ) {
             Text(
                 text = timeString,
                 color = contentColor,
-                fontSize = 54.sp,
+                fontSize = (54 * widthFactor).sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-1).sp,
-                lineHeight = 54.sp,
+                lineHeight = (54 * widthFactor).sp,
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -909,7 +965,10 @@ private fun TechHudProClockContent(
                     .clip(RoundedCornerShape(6.dp))
                     .background(contentColor.copy(alpha = 0.08f))
                     .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 7.dp, vertical = 5.dp),
+                    .padding(
+                        horizontal = (7 * widthFactor).dp.coerceAtLeast(4.dp),
+                        vertical = (5 * widthFactor).dp.coerceAtLeast(3.dp),
+                    ),
             ) {
                 Column(horizontalAlignment = Alignment.Start) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -923,7 +982,7 @@ private fun TechHudProClockContent(
                         Text(
                             text = "CPU",
                             color = contentColor.copy(alpha = 0.6f),
-                            fontSize = 8.sp,
+                            fontSize = (8 * widthFactor).sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
                         )
@@ -932,7 +991,7 @@ private fun TechHudProClockContent(
                     Text(
                         text = "${Runtime.getRuntime().availableProcessors()} CORES",
                         color = contentColor,
-                        fontSize = 10.sp,
+                        fontSize = (10 * widthFactor).sp,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -942,32 +1001,49 @@ private fun TechHudProClockContent(
         Spacer(Modifier.height(8.dp))
 
         // Telemetry Chips Row: RAM, Storage (ROM), Temperature, Battery
+        // Quando o espaço é pouco, removemos os prefixos "RAM " e "ROM " sem reduzir a fonte!
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            val ramLabel = if (isCompact) {
+                "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G"
+            } else {
+                "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G"
+            }
+            val romLabel = if (isCompact) {
+                "${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G"
+            } else {
+                "ROM ${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G"
+            }
+            val chipHPadding = if (isCompact) 4.dp else 8.dp
+
             TechChip(
                 icon = "💾",
-                label = "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G",
+                label = ramLabel,
                 contentColor = contentColor,
+                horizontalPadding = chipHPadding,
                 onClick = onBatteryStatsClick,
             )
             TechChip(
                 icon = "💽",
-                label = "ROM ${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G",
+                label = romLabel,
                 contentColor = contentColor,
+                horizontalPadding = chipHPadding,
                 onClick = onStorageClick,
             )
             TechChip(
                 icon = "🌡️",
                 label = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
                 contentColor = contentColor,
+                horizontalPadding = chipHPadding,
                 onClick = onBatteryStatsClick,
             )
             TechChip(
                 icon = if (stats.isCharging) "⚡" else "🔋",
                 label = "${stats.batteryPercent}%",
                 contentColor = contentColor,
+                horizontalPadding = chipHPadding,
                 onClick = onBatteryStatsClick,
             )
         }
@@ -981,16 +1057,22 @@ private fun SystemMonitorClockContent(
     stats: SystemStats,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
+    isCompact: Boolean = false,
+    isUltraCompact: Boolean = false,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onStatsClick: () -> Unit,
 ) {
+    val cornerRadius = (20 * widthFactor).dp.coerceAtLeast(12.dp)
+    val cardPadding = (16 * widthFactor).dp.coerceAtLeast(8.dp)
+
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(cornerRadius))
             .background(contentColor.copy(alpha = 0.08f))
-            .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(20.dp))
-            .padding(16.dp),
+            .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(cornerRadius))
+            .padding(cardPadding),
     ) {
         Column(horizontalAlignment = horizontalAlignment) {
             Row(
@@ -1001,7 +1083,7 @@ private fun SystemMonitorClockContent(
                 Text(
                     text = timeString,
                     color = contentColor,
-                    fontSize = 38.sp,
+                    fontSize = (38 * widthFactor).sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.5).sp,
                     modifier = Modifier.clickable(
@@ -1014,7 +1096,7 @@ private fun SystemMonitorClockContent(
                     Text(
                         text = dateString,
                         color = contentColor.copy(alpha = 0.85f),
-                        fontSize = 13.sp,
+                        fontSize = (13 * widthFactor).sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -1025,15 +1107,15 @@ private fun SystemMonitorClockContent(
                     Text(
                         text = "${stats.batteryPercent}% ${if (stats.isCharging) "⚡" else ""} · ${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
                         color = contentColor.copy(alpha = 0.65f),
-                        fontSize = 12.sp,
+                        fontSize = (12 * widthFactor).sp,
                         fontWeight = FontWeight.Normal,
                     )
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height((10 * widthFactor).dp.coerceAtLeast(6.dp)))
             HorizontalDivider(color = contentColor.copy(alpha = 0.12f), thickness = 1.dp)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height((10 * widthFactor).dp.coerceAtLeast(6.dp)))
 
             Column(
                 modifier = Modifier
@@ -1047,22 +1129,30 @@ private fun SystemMonitorClockContent(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "MEMÓRIA RAM",
+                        text = if (isCompact) "RAM" else "MEMÓRIA RAM",
                         color = contentColor.copy(alpha = 0.6f),
-                        fontSize = 10.sp,
+                        fontSize = (10 * widthFactor).sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
                     )
+                    val ramInfoText = if (isUltraCompact) {
+                        "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)} GB · ${stats.ramUsedPercent}%"
+                    } else if (isCompact) {
+                        "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)} GB livre (${stats.ramUsedPercent}%)"
+                    } else {
+                        "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)} GB livres (${stats.ramUsedPercent}% em uso)"
+                    }
                     Text(
-                        text = "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)} GB livres (${stats.ramUsedPercent}% em uso)",
+                        text = ramInfoText,
                         color = contentColor.copy(alpha = 0.85f),
-                        fontSize = 11.sp,
+                        fontSize = (11 * widthFactor).sp,
                         fontWeight = FontWeight.Medium,
                     )
                 }
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height((6 * widthFactor).dp.coerceAtLeast(4.dp)))
                 LinearProgressIndicator(
                     progress = { (stats.ramUsedPercent / 100f).coerceIn(0f, 1f) },
                     modifier = Modifier
@@ -1084,6 +1174,8 @@ private fun MinimalSpecsClockContent(
     stats: SystemStats,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
+    isCompact: Boolean = false,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onStatsClick: () -> Unit,
@@ -1092,10 +1184,10 @@ private fun MinimalSpecsClockContent(
         Text(
             text = timeString,
             color = contentColor,
-            fontSize = 54.sp,
+            fontSize = (54 * widthFactor).sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = (-1.5).sp,
-            lineHeight = 54.sp,
+            lineHeight = (54 * widthFactor).sp,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -1106,7 +1198,7 @@ private fun MinimalSpecsClockContent(
         Text(
             text = dateString,
             color = contentColor.copy(alpha = 0.85f),
-            fontSize = 16.sp,
+            fontSize = (16 * widthFactor).sp,
             fontWeight = FontWeight.Normal,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -1123,10 +1215,15 @@ private fun MinimalSpecsClockContent(
                 onClick = onStatsClick,
             ),
         ) {
+            val specsText = if (isCompact) {
+                "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G  ·  ${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C  ·  ${if (stats.isCharging) "⚡" else "🔋"} ${stats.batteryPercent}%"
+            } else {
+                "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G livres  ·  ${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C  ·  ${if (stats.isCharging) "⚡" else "🔋"} ${stats.batteryPercent}%"
+            }
             Text(
-                text = "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G livres  ·  ${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C  ·  ${if (stats.isCharging) "⚡" else "🔋"} ${stats.batteryPercent}%",
+                text = specsText,
                 color = contentColor.copy(alpha = 0.65f),
-                fontSize = 12.sp,
+                fontSize = (12 * widthFactor).sp,
                 fontWeight = FontWeight.Medium,
             )
         }
@@ -1140,11 +1237,13 @@ private fun RetroTerminalClockContent(
     stats: SystemStats,
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
+    isCompact: Boolean = false,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onStatsClick: () -> Unit,
 ) {
-    val totalBlocks = 8
+    val totalBlocks = if (isCompact) 5 else 8
     val filledBlocks = ((stats.ramUsedPercent / 100f) * totalBlocks).roundToInt().coerceIn(0, totalBlocks)
     val asciiBar = "█".repeat(filledBlocks) + "░".repeat(totalBlocks - filledBlocks)
 
@@ -1153,20 +1252,23 @@ private fun RetroTerminalClockContent(
             .clip(RoundedCornerShape(14.dp))
             .background(contentColor.copy(alpha = 0.08f))
             .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(
+                horizontal = (14 * widthFactor).dp.coerceAtLeast(8.dp),
+                vertical = (12 * widthFactor).dp.coerceAtLeast(8.dp),
+            ),
     ) {
         Column(horizontalAlignment = horizontalAlignment) {
             Text(
                 text = "> system.telemetry",
                 color = contentColor.copy(alpha = 0.5f),
-                fontSize = 11.sp,
+                fontSize = (11 * widthFactor).sp,
                 fontFamily = FontFamily.Monospace,
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "TIME: $timeString",
                 color = contentColor,
-                fontSize = 28.sp,
+                fontSize = (28 * widthFactor).sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 modifier = Modifier.clickable(
@@ -1178,7 +1280,7 @@ private fun RetroTerminalClockContent(
             Text(
                 text = "DATE: $dateString",
                 color = contentColor.copy(alpha = 0.8f),
-                fontSize = 12.sp,
+                fontSize = (12 * widthFactor).sp,
                 fontFamily = FontFamily.Monospace,
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -1194,16 +1296,26 @@ private fun RetroTerminalClockContent(
                     onClick = onStatsClick,
                 ),
             ) {
+                val ramLabel = if (isCompact) {
+                    "RAM : [$asciiBar] ${stats.ramUsedPercent}% (${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G)"
+                } else {
+                    "RAM : [$asciiBar] ${stats.ramUsedPercent}% (${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G free)"
+                }
                 Text(
-                    text = "RAM : [$asciiBar] ${stats.ramUsedPercent}% (${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G free)",
+                    text = ramLabel,
                     color = contentColor.copy(alpha = 0.9f),
-                    fontSize = 11.sp,
+                    fontSize = (11 * widthFactor).sp,
                     fontFamily = FontFamily.Monospace,
                 )
+                val battCharging = if (isCompact) {
+                    if (stats.isCharging) "[CHG]" else "[DIS]"
+                } else {
+                    if (stats.isCharging) "[CHARGING]" else "[DISCHARGING]"
+                }
                 Text(
-                    text = "BATT: ${stats.batteryPercent}% ${if (stats.isCharging) "[CHARGING]" else "[DISCHARGING]"} · ${String.format(Locale.US, "%.1f", stats.batteryTempCelsius)}°C",
+                    text = "BATT: ${stats.batteryPercent}% $battCharging · ${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
                     color = contentColor.copy(alpha = 0.9f),
-                    fontSize = 11.sp,
+                    fontSize = (11 * widthFactor).sp,
                     fontFamily = FontFamily.Monospace,
                 )
             }
@@ -1218,6 +1330,8 @@ private fun DailyReflectionClockContent(
     quote: DailyQuote,
     contentColor: Color,
     alignRight: Boolean,
+    widthFactor: Float = 1.0f,
+    isCompact: Boolean = false,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onQuoteClick: () -> Unit,
@@ -1230,7 +1344,7 @@ private fun DailyReflectionClockContent(
             Text(
                 text = compactDateString,
                 color = contentColor.copy(alpha = 0.7f),
-                fontSize = 11.sp,
+                fontSize = (11 * widthFactor).sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.5.sp,
                 maxLines = 1,
@@ -1250,10 +1364,10 @@ private fun DailyReflectionClockContent(
             Text(
                 text = timeString,
                 color = contentColor,
-                fontSize = 54.sp,
+                fontSize = (54 * widthFactor).sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-1).sp,
-                lineHeight = 54.sp,
+                lineHeight = (54 * widthFactor).sp,
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -1275,9 +1389,9 @@ private fun DailyReflectionClockContent(
             Text(
                 text = "“${quote.quote}”",
                 color = contentColor.copy(alpha = 0.9f),
-                fontSize = 13.sp,
+                fontSize = (13 * widthFactor).sp,
                 fontStyle = FontStyle.Italic,
-                lineHeight = 17.sp,
+                lineHeight = (17 * widthFactor).sp,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
@@ -1286,7 +1400,7 @@ private fun DailyReflectionClockContent(
             Text(
                 text = "— ${quote.author}",
                 color = contentColor.copy(alpha = 0.65f),
-                fontSize = 10.5.sp,
+                fontSize = (10.5f * widthFactor).sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -1295,31 +1409,33 @@ private fun DailyReflectionClockContent(
         }
     }
 
+    val dividerSpacing = if (isCompact) 8.dp else 12.dp
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (alignRight) {
             quoteBlock(Modifier.weight(1f))
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(dividerSpacing))
             Box(
                 modifier = Modifier
                     .width(1.dp)
-                    .height(52.dp)
+                    .height((52 * widthFactor).dp.coerceAtLeast(36.dp))
                     .background(contentColor.copy(alpha = 0.18f))
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(dividerSpacing))
             clockBlock()
         } else {
             clockBlock()
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(dividerSpacing))
             Box(
                 modifier = Modifier
                     .width(1.dp)
-                    .height(52.dp)
+                    .height((52 * widthFactor).dp.coerceAtLeast(36.dp))
                     .background(contentColor.copy(alpha = 0.18f))
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(dividerSpacing))
             quoteBlock(Modifier.weight(1f))
         }
     }
@@ -1333,6 +1449,9 @@ private fun DailyReflectionStatsClockContent(
     stats: SystemStats,
     contentColor: Color,
     alignRight: Boolean,
+    widthFactor: Float = 1.0f,
+    isCompact: Boolean = false,
+    isUltraCompact: Boolean = false,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onQuoteClick: () -> Unit,
@@ -1347,6 +1466,8 @@ private fun DailyReflectionStatsClockContent(
             quote = quote,
             contentColor = contentColor,
             alignRight = alignRight,
+            widthFactor = widthFactor,
+            isCompact = isCompact,
             onClockClick = onClockClick,
             onDateClick = onDateClick,
             onQuoteClick = onQuoteClick,
@@ -1355,18 +1476,31 @@ private fun DailyReflectionStatsClockContent(
         Spacer(Modifier.height(10.dp))
 
         // 4 Telemetry chips compactos na mesma linha, reaproveitando os mesmos chips do HUD Futurista
+        // Quando o espaço é pouco, removemos os prefixos "RAM" e "ROM" ao invés de reduzir a fonte (mantém 10.sp)!
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (isCompact) 2.5.dp else 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val ramLabel = if (isCompact) {
+                "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G"
+            } else {
+                "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G"
+            }
+            val romLabel = if (isCompact) {
+                "${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G"
+            } else {
+                "ROM ${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G"
+            }
+            val chipHPadding = if (isUltraCompact) 1.5.dp else if (isCompact) 2.5.dp else 4.dp
+
             TechChip(
                 icon = "💾",
-                label = "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G",
+                label = ramLabel,
                 contentColor = contentColor,
                 fontSize = 10.sp,
                 iconSize = 9.5.sp,
-                horizontalPadding = 4.dp,
+                horizontalPadding = chipHPadding,
                 verticalPadding = 4.dp,
                 shapeRadius = 6.dp,
                 modifier = Modifier.weight(1f),
@@ -1378,7 +1512,7 @@ private fun DailyReflectionStatsClockContent(
                 contentColor = contentColor,
                 fontSize = 10.sp,
                 iconSize = 9.5.sp,
-                horizontalPadding = 4.dp,
+                horizontalPadding = chipHPadding,
                 verticalPadding = 4.dp,
                 shapeRadius = 6.dp,
                 modifier = Modifier.weight(1f),
@@ -1390,7 +1524,7 @@ private fun DailyReflectionStatsClockContent(
                 contentColor = contentColor,
                 fontSize = 10.sp,
                 iconSize = 9.5.sp,
-                horizontalPadding = 4.dp,
+                horizontalPadding = chipHPadding,
                 verticalPadding = 4.dp,
                 shapeRadius = 6.dp,
                 modifier = Modifier.weight(1f),
@@ -1398,11 +1532,11 @@ private fun DailyReflectionStatsClockContent(
             )
             TechChip(
                 icon = "💽",
-                label = "ROM ${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G",
+                label = romLabel,
                 contentColor = contentColor,
                 fontSize = 10.sp,
                 iconSize = 9.5.sp,
-                horizontalPadding = 4.dp,
+                horizontalPadding = chipHPadding,
                 verticalPadding = 4.dp,
                 shapeRadius = 6.dp,
                 modifier = Modifier.weight(1f),
