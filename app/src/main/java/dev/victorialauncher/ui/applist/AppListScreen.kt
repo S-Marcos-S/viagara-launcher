@@ -165,6 +165,7 @@ fun AppListScreen(
     showAppNotifications: Boolean = false,
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
     sidePaddingDp: Int = 20,
+    alphabetSidePaddingDp: Int = 20,
     searchButtonEnabled: Boolean = true,
     hapticsEnabled: Boolean = true,
     onOpenSearch: () -> Unit = {},
@@ -188,8 +189,9 @@ fun AppListScreen(
     val scrubY = remember(scrub) { scrub::currentY }
     val pullPx = remember(scrub) { scrub::currentPull }
 
-    val rowStart = if (activeSide == EdgeSide.LEFT && showAlphabet) (sidePaddingDp + 32).dp else sidePaddingDp.dp
-    val rowEnd = if (activeSide != EdgeSide.LEFT && showAlphabet) (sidePaddingDp + 32).dp else sidePaddingDp.dp
+    val alphabetClearance = (alphabetSidePaddingDp + 32).dp
+    val rowStart = if (activeSide == EdgeSide.LEFT && showAlphabet) maxOf(sidePaddingDp.dp, alphabetClearance) else sidePaddingDp.dp
+    val rowEnd = if (activeSide != EdgeSide.LEFT && showAlphabet) maxOf(sidePaddingDp.dp, alphabetClearance) else sidePaddingDp.dp
 
     val listState = rememberLazyListState()
     // Rows outside the scrubbed letter fade out; the section itself never moves, because it
@@ -771,7 +773,7 @@ fun AppListScreen(
               pullPx = pullPx,
               band = band,
               side = activeSide,
-              sidePaddingDp = sidePaddingDp,
+              sidePaddingDp = alphabetSidePaddingDp,
               modifier = Modifier
                   .align(if (activeSide == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd)
                   .graphicsLayer { alpha = dismissAlpha },
@@ -901,7 +903,7 @@ fun AppListScreen(
             val searchButtonBottom = maxOf(80.dp, navBarBottom + 68.dp)
             val isLeft = activeSide == EdgeSide.LEFT
             val searchBtnAlignment = if (isLeft) Alignment.BottomStart else Alignment.BottomEnd
-            val searchBtnSidePadding = (sidePaddingDp + 38).coerceAtLeast(58).dp
+            val searchBtnSidePadding = (alphabetSidePaddingDp + 38).coerceAtLeast(58).dp
 
             val isScrolling by remember { derivedStateOf { listState.isScrollInProgress } }
             val isScrolled by remember {

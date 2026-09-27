@@ -132,6 +132,7 @@ fun VictoriaNavHost(
     val labelSizeSp by app.prefs.labelSizeSp.collectAsState(initial = 16)
     val itemSpacingDp by app.prefs.itemSpacingDp.collectAsState(initial = 10)
     val sidePaddingDp by app.prefs.sidePaddingDp.collectAsState(initial = 20)
+    val alphabetSidePaddingDp by app.prefs.alphabetSidePaddingDp.collectAsState(initial = 20)
     val nowPlayingHeightDp by app.prefs.nowPlayingHeightDp.collectAsState(initial = 64)
     val homePaddings by app.prefs.homePaddings.collectAsState(initial = HomePaddings.Default)
     val edgeSide by app.prefs.edgeSide.collectAsState(initial = EdgeSide.RIGHT)
@@ -231,6 +232,7 @@ fun VictoriaNavHost(
         labelSizeSp = labelSizeSp,
         itemSpacingDp = itemSpacingDp,
         sidePaddingDp = sidePaddingDp,
+        alphabetSidePaddingDp = alphabetSidePaddingDp,
         nowPlayingHeightDp = nowPlayingHeightDp,
         nowPlayingEnabled = nowPlayingEnabled,
         edgeSide = edgeSide,

@@ -178,6 +178,8 @@ fun HomeScreen(
     itemSpacingDp: Int,
     sidePaddingDp: Int,
     onSetSidePadding: (Int) -> Unit,
+    alphabetSidePaddingDp: Int = 20,
+    onSetAlphabetSidePadding: (Int) -> Unit = {},
     paddings: HomePaddings,
     widgetId: Int = -1,
     widgetIds: List<Int> = emptyList(),
@@ -230,14 +232,14 @@ fun HomeScreen(
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     // Automatic alignment calculation:
-    // When the alphabet is visible on an edge, content insets by (sidePaddingDp + 32) dp,
-    // leaving a balanced 8dp breathing gutter next to the alphabet column (24dp wide + sidePaddingDp).
+    // When the alphabet is visible on an edge, content insets by at least (alphabetSidePaddingDp + 32) dp,
+    // leaving a balanced 8dp breathing gutter next to the alphabet column (24dp wide + alphabetSidePaddingDp).
     // On edges without the alphabet, content aligns symmetrically at sidePaddingDp.
     val hasAlphabetStart = alwaysShowAz && (edgeSide == EdgeSide.LEFT || edgeSide == EdgeSide.BOTH)
     val hasAlphabetEnd = alwaysShowAz && (edgeSide == EdgeSide.RIGHT || edgeSide == EdgeSide.BOTH)
-    val alphabetClearance = (sidePaddingDp + 32).dp
-    val contentStart = if (hasAlphabetStart) alphabetClearance else sidePaddingDp.dp
-    val contentEnd = if (hasAlphabetEnd) alphabetClearance else sidePaddingDp.dp
+    val alphabetClearance = (alphabetSidePaddingDp + 32).dp
+    val contentStart = if (hasAlphabetStart) maxOf(sidePaddingDp.dp, alphabetClearance) else sidePaddingDp.dp
+    val contentEnd = if (hasAlphabetEnd) maxOf(sidePaddingDp.dp, alphabetClearance) else sidePaddingDp.dp
 
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var floatingFolderDialog by remember { mutableStateOf<Folder?>(null) }
@@ -267,6 +269,7 @@ fun HomeScreen(
     val handleResetAlignments = {
         HapticUtil.tick(view, hapticsEnabled)
         onSetSidePadding(20)
+        onSetAlphabetSidePadding(20)
         onCommitPadding(PaddingSlot.NOW_PLAYING_TOP, dev.victorialauncher.data.HomePaddings.Default.nowPlayingTop)
         onCommitPadding(PaddingSlot.NOW_PLAYING_BOTTOM, dev.victorialauncher.data.HomePaddings.Default.nowPlayingBottom)
         onCommitPadding(PaddingSlot.WIDGET_TOP, dev.victorialauncher.data.HomePaddings.Default.widgetTop)
@@ -615,7 +618,17 @@ fun HomeScreen(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                SidePaddingHandle(sidePaddingDp = sidePaddingDp, onSetSidePadding = onSetSidePadding)
+                SidePaddingHandle(
+                    sidePaddingDp = sidePaddingDp,
+                    onSetSidePadding = onSetSidePadding,
+                    labelRes = R.string.handle_side_padding,
+                )
+                Spacer(Modifier.height(6.dp))
+                SidePaddingHandle(
+                    sidePaddingDp = alphabetSidePaddingDp,
+                    onSetSidePadding = onSetAlphabetSidePadding,
+                    labelRes = R.string.handle_alphabet_side_padding,
+                )
                 Spacer(Modifier.height(6.dp))
             }
 
@@ -1807,9 +1820,13 @@ private fun FolderEditDialog(
     }
 }
 
-/** Drag sideways to inset every home element equally from the screen edges. */
+/** Drag sideways to inset elements equally from the screen edges. */
 @Composable
-private fun SidePaddingHandle(sidePaddingDp: Int, onSetSidePadding: (Int) -> Unit) {
+private fun SidePaddingHandle(
+    sidePaddingDp: Int,
+    onSetSidePadding: (Int) -> Unit,
+    @StringRes labelRes: Int = R.string.handle_side_padding,
+) {
     val density = LocalDensity.current
     val colorScheme = MaterialTheme.colorScheme
     Box(
@@ -1830,7 +1847,7 @@ private fun SidePaddingHandle(sidePaddingDp: Int, onSetSidePadding: (Int) -> Uni
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            stringResource(R.string.handle_side_padding, sidePaddingDp),
+            stringResource(labelRes, sidePaddingDp),
             color = colorScheme.onSurface,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,

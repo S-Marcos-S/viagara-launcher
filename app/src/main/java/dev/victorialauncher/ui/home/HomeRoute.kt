@@ -391,6 +391,8 @@ fun HomeRoute(
                 itemSpacingDp = settings.itemSpacingDp,
                 sidePaddingDp = settings.sidePaddingDp,
                 onSetSidePadding = { scope.launch { app.prefs.setSidePaddingDp(it) } },
+                alphabetSidePaddingDp = settings.alphabetSidePaddingDp,
+                onSetAlphabetSidePadding = { scope.launch { app.prefs.setAlphabetSidePaddingDp(it) } },
                 paddings = homePaddings,
                 widgetId = widgetId,
                 widgetIds = widgetIds,
@@ -521,6 +523,7 @@ fun HomeRoute(
                 notificationsByPackage = notificationsByPackage,
                 onDoubleTapLock = handleDoubleTapLock,
                 sidePaddingDp = settings.sidePaddingDp,
+                alphabetSidePaddingDp = settings.alphabetSidePaddingDp,
                 searchButtonEnabled = settings.searchButtonEnabled,
                 hapticsEnabled = settings.hapticsEnabled,
                 onOpenSearch = {
@@ -537,7 +540,7 @@ fun HomeRoute(
                 pullPx = remember(scrub) { scrub::currentPull },
                 band = band,
                 side = scrub.side,
-                sidePaddingDp = settings.sidePaddingDp,
+                sidePaddingDp = settings.alphabetSidePaddingDp,
                 modifier = Modifier.align(
                     if (scrub.side == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd
                 ),
@@ -580,7 +583,7 @@ fun HomeRoute(
                     EdgeSide.BOTH -> listOf(EdgeSide.LEFT, EdgeSide.RIGHT)
                 }
             }
-            val edgeZoneWidth = (settings.sidePaddingDp + 32).coerceAtLeast(48).dp
+            val edgeZoneWidth = (settings.alphabetSidePaddingDp + 32).coerceAtLeast(48).dp
             sides.forEach { side ->
                 EdgeTouchZone(
                     side = side,
@@ -607,7 +610,7 @@ fun HomeRoute(
             val clickApp = settings.dynamicButtonClickApp?.let { appsByKey[it] }
             val swipeUpApp = settings.dynamicButtonSwipeUpApp?.let { appsByKey[it] }
             val swipeDownApp = settings.dynamicButtonSwipeDownApp?.let { appsByKey[it] }
-            val dynamicBtnSidePadding = (settings.sidePaddingDp + 38).coerceAtLeast(58).dp
+            val dynamicBtnSidePadding = (settings.alphabetSidePaddingDp + 38).coerceAtLeast(58).dp
 
             DynamicActionButton(
                 clickApp = clickApp,
@@ -711,6 +714,7 @@ data class HomeSettings(
     val labelSizeSp: Int,
     val itemSpacingDp: Int,
     val sidePaddingDp: Int,
+    val alphabetSidePaddingDp: Int = 20,
     val nowPlayingHeightDp: Int,
     val nowPlayingEnabled: Boolean,
     val edgeSide: EdgeSide,

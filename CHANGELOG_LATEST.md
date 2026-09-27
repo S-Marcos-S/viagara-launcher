@@ -1,10 +1,7 @@
-### 🚀 Novidades e Melhorias da Versão 0.59.18
+### 🚀 Novidades e Melhorias da Versão 0.59.19
 
-- **Ajuste Fino e Zoom no Ícone do Viagra Launcher:**
-  - Removido o recorte residual de borda clara na parte inferior da imagem original.
-  - Aplicado zoom inteligente (~10-12%) e enquadramento ideal no ícone, fazendo com que o logo preencha perfeitamente a máscara de exibição sem sobrar nenhuma faixa branca indesejada na base.
-  - Regeneradas todas as densidades de drawables e mipmaps (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`).
-
-- **Otimização do Fluxo de Integração Contínua (CI/CD):**
-  - Removido o job redundante e demorado de verificação paralela do GitHub Actions.
-  - Testes unitários integrados diretamente no job de compilação, reduzindo o tempo de entrega do APK em mais de 50%.
+- **Editor Independente de Espaçamento Lateral do Alfabeto:**
+  - Adicionada alça dedicada no modo de edição de layout para ajustar exclusivamente o espaçamento lateral da coluna do alfabeto (`↔ Espaçamento lateral do alfabeto · Xdp`).
+  - O editor geral de "Espaçamento lateral" agora ajusta exclusivamente os elementos da tela inicial (favoritos, relógio, widgets, lista de apps), sem mais afetar ou empurrar involuntariamente a barra do alfabeto.
+  - Sincronização inteligente dos pontos de toque da borda (`EdgeTouchZone`) e do botão de ação com o novo espaçamento customizado do alfabeto.
+  - Suporte completo no botão "Alinhar elementos" para restauração rápida das margens e alinhamentos ao padrão (20dp).

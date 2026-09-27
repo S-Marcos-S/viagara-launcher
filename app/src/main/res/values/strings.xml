@@ -74,6 +74,7 @@
 
     <!-- Edit-mode drag handles -->
     <string name="handle_side_padding">↔ Side padding · %1$ddp</string>
+    <string name="handle_alphabet_side_padding">↔ Alphabet side padding · %1$ddp</string>
     <string name="handle_vertical">↕ %1$s · %2$ddp</string>
     <string name="handle_widget_top">Widget top</string>
     <string name="handle_widget_bottom">Widget bottom</string>

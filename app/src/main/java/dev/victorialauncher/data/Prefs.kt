@@ -59,6 +59,7 @@ class Prefs(private val context: Context) {
         val LABEL_SIZE_SP = intPreferencesKey("label_size_sp")
         val ITEM_SPACING_DP = intPreferencesKey("item_spacing_dp")
         val SIDE_PADDING_DP = intPreferencesKey("side_padding_dp")
+        val ALPHABET_SIDE_PADDING_DP = intPreferencesKey("alphabet_side_padding_dp")
         val NOW_PLAYING_HEIGHT_DP = intPreferencesKey("now_playing_height_dp")
         val NOW_PLAYING_PAD_TOP = intPreferencesKey("now_playing_pad_top")
         val NOW_PLAYING_PAD_BOTTOM = intPreferencesKey("now_playing_pad_bottom")
@@ -147,6 +148,9 @@ class Prefs(private val context: Context) {
 
     /** Left/right inset applied to every element on the home screen, so they stay in line. */
     val sidePaddingDp: Flow<Int> = data.map { it[Keys.SIDE_PADDING_DP] ?: 20 }.distinctUntilChanged()
+
+    /** Left/right inset applied specifically to the alphabet scrubber. */
+    val alphabetSidePaddingDp: Flow<Int> = data.map { it[Keys.ALPHABET_SIDE_PADDING_DP] ?: 20 }.distinctUntilChanged()
 
     val nowPlayingHeightDp: Flow<Int> = data.map { it[Keys.NOW_PLAYING_HEIGHT_DP] ?: 64 }.distinctUntilChanged()
 
@@ -370,6 +374,10 @@ class Prefs(private val context: Context) {
         context.dataStore.edit { it[Keys.SIDE_PADDING_DP] = v }
     }
 
+    suspend fun setAlphabetSidePaddingDp(v: Int) {
+        context.dataStore.edit { it[Keys.ALPHABET_SIDE_PADDING_DP] = v }
+    }
+
     suspend fun setItemSpacingDp(v: Int) {
         context.dataStore.edit { it[Keys.ITEM_SPACING_DP] = v }
     }
@@ -393,6 +401,7 @@ class Prefs(private val context: Context) {
     suspend fun resetHomePaddingsAndSidePadding() {
         context.dataStore.edit {
             it[Keys.SIDE_PADDING_DP] = 20
+            it[Keys.ALPHABET_SIDE_PADDING_DP] = 20
             it[Keys.NOW_PLAYING_PAD_TOP] = HomePaddings.Default.nowPlayingTop
             it[Keys.NOW_PLAYING_PAD_BOTTOM] = HomePaddings.Default.nowPlayingBottom
             it[Keys.WIDGET_PAD_TOP] = HomePaddings.Default.widgetTop

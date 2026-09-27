@@ -75,6 +75,7 @@
 
     <!-- Alças de arrasto no modo de edição -->
     <string name="handle_side_padding">↔ Espaçamento lateral · %1$ddp</string>
+    <string name="handle_alphabet_side_padding">↔ Espaçamento lateral do alfabeto · %1$ddp</string>
     <string name="handle_vertical">↕ %1$s · %2$ddp</string>
     <string name="handle_widget_top">Topo do widget</string>
     <string name="handle_widget_bottom">Base do widget</string>
