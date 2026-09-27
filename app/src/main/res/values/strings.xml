@@ -359,6 +359,16 @@
     <string name="root_inspector_status_foreground">FOREGROUND</string>
     <string name="root_inspector_status_background">BACKGROUND</string>
     <string name="root_inspector_status_stopped">STOPPED</string>
+    <string name="root_inspector_speed_download">Download Speed</string>
+    <string name="root_inspector_speed_upload">Upload Speed</string>
+    <string name="root_inspector_data_usage">Data Usage</string>
+    <string name="root_inspector_period_today">Today</string>
+    <string name="root_inspector_period_7days">7 Days</string>
+    <string name="root_inspector_period_total">Total</string>
+    <string name="root_inspector_realtime_speed">Real-Time Transfer</string>
+    <string name="root_inspector_total_data">Total Data</string>
+    <string name="root_inspector_live_active">LIVE</string>
+    <string name="root_inspector_live_idle">IDLE</string>
     <string name="root_inspector_cpu">CPU</string>
     <string name="root_inspector_ram">RAM (PSS)</string>
     <string name="root_inspector_download">Download</string>

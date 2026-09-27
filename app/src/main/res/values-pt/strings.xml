@@ -360,6 +360,16 @@
     <string name="root_inspector_status_foreground">EM PRIMEIRO PLANO</string>
     <string name="root_inspector_status_background">EM SEGUNDO PLANO</string>
     <string name="root_inspector_status_stopped">PARADO / INATIVO</string>
+    <string name="root_inspector_speed_download">Velocidade Download</string>
+    <string name="root_inspector_speed_upload">Velocidade Upload</string>
+    <string name="root_inspector_data_usage">Consumo de Dados</string>
+    <string name="root_inspector_period_today">Hoje</string>
+    <string name="root_inspector_period_7days">7 Dias</string>
+    <string name="root_inspector_period_total">Total</string>
+    <string name="root_inspector_realtime_speed">Transferência em Tempo Real</string>
+    <string name="root_inspector_total_data">Total de Dados</string>
+    <string name="root_inspector_live_active">AO VIVO</string>
+    <string name="root_inspector_live_idle">INATIVO</string>
     <string name="root_inspector_cpu">CPU</string>
     <string name="root_inspector_ram">RAM (PSS)</string>
     <string name="root_inspector_download">Download</string>

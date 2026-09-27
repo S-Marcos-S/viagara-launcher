@@ -31,8 +31,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.PlayArrow
@@ -93,6 +96,12 @@ private enum class InspectorTab {
     PERMISSIONS,
 }
 
+private enum class DataPeriod {
+    TODAY,
+    LAST_7_DAYS,
+    TOTAL,
+}
+
 /**
  * High-precision, professional root inspection dialog for individual apps.
  * Displays live process telemetry, memory allocations (Dalvik, Native, Graphics),
@@ -114,6 +123,7 @@ fun AppRootInspectorDialog(
     var isLoading by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(InspectorTab.MEMORY) }
+    var selectedPeriod by remember { mutableStateOf(DataPeriod.TODAY) }
 
     var isAutoRefreshEnabled by remember { mutableStateOf(true) }
 
@@ -364,7 +374,7 @@ fun AppRootInspectorDialog(
                                 )
                             }
                         } else {
-                            // 4 Key Hardware Metric Cards
+                            // Hardware Metrics: CPU & RAM
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -387,29 +397,36 @@ fun AppRootInspectorDialog(
 
                             Spacer(Modifier.height(8.dp))
 
+                            // Dedicated Real-time Speed Cards (Download & Upload)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                MetricCard(
+                                RealtimeSpeedCard(
                                     modifier = Modifier.weight(1f),
-                                    title = stringResource(R.string.root_inspector_download),
-                                    value = AppRootInspector.formatBytes(data.rxBytes),
-                                    subtitle = if (data.rxSpeedBps > 0) "↓ ${AppRootInspector.formatSpeed(data.rxSpeedBps)}" else null,
-                                    icon = Icons.Filled.NetworkCheck,
-                                    accentColor = Color(0xFF10B981),
+                                    title = stringResource(R.string.root_inspector_speed_download),
+                                    speedBps = data.rxSpeedBps,
+                                    isDownload = true,
                                 )
-                                MetricCard(
+                                RealtimeSpeedCard(
                                     modifier = Modifier.weight(1f),
-                                    title = stringResource(R.string.root_inspector_upload),
-                                    value = AppRootInspector.formatBytes(data.txBytes),
-                                    subtitle = if (data.txSpeedBps > 0) "↑ ${AppRootInspector.formatSpeed(data.txSpeedBps)}" else null,
-                                    icon = Icons.Filled.NetworkCheck,
-                                    accentColor = Color(0xFF06B6D4),
+                                    title = stringResource(R.string.root_inspector_speed_upload),
+                                    speedBps = data.txSpeedBps,
+                                    isDownload = false,
                                 )
                             }
 
-                            Spacer(Modifier.height(14.dp))
+                            Spacer(Modifier.height(8.dp))
+
+                            // Native Data Usage Card with Period Selector (Hoje / 7 Dias / Total)
+                            DataUsageCard(
+                                data = data,
+                                selectedPeriod = selectedPeriod,
+                                onPeriodSelect = { selectedPeriod = it },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+
+                            Spacer(Modifier.height(12.dp))
 
                             // Tab selector row
                             Row(
@@ -615,6 +632,254 @@ private fun MetricCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RealtimeSpeedCard(
+    title: String,
+    speedBps: Long,
+    isDownload: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val accentColor = if (isDownload) Color(0xFF10B981) else Color(0xFF06B6D4)
+    val icon = if (isDownload) Icons.Filled.ArrowDownward else Icons.Filled.ArrowUpward
+    val isLive = speedBps > 0L
+    val formattedSpeed = if (isLive) AppRootInspector.formatSpeed(speedBps) else "0 B/s"
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(colorScheme.onSurface.copy(alpha = 0.05f))
+            .border(1.dp, if (isLive) accentColor.copy(alpha = 0.35f) else colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false),
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(13.dp),
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        text = title,
+                        color = colorScheme.onSurface.copy(alpha = 0.65f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                Spacer(Modifier.width(4.dp))
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (isLive) accentColor.copy(alpha = 0.14f) else colorScheme.onSurface.copy(alpha = 0.08f))
+                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                ) {
+                    Text(
+                        text = if (isLive) stringResource(R.string.root_inspector_live_active) else stringResource(R.string.root_inspector_live_idle),
+                        color = if (isLive) accentColor else colorScheme.onSurface.copy(alpha = 0.45f),
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                text = "${if (isDownload) "↓" else "↑"} $formattedSpeed",
+                color = if (isLive) accentColor else colorScheme.onSurface,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DataUsageCard(
+    data: AppInspectionData,
+    selectedPeriod: DataPeriod,
+    onPeriodSelect: (DataPeriod) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    val (rxBytes, txBytes) = when (selectedPeriod) {
+        DataPeriod.TODAY -> data.rxBytesToday to data.txBytesToday
+        DataPeriod.LAST_7_DAYS -> data.rxBytes7Days to data.txBytes7Days
+        DataPeriod.TOTAL -> data.rxBytes to data.txBytes
+    }
+    val totalBytes = rxBytes + txBytes
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(colorScheme.onSurface.copy(alpha = 0.05f))
+            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Column {
+            // Header: Title + Period Selector Pills
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.DataUsage,
+                        contentDescription = null,
+                        tint = colorScheme.primary,
+                        modifier = Modifier.size(13.dp),
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        text = stringResource(R.string.root_inspector_data_usage),
+                        color = colorScheme.onSurface.copy(alpha = 0.65f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                Spacer(Modifier.width(4.dp))
+
+                // Selector Pills: Hoje | 7 Dias | Total
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PeriodPill(
+                        label = stringResource(R.string.root_inspector_period_today),
+                        selected = selectedPeriod == DataPeriod.TODAY,
+                        onClick = { onPeriodSelect(DataPeriod.TODAY) },
+                    )
+                    PeriodPill(
+                        label = stringResource(R.string.root_inspector_period_7days),
+                        selected = selectedPeriod == DataPeriod.LAST_7_DAYS,
+                        onClick = { onPeriodSelect(DataPeriod.LAST_7_DAYS) },
+                    )
+                    PeriodPill(
+                        label = stringResource(R.string.root_inspector_period_total),
+                        selected = selectedPeriod == DataPeriod.TOTAL,
+                        onClick = { onPeriodSelect(DataPeriod.TOTAL) },
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+
+            // 3-Metric Row: Download | Upload | Total
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.root_inspector_download),
+                        color = colorScheme.onSurface.copy(alpha = 0.55f),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        text = AppRootInspector.formatBytes(rxBytes),
+                        color = Color(0xFF10B981),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = stringResource(R.string.root_inspector_upload),
+                        color = colorScheme.onSurface.copy(alpha = 0.55f),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        text = AppRootInspector.formatBytes(txBytes),
+                        color = Color(0xFF06B6D4),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = stringResource(R.string.root_inspector_total_data),
+                        color = colorScheme.onSurface.copy(alpha = 0.55f),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        text = AppRootInspector.formatBytes(totalBytes),
+                        color = colorScheme.primary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PeriodPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val bg = if (selected) colorScheme.primary.copy(alpha = 0.22f) else colorScheme.onSurface.copy(alpha = 0.06f)
+    val textCol = if (selected) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.65f)
+    val borderCol = if (selected) colorScheme.primary.copy(alpha = 0.4f) else Color.Transparent
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(bg)
+            .border(1.dp, borderCol, RoundedCornerShape(6.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = textCol,
+            fontSize = 9.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+        )
     }
 }
 
@@ -931,6 +1196,45 @@ private fun NetworkTabContent(data: AppInspectionData) {
     val colorScheme = MaterialTheme.colorScheme
     Column {
         Text(
+            text = "CONSUMO DE DADOS (SISTEMA NATIVO)",
+            color = colorScheme.onSurface.copy(alpha = 0.55f),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+        )
+        Spacer(Modifier.height(6.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(colorScheme.onSurface.copy(alpha = 0.05f))
+                .padding(10.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                NetworkUsageRow(
+                    label = "Hoje (00:00 - Agora)",
+                    rx = data.rxBytesToday,
+                    tx = data.txBytesToday,
+                )
+                HorizontalDivider(color = colorScheme.outline.copy(alpha = 0.1f))
+                NetworkUsageRow(
+                    label = "Últimos 7 Dias",
+                    rx = data.rxBytes7Days,
+                    tx = data.txBytes7Days,
+                )
+                HorizontalDivider(color = colorScheme.outline.copy(alpha = 0.1f))
+                NetworkUsageRow(
+                    label = "Histórico Total",
+                    rx = data.rxBytes,
+                    tx = data.txBytes,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Text(
             text = "CONEXÕES DE REDE ATIVAS",
             color = colorScheme.onSurface.copy(alpha = 0.55f),
             fontSize = 10.sp,
@@ -1001,6 +1305,46 @@ private fun NetworkTabContent(data: AppInspectionData) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun NetworkUsageRow(label: String, rx: Long, tx: Long) {
+    val colorScheme = MaterialTheme.colorScheme
+    Column {
+        Text(
+            text = label,
+            color = colorScheme.onSurface.copy(alpha = 0.85f),
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(Modifier.height(2.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "↓ ${AppRootInspector.formatBytes(rx)}",
+                color = Color(0xFF10B981),
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = "↑ ${AppRootInspector.formatBytes(tx)}",
+                color = Color(0xFF06B6D4),
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = "Total: ${AppRootInspector.formatBytes(rx + tx)}",
+                color = colorScheme.primary,
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
     }
 }

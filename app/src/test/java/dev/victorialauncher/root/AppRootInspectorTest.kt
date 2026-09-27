@@ -296,4 +296,56 @@ class AppRootInspectorTest {
         assertEquals(6144L, rx)
         assertEquals(3072L, tx)
     }
+
+    @Test
+    fun `isPackageProcess rejects shell commands and diagnostic tools containing package name`() {
+        assertFalse(AppRootInspector.isPackageProcess("grep com.android.vending", "com.android.vending"))
+        assertFalse(AppRootInspector.isPackageProcess("su -c dumpsys meminfo com.android.vending", "com.android.vending"))
+        assertFalse(AppRootInspector.isPackageProcess("sh -c pidof com.android.vending", "com.android.vending"))
+        assertFalse(AppRootInspector.isPackageProcess("toybox ps -A", "com.android.vending"))
+        assertFalse(AppRootInspector.isPackageProcess("/system/bin/cat /proc/123/cmdline", "com.android.vending"))
+    }
+
+    @Test
+    fun `parsePsOutput filters out root processes when inspecting standard app UID`() {
+        val samplePs = """
+            12345 root 0.0 0.1 grep com.example.app
+            12346 u0_a185 2.5 1.2 com.example.app
+        """.trimIndent()
+
+        val procs = AppRootInspector.parsePsOutput(
+            text = samplePs,
+            packageName = "com.example.app",
+            targetUid = 10185,
+        )
+
+        assertEquals(1, procs.size)
+        assertEquals(12346, procs[0].pid)
+        assertEquals("u0_a185", procs[0].user)
+    }
+
+    @Test
+    fun `parseNetstatsOutput filters today and 7-day buckets correctly`() {
+        val sampleBuckets = """
+            uid=10185 set=DEFAULT tag=0x0
+              st=1000 rb=1000 tb=500
+              st=5000 rb=2000 tb=1000
+              st=9000 rb=3000 tb=1500
+        """.trimIndent()
+
+        // 7 days ago starts at 4000, today starts at 8000
+        val breakdown = AppRootInspector.parseNetstatsOutput(
+            text = sampleBuckets,
+            targetUid = 10185,
+            todayStartSec = 8000L,
+            sevenDaysAgoSec = 4000L,
+        )
+
+        assertEquals(6000L, breakdown.rxTotal)
+        assertEquals(3000L, breakdown.txTotal)
+        assertEquals(3000L, breakdown.rxToday)
+        assertEquals(1500L, breakdown.txToday)
+        assertEquals(5000L, breakdown.rx7Days)
+        assertEquals(2500L, breakdown.tx7Days)
+    }
 }

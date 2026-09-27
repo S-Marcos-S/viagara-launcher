@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.root
 
+import android.app.usage.NetworkStats
+import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
 import android.net.TrafficStats
+import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Calendar
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
@@ -40,6 +45,15 @@ data class AppPermissionItem(
     val isDangerous: Boolean,
 )
 
+data class NetBreakdown(
+    val rxTotal: Long = 0L,
+    val txTotal: Long = 0L,
+    val rxToday: Long = 0L,
+    val txToday: Long = 0L,
+    val rx7Days: Long = 0L,
+    val tx7Days: Long = 0L,
+)
+
 data class AppInspectionData(
     val packageName: String,
     val appName: String,
@@ -55,6 +69,10 @@ data class AppInspectionData(
     val ramGraphicsMb: Double,
     val rxBytes: Long,
     val txBytes: Long,
+    val rxBytesToday: Long = 0L,
+    val txBytesToday: Long = 0L,
+    val rxBytes7Days: Long = 0L,
+    val txBytes7Days: Long = 0L,
     val rxSpeedBps: Long = 0L,
     val txSpeedBps: Long = 0L,
     val activeConnections: List<NetworkConnection>,
@@ -128,9 +146,23 @@ object AppRootInspector {
             val topGrep = if (extraPackageName != null) "grep -e \"$packageName\" -e \"$extraPackageName\"" else "grep \"$packageName\""
             val psGrep = if (extraPackageName != null) "grep -e \"$packageName\" -e \"$extraPackageName\"" else "grep \"$packageName\""
 
-            val extraSmapsScript = if (extraPackageName != null) {
+            val extraPidsScript = if (extraPackageName != null && dlManagerUid != null) {
                 """
-                for p in ${'$'}(pidof $extraPackageName 2>/dev/null || pgrep -f $extraPackageName 2>/dev/null); do
+                pidof $extraPackageName 2>/dev/null
+                for p in ${'$'}(pgrep -u $dlManagerUid 2>/dev/null); do
+                    cmd=${'$'}(cat /proc/${'$'}p/cmdline 2>/dev/null | tr '\0' ' ')
+                    case "${'$'}cmd" in
+                        $extraPackageName|$extraPackageName\ *|$extraPackageName:*|" $extraPackageName"*)
+                            echo "${'$'}p"
+                            ;;
+                    esac
+                done
+                """.trimIndent()
+            } else ""
+
+            val extraSmapsScript = if (extraPackageName != null && dlManagerUid != null) {
+                """
+                for p in ${'$'}(pidof $extraPackageName 2>/dev/null; for p2 in ${'$'}(pgrep -u $dlManagerUid 2>/dev/null); do cmd=${'$'}(cat /proc/${'$'}p2/cmdline 2>/dev/null | tr '\0' ' '); case "${'$'}cmd" in $extraPackageName|$extraPackageName\ *|$extraPackageName:*|" $extraPackageName"*) echo "${'$'}p2";; esac; done | sort -u); do
                     echo "---PID:${'$'}p---"
                     echo "---IO---"
                     cat /proc/${'$'}p/io 2>/dev/null
@@ -154,14 +186,25 @@ object AppRootInspector {
 
             // High-performance unified shell inspection script without toybox-incompatible regexes (\b, \s, \d)
             val shellScript = """
+                appops set dev.victorialauncher GET_USAGE_STATS allow 2>/dev/null
+                pm grant dev.victorialauncher android.permission.PACKAGE_USAGE_STATS 2>/dev/null
                 echo "===PIDS==="
-                pidof $packageName 2>/dev/null || pgrep -f $packageName 2>/dev/null
+                pidof $packageName 2>/dev/null
+                for p in ${'$'}(pgrep -u $uid 2>/dev/null); do
+                    cmd=${'$'}(cat /proc/${'$'}p/cmdline 2>/dev/null | tr '\0' ' ')
+                    case "${'$'}cmd" in
+                        $packageName|$packageName\ *|$packageName:*|" $packageName"*)
+                            echo "${'$'}p"
+                            ;;
+                    esac
+                done
+                $extraPidsScript
                 echo "===TOP==="
                 top -b -n 1 -q 2>/dev/null | $topGrep
                 echo "===PS==="
                 ps -A -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null | $psGrep
                 echo "===SMAPS==="
-                for p in ${'$'}(pidof $packageName 2>/dev/null || pgrep -f $packageName 2>/dev/null); do
+                for p in ${'$'}(pidof $packageName 2>/dev/null; for p2 in ${'$'}(pgrep -u $uid 2>/dev/null); do cmd=${'$'}(cat /proc/${'$'}p2/cmdline 2>/dev/null | tr '\0' ' '); case "${'$'}cmd" in $packageName|$packageName\ *|$packageName:*|" $packageName"*) echo "${'$'}p2";; esac; done | sort -u); do
                     echo "---PID:${'$'}p---"
                     cat /proc/${'$'}p/smaps_rollup 2>/dev/null
                     cat /proc/${'$'}p/status 2>/dev/null | grep -E "^(VmRSS|RssAnon|RssFile):"
@@ -200,10 +243,10 @@ object AppRootInspector {
                 .distinct()
 
             val topText = sections["TOP"] ?: ""
-            val topProcesses = parseTopOutput(topText, packageName, extraPackageName)
+            val topProcesses = parseTopOutput(topText, packageName, extraPackageName, targetUid = uid)
 
             val psText = sections["PS"] ?: ""
-            val psProcesses = parsePsOutput(psText, packageName, extraPackageName)
+            val psProcesses = parsePsOutput(psText, packageName, extraPackageName, targetUid = uid)
 
             val processes = mutableListOf<ProcessDetail>()
             topProcesses.forEach { processes.add(it) }
@@ -213,7 +256,7 @@ object AppRootInspector {
                 }
             }
 
-            // Fallback for any raw PIDs not captured in top or ps
+            // Fallback for any verified raw PIDs not captured in top or ps
             rawPids.forEach { pid ->
                 if (processes.none { it.pid == pid }) {
                     processes.add(
@@ -253,9 +296,21 @@ object AppRootInspector {
             val dalvikKb = if (smapsDalvik > 0L) smapsDalvik else meminfoDalvik
             val nativeKb = if (smapsNative > 0L) smapsNative else meminfoNative
 
-            // 4. Network & Process I/O Telemetry
+            // 4. Native Android Network Stats (Today & Last 7 Days) + Real-Time Telemetry
+            val now = System.currentTimeMillis()
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val todayStartMs = calendar.timeInMillis
+            val todayStartSec = todayStartMs / 1000
+            val sevenDaysAgoMs = now - (7L * 24 * 60 * 60 * 1000)
+            val sevenDaysAgoSec = sevenDaysAgoMs / 1000
+
             val netStatsText = sections["NET_STATS"] ?: ""
-            val (nsRx, nsTx) = parseNetstatsOutput(netStatsText, uid)
+            val nsBreakdown = parseNetstatsOutput(netStatsText, uid, todayStartSec, sevenDaysAgoSec)
             val (qtagRx, qtagTx) = parseQtaguidStats(netStatsText, uid)
             val tsRx = runCatching { TrafficStats.getUidRxBytes(uid) }.getOrDefault(-1L)
             val tsTx = runCatching { TrafficStats.getUidTxBytes(uid) }.getOrDefault(-1L)
@@ -263,15 +318,29 @@ object AppRootInspector {
             val uidStatText = sections["UID_STAT"] ?: ""
             val (uidStatRx, uidStatTx) = uidStatStatFallback(uidStatText)
 
-            val appNetRx = maxOf(if (tsRx > 0L) tsRx else 0L, nsRx, qtagRx, uidStatRx)
-            val appNetTx = maxOf(if (tsTx > 0L) tsTx else 0L, nsTx, qtagTx, uidStatTx)
+            val appNetRx = maxOf(if (tsRx > 0L) tsRx else 0L, nsBreakdown.rxTotal, qtagRx, uidStatRx)
+            val appNetTx = maxOf(if (tsTx > 0L) tsTx else 0L, nsBreakdown.txTotal, qtagTx, uidStatTx)
+
+            // Native Android NetworkStatsManager query for exact system accounting
+            val (nsmTodayRx, nsmTodayTx) = getNativeAppUsage(context, uid, todayStartMs, now)
+            val (nsm7DaysRx, nsm7DaysTx) = getNativeAppUsage(context, uid, sevenDaysAgoMs, now)
+
+            var appRxToday = maxOf(nsBreakdown.rxToday, nsmTodayRx)
+            var appTxToday = maxOf(nsBreakdown.txToday, nsmTodayTx)
+            var appRx7Days = maxOf(nsBreakdown.rx7Days, nsm7DaysRx)
+            var appTx7Days = maxOf(nsBreakdown.tx7Days, nsm7DaysTx)
 
             // Download Provider fallback for Play Store (dual-UID tracking)
             var dlmNetRx = 0L
             var dlmNetTx = 0L
+            var dlmRxToday = 0L
+            var dlmTxToday = 0L
+            var dlmRx7Days = 0L
+            var dlmTx7Days = 0L
+
             if (dlManagerUid != null) {
                 val dlmNetStatsText = sections["NET_STATS_DLM"] ?: ""
-                val (dlmNsRx, dlmNsTx) = parseNetstatsOutput(dlmNetStatsText, dlManagerUid)
+                val dlmNsBreakdown = parseNetstatsOutput(dlmNetStatsText, dlManagerUid, todayStartSec, sevenDaysAgoSec)
                 val (dlmQtagRx, dlmQtagTx) = parseQtaguidStats(dlmNetStatsText, dlManagerUid)
                 val tsDlmRx = runCatching { TrafficStats.getUidRxBytes(dlManagerUid) }.getOrDefault(-1L)
                 val tsDlmTx = runCatching { TrafficStats.getUidTxBytes(dlManagerUid) }.getOrDefault(-1L)
@@ -279,8 +348,16 @@ object AppRootInspector {
                 val dlmUidStatText = sections["UID_STAT_DLM"] ?: ""
                 val (dlmUidRx, dlmUidTx) = uidStatStatFallback(dlmUidStatText)
 
-                dlmNetRx = maxOf(if (tsDlmRx > 0L) tsDlmRx else 0L, dlmNsRx, dlmQtagRx, dlmUidRx)
-                dlmNetTx = maxOf(if (tsDlmTx > 0L) tsDlmTx else 0L, dlmNsTx, dlmQtagTx, dlmUidTx)
+                dlmNetRx = maxOf(if (tsDlmRx > 0L) tsDlmRx else 0L, dlmNsBreakdown.rxTotal, dlmQtagRx, dlmUidRx)
+                dlmNetTx = maxOf(if (tsDlmTx > 0L) tsDlmTx else 0L, dlmNsBreakdown.txTotal, dlmQtagTx, dlmUidTx)
+
+                val (nsmDlmTodayRx, nsmDlmTodayTx) = getNativeAppUsage(context, dlManagerUid, todayStartMs, now)
+                val (nsmDlm7DaysRx, nsmDlm7DaysTx) = getNativeAppUsage(context, dlManagerUid, sevenDaysAgoMs, now)
+
+                dlmRxToday = maxOf(dlmNsBreakdown.rxToday, nsmDlmTodayRx)
+                dlmTxToday = maxOf(dlmNsBreakdown.txToday, nsmDlmTodayTx)
+                dlmRx7Days = maxOf(dlmNsBreakdown.rx7Days, nsmDlm7DaysRx)
+                dlmTx7Days = maxOf(dlmNsBreakdown.tx7Days, nsmDlm7DaysTx)
             }
 
             // Socket Telemetry (TCP internal stats)
@@ -292,9 +369,12 @@ object AppRootInspector {
 
             val combinedNetRx = appNetRx + dlmNetRx
             val combinedNetTx = appNetTx + dlmNetTx
+            val combinedRxToday = appRxToday + dlmRxToday
+            val combinedTxToday = appTxToday + dlmTxToday
+            val combinedRx7Days = appRx7Days + dlmRx7Days
+            val combinedTx7Days = appTx7Days + dlmTx7Days
 
             // Real-time transfer speed calculation across all telemetry layers
-            val now = System.currentTimeMillis()
             val prevSample = lastExtendedSnapshots[packageName]
             var rxSpeedBps = 0L
             var txSpeedBps = 0L
@@ -316,13 +396,8 @@ object AppRootInspector {
                     val dIoRx = ioRead - prevSample.ioRx
                     val speedIoRx = if (dIoRx > 0) (dIoRx / dt).toLong() else 0L
 
-                    // Best RX speed: prioritize pure socket / netstats, fallback to IO
-                    rxSpeedBps = when {
-                        speedSockRx > 0L -> speedSockRx
-                        speedNetRx > 0L -> speedNetRx
-                        speedIoRx > 0L -> speedIoRx
-                        else -> 0L
-                    }
+                    // Best RX speed: max across socket, network counters, and process I/O
+                    rxSpeedBps = maxOf(speedSockRx, speedNetRx, speedIoRx)
 
                     // TX (upload) delta
                     val dNetTx = combinedNetTx - prevSample.netstatsTx
@@ -334,12 +409,7 @@ object AppRootInspector {
                     val dIoTx = ioWrite - prevSample.ioTx
                     val speedIoTx = if (dIoTx > 0) (dIoTx / dt).toLong() else 0L
 
-                    txSpeedBps = when {
-                        speedSockTx > 0L -> speedSockTx
-                        speedNetTx > 0L -> speedNetTx
-                        speedIoTx > 0L -> speedIoTx
-                        else -> 0L
-                    }
+                    txSpeedBps = maxOf(speedSockTx, speedNetTx, speedIoTx)
                 }
             }
 
@@ -393,6 +463,10 @@ object AppRootInspector {
                 ramGraphicsMb = graphicsKb / 1024.0,
                 rxBytes = rxBytes,
                 txBytes = txBytes,
+                rxBytesToday = combinedRxToday,
+                txBytesToday = combinedTxToday,
+                rxBytes7Days = combinedRx7Days,
+                txBytes7Days = combinedTx7Days,
                 rxSpeedBps = rxSpeedBps,
                 txSpeedBps = txSpeedBps,
                 activeConnections = activeConnections,
@@ -484,17 +558,34 @@ object AppRootInspector {
     }
 
     fun isPackageProcess(cmd: String, packageName: String): Boolean {
-        if (!cmd.contains(packageName)) return false
-        return cmd.split(Regex("\\s+")).any { token ->
-            val clean = token.substringAfterLast("/")
-            val stripped = clean.substringAfterLast("=")
-                .removeSurrounding("[", "]")
-                .removeSurrounding("(", ")")
-            stripped == packageName || stripped.startsWith("$packageName:")
+        val trimmed = cmd.trim()
+        if (!trimmed.contains(packageName)) return false
+        val tokens = trimmed.split(Regex("\\s+"))
+        val firstToken = tokens.firstOrNull()?.substringAfterLast("/") ?: return false
+
+        // Discard shell interpreters, system binaries, grep, and diagnostic command lines
+        val ignoredCommands = setOf("grep", "su", "sh", "bash", "toybox", "top", "ps", "pidof", "pgrep", "dumpsys", "cat", "echo", "tr", "kill")
+        if (ignoredCommands.contains(firstToken.lowercase(Locale.ROOT))) {
+            return false
         }
+
+        val procName = firstToken.substringAfterLast("=").removeSurrounding("[", "]").removeSurrounding("(", ")")
+        if (procName == packageName || procName.startsWith("$packageName:")) {
+            return true
+        }
+
+        for (token in tokens) {
+            if (token.startsWith("--nice-name=")) {
+                val name = token.removePrefix("--nice-name=")
+                if (name == packageName || name.startsWith("$packageName:")) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
-    fun parseTopOutput(text: String, packageName: String, extraPackageName: String? = null): List<ProcessDetail> {
+    fun parseTopOutput(text: String, packageName: String, extraPackageName: String? = null, targetUid: Int? = null): List<ProcessDetail> {
         val list = mutableListOf<ProcessDetail>()
         val timeRegex = Regex("^\\d+:\\d+.*")
         text.lineSequence().forEach { line ->
@@ -502,6 +593,11 @@ object AppRootInspector {
             if (tokens.size >= 5) {
                 val pid = tokens[0].toIntOrNull()
                 val user = tokens.getOrNull(1) ?: "unknown"
+
+                if (targetUid != null && targetUid >= 10000 && (user == "root" || user == "0")) {
+                    return@forEach
+                }
+
                 val timeIdx = tokens.indexOfFirst { timeRegex.matches(it) }
 
                 val (cpu, mem, cmd) = if (timeIdx in 2..(tokens.size - 2)) {
@@ -537,7 +633,7 @@ object AppRootInspector {
         return list
     }
 
-    fun parsePsOutput(text: String, packageName: String, extraPackageName: String? = null): List<ProcessDetail> {
+    fun parsePsOutput(text: String, packageName: String, extraPackageName: String? = null, targetUid: Int? = null): List<ProcessDetail> {
         val list = mutableListOf<ProcessDetail>()
         text.lineSequence().forEach { line ->
             val tokens = line.trim().split(Regex("\\s+"))
@@ -545,6 +641,11 @@ object AppRootInspector {
                 val pid = tokens[0].toIntOrNull()
                 if (pid != null) {
                     val user = tokens.getOrNull(1) ?: "unknown"
+
+                    if (targetUid != null && targetUid >= 10000 && (user == "root" || user == "0")) {
+                        return@forEach
+                    }
+
                     val cpu = tokens.getOrNull(2)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
                     val mem = tokens.getOrNull(3)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
                     val cmd = tokens.drop(4).joinToString(" ")
@@ -696,9 +797,18 @@ object AppRootInspector {
         return Pair(totalRx, totalTx)
     }
 
-    fun parseNetstatsOutput(text: String, targetUid: Int): Pair<Long, Long> {
+    fun parseNetstatsOutput(
+        text: String,
+        targetUid: Int,
+        todayStartSec: Long = 0L,
+        sevenDaysAgoSec: Long = 0L,
+    ): NetBreakdown {
         var rxTotal = 0L
         var txTotal = 0L
+        var rxToday = 0L
+        var txToday = 0L
+        var rx7Days = 0L
+        var tx7Days = 0L
         var insideTargetUid = false
         val uidRegex = Regex("\\buid=$targetUid\\b")
 
@@ -711,16 +821,82 @@ object AppRootInspector {
                 if (isBaseTag) {
                     val rxMatch = Regex("(?:rxBytes|rb)=(\\d+)").find(line)
                     val txMatch = Regex("(?:txBytes|tb)=(\\d+)").find(line)
-                    if (rxMatch != null) {
-                        rxTotal += rxMatch.groupValues[1].toLongOrNull() ?: 0L
-                    }
-                    if (txMatch != null) {
-                        txTotal += txMatch.groupValues[1].toLongOrNull() ?: 0L
+                    val stMatch = Regex("st=(\\d+)").find(line)
+
+                    val rx = rxMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+                    val tx = txMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+                    val st = stMatch?.groupValues?.get(1)?.toLongOrNull()
+
+                    rxTotal += rx
+                    txTotal += tx
+
+                    if (st != null) {
+                        if (todayStartSec > 0L && st >= todayStartSec) {
+                            rxToday += rx
+                            txToday += tx
+                        }
+                        if (sevenDaysAgoSec > 0L && st >= sevenDaysAgoSec) {
+                            rx7Days += rx
+                            tx7Days += tx
+                        }
                     }
                 }
             }
         }
-        return Pair(rxTotal, txTotal)
+        return NetBreakdown(
+            rxTotal = rxTotal,
+            txTotal = txTotal,
+            rxToday = if (rxToday > 0L) rxToday else rxTotal,
+            txToday = if (txToday > 0L) txToday else txTotal,
+            rx7Days = if (rx7Days > 0L) rx7Days else rxTotal,
+            tx7Days = if (tx7Days > 0L) tx7Days else txTotal,
+        )
+    }
+
+    /**
+     * Uses Android's native NetworkStatsManager system service to retrieve exact byte usage
+     * (Wi-Fi + Mobile cellular) for any application UID within a time interval.
+     */
+    fun getNativeAppUsage(
+        context: Context,
+        uid: Int,
+        startTimeMs: Long,
+        endTimeMs: Long = System.currentTimeMillis(),
+    ): Pair<Long, Long> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return Pair(0L, 0L)
+        return runCatching {
+            val nsm = context.getSystemService(Context.NETWORK_STATS_SERVICE) as? NetworkStatsManager
+                ?: return Pair(0L, 0L)
+
+            var rxTotal = 0L
+            var txTotal = 0L
+
+            // 1. Wi-Fi
+            runCatching {
+                val statsWifi = nsm.queryDetailsForUid(ConnectivityManager.TYPE_WIFI, null, startTimeMs, endTimeMs, uid)
+                val bucket = NetworkStats.Bucket()
+                while (statsWifi.hasNextBucket()) {
+                    statsWifi.getNextBucket(bucket)
+                    rxTotal += bucket.rxBytes
+                    txTotal += bucket.txBytes
+                }
+                statsWifi.close()
+            }
+
+            // 2. Mobile Cellular
+            runCatching {
+                val statsMobile = nsm.queryDetailsForUid(ConnectivityManager.TYPE_MOBILE, null, startTimeMs, endTimeMs, uid)
+                val bucket = NetworkStats.Bucket()
+                while (statsMobile.hasNextBucket()) {
+                    statsMobile.getNextBucket(bucket)
+                    rxTotal += bucket.rxBytes
+                    txTotal += bucket.txBytes
+                }
+                statsMobile.close()
+            }
+
+            Pair(rxTotal, txTotal)
+        }.getOrDefault(Pair(0L, 0L))
     }
 
     fun isAppInForeground(activitiesText: String, packageName: String): Boolean {
