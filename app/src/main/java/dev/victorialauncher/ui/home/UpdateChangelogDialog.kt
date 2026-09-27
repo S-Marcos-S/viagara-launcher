@@ -58,6 +58,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import dev.victorialauncher.R
+import dev.victorialauncher.ui.common.ChangelogMarkdownViewer
 import dev.victorialauncher.update.DownloadStatus
 import dev.victorialauncher.update.RootInstaller
 import dev.victorialauncher.update.UpdateInfo
@@ -204,11 +205,9 @@ fun UpdateChangelogDialog(
                             .padding(14.dp)
                             .verticalScroll(rememberScrollState()),
                     ) {
-                        Text(
-                            text = update.changelog,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = colorScheme.onSurface,
-                            lineHeight = 20.sp,
+                        ChangelogMarkdownViewer(
+                            markdown = update.changelog,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
 
