@@ -37,6 +37,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -96,6 +98,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -139,7 +142,17 @@ fun TaskManagerScreen(
     val colorScheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
 
-    var selectedTab by remember { mutableStateOf(TaskManagerTab.PROCESSES) }
+    val tabs = remember { TaskManagerTab.entries }
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        pageCount = { tabs.size },
+    )
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(pagerState.currentPage) {
+        focusManager.clearFocus()
+    }
+
     var isAutoRefreshEnabled by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
 
@@ -200,8 +213,12 @@ fun TaskManagerScreen(
         containerColor = dynamicSurfaceColor(),
         topBar = {
             CleanTaskManagerTopBar(
-                selectedTab = selectedTab,
-                onTabSelect = { selectedTab = it },
+                selectedTab = tabs.getOrElse(pagerState.currentPage) { TaskManagerTab.PROCESSES },
+                onTabSelect = { targetTab ->
+                    scope.launch {
+                        pagerState.animateScrollToPage(targetTab.ordinal)
+                    }
+                },
                 onNavigateBack = onNavigateBack,
             )
         },
@@ -211,65 +228,71 @@ fun TaskManagerScreen(
                 .fillMaxSize()
                 .padding(paddingValues),
         ) {
-            when (selectedTab) {
-                TaskManagerTab.PROCESSES -> {
-                    ProcessesScreen(
-                        tasksSnapshot = runningTasksSnapshot,
-                        searchQuery = searchQuery,
-                        onSearchQueryChange = { searchQuery = it },
-                        showSystemProcesses = showSystemProcesses,
-                        onToggleSystemProcesses = { showSystemProcesses = !showSystemProcesses },
-                        onInspectApp = { item ->
-                            val targetApp = item.appInfo ?: AppInfo(
-                                componentName = ComponentName(item.packageName, ""),
-                                label = item.appName,
-                            )
-                            inspectingApp = targetApp
-                        },
-                        onKillProcess = { item ->
-                            scope.launch {
-                                val killed = AppRootInspector.killProcess(item.pid)
-                                if (killed) {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.root_inspector_toast_kill_success, item.pid),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                    refreshAll(showSpinner = false)
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.root_inspector_toast_kill_error),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                key = { pageIndex -> tabs[pageIndex].name },
+            ) { pageIndex ->
+                when (tabs[pageIndex]) {
+                    TaskManagerTab.PROCESSES -> {
+                        ProcessesScreen(
+                            tasksSnapshot = runningTasksSnapshot,
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = { searchQuery = it },
+                            showSystemProcesses = showSystemProcesses,
+                            onToggleSystemProcesses = { showSystemProcesses = !showSystemProcesses },
+                            onInspectApp = { item ->
+                                val targetApp = item.appInfo ?: AppInfo(
+                                    componentName = ComponentName(item.packageName, ""),
+                                    label = item.appName,
+                                )
+                                inspectingApp = targetApp
+                            },
+                            onKillProcess = { item ->
+                                scope.launch {
+                                    val killed = AppRootInspector.killProcess(item.pid)
+                                    if (killed) {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.root_inspector_toast_kill_success, item.pid),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                        refreshAll(showSpinner = false)
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.root_inspector_toast_kill_error),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
                                 }
-                            }
-                        },
-                        onForceStop = { item ->
-                            scope.launch {
-                                val stopped = AppRootInspector.forceStopApp(item.packageName)
-                                if (stopped) {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.root_inspector_toast_stopped),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                    refreshAll(showSpinner = false)
+                            },
+                            onForceStop = { item ->
+                                scope.launch {
+                                    val stopped = AppRootInspector.forceStopApp(item.packageName)
+                                    if (stopped) {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.root_inspector_toast_stopped),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                        refreshAll(showSpinner = false)
+                                    }
                                 }
-                            }
-                        },
-                    )
-                }
+                            },
+                        )
+                    }
 
-                TaskManagerTab.PERFORMANCE -> {
-                    PerformanceScreen(
-                        snapshot = performanceSnapshot,
-                        cpuHistory = cpuHistory,
-                        ramHistory = ramHistory,
-                        netRxHistory = netRxHistory,
-                        netTxHistory = netTxHistory,
-                        onNavigateToNetworkStats = onNavigateToNetworkStats,
-                    )
+                    TaskManagerTab.PERFORMANCE -> {
+                        PerformanceScreen(
+                            snapshot = performanceSnapshot,
+                            cpuHistory = cpuHistory,
+                            ramHistory = ramHistory,
+                            netRxHistory = netRxHistory,
+                            netTxHistory = netTxHistory,
+                            onNavigateToNetworkStats = onNavigateToNetworkStats,
+                        )
+                    }
                 }
             }
 

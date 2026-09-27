@@ -3,6 +3,7 @@
 - **Gerenciador de Tarefas Completo em Tela Inteira (Estilo Windows Task Manager):**
   - Adicionada a nova opção **"Gerenciador de tarefas"** no menu inferior da Tela Inicial, posicionada logo abaixo de "Configurações" para usuários com privilégios de superusuário (Root).
   - **Cabeçalho Minimalista e Clean:** Topo simplificado com a seta de voltar posicionada no topo com `statusBarsPadding()` e o seletor das abas "Processos" e "Desempenho", eliminando elementos supérfluos e maximizando o espaço útil de tela.
+  - **Navegação por Gesto de Rolagem Horizontal (Swipe entre Telas):** Implementada a transição fluida entre as abas "Processos" e "Desempenho" ao arrastar a tela para os lados (`HorizontalPager`), com sincronização bidirecional instantânea das pílulas no cabeçalho e liberação automática do teclado ao alternar de tela.
 
 - **Aba de Desempenho (Performance):**
   - **Gráfico de Ondas de CPU Fluido:** Gráfico oscilante contínuo com movimentação fluida de onda e preenchimento vertical em gradiente translúcido baseado na utilização em tempo real do processador via `/proc/stat` (com leitura direta e fallback via root contra restrições de SELinux).
