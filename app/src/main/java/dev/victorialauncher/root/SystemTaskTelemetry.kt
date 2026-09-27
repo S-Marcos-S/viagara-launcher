@@ -79,6 +79,34 @@ object SystemTaskInspector {
     private data class NetSample(val rx: Long, val tx: Long, val timestamp: Long)
     private val lastNetSample = AtomicReference<NetSample?>(null)
 
+    fun readDeviceTotalNetBytes(): Pair<Long, Long> {
+        val tsRx = TrafficStats.getTotalRxBytes()
+        val tsTx = TrafficStats.getTotalTxBytes()
+        if (tsRx > 0L && tsTx > 0L) {
+            return Pair(tsRx, tsTx)
+        }
+        return runCatching {
+            var rxSum = 0L
+            var txSum = 0L
+            File("/proc/net/dev").forEachLine { line ->
+                val trimmed = line.trim()
+                if (trimmed.contains(":") && !trimmed.startsWith("lo:")) {
+                    val parts = trimmed.substringAfter(":").trim().split(Regex("\\s+"))
+                    if (parts.size >= 9) {
+                        val rx = parts[0].toLongOrNull() ?: 0L
+                        val tx = parts[8].toLongOrNull() ?: 0L
+                        rxSum += rx
+                        txSum += tx
+                    }
+                }
+            }
+            Pair(
+                if (tsRx > 0L) tsRx else rxSum,
+                if (tsTx > 0L) tsTx else txSum,
+            )
+        }.getOrDefault(Pair(maxOf(0L, tsRx), maxOf(0L, tsTx)))
+    }
+
     /**
      * Samples overall device performance metrics (CPU, RAM, GPU, Network, Storage).
      */
@@ -95,8 +123,7 @@ object SystemTaskInspector {
         val (ramTotal, ramAvail, ramUsed, ramPercent, swapTotal, swapUsed) = readRamAndSwap(context)
 
         // 3. Network Transfer & Speeds
-        val totalRx = TrafficStats.getTotalRxBytes().coerceAtLeast(0L)
-        val totalTx = TrafficStats.getTotalTxBytes().coerceAtLeast(0L)
+        val (totalRx, totalTx) = readDeviceTotalNetBytes()
         var rxSpeed = 0L
         var txSpeed = 0L
 
@@ -106,8 +133,8 @@ object SystemTaskInspector {
             if (dt in 0.4..30.0) {
                 val dRx = totalRx - prevNet.rx
                 val dTx = totalTx - prevNet.tx
-                if (dRx > 0) rxSpeed = (dRx / dt).toLong()
-                if (dTx > 0) txSpeed = (dTx / dt).toLong()
+                if (prevNet.rx > 0L && dRx > 0) rxSpeed = (dRx / dt).toLong()
+                if (prevNet.tx > 0L && dTx > 0) txSpeed = (dTx / dt).toLong()
             }
         }
 

@@ -30,9 +30,11 @@
   - **Eliminação de Fechamento Prematuro e Saltos Visuais:** Corrigida a condição de descarte acidental que fechava o menu caso o movimento de subida não chegasse ao topo imediato, e removido o snap instantâneo de offset que causava um salto visual brusco durante a transição de saída.
 
 - **Correção da Telemetria de Rede em Tempo Real e Desacoplamento de Disco (I/O):**
+  - **Suporte Nativo a Mapas eBPF do Kernel (Android 9 ao 16):** Adicionada a leitura direta do mapa de contadores em tempo real `mAppUidStatsMap` via `dumpsys netstats` no script de superusuário, garantindo medição instantânea e contínua de tráfego (Download e Upload) por UID/aplicativo em versões modernas do Android onde interfaces legadas como `xt_qtaguid` foram extintas.
   - **Separação Rigorosa entre Rede e Armazenamento:** Eliminada a inclusão indevida de taxas de leitura e gravação em disco (`/proc/[pid]/io`, `rchar` e `wchar`) no cálculo de velocidade de download e upload por aplicativo.
   - **Fim do Consumo de Rede Fantasma na Launcher:** Resolvido o consumo elevado de rede exibido indevidamente ao inspecionar o Niagara/Viagra Launcher, que era provocado por rotinas de leitura de arquivos e cache em disco (`rchar`) sendo confundidas com download.
   - **Correção de Upload Maior que Download na Play Store:** Corrigida a distorção onde downloads na Google Play Store exibiam altas taxas de upload, que na verdade eram blocos do instalador sendo gravados em disco (`wchar`) durante o processo de download e descompactação de pacotes APK.
-  - **Velocidade em Tempo Real Precisa do Kernel:** A velocidade instantânea agora é calculada estritamente através dos contadores monotônicos de rede do kernel (`TrafficStats`, `xt_qtaguid` e `uid_stat`), com agregação correta e transparente do Download Manager para instaladores do sistema.
+  - **Fallback Robusto para Métricas Globais do Dispositivo:** Implementada leitura de `/proc/net/dev` como contingência para garantir telemetria global ininterrupta de Download e Upload na aba Desempenho.
+
 
 

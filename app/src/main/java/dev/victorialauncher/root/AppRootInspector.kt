@@ -173,6 +173,8 @@ object AppRootInspector {
 
             val dlmNetStatsScript = if (dlManagerUid != null) {
                 """
+                echo "===NET_BPF_DLM==="
+                dumpsys netstats 2>/dev/null | grep -E '^ *$dlManagerUid '
                 echo "===NET_STATS_DLM==="
                 dumpsys netstats detail 2>/dev/null | grep -A 2 "uid=$dlManagerUid" || dumpsys netstats 2>/dev/null | grep -A 2 "uid=$dlManagerUid"
                 cat /proc/net/xt_qtaguid/stats 2>/dev/null | grep " $dlManagerUid "
@@ -215,6 +217,8 @@ object AppRootInspector {
                 $extraSmapsScript
                 echo "===MEMINFO==="
                 dumpsys meminfo $packageName 2>/dev/null | grep -E "TOTAL PSS|TOTAL      PSS|TOTAL:|Dalvik Heap|Native Heap|EGL mtrack|GL mtrack|Graphics|TOTAL RSS|Total PSS by process:|[0-9,]+K: *$packageName"
+                echo "===NET_BPF==="
+                dumpsys netstats 2>/dev/null | grep -E '^ *$uid '
                 echo "===NET_STATS==="
                 dumpsys netstats detail 2>/dev/null | grep -A 2 "uid=$uid" || dumpsys netstats 2>/dev/null | grep -A 2 "uid=$uid"
                 cat /proc/net/xt_qtaguid/stats 2>/dev/null | grep " $uid "
@@ -312,6 +316,9 @@ object AppRootInspector {
             val sevenDaysAgoMs = now - (7L * 24 * 60 * 60 * 1000)
             val sevenDaysAgoSec = sevenDaysAgoMs / 1000
 
+            val bpfText = sections["NET_BPF"] ?: ""
+            val (bpfRx, bpfTx) = parseBpfUidStats(bpfText, uid)
+
             val netStatsText = sections["NET_STATS"] ?: ""
             val nsBreakdown = parseNetstatsOutput(netStatsText, uid, todayStartSec, sevenDaysAgoSec)
             val (qtagRx, qtagTx) = parseQtaguidStats(netStatsText, uid)
@@ -321,8 +328,23 @@ object AppRootInspector {
             val uidStatText = sections["UID_STAT"] ?: ""
             val (uidStatRx, uidStatTx) = uidStatStatFallback(uidStatText)
 
-            val appNetRx = maxOf(if (tsRx > 0L) tsRx else 0L, nsBreakdown.rxTotal, qtagRx, uidStatRx)
-            val appNetTx = maxOf(if (tsTx > 0L) tsTx else 0L, nsBreakdown.txTotal, qtagTx, uidStatTx)
+            val appRealtimeRx = when {
+                bpfRx > 0L -> bpfRx
+                tsRx >= 0L -> tsRx
+                qtagRx > 0L -> qtagRx
+                uidStatRx > 0L -> uidStatRx
+                else -> 0L
+            }
+            val appRealtimeTx = when {
+                bpfTx > 0L -> bpfTx
+                tsTx >= 0L -> tsTx
+                qtagTx > 0L -> qtagTx
+                uidStatTx > 0L -> uidStatTx
+                else -> 0L
+            }
+
+            val appNetRx = maxOf(if (tsRx > 0L) tsRx else 0L, bpfRx, nsBreakdown.rxTotal, qtagRx, uidStatRx)
+            val appNetTx = maxOf(if (tsTx > 0L) tsTx else 0L, bpfTx, nsBreakdown.txTotal, qtagTx, uidStatTx)
 
             // Native Android NetworkStatsManager query for exact system accounting
             val (nsmTodayRx, nsmTodayTx) = getNativeAppUsage(context, uid, todayStartMs, now)
@@ -345,6 +367,9 @@ object AppRootInspector {
             var dlmRealtimeTx = 0L
 
             if (dlManagerUid != null) {
+                val dlmBpfText = sections["NET_BPF_DLM"] ?: ""
+                val (dlmBpfRx, dlmBpfTx) = parseBpfUidStats(dlmBpfText, dlManagerUid)
+
                 val dlmNetStatsText = sections["NET_STATS_DLM"] ?: ""
                 val dlmNsBreakdown = parseNetstatsOutput(dlmNetStatsText, dlManagerUid, todayStartSec, sevenDaysAgoSec)
                 val (dlmQtagRx, dlmQtagTx) = parseQtaguidStats(dlmNetStatsText, dlManagerUid)
@@ -354,11 +379,23 @@ object AppRootInspector {
                 val dlmUidStatText = sections["UID_STAT_DLM"] ?: ""
                 val (dlmUidRx, dlmUidTx) = uidStatStatFallback(dlmUidStatText)
 
-                dlmRealtimeRx = if (tsDlmRx >= 0L) tsDlmRx else maxOf(dlmQtagRx, dlmUidRx)
-                dlmRealtimeTx = if (tsDlmTx >= 0L) tsDlmTx else maxOf(dlmQtagTx, dlmUidTx)
+                dlmRealtimeRx = when {
+                    dlmBpfRx > 0L -> dlmBpfRx
+                    tsDlmRx >= 0L -> tsDlmRx
+                    dlmQtagRx > 0L -> dlmQtagRx
+                    dlmUidRx > 0L -> dlmUidRx
+                    else -> 0L
+                }
+                dlmRealtimeTx = when {
+                    dlmBpfTx > 0L -> dlmBpfTx
+                    tsDlmTx >= 0L -> tsDlmTx
+                    dlmQtagTx > 0L -> dlmQtagTx
+                    dlmUidTx > 0L -> dlmUidTx
+                    else -> 0L
+                }
 
-                dlmNetRx = maxOf(if (tsDlmRx > 0L) tsDlmRx else 0L, dlmNsBreakdown.rxTotal, dlmQtagRx, dlmUidRx)
-                dlmNetTx = maxOf(if (tsDlmTx > 0L) tsDlmTx else 0L, dlmNsBreakdown.txTotal, dlmQtagTx, dlmUidTx)
+                dlmNetRx = maxOf(if (tsDlmRx > 0L) tsDlmRx else 0L, dlmBpfRx, dlmNsBreakdown.rxTotal, dlmQtagRx, dlmUidRx)
+                dlmNetTx = maxOf(if (tsDlmTx > 0L) tsDlmTx else 0L, dlmBpfTx, dlmNsBreakdown.txTotal, dlmQtagTx, dlmUidTx)
 
                 val (nsmDlmTodayRx, nsmDlmTodayTx) = getNativeAppUsage(context, dlManagerUid, todayStartMs, now)
                 val (nsmDlm7DaysRx, nsmDlm7DaysTx) = getNativeAppUsage(context, dlManagerUid, sevenDaysAgoMs, now)
@@ -369,10 +406,7 @@ object AppRootInspector {
                 dlmTx7Days = maxOf(dlmNsBreakdown.tx7Days, nsmDlm7DaysTx)
             }
 
-            // Real-time network accounting strictly from kernel network counters (TrafficStats / qtaguid / uid_stat)
-            val appRealtimeRx = if (tsRx >= 0L) tsRx else maxOf(qtagRx, uidStatRx)
-            val appRealtimeTx = if (tsTx >= 0L) tsTx else maxOf(qtagTx, uidStatTx)
-
+            // Real-time network accounting strictly from kernel network counters (BPF / TrafficStats / qtaguid / uid_stat)
             val currentRealtimeRx = appRealtimeRx + dlmRealtimeRx
             val currentRealtimeTx = appRealtimeTx + dlmRealtimeTx
 
@@ -400,10 +434,10 @@ object AppRootInspector {
                     val dRx = currentRealtimeRx - prevSample.realtimeRx
                     val dTx = currentRealtimeTx - prevSample.realtimeTx
 
-                    if (dRx > 0) {
+                    if (prevSample.realtimeRx > 0L && dRx > 0) {
                         rxSpeedBps = (dRx / dt).toLong()
                     }
-                    if (dTx > 0) {
+                    if (prevSample.realtimeTx > 0L && dTx > 0) {
                         txSpeedBps = (dTx / dt).toLong()
                     }
                 }
@@ -789,6 +823,34 @@ object AppRootInspector {
         return Pair(totalRx, totalTx)
     }
 
+    fun parseBpfUidStats(text: String, targetUid: Int): Pair<Long, Long> {
+        var rxTotal = 0L
+        var txTotal = 0L
+        text.lineSequence().forEach { line ->
+            val trimmed = line.trim()
+            val tokens = trimmed.split(Regex("\\s+"))
+            if (tokens.size >= 5) {
+                val uid = tokens[0].toIntOrNull()
+                if (uid == targetUid) {
+                    val rx = tokens[1].toLongOrNull() ?: 0L
+                    val tx = tokens[3].toLongOrNull() ?: 0L
+                    if (rx > 0L || tx > 0L) {
+                        return Pair(rx, tx)
+                    }
+                }
+            }
+            if (tokens.size >= 8) {
+                val tag = tokens[2]
+                val uid = tokens[3].toIntOrNull()
+                if (uid == targetUid && (tag == "0x0" || tag == "0")) {
+                    rxTotal += tokens[5].toLongOrNull() ?: 0L
+                    txTotal += tokens[7].toLongOrNull() ?: 0L
+                }
+            }
+        }
+        return Pair(rxTotal, txTotal)
+    }
+
     fun parseQtaguidStats(text: String, targetUid: Int): Pair<Long, Long> {
         var totalRx = 0L
         var totalTx = 0L
@@ -852,6 +914,13 @@ object AppRootInspector {
                 }
             }
         }
+
+        if (rxTotal == 0L && txTotal == 0L) {
+            val (bpfRx, bpfTx) = parseBpfUidStats(text, targetUid)
+            rxTotal = bpfRx
+            txTotal = bpfTx
+        }
+
         return NetBreakdown(
             rxTotal = rxTotal,
             txTotal = txTotal,

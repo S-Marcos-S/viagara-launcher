@@ -367,4 +367,42 @@ class AppRootInspectorTest {
         assertEquals(5000L, breakdown.rx7Days)
         assertEquals(2500L, breakdown.tx7Days)
     }
+
+    @Test
+    fun `parseBpfUidStats parses mAppUidStatsMap correctly`() {
+        val sampleBpf = """
+            mAppUidStatsMap:
+                uid rxBytes rxPackets txBytes txPackets
+                10321 1012 13 4528 56
+                10261 3251737943 2576134 79627356 943545
+                10470 45848207 31764 1182448 19004
+        """.trimIndent()
+
+        val (rxPlay, txPlay) = AppRootInspector.parseBpfUidStats(sampleBpf, 10261)
+        assertEquals(3251737943L, rxPlay)
+        assertEquals(79627356L, txPlay)
+
+        val (rxLauncher, txLauncher) = AppRootInspector.parseBpfUidStats(sampleBpf, 10470)
+        assertEquals(45848207L, rxLauncher)
+        assertEquals(1182448L, txLauncher)
+
+        val (rxUnknown, txUnknown) = AppRootInspector.parseBpfUidStats(sampleBpf, 99999)
+        assertEquals(0L, rxUnknown)
+        assertEquals(0L, txUnknown)
+    }
+
+    @Test
+    fun `parseBpfUidStats parses mStatsMap fallback correctly`() {
+        val sampleStatsMap = """
+            mStatsMapA:
+                ifaceIndex ifaceName tag_hex uid_int cnt_set rxBytes rxPackets txBytes txPackets
+                58 wlan1 0x0 10261 1 2000 20 500 10
+                59 rmnet0 0x0 10261 1 3000 30 700 15
+        """.trimIndent()
+
+        val (rx, tx) = AppRootInspector.parseBpfUidStats(sampleStatsMap, 10261)
+        assertEquals(5000L, rx)
+        assertEquals(1200L, tx)
+    }
 }
+
