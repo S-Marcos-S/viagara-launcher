@@ -179,6 +179,10 @@ object SystemTaskInspector {
 
         val foregroundPackages = extractForegroundPackages(activitiesText)
 
+        // Determine CPU cores count to normalize raw Irix-mode CPU percentage (where 100% = 1 core)
+        // to Solaris / Windows Task Manager total-system scale (where 100% = all cores fully utilized).
+        val coresCount = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+
         // Parse processes
         val rawList = mutableListOf<RawProc>()
         psText.lineSequence().forEach { line ->
@@ -188,10 +192,11 @@ object SystemTaskInspector {
             if (tokens.size >= 5) {
                 val pid = tokens[0].toIntOrNull() ?: return@forEach
                 val user = tokens[1]
-                val cpu = tokens[2].toDoubleOrNull() ?: 0.0
+                val rawCpu = tokens[2].toDoubleOrNull() ?: 0.0
+                val normalizedCpu = (rawCpu / coresCount).coerceIn(0.0, 100.0)
                 val mem = tokens[3].toDoubleOrNull() ?: 0.0
                 val args = tokens.subList(4, tokens.size).joinToString(" ")
-                rawList.add(RawProc(pid, user, cpu, mem, args))
+                rawList.add(RawProc(pid, user, normalizedCpu, mem, args))
             }
         }
 

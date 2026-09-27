@@ -148,6 +148,25 @@ class AppRootInspectorTest {
     }
 
     @Test
+    fun `parseTopOutput normalizes multi-core CPU usage correctly without exceeding 100 percent`() {
+        val sampleMultiCoreTop = """
+            24192 root 10 -10 17G 207M 123M S 240.0 2.1 35:54.31 com.android.vending
+        """.trimIndent()
+
+        // 8-core CPU: 240% in Irix mode should normalize to 30.0% in Solaris/Windows mode
+        val procs = AppRootInspector.parseTopOutput(sampleMultiCoreTop, "com.android.vending", coresCount = 8)
+        assertEquals(1, procs.size)
+        assertEquals(30.0, procs[0].cpuPercent, 0.01)
+
+        // Extreme multi-core spike exceeding 800% is clamped to 100.0%
+        val sampleSpikeTop = """
+            24192 root 10 -10 17G 207M 123M S 950.0 2.1 35:54.31 com.android.vending
+        """.trimIndent()
+        val spikedProcs = AppRootInspector.parseTopOutput(sampleSpikeTop, "com.android.vending", coresCount = 8)
+        assertEquals(100.0, spikedProcs[0].cpuPercent, 0.01)
+    }
+
+    @Test
     fun `formatSpeed formats rates correctly`() {
         assertEquals("", AppRootInspector.formatSpeed(0L))
         assertEquals("1.0 KB/s", AppRootInspector.formatSpeed(1024L))

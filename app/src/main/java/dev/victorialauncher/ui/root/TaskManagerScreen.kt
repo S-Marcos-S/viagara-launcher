@@ -43,6 +43,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
@@ -132,6 +133,7 @@ private enum class TaskManagerTab {
 fun TaskManagerScreen(
     allApps: List<AppInfo>,
     onNavigateBack: () -> Unit,
+    onNavigateToNetworkStats: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
@@ -266,6 +268,7 @@ fun TaskManagerScreen(
                         ramHistory = ramHistory,
                         netRxHistory = netRxHistory,
                         netTxHistory = netTxHistory,
+                        onNavigateToNetworkStats = onNavigateToNetworkStats,
                     )
                 }
             }
@@ -814,6 +817,7 @@ private fun PerformanceScreen(
     ramHistory: List<Float>,
     netRxHistory: List<Float>,
     netTxHistory: List<Float>,
+    onNavigateToNetworkStats: () -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -872,10 +876,26 @@ private fun PerformanceScreen(
                 title = "Rede & Internet",
                 icon = Icons.Filled.CloudDownload,
                 accentColor = Color(0xFF06B6D4), // Cyan
-                headline = "↓ ${formatSpeed(rxSpeed)}   ↑ ${formatSpeed(txSpeed)}",
+                headline = "↓ ${formatSpeed(rxSpeed)}  ↑ ${formatSpeed(txSpeed)}",
                 subHeadline = "Tipo de conexão: ${snapshot?.networkType ?: "Conectado"}",
                 history = netRxHistory,
                 chartColor = Color(0xFF06B6D4),
+                actionButton = {
+                    IconButton(
+                        onClick = onNavigateToNetworkStats,
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF06B6D4).copy(alpha = 0.16f)),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Monitor de Rede Detalhado",
+                            tint = Color(0xFF06B6D4),
+                            modifier = Modifier.size(17.dp),
+                        )
+                    }
+                },
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1318,14 +1338,14 @@ private fun CpuFluidWaveformGraph(
         fillPath.lineTo(coords.last().x, height)
         fillPath.close()
 
-        // 2. Draw Translucent Gradient Fill Under the Wave
+        // 2. Draw Rich Gradient Fill Under the Wave
         drawPath(
             path = fillPath,
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    accentColor.copy(alpha = 0.35f),
-                    accentColor.copy(alpha = 0.08f),
-                    Color.Transparent,
+                    accentColor.copy(alpha = 0.55f),
+                    accentColor.copy(alpha = 0.30f),
+                    accentColor.copy(alpha = 0.15f),
                 ),
             ),
         )
@@ -1360,6 +1380,7 @@ private fun PerformanceResourceCard(
     subHeadline: String,
     history: List<Float>,
     chartColor: Color,
+    actionButton: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -1403,20 +1424,30 @@ private fun PerformanceResourceCard(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = subHeadline,
                         fontSize = 11.sp,
                         color = colorScheme.onSurface.copy(alpha = 0.55f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
+                Spacer(Modifier.width(6.dp))
                 Text(
                     text = headline,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
                     color = accentColor,
                     fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
                 )
+                if (actionButton != null) {
+                    Spacer(Modifier.width(6.dp))
+                    actionButton()
+                }
             }
 
             Spacer(Modifier.height(14.dp))
@@ -1480,20 +1511,22 @@ private fun RealtimeTelemetryGraph(
                 )
             }
 
-            if (history.isEmpty()) return@Canvas
+            val maxPoints = 30
+            val paddedHistory = if (history.size < maxPoints) {
+                List(maxPoints - history.size) { 0f } + history
+            } else {
+                history.takeLast(maxPoints)
+            }
 
             // Compute min/max for normalization
-            val maxVal = maxOf(history.maxOrNull() ?: 1f, 100f)
+            val maxVal = maxOf(paddedHistory.maxOrNull() ?: 1f, 100f)
             val minVal = 0f
+            val stepX = width / (maxPoints - 1)
 
-            val points = history.mapIndexed { index, value ->
-                val x = if (history.size > 1) {
-                    (index.toFloat() / (history.size - 1)) * width
-                } else {
-                    width
-                }
+            val points = paddedHistory.mapIndexed { index, value ->
+                val x = index * stepX
                 val normalized = ((value - minVal) / (maxVal - minVal)).coerceIn(0f, 1f)
-                val y = height - (normalized * height)
+                val y = height - (normalized * (height - 6f)) - 3f
                 Offset(x, y)
             }
 
@@ -1518,14 +1551,14 @@ private fun RealtimeTelemetryGraph(
                 fillPath.lineTo(points.last().x, height)
                 fillPath.close()
 
-                // Draw Gradient Fill under the curve
+                // Draw Rich Gradient Fill under the curve
                 drawPath(
                     path = fillPath,
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            color.copy(alpha = 0.35f),
-                            color.copy(alpha = 0.05f),
-                            Color.Transparent,
+                            color.copy(alpha = 0.55f),
+                            color.copy(alpha = 0.30f),
+                            color.copy(alpha = 0.15f),
                         ),
                     ),
                 )
@@ -1535,8 +1568,9 @@ private fun RealtimeTelemetryGraph(
                     path = strokePath,
                     color = color,
                     style = Stroke(
-                        width = 2.dp.toPx(),
+                        width = 2.5.dp.toPx(),
                         cap = StrokeCap.Round,
+                        join = StrokeJoin.Round,
                     ),
                 )
             }

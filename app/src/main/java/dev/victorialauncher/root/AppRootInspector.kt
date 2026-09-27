@@ -242,11 +242,13 @@ object AppRootInspector {
                 .mapNotNull { it.trim().toIntOrNull() }
                 .distinct()
 
+            val coresCount = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+
             val topText = sections["TOP"] ?: ""
-            val topProcesses = parseTopOutput(topText, packageName, extraPackageName, targetUid = uid)
+            val topProcesses = parseTopOutput(topText, packageName, extraPackageName, targetUid = uid, coresCount = coresCount)
 
             val psText = sections["PS"] ?: ""
-            val psProcesses = parsePsOutput(psText, packageName, extraPackageName, targetUid = uid)
+            val psProcesses = parsePsOutput(psText, packageName, extraPackageName, targetUid = uid, coresCount = coresCount)
 
             val processes = mutableListOf<ProcessDetail>()
             topProcesses.forEach { processes.add(it) }
@@ -271,7 +273,7 @@ object AppRootInspector {
                 }
             }
 
-            val totalCpu = processes.sumOf { it.cpuPercent }
+            val totalCpu = processes.sumOf { it.cpuPercent }.coerceIn(0.0, 100.0)
 
             // 2. Activities & Execution Status (Strict Focus Validation)
             val activitiesText = sections["ACTIVITIES"] ?: ""
@@ -585,9 +587,16 @@ object AppRootInspector {
         return false
     }
 
-    fun parseTopOutput(text: String, packageName: String, extraPackageName: String? = null, targetUid: Int? = null): List<ProcessDetail> {
+    fun parseTopOutput(
+        text: String,
+        packageName: String,
+        extraPackageName: String? = null,
+        targetUid: Int? = null,
+        coresCount: Int = 1,
+    ): List<ProcessDetail> {
         val list = mutableListOf<ProcessDetail>()
         val timeRegex = Regex("^\\d+:\\d+.*")
+        val effectiveCores = coresCount.coerceAtLeast(1)
         text.lineSequence().forEach { line ->
             val tokens = line.trim().split(Regex("\\s+"))
             if (tokens.size >= 5) {
@@ -601,12 +610,14 @@ object AppRootInspector {
                 val timeIdx = tokens.indexOfFirst { timeRegex.matches(it) }
 
                 val (cpu, mem, cmd) = if (timeIdx in 2..(tokens.size - 2)) {
-                    val cpuVal = tokens[timeIdx - 2].replace("%", "").toDoubleOrNull()
+                    val rawCpuVal = tokens[timeIdx - 2].replace("%", "").toDoubleOrNull()
+                    val cpuVal = rawCpuVal?.let { (it / effectiveCores).coerceIn(0.0, 100.0) }
                     val memVal = tokens[timeIdx - 1].replace("%", "").toDoubleOrNull()
                     val cmdVal = tokens.drop(timeIdx + 1).joinToString(" ")
                     Triple(cpuVal, memVal, cmdVal)
                 } else if (tokens.size >= 12) {
-                    val cpuVal = tokens[8].replace("%", "").toDoubleOrNull()
+                    val rawCpuVal = tokens[8].replace("%", "").toDoubleOrNull()
+                    val cpuVal = rawCpuVal?.let { (it / effectiveCores).coerceIn(0.0, 100.0) }
                     val memVal = tokens[9].replace("%", "").toDoubleOrNull()
                     val cmdVal = tokens.drop(11).joinToString(" ")
                     Triple(cpuVal, memVal, cmdVal)
@@ -633,8 +644,15 @@ object AppRootInspector {
         return list
     }
 
-    fun parsePsOutput(text: String, packageName: String, extraPackageName: String? = null, targetUid: Int? = null): List<ProcessDetail> {
+    fun parsePsOutput(
+        text: String,
+        packageName: String,
+        extraPackageName: String? = null,
+        targetUid: Int? = null,
+        coresCount: Int = 1,
+    ): List<ProcessDetail> {
         val list = mutableListOf<ProcessDetail>()
+        val effectiveCores = coresCount.coerceAtLeast(1)
         text.lineSequence().forEach { line ->
             val tokens = line.trim().split(Regex("\\s+"))
             if (tokens.size >= 5) {
@@ -646,7 +664,8 @@ object AppRootInspector {
                         return@forEach
                     }
 
-                    val cpu = tokens.getOrNull(2)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
+                    val rawCpu = tokens.getOrNull(2)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
+                    val cpu = (rawCpu / effectiveCores).coerceIn(0.0, 100.0)
                     val mem = tokens.getOrNull(3)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
                     val cmd = tokens.drop(4).joinToString(" ")
                     val matchesApp = isPackageProcess(cmd, packageName) ||

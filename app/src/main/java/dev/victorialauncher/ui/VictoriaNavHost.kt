@@ -648,6 +648,18 @@ fun VictoriaNavHost(
             dev.victorialauncher.ui.root.TaskManagerScreen(
                 allApps = allApps,
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToNetworkStats = { navController.navigate("network_monitor") },
+            )
+        }
+
+        composable(
+            route = "network_monitor",
+            enterTransition = { fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 8 } },
+            exitTransition = { fadeOut(tween(200)) },
+            popExitTransition = { fadeOut(tween(200)) + slideOutVertically(tween(250)) { it / 8 } },
+        ) {
+            dev.victorialauncher.ui.network.NetworkStatsScreen(
+                onNavigateBack = { navController.popBackStack() },
             )
         }
     }

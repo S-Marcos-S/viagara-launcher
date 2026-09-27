@@ -1,4 +1,4 @@
-### 🚀 Novidades e Melhorias da Versão 0.59.29
+### Novidades e Melhorias da Versão 0.59.29
 
 - **Gerenciador de Tarefas Completo em Tela Inteira (Estilo Windows Task Manager):**
   - Adicionada a nova opção **"Gerenciador de tarefas"** no menu inferior da Tela Inicial, posicionada logo abaixo de "Configurações" para usuários com privilégios de superusuário (Root).
@@ -9,10 +9,14 @@
   - **Colunas Invisíveis de Núcleos Integradas:** Sobreposto ao gráfico de ondas, duas colunas invisíveis exibem a velocidade em tempo real de cada um dos 8 núcleos (CPU 0 a 3 à esquerda, CPU 4 a 7 à direita) acompanhados da unidade "MHz".
   - **Memória (RAM):** Gráfico histórico dinâmico de consumo, memória total física, memória em uso, disponível e telemetria de zRAM / Swap ativa.
   - **Rede & Internet:** Gráfico de tráfego de dados, velocímetro instantâneo de Download e Upload (↓ / ↑), total de dados trafegados e tipo de conexão ativa (Wi-Fi, Dados Móveis).
+  - **Estabilidade do Cabeçalho de Rede:** O cabeçalho do cartão de Rede agora possui altura e posições travadas com tipografia otimizada e limite de linha única, impedindo que o título e o ícone se desloquem ou saltem conforme as taxas de velocidade flutuam em tempo real.
+  - **Integração com Monitor de Rede por Aplicativo (+):** Adicionado botão de atalho `+` no cabeçalho do cartão de Rede que abre a nova tela de **Monitor de Rede por App** (baseada no NetSpeedIndicator, portada e adaptada ao estilo Material Expressive do launcher). Permite visualizar consumo total e histórico (Hoje, 7 dias, 30 dias), gráficos de barras por horário/dia, visualização de segmentos coloridos por aplicativo e lista dos apps que mais consumiram internet (Móvel vs Wi-Fi).
+  - **Visualização de Área Colorida nos Gráficos:** Preenchimento de cor vibrante e nítido sob as linhas de todos os gráficos (CPU, Memória, Rede), conferindo destaque visual imediato e profundidade na leitura do histórico.
   - **Unidade Gráfica (GPU):** Telemetria de GPU via sysfs (Qualcomm Adreno / ARM Mali) com leitura de frequência de clock e carga.
   - **Armazenamento:** Indicador de ocupação e espaço livre no armazenamento interno do dispositivo.
 
 - **Aba de Processos (Processes):**
+  - **Normalização e Correção do Cálculo de CPU:** Corrigida a medição por processo e aplicativo que excedia 100% devido ao modo Irix do Linux em processadores multi-core. O cálculo agora normaliza a taxa pelo número total de núcleos (estilo Windows Task Manager / modo Solaris) e limita o teto a 100%, garantindo consistência com a capacidade global do processador.
   - **Categorização em Primeiro e Segundo Plano:** Lista agrupada de aplicativos ativos com status dinâmico (`FOCO` para o aplicativo em primeiro plano e `2º Plano` para processos em background).
   - **Métricas por Processo:** Exibição em tempo real de consumo de CPU (%) e memória RAM (MB) consumida por cada processo e aplicativo.
   - **Inspeção de Aplicativo com 1 Toque:** Toque em qualquer aplicativo para abrir a tela de diagnóstico avançado com métricas completas de memória (Dalvik, Native, Graphics), processos filhos, conexões de rede em tempo real, permissões perigosas, limpeza de cache e gravação de logs.
@@ -20,7 +24,7 @@
   - **Processos do Sistema:** Seção colapsável opcional para visualizar daemons e serviços do sistema Android.
   - **Barra de Pesquisa Expressiva:** Filtro em tempo real por nome do app, pacote ou PID.
 
-### 🚀 Novidades e Melhorias da Versão 0.59.28
+### Novidades e Melhorias da Versão 0.59.28
 
 - **Captura e Gravação de Logs (Logcat) por Aplicativo com Root:**
   - Adicionada a nova opção **"Capturar logs (Root)"** ao clicar e segurar em qualquer aplicativo (na Tela Inicial, na Gaveta de Apps e dentro de Pastas Flutuantes). Disponível exclusivamente para usuários com acesso root.
@@ -35,7 +39,7 @@
   - Para aplicativos do sistema, exibe diálogo protetor com aviso de risco de instabilidade antes de efetuar a desinstalação via root.
   - Fallback automático para o instalador padrão do Android (`PackageInstaller`) em dispositivos sem root.
 
-### 🚀 Novidades e Melhorias da Versão 0.59.15
+### Novidades e Melhorias da Versão 0.59.15
 
 - **Eliminação de Lags e Engasgos na Rolagem do Alfabeto:**
   - **Isolamento de Recomposição:** Encapsuladas as checagens de visibilidade da tela inicial (`showHome`) e bloqueio de toques (`blockHomeTouches`) com `derivedStateOf` em `HomeRoute`, impedindo que a mudança de letras durante o scrub recomponha a tela inicial inteira e seus widgets.
@@ -43,7 +47,7 @@
   - **Remoção de Nós Mortos nas Linhas da Lista (`AppRow`):** Eliminado o `DropdownMenu` obsoleto e seus 8 parâmetros não utilizados de cada linha da lista de aplicativos, reduzindo centenas de alocações inúteis de nós de composição, ícones e strings por segundo durante rolagens rápidas.
   - **Ativação de `largeHeap`:** Habilitado `android:largeHeap="true"` no manifesto para evitar pressão de coleta de lixo (GC) e descarte do cache de ícones (`IconCache`) após o celular permanecer ocioso na tela inicial.
 
-### 🚀 Novidades e Melhorias da Versão 0.59.14
+### Novidades e Melhorias da Versão 0.59.14
 
 - **Reversão das Modificações de Desfoque (Blur) na Lista de Aplicativos:**
   - Revertidas todas as alterações recentes e commits relacionados à implementação de blur na gaveta de aplicativos e no papel de parede.
@@ -51,13 +55,13 @@
   - Restaurado o comportamento estável e original da lista de aplicativos com escurecimento de fundo via opacidade configurável (*Aparência → Escurecer papel de parede na lista de apps*).
   - Removida a opção de alternância de blur das configurações e recursos de texto correspondentes.
 
-### 🚀 Novidades e Melhorias da Versão 0.59.12
+### Novidades e Melhorias da Versão 0.59.12
 
 - **Restauração do Timing Original de Desligamento de Tela (`ScreenOffEffect`):**
   - Revertida a antecipação de disparo do comando de bloqueio de tela para o momento de conclusão total da animação de colapso circular (`progress.animateTo` a 100%).
   - Mantida a estabilidade da sobreposição preta até o despertar do dispositivo (`ON_START` / `ON_RESUME`), prevenindo a reexibição prematura da tela inicial.
 
-### 🚀 Novidades e Melhorias da Versão 0.59.11
+### Novidades e Melhorias da Versão 0.59.11
 
 - **Sincronização do Desligamento da Tela contra Flash da Tela de Bloqueio (`ScreenOffEffect`):**
   - Ajustado o ponto de disparo do comando de bloqueio e desligamento de tela (`GLOBAL_ACTION_LOCK_SCREEN`) para iniciar de forma sincronizada na reta final da animação de colapso circular (`progresso >= 85%`).
@@ -65,7 +69,7 @@
   - Isso elimina a condição de corrida de milissegundos no sistema operacional onde a tela de bloqueio nativa (`Keyguard`) conseguia renderizar um frame no topo do overlay antes do painel físico apagar.
   - Transição de desligamento suave, estável e completamente escura, sem flashes da tela de bloqueio.
 
-### 🚀 Novidades e Melhorias da Versão 0.59.10
+### Novidades e Melhorias da Versão 0.59.10
 
 - **Correção da Piscada (Flash) ao Desligar a Tela com Toque Duplo (`ScreenOffEffect`):**
   - Corrigido o problema onde a tela inicial reaparecia brevemente (piscava) logo após a conclusão da animação de colapso circular antes de desligar completamente o visor.
@@ -74,7 +78,7 @@
   - Adicionado timeout de contingência para garantir que, caso o serviço de bloqueio do sistema operacional não processe o desligamento em tempo hábil, a interface retorne ao estado normal com segurança.
   - A animação do efeito de desligamento (`ScreenOffEffect`) foi isolada com chave estável para evitar reinicializações espúrias durante recomposições de ciclo de vida.
 
-### 🚀 Novidades e Melhorias da Versão 0.58.1
+### Novidades e Melhorias da Versão 0.58.1
 
 - **Correção e Redesign da Tela de Editar Layout (`HomeScreen`):**
   - **Respeito aos Insets da Barra de Status:** Adicionado recuo superior automático baseado em `WindowInsets.statusBars`, evitando que os botões e textos do modo de edição fiquem sob a barra de notificações, notch ou recorte da câmera.
@@ -90,7 +94,7 @@
 - **Opção de Definir Inicializador Padrão nas Configurações (`SettingsScreen`):**
   - Nova opção na seção *Comportamento* exibindo o status em tempo real e permitindo alterar a qualquer momento.
 
-### 🚀 Novidades e Melhorias da Versão 0.58.0
+### Novidades e Melhorias da Versão 0.58.0
 
 - **Novo Botão Flutuante de Pesquisa na Lista de Aplicativos (`AppListScreen`):**
   - **Aparecimento Inteligente Durante a Rolagem:** O botão de pesquisa permanece discretamente oculto no topo da lista e surge com uma animação fluida de mola (`Spring.DampingRatioMediumBouncy`) e fade quando o usuário começa a rolar a lista de aplicativos, permanecendo acessível durante a navegação e recolhendo-se suavemente ao retornar ao início da lista.
@@ -125,7 +129,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.57.3
+### Novidades e Melhorias da Versão 0.57.3
 
 - **Novo Estilo de Relógio: Reflexão Diária + Métricas do Sistema (`DAILY_REFLECTION_STATS`):**
   - **Cards Técnicos Compactos na Mesma Linha:** Adicionados 4 chips de telemetria discretos e alinhados harmoniosamente lado a lado logo abaixo do relógio e da frase de reflexão diária (reaproveitando os mesmos chips visuais do HUD Futurista com tamanho e paddings otimizados):
@@ -139,7 +143,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.57.2
+### Novidades e Melhorias da Versão 0.57.2
 
 - **Refinamento Visual e Alinhamento do Widget de Frase Diária (`DAILY_REFLECTION`):**
   - **Data Limitada Rigorosamente à Largura do Relógio:** A data agora utiliza medição intrínseca mínima (`IntrinsicSize.Min`) e preenchimento total (`fillMaxWidth`), fazendo com que ocupe exatamente a mesma largura dos dígitos do relógio abaixo dela, perfeitamente alinhada às bordas (à esquerda ou à direita no modo invertido).
@@ -149,7 +153,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.57.1
+### Novidades e Melhorias da Versão 0.57.1
 
 - **Ajuste de Posicionamento e Elevação da Frase de Reflexão Diária:**
   - **Elevação Harmônica na Tela Inicial:** A frase do dia agora fica posicionada significativamente mais para cima na tela inicial, eliminando o espaçamento excessivo que havia anteriormente abaixo dos aplicativos favoritos.
@@ -158,7 +162,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.57.0
+### Novidades e Melhorias da Versão 0.57.0
 
 - **Sistema Local de Frases Diárias de Reflexão (100% Offline e Sem Consumo de Bateria):**
   - **Curadoria Temática por Dias da Semana:** Implementado o novo `DailyQuoteManager` com acervo offline de frases e pensamentos de grandes autores (como Sêneca, Marco Aurélio, Aristóteles, Confúcio, Machado de Assis, Fernando Pessoa, Mário Quintana, etc.), distribuídas e filtradas de acordo com o espírito de cada dia:
@@ -178,7 +182,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.56.4
+### Novidades e Melhorias da Versão 0.56.4
 
 - **Correção Definitiva para Adição de Widgets com Configuração Privada (SecurityException):**
   - **Uso do Fluxo Nativo do `AppWidgetHost` (`startAppWidgetConfigureActivityForResult`):** Corrigido o erro fatal (`SecurityException: Permission Denial ... not exported`) que ocorria ao tentar adicionar certos widgets de terceiros (como Battery Guru e outros aplicativos) cujas atividades de configuração não são exportadas (`android:exported="false"`).
@@ -190,7 +194,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.56.3
+### Novidades e Melhorias da Versão 0.56.3
 
 - **Restauração da Rolagem Vertical de Conteúdo nos Widgets:**
   - **Correção da Rolagem Interna (Cima/Baixo):** Restaurada a capacidade de rolar o conteúdo interno de widgets roláveis (como listas de tarefas, e-mails, notícias, eventos de agenda e calendário).
@@ -199,7 +203,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.56.2
+### Novidades e Melhorias da Versão 0.56.2
 
 - **Correção da Remoção Individual de Widgets do Carrossel:**
   - **Eliminação da Remoção Indevida dos Dois Widgets:** Corrigido o problema em que, ao haver dois widgets empilhados e solicitar a remoção de um deles, ambos pareciam sumir da tela.
@@ -219,7 +223,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.56.1
+### Novidades e Melhorias da Versão 0.56.1
 
 - **Correção da Rolagem / Deslize Horizontal entre Widgets no Carrossel:**
   - **Intercepção Direta de Gestos no Nível do Container (`PointerEventPass.Initial`):** Resolvido o problema em que o deslize lateral sobre os widgets não trocava de página. As visualizações de widgets do Android (`AppWidgetHostView`) consomem nativamente eventos de toque durante a fase principal do Compose, impedindo o detector padrão do pager de receber os movimentos de arrasto. Implementado interceptor de alta prioridade que detecta o deslize horizontal com precisão matemática antes do consumo pelas views filhas.
@@ -229,7 +233,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.56.0
+### Novidades e Melhorias da Versão 0.56.0
 
 - **Suporte a Múltiplos Widgets na Tela Inicial (Carrossel / Stack Inteligente):**
   - **Empilhamento de Widgets com Visual Limpo:** Agora é possível adicionar múltiplos widgets à tela inicial sem poluir o visual. Os widgets ficam organizados em um carrossel em pilha ocupando uma única área (slot), mantendo apenas um widget visível por vez, preservando a estética limpa e minimalista do Victoria Launcher.
@@ -249,7 +253,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.55.0
+### Novidades e Melhorias da Versão 0.55.0
 
 - **Novo Widget "HUD Futurista Pro" (Tech HUD Pro):**
   - **Estética Cyberpunk Expandida:** Introduzido um novo estilo de relógio na tela inicial no estilo HUD futurista, com cabeçalho `SYS // HUD PRO`, tipografia cyberpunk de alto contraste e layout de telemetria estendido.
@@ -260,7 +264,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.54.1
+### Novidades e Melhorias da Versão 0.54.1
 
 - **Correção da Instalação do APK ("Arquivo Inválido") e Ajuste de VersionCode:**
   - **Resolução de Conflito de Downgrade:** Elevado o `versionCode` para 61 (v0.54.1). Após o revert de alterações anteriores que havia retornado temporariamente o versionCode para 59, dispositivos que já haviam instalado a versão com código 60 via Root sofriam bloqueio do instalador do sistema Android por tentativa de downgrade ("O pacote parece ser inválido" / "O arquivo é inválido"). A nova versão garante atualização limpa e direta.
@@ -269,7 +273,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.53.1
+### Novidades e Melhorias da Versão 0.53.1
 
 - **Indicador de Acesso Root nas Configurações do Aplicativo:**
   - **Status Visual de Superusuário:** Adicionada uma nova linha informativa na seção *Sobre* (ao final da tela de Configurações), identificando se o dispositivo possui acesso Root disponível no sistema.
@@ -277,7 +281,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.53.0
+### Novidades e Melhorias da Versão 0.53.0
 
 - **Limpeza Automática do APK Pós-Atualização:**
   - **Eliminação de Resíduos de Armazenamento:** Após o download e instalação da nova versão do Victoria Launcher, o arquivo APK baixado é automaticamente removido da pasta de Downloads do usuário.
@@ -293,7 +297,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.52.0
+### Novidades e Melhorias da Versão 0.52.0
 
 - **Novos Relógios Técnicos com Telemetria do Sistema em Tempo Real:**
   - **4 Novos Estilos de Relógio na Tela Inicial:**
@@ -316,7 +320,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.51.1
+### Novidades e Melhorias da Versão 0.51.1
 
 - **Correção da Escala Óptica e Enquadramento dos Ícones Temáticos:**
   - **Eliminação do Duplo Padding e Margens Transparentes Excessivas:** Corrigido o comportamento em que a imagem e os glifos dentro dos ícones temáticos ficavam visivelmente menores do que nos ícones normais. A especificação técnica de `AdaptiveIconDrawable` do Android define um canvas de 108dp com safe-zone central de ~44dp, o que introduzia margens transparentes vazias no glifo extraído antes mesmo da aplicação das margens do container squircle.
@@ -329,7 +333,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.51.0
+### Novidades e Melhorias da Versão 0.51.0
 
 - **Ícones Temáticos Dinâmicos do Monet para Todos os Aplicativos:**
   - **Geração Própria e Abrangente para 100% dos Aplicativos:** A Victoria Launcher agora gera ícones temáticos baseados na paleta dinâmica do Material You / Monet diretamente pelo motor da própria launcher. Elimina de vez a frustração dos ícones mistos no Android, garantindo que absolutamente todos os aplicativos instalados — modernos, antigos, corporativos, jogos ou ferramentas locais — recebam um ícone tematizado harmônico com o papel de parede.
@@ -356,7 +360,7 @@
 
 ---
 
-### 🚀 Novidades e Melhorias da Versão 0.50.0
+### Novidades e Melhorias da Versão 0.50.0
 
 - **Correção e Alinhamento Perfeito dos Widgets e Reprodutor de Mídia (Now Playing):**
   - **Eliminação do Afastamento Extra no Reprodutor de Mídia (`NowPlayingWidget`):** Removido o espaçamento horizontal interno duplicado que afastava a arte do álbum e os controles de mídia 14dp para dentro da tela. Agora a capa da faixa em reprodução inicia exatamente na mesma coordenada horizontal (`contentStart`) dos ícones de aplicativos e do relógio, garantindo alinhamento e simetria impecáveis.
