@@ -12,3 +12,6 @@
   - Em dispositivos com Root, o aplicativo é desinstalado silenciosamente via linha de comando (`pm uninstall` e `pm uninstall --user 0`).
   - Para aplicativos do sistema, exibe diálogo protetor com aviso de risco de instabilidade antes de efetuar a desinstalação via root.
   - Fallback automático para o instalador padrão do Android (`PackageInstaller`) em dispositivos sem root.
+
+- **Correção de Compilação:**
+  - Corrigida a referência da API do Android em `AppLogCaptureService` ajustando `PackageUidFlags` para `PackageManager.PackageInfoFlags.of(0)`.

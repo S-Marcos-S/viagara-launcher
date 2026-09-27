@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
@@ -229,7 +230,7 @@ class AppLogCaptureService : Service() {
     private fun startRecordingSession() {
         targetUid = try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageManager.getPackageUid(targetPackage, android.content.pm.PackageManager.PackageUidFlags.of(0))
+                packageManager.getPackageUid(targetPackage, PackageManager.PackageInfoFlags.of(0))
             } else {
                 @Suppress("DEPRECATION")
                 packageManager.getPackageUid(targetPackage, 0)
