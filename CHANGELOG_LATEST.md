@@ -1,10 +1,17 @@
-### 🚀 Novidades e Melhorias da Versão 0.59.22
+### 🚀 Novidades e Melhorias da Versão 0.59.23
 
-- **Tipografia Adaptativa e Responsiva nos Widgets:**
-  - O tamanho da fonte e espaçamentos de todos os estilos de relógio e cartões de telemetria agora se adaptam dinamicamente à largura disponível.
-  - Ao aumentar o espaçamento lateral da tela inicial, os widgets encolhem suas fontes suavemente para garantir que todos os textos caibam sem quebras inadequadas ou cortes.
+- **Novo Inspetor e Monitor de Aplicativos via Root:**
+  - Adicionada opção exclusiva para usuários com acesso Root ao clicar e segurar qualquer aplicativo: **Inspecionar App (Root)**.
+  - Tela translúcida profissional com efeito de desfoque fosco (*frosted glass blur*) exibindo diagnóstico avançado em tempo real.
 
-- **Cartões de Telemetria e Chips de Sistema Compactos:**
-  - Em espaços reduzidos, os prefixos **"RAM"** e **"ROM"** são automaticamente omitidos (ex.: exibindo diretamente `3.2G` e `64G`), preservando o tamanho legível da fonte sem precisar reduzi-la.
-  - Otimização do padding interno e do espaçamento entre os cartões, impedindo o surgimento de reticências (`...`) nas métricas de hardware.
-  - Cartões como **Monitor do Sistema**, **Minimal Specs**, **Terminal Retrô** e **Reflexão Diária com Estatísticas** agora exibem leituras completas e elegantes mesmo com margens laterais elevadas.
+- **Diagnóstico Completo de Sistema & Hardware:**
+  - **Status de Execução:** Identifica com precisão se o app está em **Primeiro Plano** (com atividade aberta na tela), em **Segundo Plano** (serviço ativo ou processo em cache) ou **Inativo / Parado**.
+  - **Telemetria de CPU & Memória:** Monitoramento do percentual de uso do processador e divisão minuciosa da memória RAM PSS (*Dalvik/ART Heap*, *Native Heap* e *Gráficos/GPU*).
+  - **Tráfego de Rede & Conexões Ativas:** Monitoramento do volume de dados trafegados (*Download / Upload*) e listagem de conexões TCP ativas com servidores externos em tempo real.
+  - **Processos & Serviços:** Listagem de todos os PIDs ativos com botão individual para encerrar processos via root, além da identificação de serviços de segundo plano.
+  - **Mapeamento de Permissões:** Exibição clara e categorizada das permissões concedidas e negadas, destacando acessos críticos (Câmera, Localização, Microfone, Armazenamento).
+
+- **Ações Rápidas de Administração Root:**
+  - Botão de **Forçar Parada** (`am force-stop`) direto pelo diálogo.
+  - Botão de **Limpeza de Cache Silenciosa** via Superusuário.
+  - Botão para **Iniciar Aplicativo** e atualização sob demanda.

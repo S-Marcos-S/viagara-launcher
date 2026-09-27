@@ -353,4 +353,29 @@
     <string name="backup_dest_folder_required">Destination folder required to create backups</string>
     <string name="backup_dest_folder_need_selection">Select a destination folder above first</string>
     <string name="backup_dest_folder_saved_toast">Backup folder selected</string>
+
+    <!-- App Root Inspector -->
+    <string name="action_root_inspect_app">Inspect App (Root)</string>
+    <string name="root_inspector_status_foreground">FOREGROUND</string>
+    <string name="root_inspector_status_background">BACKGROUND</string>
+    <string name="root_inspector_status_stopped">STOPPED</string>
+    <string name="root_inspector_cpu">CPU</string>
+    <string name="root_inspector_ram">RAM (PSS)</string>
+    <string name="root_inspector_download">Download</string>
+    <string name="root_inspector_upload">Upload</string>
+    <string name="root_inspector_tab_memory">Memory</string>
+    <string name="root_inspector_tab_processes">Processes</string>
+    <string name="root_inspector_tab_network">Network</string>
+    <string name="root_inspector_tab_permissions">Permissions</string>
+    <string name="root_inspector_action_force_stop">Force Stop</string>
+    <string name="root_inspector_action_clear_cache">Clear Cache</string>
+    <string name="root_inspector_action_launch">Launch</string>
+    <string name="root_inspector_action_kill_pid">Kill</string>
+    <string name="root_inspector_toast_cache_cleared">App cache cleared successfully!</string>
+    <string name="root_inspector_toast_stopped">App force-stopped via root!</string>
+    <string name="root_inspector_toast_kill_success">Process PID %1$d killed!</string>
+    <string name="root_inspector_toast_kill_error">Failed to kill process.</string>
+    <string name="root_inspector_no_connections">No active network connections at the moment</string>
+    <string name="root_inspector_no_services">No running services</string>
+    <string name="root_inspector_loading">Inspecting application via Superuser…</string>
 </resources>

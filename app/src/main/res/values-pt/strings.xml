@@ -354,4 +354,29 @@
     <string name="backup_dest_folder_required">Pasta de destino necessária para criar backups</string>
     <string name="backup_dest_folder_need_selection">Selecione uma pasta de destino acima primeiro</string>
     <string name="backup_dest_folder_saved_toast">Pasta de backup selecionada com sucesso</string>
+
+    <!-- App Root Inspector -->
+    <string name="action_root_inspect_app">Inspecionar App (Root)</string>
+    <string name="root_inspector_status_foreground">EM PRIMEIRO PLANO</string>
+    <string name="root_inspector_status_background">EM SEGUNDO PLANO</string>
+    <string name="root_inspector_status_stopped">PARADO / INATIVO</string>
+    <string name="root_inspector_cpu">CPU</string>
+    <string name="root_inspector_ram">RAM (PSS)</string>
+    <string name="root_inspector_download">Download</string>
+    <string name="root_inspector_upload">Upload</string>
+    <string name="root_inspector_tab_memory">Memória</string>
+    <string name="root_inspector_tab_processes">Processos</string>
+    <string name="root_inspector_tab_network">Rede</string>
+    <string name="root_inspector_tab_permissions">Permissões</string>
+    <string name="root_inspector_action_force_stop">Forçar Parada</string>
+    <string name="root_inspector_action_clear_cache">Limpar Cache</string>
+    <string name="root_inspector_action_launch">Abrir App</string>
+    <string name="root_inspector_action_kill_pid">Encerrar</string>
+    <string name="root_inspector_toast_cache_cleared">Cache do aplicativo limpo com sucesso!</string>
+    <string name="root_inspector_toast_stopped">Aplicativo encerrado via root!</string>
+    <string name="root_inspector_toast_kill_success">Processo PID %1$d encerrado!</string>
+    <string name="root_inspector_toast_kill_error">Falha ao encerrar processo.</string>
+    <string name="root_inspector_no_connections">Nenhuma conexão de rede ativa no momento</string>
+    <string name="root_inspector_no_services">Nenhum serviço em execução</string>
+    <string name="root_inspector_loading">Inspecionando aplicativo via Superusuário…</string>
 </resources>

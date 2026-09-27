@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
@@ -172,6 +173,7 @@ fun AppListScreen(
 ) {
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
+    var rootInspectorFor by remember { mutableStateOf<AppInfo?>(null) }
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     // The gesture handlers below outlive the composition that created them, so they must not
@@ -782,40 +784,68 @@ fun AppListScreen(
 
         appMenuFor?.let { app ->
             val isFavorite = favoriteKeys.contains(app.key)
-            val menuItems = listOf(
-                dev.victorialauncher.ui.common.AppMenuItem(
-                    title = stringResource(if (isFavorite) R.string.applist_remove_favorite else R.string.applist_add_favorite),
-                    icon = if (isFavorite) Icons.Filled.StarBorder else Icons.Filled.Star,
-                    onClick = { onSetFavorite(app, !isFavorite) },
-                ),
-                dev.victorialauncher.ui.common.AppMenuItem(
-                    title = stringResource(R.string.action_edit_icon_and_name),
-                    icon = Icons.Filled.Tune,
-                    onClick = { editDialogFor = app },
-                ),
-                dev.victorialauncher.ui.common.AppMenuItem(
-                    title = stringResource(R.string.action_app_info),
-                    icon = Icons.Filled.Info,
-                    onClick = { onAppInfo(app) },
-                ),
-                dev.victorialauncher.ui.common.AppMenuItem(
-                    title = stringResource(R.string.action_move_to_folder),
-                    icon = Icons.Filled.Folder,
-                    onClick = { onMoveToFolder(app) },
-                ),
-                dev.victorialauncher.ui.common.AppMenuItem(
-                    title = stringResource(R.string.applist_hide),
-                    icon = Icons.Filled.VisibilityOff,
-                    onClick = { onHideApp(app) },
-                    isDestructive = true,
-                ),
-            )
+            val isRootAvailable = remember { dev.victorialauncher.update.RootInstaller.isRootAvailable() }
+            val menuItems = buildList {
+                add(
+                    dev.victorialauncher.ui.common.AppMenuItem(
+                        title = stringResource(if (isFavorite) R.string.applist_remove_favorite else R.string.applist_add_favorite),
+                        icon = if (isFavorite) Icons.Filled.StarBorder else Icons.Filled.Star,
+                        onClick = { onSetFavorite(app, !isFavorite) },
+                    )
+                )
+                if (isRootAvailable) {
+                    add(
+                        dev.victorialauncher.ui.common.AppMenuItem(
+                            title = stringResource(R.string.action_root_inspect_app),
+                            icon = Icons.Filled.Terminal,
+                            onClick = { rootInspectorFor = app },
+                        )
+                    )
+                }
+                add(
+                    dev.victorialauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.action_edit_icon_and_name),
+                        icon = Icons.Filled.Tune,
+                        onClick = { editDialogFor = app },
+                    )
+                )
+                add(
+                    dev.victorialauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.action_app_info),
+                        icon = Icons.Filled.Info,
+                        onClick = { onAppInfo(app) },
+                    )
+                )
+                add(
+                    dev.victorialauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.action_move_to_folder),
+                        icon = Icons.Filled.Folder,
+                        onClick = { onMoveToFolder(app) },
+                    )
+                )
+                add(
+                    dev.victorialauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.applist_hide),
+                        icon = Icons.Filled.VisibilityOff,
+                        onClick = { onHideApp(app) },
+                        isDestructive = true,
+                    )
+                )
+            }
 
             dev.victorialauncher.ui.common.AppMenuDialog(
                 app = app,
                 displayName = displayName(app),
                 onDismissRequest = { appMenuFor = null },
                 items = menuItems,
+            )
+        }
+
+        rootInspectorFor?.let { target ->
+            dev.victorialauncher.ui.root.AppRootInspectorDialog(
+                app = target,
+                displayName = displayName(target),
+                onDismissRequest = { rootInspectorFor = null },
             )
         }
 
