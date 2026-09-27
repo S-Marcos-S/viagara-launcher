@@ -162,13 +162,13 @@ fun AppRootInspectorDialog(
                     .fillMaxWidth(0.92f)
                     .fillMaxHeight(0.86f)
                     .clip(RoundedCornerShape(26.dp))
-                    .border(1.dp, dynamicBorderColor, RoundedCornerShape(26.dp))
+                    .border(1.dp, dynamicBorderColor(), RoundedCornerShape(26.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {}, // Prevents click-through dismiss
                     ),
-                color = dynamicSurfaceColor.copy(alpha = 0.95f),
+                color = dynamicSurfaceColor().copy(alpha = 0.95f),
                 tonalElevation = 8.dp,
                 shadowElevation = 16.dp,
             ) {
@@ -184,7 +184,7 @@ fun AppRootInspectorDialog(
                     ) {
                         AppIcon(
                             app = app,
-                            size = 46.dp,
+                            sizeDp = 46,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
@@ -353,14 +353,14 @@ fun AppRootInspectorDialog(
                                 MetricCard(
                                     modifier = Modifier.weight(1f),
                                     title = stringResource(R.string.root_inspector_download),
-                                    value = formatBytes(data.rxBytes),
+                                    value = AppRootInspector.formatBytes(data.rxBytes),
                                     icon = Icons.Filled.NetworkCheck,
                                     accentColor = Color(0xFF10B981),
                                 )
                                 MetricCard(
                                     modifier = Modifier.weight(1f),
                                     title = stringResource(R.string.root_inspector_upload),
-                                    value = formatBytes(data.txBytes),
+                                    value = AppRootInspector.formatBytes(data.txBytes),
                                     icon = Icons.Filled.NetworkCheck,
                                     accentColor = Color(0xFF06B6D4),
                                 )

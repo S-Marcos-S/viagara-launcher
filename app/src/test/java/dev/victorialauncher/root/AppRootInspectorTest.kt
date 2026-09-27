@@ -10,11 +10,11 @@ class AppRootInspectorTest {
 
     @Test
     fun `formatBytes converts byte counts correctly`() {
-        assertEquals("0 B", formatBytesForTest(0L))
-        assertEquals("500.0 B", formatBytesForTest(500L))
-        assertEquals("1.0 KB", formatBytesForTest(1024L))
-        assertEquals("1.5 MB", formatBytesForTest(1572864L))
-        assertEquals("2.0 GB", formatBytesForTest(2147483648L))
+        assertEquals("0 B", AppRootInspector.formatBytes(0L))
+        assertEquals("500.0 B", AppRootInspector.formatBytes(500L))
+        assertEquals("1.0 KB", AppRootInspector.formatBytes(1024L))
+        assertEquals("1.5 MB", AppRootInspector.formatBytes(1572864L))
+        assertEquals("2.0 GB", AppRootInspector.formatBytes(2147483648L))
     }
 
     @Test
@@ -103,13 +103,5 @@ class AppRootInspectorTest {
         assertEquals("TCP", connections[0].protocol)
         assertEquals("ESTAB", connections[0].state)
         assertEquals("142.250.190.46:443", connections[0].remoteAddress)
-    }
-
-    private fun formatBytesForTest(bytes: Long): String {
-        if (bytes <= 0) return "0 B"
-        val units = arrayOf("B", "KB", "MB", "GB", "TB")
-        val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt().coerceIn(0, units.size - 1)
-        val value = bytes / Math.pow(1024.0, digitGroups.toDouble())
-        return String.format(java.util.Locale.US, "%.1f %s", value, units[digitGroups])
     }
 }

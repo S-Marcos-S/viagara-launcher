@@ -81,9 +81,12 @@ object AppRootInspector {
                 pm.getPackageInfo(packageName, 0)
             }
 
-            val appName = runCatching {
-                pm.getApplicationLabel(packageInfo.applicationInfo).toString()
-            }.getOrDefault(packageName)
+            val appInfo = packageInfo.applicationInfo
+            val appName = if (appInfo != null) {
+                runCatching { pm.getApplicationLabel(appInfo).toString() }.getOrDefault(packageName)
+            } else {
+                packageName
+            }
 
             val versionName = packageInfo.versionName ?: "1.0"
             val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
@@ -92,7 +95,7 @@ object AppRootInspector {
                 @Suppress("DEPRECATION")
                 packageInfo.versionCode.toLong()
             }
-            val uid = packageInfo.applicationInfo.uid
+            val uid = appInfo?.uid ?: 0
 
             // Unified shell inspection script
             val shellScript = """
@@ -444,5 +447,16 @@ object AppRootInspector {
             perm.endsWith(".WAKE_LOCK") -> "Impedir Hibernação" to false
             else -> perm.substringAfterLast(".") to false
         }
+    }
+
+    /**
+     * Formats raw byte count into human-readable format (B, KB, MB, GB).
+     */
+    fun formatBytes(bytes: Long): String {
+        if (bytes <= 0) return "0 B"
+        val units = arrayOf("B", "KB", "MB", "GB", "TB")
+        val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt().coerceIn(0, units.size - 1)
+        val value = bytes / Math.pow(1024.0, digitGroups.toDouble())
+        return String.format(java.util.Locale.US, "%.1f %s", value, units[digitGroups])
     }
 }
