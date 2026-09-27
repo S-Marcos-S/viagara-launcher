@@ -15,6 +15,7 @@ import android.os.StatFs
 import android.os.SystemClock
 import dev.victorialauncher.data.AppInfo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.RandomAccessFile
@@ -326,16 +327,23 @@ object SystemTaskInspector {
         val args: String,
     )
 
-    private fun sampleGlobalCpuUsage(now: Long): Double {
+    private suspend fun sampleGlobalCpuUsage(now: Long): Double {
         return try {
-            val statFile = File("/proc/stat")
-            val firstLine = if (statFile.canRead()) {
-                statFile.bufferedReader().use { it.readLine() }
-            } else {
+            var firstLine = try {
+                val statFile = File("/proc/stat")
+                if (statFile.canRead()) {
+                    statFile.bufferedReader().use { it.readLine() }
+                } else null
+            } catch (_: Throwable) {
                 null
-            } ?: ""
+            }
 
-            if (firstLine.startsWith("cpu ")) {
+            // Fallback via root execution if SELinux denies direct access
+            if (firstLine.isNullOrBlank()) {
+                firstLine = AppRootInspector.runSuCommand("head -n 1 /proc/stat 2>/dev/null").getOrNull()?.trim()
+            }
+
+            if (!firstLine.isNullOrBlank() && firstLine.startsWith("cpu ")) {
                 val parts = firstLine.removePrefix("cpu ").trim().split(Regex("\\s+"))
                 if (parts.size >= 4) {
                     val user = parts[0].toLongOrNull() ?: 0L
@@ -358,6 +366,10 @@ object SystemTaskInspector {
                             val usage = ((dTotal - dIdle).toDouble() / dTotal.toDouble()) * 100.0
                             return usage.coerceIn(0.0, 100.0)
                         }
+                    } else {
+                        // First sample ever: briefly delay to obtain an immediate baseline calculation
+                        delay(120L)
+                        return sampleGlobalCpuUsage(SystemClock.elapsedRealtime())
                     }
                 }
             }
@@ -367,20 +379,38 @@ object SystemTaskInspector {
         }
     }
 
-    private fun readCpuCoreFrequencies(cores: Int): List<Long> {
-        val freqs = mutableListOf<Long>()
-        for (i in 0 until cores) {
+    private suspend fun readCpuCoreFrequencies(cores: Int): List<Long> {
+        val targetSize = maxOf(cores, 8)
+        val freqs = MutableList(targetSize) { 0L }
+        var needRootFallback = false
+
+        for (i in 0 until targetSize) {
             val freqFile = File("/sys/devices/system/cpu/cpu$i/cpufreq/scaling_cur_freq")
             val freqKHz = if (freqFile.canRead()) {
                 runCatching { freqFile.readText().trim().toLongOrNull() }.getOrNull()
             } else null
 
             if (freqKHz != null && freqKHz > 0) {
-                freqs.add(freqKHz / 1000) // Convert to MHz
+                freqs[i] = freqKHz / 1000 // Convert to MHz
             } else {
-                freqs.add(0L)
+                needRootFallback = true
             }
         }
+
+        if (needRootFallback) {
+            val cmd = (0 until targetSize).joinToString("; ") { i ->
+                "cat /sys/devices/system/cpu/cpu$i/cpufreq/scaling_cur_freq 2>/dev/null || echo 0"
+            }
+            val raw = AppRootInspector.runSuCommand(cmd).getOrNull() ?: ""
+            val lines = raw.lines().map { it.trim().toLongOrNull() ?: 0L }
+            for (i in 0 until minOf(targetSize, lines.size)) {
+                val khz = lines[i]
+                if (khz > 0) {
+                    freqs[i] = khz / 1000
+                }
+            }
+        }
+
         return freqs
     }
 

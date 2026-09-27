@@ -7,8 +7,10 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -25,11 +27,13 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -85,7 +89,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -191,13 +197,9 @@ fun TaskManagerScreen(
     Scaffold(
         containerColor = dynamicSurfaceColor(),
         topBar = {
-            TaskManagerTopBar(
+            CleanTaskManagerTopBar(
                 selectedTab = selectedTab,
                 onTabSelect = { selectedTab = it },
-                isAutoRefreshEnabled = isAutoRefreshEnabled,
-                onToggleAutoRefresh = { isAutoRefreshEnabled = !isAutoRefreshEnabled },
-                isRefreshing = isRefreshing,
-                onManualRefresh = { refreshAll(showSpinner = true) },
                 onNavigateBack = onNavigateBack,
             )
         },
@@ -281,159 +283,46 @@ fun TaskManagerScreen(
 }
 
 @Composable
-private fun TaskManagerTopBar(
+private fun CleanTaskManagerTopBar(
     selectedTab: TaskManagerTab,
     onTabSelect: (TaskManagerTab) -> Unit,
-    isAutoRefreshEnabled: Boolean,
-    onToggleAutoRefresh: () -> Unit,
-    isRefreshing: Boolean,
-    onManualRefresh: () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
-    val infiniteTransition = rememberInfiniteTransition(label = "pulseLive")
-    val liveAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "liveAlpha",
-    )
-
     Surface(
-        color = dynamicSurfaceColor().copy(alpha = 0.95f),
-        tonalElevation = 4.dp,
-        modifier = Modifier.fillMaxWidth(),
+        color = dynamicSurfaceColor(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding(),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(start = 6.dp, end = 14.dp, top = 4.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            IconButton(
+                onClick = onNavigateBack,
+                modifier = Modifier.size(38.dp),
             ) {
-                IconButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.size(38.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.action_back),
-                        tint = colorScheme.onSurface,
-                    )
-                }
-
-                Spacer(Modifier.width(6.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Speed,
-                        contentDescription = null,
-                        tint = colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-
-                Spacer(Modifier.width(10.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(R.string.task_manager_title),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = colorScheme.onSurface,
-                        )
-                        if (isAutoRefreshEnabled) {
-                            Spacer(Modifier.width(8.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(Color(0xFF10B981).copy(alpha = 0.14f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFF10B981).copy(alpha = liveAlpha)),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = stringResource(R.string.task_manager_live_badge),
-                                    color = Color(0xFF10B981),
-                                    fontSize = 8.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp,
-                                )
-                            }
-                        }
-                    }
-                    Text(
-                        text = "Windows Task Manager Engine • Root Enabled",
-                        fontSize = 10.sp,
-                        color = colorScheme.onSurface.copy(alpha = 0.55f),
-                    )
-                }
-
-                // Pause / Play Auto-refresh
-                IconButton(
-                    onClick = onToggleAutoRefresh,
-                    modifier = Modifier.size(36.dp),
-                ) {
-                    Icon(
-                        imageVector = if (isAutoRefreshEnabled) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        contentDescription = "Toggle auto-refresh",
-                        tint = if (isAutoRefreshEnabled) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-
-                // Manual Refresh
-                IconButton(
-                    onClick = onManualRefresh,
-                    enabled = !isRefreshing,
-                    modifier = Modifier.size(36.dp),
-                ) {
-                    if (isRefreshing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = colorScheme.primary,
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = stringResource(R.string.action_reset),
-                            tint = colorScheme.onSurface,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.action_back),
+                    tint = colorScheme.onSurface,
+                )
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.width(8.dp))
 
-            // Material Expressive Pill Segmented Tabs
+            // Cabeçalho com os nomes Processos e Desempenho
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
+                    .weight(1f)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(colorScheme.surfaceContainerHigh)
-                    .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(18.dp))
-                    .padding(4.dp),
+                    .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
+                    .padding(3.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 ExpressiveTabPill(
@@ -936,72 +825,14 @@ private fun PerformanceScreen(
     ) {
         item {
             Spacer(Modifier.height(4.dp))
-            // 1. CPU RESOURCE CARD (Windows Task Manager style)
+            // 1. CPU WAVEFORM CARD (Waveform chart with dual invisible columns for 8 cores)
             val cpuUsage = snapshot?.totalCpuPercent ?: 0.0
-            PerformanceResourceCard(
-                title = "Processador (CPU)",
-                icon = Icons.Filled.Speed,
-                accentColor = Color(0xFF3B82F6), // Electric Blue
-                headline = "${String.format(Locale.US, "%.1f", cpuUsage)}%",
-                subHeadline = "Utilização total do processador",
-                history = cpuHistory,
-                chartColor = Color(0xFF3B82F6),
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        SpecItem(label = stringResource(R.string.task_manager_cpu_cores), value = "${snapshot?.cpuCores ?: 1} Núcleos")
-                        SpecItem(label = stringResource(R.string.task_manager_cpu_speed), value = "${snapshot?.maxCpuFrequencyMhz ?: 0} MHz Max")
-                        SpecItem(label = stringResource(R.string.task_manager_cpu_threads), value = "${snapshot?.totalProcesses ?: 0} / ${snapshot?.totalThreads ?: 0}")
-                    }
-
-                    val uptimeSec = (snapshot?.uptimeMillis ?: 0L) / 1000L
-                    val hours = uptimeSec / 3600
-                    val minutes = (uptimeSec % 3600) / 60
-                    val seconds = uptimeSec % 60
-                    val uptimeFormatted = "${hours}h ${minutes}m ${seconds}s"
-                    SpecItem(label = stringResource(R.string.task_manager_cpu_uptime), value = uptimeFormatted)
-
-                    // Individual Core Frequencies (Live)
-                    val freqs = snapshot?.cpuFrequenciesMhz ?: emptyList()
-                    if (freqs.isNotEmpty()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "Frequências por Núcleo:",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = colorScheme.onSurface.copy(alpha = 0.65f),
-                        )
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            freqs.forEachIndexed { index, freq ->
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(colorScheme.surfaceContainerHigh)
-                                        .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                                ) {
-                                    Text(
-                                        text = "C$index: ${freq}MHz",
-                                        fontSize = 10.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        color = colorScheme.onSurface.copy(alpha = 0.8f),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            CpuWaveformCard(
+                cpuUsage = cpuUsage,
+                coreFrequencies = snapshot?.cpuFrequenciesMhz ?: emptyList(),
+                cpuHistory = cpuHistory,
+                snapshot = snapshot,
+            )
         }
 
         item {
@@ -1210,6 +1041,313 @@ private fun PerformanceScreen(
         item {
             Spacer(Modifier.height(20.dp))
         }
+    }
+}
+
+@Composable
+private fun CpuWaveformCard(
+    cpuUsage: Double,
+    coreFrequencies: List<Long>,
+    cpuHistory: List<Float>,
+    snapshot: SystemPerformanceSnapshot?,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    val accentColor = when {
+        cpuUsage > 75.0 -> Color(0xFFEF4444)
+        cpuUsage > 45.0 -> Color(0xFFF59E0B)
+        else -> Color(0xFF38BDF8) // Electric Cyan
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(20.dp)),
+        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+        tonalElevation = 2.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ) {
+            // Header Row: Title & Percentage
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(accentColor.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Speed,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Processador (CPU)",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onSurface,
+                    )
+                    Text(
+                        text = "Utilização total do processador",
+                        fontSize = 11.sp,
+                        color = colorScheme.onSurface.copy(alpha = 0.55f),
+                    )
+                }
+                Text(
+                    text = "${String.format(Locale.US, "%.1f", cpuUsage)}%",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = accentColor,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            // Container do Gráfico de Ondas de CPU com as Duas Colunas Invisíveis sobrepostas
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(145.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colorScheme.surfaceContainerHighest.copy(alpha = 0.22f))
+                    .border(1.dp, colorScheme.outline.copy(alpha = 0.08f), RoundedCornerShape(14.dp)),
+            ) {
+                // 1. Gráfico de Ondas de CPU em movimento fluido
+                CpuFluidWaveformGraph(
+                    history = cpuHistory,
+                    currentCpu = cpuUsage.toFloat(),
+                    accentColor = accentColor,
+                    modifier = Modifier.fillMaxSize(),
+                )
+
+                // 2. Duas colunas invisíveis sobrepostas ao gráfico com os 8 núcleos
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Coluna 1 (Invisível): Núcleos 0 a 3
+                    Column(
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.fillMaxHeight(),
+                    ) {
+                        for (i in 0..3) {
+                            val freq = coreFrequencies.getOrNull(i) ?: 0L
+                            Text(
+                                text = "CPU $i: ${if (freq > 0) "$freq MHz" else "Ocioso"}",
+                                fontSize = 11.5.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = colorScheme.onSurface.copy(alpha = 0.92f),
+                                style = androidx.compose.ui.text.TextStyle(
+                                    shadow = Shadow(
+                                        color = colorScheme.surface.copy(alpha = 0.85f),
+                                        blurRadius = 6f,
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+
+                    // Coluna 2 (Invisível): Núcleos 4 a 7
+                    Column(
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.fillMaxHeight(),
+                    ) {
+                        for (i in 4..7) {
+                            val freq = coreFrequencies.getOrNull(i) ?: 0L
+                            Text(
+                                text = "CPU $i: ${if (freq > 0) "$freq MHz" else "Ocioso"}",
+                                fontSize = 11.5.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = colorScheme.onSurface.copy(alpha = 0.92f),
+                                style = androidx.compose.ui.text.TextStyle(
+                                    shadow = Shadow(
+                                        color = colorScheme.surface.copy(alpha = 0.85f),
+                                        blurRadius = 6f,
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            HorizontalDivider(
+                color = colorScheme.outline.copy(alpha = 0.1f),
+                thickness = 1.dp,
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // Informações adicionais
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                SpecItem(
+                    label = stringResource(R.string.task_manager_cpu_cores),
+                    value = "${snapshot?.cpuCores ?: 1} Núcleos",
+                )
+
+                val uptimeSec = (snapshot?.uptimeMillis ?: 0L) / 1000L
+                val hours = uptimeSec / 3600
+                val minutes = (uptimeSec % 3600) / 60
+                val seconds = uptimeSec % 60
+                SpecItem(
+                    label = stringResource(R.string.task_manager_cpu_uptime),
+                    value = "${hours}h ${minutes}m ${seconds}s",
+                )
+
+                SpecItem(
+                    label = stringResource(R.string.task_manager_cpu_threads),
+                    value = "${snapshot?.totalProcesses ?: 0} / ${snapshot?.totalThreads ?: 0}",
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CpuFluidWaveformGraph(
+    history: List<Float>,
+    currentCpu: Float,
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val gridColor = colorScheme.outline.copy(alpha = 0.12f)
+
+    // Smooth animation for the latest CPU usage value to create fluid transitions
+    val animatedCpu by animateFloatAsState(
+        targetValue = currentCpu.coerceIn(0f, 100f),
+        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+        label = "animatedCpu",
+    )
+
+    // Continuous wave phase animation for live motion effect
+    val infiniteTransition = rememberInfiniteTransition(label = "waveShift")
+    val wavePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 2f * Math.PI.toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "wavePhase",
+    )
+
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+
+        // 1. Draw horizontal guide lines (0%, 25%, 50%, 75%, 100%)
+        val steps = 4
+        for (i in 0..steps) {
+            val y = height * (i.toFloat() / steps)
+            drawLine(
+                color = gridColor,
+                start = Offset(0f, y),
+                end = Offset(width, y),
+                strokeWidth = 1f,
+            )
+        }
+
+        // Fixed buffer size so stepX is constant and wave flows smoothly from right to left
+        val maxPoints = 35
+        val workingList = history.toMutableList()
+        if (workingList.isNotEmpty()) {
+            workingList[workingList.size - 1] = animatedCpu
+        } else {
+            workingList.add(animatedCpu)
+        }
+
+        val paddedPoints = if (workingList.size < maxPoints) {
+            val pad = List(maxPoints - workingList.size) { 0f }
+            pad + workingList
+        } else {
+            workingList.takeLast(maxPoints)
+        }
+
+        val stepX = width / (maxPoints - 1)
+        val fillPath = Path()
+        val strokePath = Path()
+
+        // Map points to canvas coordinates with organic fluid wave ripple
+        val coords = paddedPoints.mapIndexed { index, value ->
+            val x = index * stepX
+            val rawY = height - (value.coerceIn(0f, 100f) / 100f * (height - 8f)) - 4f
+            val rippleScale = (value / 100f).coerceIn(0.05f, 1f)
+            val waveMod = kotlin.math.sin(wavePhase + index * 0.45f).toFloat() * (2.5f * rippleScale)
+            val y = (rawY + waveMod).coerceIn(0f, height)
+            Offset(x, y)
+        }
+
+        fillPath.moveTo(coords.first().x, height)
+        fillPath.lineTo(coords.first().x, coords.first().y)
+        strokePath.moveTo(coords.first().x, coords.first().y)
+
+        for (i in 1 until coords.size) {
+            val prev = coords[i - 1]
+            val curr = coords[i]
+            val midX = (prev.x + curr.x) / 2f
+            fillPath.cubicTo(midX, prev.y, midX, curr.y, curr.x, curr.y)
+            strokePath.cubicTo(midX, prev.y, midX, curr.y, curr.x, curr.y)
+        }
+
+        fillPath.lineTo(coords.last().x, height)
+        fillPath.close()
+
+        // 2. Draw Translucent Gradient Fill Under the Wave
+        drawPath(
+            path = fillPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    accentColor.copy(alpha = 0.35f),
+                    accentColor.copy(alpha = 0.08f),
+                    Color.Transparent,
+                ),
+            ),
+        )
+
+        // 3. Draw Outer Wave Line
+        drawPath(
+            path = strokePath,
+            color = accentColor,
+            style = Stroke(
+                width = 2.5.dp.toPx(),
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round,
+            ),
+        )
+
+        // 4. Draw Leading Point Pulse
+        val lastCoord = coords.last()
+        drawCircle(
+            color = accentColor,
+            radius = 3.5.dp.toPx(),
+            center = lastCoord,
+        )
     }
 }
 
