@@ -5,10 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.net.TrafficStats
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 enum class AppProcessStatus {
     FOREGROUND,
@@ -53,6 +55,8 @@ data class AppInspectionData(
     val ramGraphicsMb: Double,
     val rxBytes: Long,
     val txBytes: Long,
+    val rxSpeedBps: Long = 0L,
+    val txSpeedBps: Long = 0L,
     val activeConnections: List<NetworkConnection>,
     val topActivity: String?,
     val activeServices: List<String>,
@@ -61,6 +65,9 @@ data class AppInspectionData(
 )
 
 object AppRootInspector {
+
+    private data class NetSnapshot(val timestamp: Long, val rxBytes: Long, val txBytes: Long)
+    private val lastNetSnapshots = ConcurrentHashMap<String, NetSnapshot>()
 
     /**
      * Executes an inspection script via root shell and queries PackageManager to build
@@ -97,22 +104,32 @@ object AppRootInspector {
             }
             val uid = appInfo?.uid ?: 0
 
-            // Unified shell inspection script
+            // High-performance unified shell inspection script
             val shellScript = """
                 echo "===PIDS==="
                 pidof $packageName 2>/dev/null || pgrep -f $packageName 2>/dev/null
+                echo "===TOP==="
+                top -b -n 1 -q 2>/dev/null | grep -E "$packageName\b|$packageName:"
                 echo "===PS==="
-                ps -A -o PID,USER,%CPU,%MEM,CMD 2>/dev/null | grep $packageName
+                ps -A -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null | grep -E "$packageName\b|$packageName:"
+                echo "===SMAPS==="
+                for p in ${'$'}(pidof $packageName 2>/dev/null || pgrep -f $packageName 2>/dev/null); do
+                    echo "---PID:${'$'}p---"
+                    cat /proc/${'$'}p/smaps_rollup 2>/dev/null
+                    cat /proc/${'$'}p/status 2>/dev/null | grep -E "^(VmRSS|RssAnon|RssFile):"
+                done
                 echo "===MEMINFO==="
-                dumpsys meminfo $packageName 2>/dev/null | grep -E "TOTAL PSS|TOTAL      PSS|TOTAL:|Dalvik Heap|Native Heap|EGL mtrack|GL mtrack|Graphics"
+                dumpsys meminfo $packageName 2>/dev/null | grep -E "TOTAL PSS|TOTAL      PSS|TOTAL:|Dalvik Heap|Native Heap|EGL mtrack|GL mtrack|Graphics|TOTAL RSS|Total PSS by process:|[0-9,]+K:\s+$packageName"
                 echo "===NET_STATS==="
+                dumpsys netstats detail 2>/dev/null | grep -E "uid=$uid\b" || dumpsys netstats 2>/dev/null | grep -E "uid=$uid\b"
                 cat /proc/uid_stat/$uid/tcp_rcv 2>/dev/null
                 echo "---TX---"
                 cat /proc/uid_stat/$uid/tcp_snd 2>/dev/null
                 echo "===CONNECTIONS==="
-                ss -tupn 2>/dev/null | grep $packageName || ss -tupn 2>/dev/null | grep $uid || netstat -tlpn 2>/dev/null | grep $packageName
+                ss -tupn 2>/dev/null | grep -E "$packageName|$uid\b" || netstat -tlpn 2>/dev/null | grep -E "$packageName|$uid\b"
                 echo "===ACTIVITIES==="
-                dumpsys activity activities 2>/dev/null | grep -E "mResumedActivity|topResumedActivity|ActivityRecord.*$packageName"
+                dumpsys window 2>/dev/null | grep -E "mCurrentFocus|mFocusedApp"
+                dumpsys activity activities 2>/dev/null | grep -E "topResumedActivity|mResumedActivity"
                 echo "===SERVICES==="
                 dumpsys activity services $packageName 2>/dev/null | grep -E "ServiceRecord\{|app=ProcessRecord"
             """.trimIndent()
@@ -128,36 +145,21 @@ object AppRootInspector {
                 .mapNotNull { it.trim().toIntOrNull() }
                 .distinct()
 
-            val psText = sections["PS"] ?: ""
-            val processes = mutableListOf<ProcessDetail>()
-            var totalCpu = 0.0
+            val topText = sections["TOP"] ?: ""
+            val topProcesses = parseTopOutput(topText, packageName)
 
-            psText.lineSequence().forEach { line ->
-                val tokens = line.trim().split(Regex("\\s+"))
-                if (tokens.size >= 5) {
-                    val pid = tokens[0].toIntOrNull()
-                    if (pid != null) {
-                        val user = tokens.getOrNull(1) ?: "unknown"
-                        val cpu = tokens.getOrNull(2)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
-                        val mem = tokens.getOrNull(3)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
-                        val cmd = tokens.drop(4).joinToString(" ")
-                        if (cmd.contains(packageName)) {
-                            totalCpu += cpu
-                            processes.add(
-                                ProcessDetail(
-                                    pid = pid,
-                                    name = cmd.substringAfterLast("/").substringAfterLast(" "),
-                                    user = user,
-                                    cpuPercent = cpu,
-                                    memPercent = mem,
-                                )
-                            )
-                        }
-                    }
+            val psText = sections["PS"] ?: ""
+            val psProcesses = parsePsOutput(psText, packageName)
+
+            val processes = mutableListOf<ProcessDetail>()
+            topProcesses.forEach { processes.add(it) }
+            psProcesses.forEach { psProc ->
+                if (processes.none { it.pid == psProc.pid }) {
+                    processes.add(psProc)
                 }
             }
 
-            // Fallback if ps did not capture all pids
+            // Fallback for any raw PIDs not captured in top or ps
             rawPids.forEach { pid ->
                 if (processes.none { it.pid == pid }) {
                     processes.add(
@@ -172,29 +174,66 @@ object AppRootInspector {
                 }
             }
 
-            // 2. Activities & Execution Status
+            val totalCpu = processes.sumOf { it.cpuPercent }
+
+            // 2. Activities & Execution Status (Strict Focus Validation)
             val activitiesText = sections["ACTIVITIES"] ?: ""
-            val isForeground = activitiesText.contains("mResumedActivity") ||
-                    activitiesText.contains("topResumedActivity") ||
-                    (activitiesText.contains(packageName) && activitiesText.contains("Resumed"))
+            val isForeground = isAppInForeground(activitiesText, packageName)
 
             val status = when {
-                processes.isEmpty() -> AppProcessStatus.STOPPED
+                processes.isEmpty() && rawPids.isEmpty() -> AppProcessStatus.STOPPED
                 isForeground -> AppProcessStatus.FOREGROUND
                 else -> AppProcessStatus.BACKGROUND
             }
 
             val topActivity = extractTopActivity(activitiesText, packageName)
 
-            // 3. Memory breakdown from dumpsys meminfo
+            // 3. Memory breakdown from smaps_rollup & dumpsys meminfo
+            val smapsText = sections["SMAPS"] ?: ""
+            val (smapsPss, smapsDalvik, smapsNative, _) = parseSmaps(smapsText)
+
             val meminfoText = sections["MEMINFO"] ?: ""
-            val (totalPssKb, dalvikKb, nativeKb, graphicsKb) = parseMeminfo(meminfoText)
+            val (meminfoPss, meminfoDalvik, meminfoNative, graphicsKb) = parseMeminfo(meminfoText)
+
+            val totalPssKb = if (smapsPss > 0L) smapsPss else meminfoPss
+            val dalvikKb = if (smapsDalvik > 0L) smapsDalvik else meminfoDalvik
+            val nativeKb = if (smapsNative > 0L) smapsNative else meminfoNative
 
             // 4. Network stats
             val netStatsText = sections["NET_STATS"] ?: ""
-            val netParts = netStatsText.split("---TX---")
-            val rxBytes = netParts.getOrNull(0)?.trim()?.toLongOrNull() ?: 0L
-            val txBytes = netParts.getOrNull(1)?.trim()?.toLongOrNull() ?: 0L
+            var (rxBytes, txBytes) = parseNetstatsOutput(netStatsText, uid)
+
+            // Android TrafficStats API integration
+            val tsRx = TrafficStats.getUidRxBytes(uid)
+            val tsTx = TrafficStats.getUidTxBytes(uid)
+            if (tsRx > 0L) rxBytes = maxOf(rxBytes, tsRx)
+            if (tsTx > 0L) txBytes = maxOf(txBytes, tsTx)
+
+            // Legacy /proc/uid_stat fallback
+            if (rxBytes == 0L && txBytes == 0L) {
+                val netParts = netStatsText.split("---TX---")
+                val legacyRx = netParts.getOrNull(0)?.trim()?.toLongOrNull() ?: 0L
+                val legacyTx = netParts.getOrNull(1)?.trim()?.toLongOrNull() ?: 0L
+                if (legacyRx > 0L) rxBytes = legacyRx
+                if (legacyTx > 0L) txBytes = legacyTx
+            }
+
+            // Real-time transfer speed calculation
+            val now = System.currentTimeMillis()
+            val prevSample = lastNetSnapshots[packageName]
+            var rxSpeedBps = 0L
+            var txSpeedBps = 0L
+            if (prevSample != null) {
+                val deltaMs = now - prevSample.timestamp
+                if (deltaMs in 500..30000) {
+                    val deltaSec = deltaMs / 1000.0
+                    val dRx = rxBytes - prevSample.rxBytes
+                    val dTx = txBytes - prevSample.txBytes
+                    if (dRx > 0) rxSpeedBps = (dRx / deltaSec).toLong()
+                    if (dTx > 0) txSpeedBps = (dTx / deltaSec).toLong()
+                }
+            }
+            lastNetSnapshots[packageName] = NetSnapshot(now, rxBytes, txBytes)
 
             // 5. Active connections
             val connText = sections["CONNECTIONS"] ?: ""
@@ -222,6 +261,8 @@ object AppRootInspector {
                 ramGraphicsMb = graphicsKb / 1024.0,
                 rxBytes = rxBytes,
                 txBytes = txBytes,
+                rxSpeedBps = rxSpeedBps,
+                txSpeedBps = txSpeedBps,
                 activeConnections = activeConnections,
                 topActivity = topActivity,
                 activeServices = activeServices,
@@ -303,20 +344,118 @@ object AppRootInspector {
         return map.mapValues { it.value.toString().trim() }
     }
 
-    private fun parseMeminfo(text: String): LongArray {
-        // [totalPssKb, dalvikKb, nativeKb, graphicsKb]
-        val result = LongArray(4) { 0L }
+    fun parseTopOutput(text: String, packageName: String): List<ProcessDetail> {
+        val list = mutableListOf<ProcessDetail>()
+        text.lineSequence().forEach { line ->
+            val tokens = line.trim().split(Regex("\\s+"))
+            // Standard toybox top: PID, USER, PR, NI, VIRT, RES, SHR, S, %CPU, %MEM, TIME+, ARGS...
+            if (tokens.size >= 12) {
+                val pid = tokens[0].toIntOrNull()
+                val user = tokens[1]
+                val cpu = tokens[8].replace("%", "").toDoubleOrNull()
+                val mem = tokens[9].replace("%", "").toDoubleOrNull()
+                val cmd = tokens.drop(11).joinToString(" ")
+                if (pid != null && cpu != null && (cmd.contains(packageName) || cmd.contains("$packageName:"))) {
+                    list.add(
+                        ProcessDetail(
+                            pid = pid,
+                            name = cmd.substringAfterLast("/").substringAfterLast(" "),
+                            user = user,
+                            cpuPercent = cpu,
+                            memPercent = mem ?: 0.0,
+                        )
+                    )
+                }
+            }
+        }
+        return list
+    }
+
+    fun parsePsOutput(text: String, packageName: String): List<ProcessDetail> {
+        val list = mutableListOf<ProcessDetail>()
+        text.lineSequence().forEach { line ->
+            val tokens = line.trim().split(Regex("\\s+"))
+            if (tokens.size >= 5) {
+                val pid = tokens[0].toIntOrNull()
+                if (pid != null) {
+                    val user = tokens.getOrNull(1) ?: "unknown"
+                    val cpu = tokens.getOrNull(2)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
+                    val mem = tokens.getOrNull(3)?.replace("%", "")?.toDoubleOrNull() ?: 0.0
+                    val cmd = tokens.drop(4).joinToString(" ")
+                    if (cmd.contains(packageName) || cmd.contains("$packageName:")) {
+                        list.add(
+                            ProcessDetail(
+                                pid = pid,
+                                name = cmd.substringAfterLast("/").substringAfterLast(" "),
+                                user = user,
+                                cpuPercent = cpu,
+                                memPercent = mem,
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        return list
+    }
+
+    fun parseSmaps(text: String): LongArray {
+        // [totalPssKb, dalvikKb, nativeKb, rssKb]
+        var totalPss = 0L
+        var dalvik = 0L
+        var native = 0L
+        var totalRss = 0L
+
         text.lineSequence().forEach { line ->
             val trimmed = line.trim()
             val lower = trimmed.lowercase(Locale.ROOT)
             when {
+                lower.startsWith("pss:") -> {
+                    val num = Regex("\\d+").find(trimmed)?.value?.toLongOrNull() ?: 0L
+                    totalPss += num
+                }
+                lower.startsWith("pss_anon:") || lower.startsWith("rssanon:") -> {
+                    val num = Regex("\\d+").find(trimmed)?.value?.toLongOrNull() ?: 0L
+                    dalvik += num
+                }
+                lower.startsWith("pss_file:") || lower.startsWith("rssfile:") -> {
+                    val num = Regex("\\d+").find(trimmed)?.value?.toLongOrNull() ?: 0L
+                    native += num
+                }
+                lower.startsWith("rss:") || lower.startsWith("vmrss:") -> {
+                    val num = Regex("\\d+").find(trimmed)?.value?.toLongOrNull() ?: 0L
+                    totalRss += num
+                }
+            }
+        }
+        if (totalPss == 0L && totalRss > 0L) {
+            totalPss = totalRss
+        }
+        return longArrayOf(totalPss, dalvik, native, totalRss)
+    }
+
+    fun parseMeminfo(text: String): LongArray {
+        // [totalPssKb, dalvikKb, nativeKb, graphicsKb]
+        val result = LongArray(4) { 0L }
+        var multiProcessSum = 0L
+
+        text.lineSequence().forEach { line ->
+            val trimmed = line.trim()
+            val lower = trimmed.lowercase(Locale.ROOT)
+            when {
+                // Multi-process format: "152,342K: com.android.vending (pid 12345)"
+                Regex("^([0-9,]+)\\s*k:\\s+", RegexOption.IGNORE_CASE).containsMatchIn(trimmed) -> {
+                    val match = Regex("^([0-9,]+)\\s*k:\\s+", RegexOption.IGNORE_CASE).find(trimmed)
+                    val rawNum = match?.groupValues?.get(1)?.replace(",", "")?.toLongOrNull() ?: 0L
+                    multiProcessSum += rawNum
+                }
                 lower.startsWith("total pss:") || lower.startsWith("total:") || (lower.startsWith("total") && lower.contains("pss")) -> {
                     val numbers = Regex("\\d+").findAll(trimmed).map { it.value.toLong() }.toList()
                     if (numbers.isNotEmpty()) {
                         result[0] = numbers[0]
                     }
                 }
-                lower.contains("dalvik heap") -> {
+                lower.contains("dalvik heap") || lower.contains("java heap") -> {
                     val numbers = Regex("\\d+").findAll(trimmed).map { it.value.toLong() }.toList()
                     if (numbers.isNotEmpty()) {
                         result[1] = numbers[0]
@@ -336,7 +475,45 @@ object AppRootInspector {
                 }
             }
         }
+        if (result[0] == 0L && multiProcessSum > 0L) {
+            result[0] = multiProcessSum
+        }
         return result
+    }
+
+    fun parseNetstatsOutput(text: String, targetUid: Int): Pair<Long, Long> {
+        var rxTotal = 0L
+        var txTotal = 0L
+        val uidRegex = Regex("\\buid=$targetUid\\b")
+
+        text.lineSequence().forEach { line ->
+            if (uidRegex.containsMatchIn(line)) {
+                // Keep base un-tagged sockets (tag=0x0 or no tag) to prevent double counting
+                val isBaseTag = !line.contains("tag=") || line.contains("tag=0x0") || line.contains("tag=0 ")
+                if (isBaseTag) {
+                    val rxMatch = Regex("(?:rxBytes|rb)=(\\d+)").find(line)
+                    val txMatch = Regex("(?:txBytes|tb)=(\\d+)").find(line)
+                    if (rxMatch != null) {
+                        rxTotal += rxMatch.groupValues[1].toLongOrNull() ?: 0L
+                    }
+                    if (txMatch != null) {
+                        txTotal += txMatch.groupValues[1].toLongOrNull() ?: 0L
+                    }
+                }
+            }
+        }
+        return Pair(rxTotal, txTotal)
+    }
+
+    fun isAppInForeground(activitiesText: String, packageName: String): Boolean {
+        return activitiesText.lineSequence().any { line ->
+            val lower = line.lowercase(Locale.ROOT)
+            val isFocusLine = lower.contains("mcurrentfocus") ||
+                    lower.contains("mfocusedapp") ||
+                    lower.contains("topresumedactivity") ||
+                    lower.contains("mresumedactivity")
+            isFocusLine && line.contains(packageName)
+        }
     }
 
     private fun extractTopActivity(text: String, packageName: String): String? {
@@ -472,5 +649,13 @@ object AppRootInspector {
         val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt().coerceIn(0, units.size - 1)
         val value = bytes / Math.pow(1024.0, digitGroups.toDouble())
         return String.format(java.util.Locale.US, "%.1f %s", value, units[digitGroups])
+    }
+
+    /**
+     * Formats bytes per second into human-readable transfer rate (e.g. "3.2 MB/s").
+     */
+    fun formatSpeed(bytesPerSec: Long): String {
+        if (bytesPerSec <= 0) return ""
+        return "${formatBytes(bytesPerSec)}/s"
     }
 }

@@ -39,39 +39,119 @@ class AppRootInspectorTest {
                        TOTAL:   120000       TOTAL SWAP PSS:        0
         """.trimIndent()
 
-        // Testing the parsing logic
-        var totalPss = 0L
-        var dalvik = 0L
-        var native = 0L
-        var graphics = 0L
-
-        sampleMeminfo.lineSequence().forEach { line ->
-            val trimmed = line.trim()
-            val lower = trimmed.lowercase()
-            when {
-                lower.startsWith("total:") || lower.startsWith("total pss:") -> {
-                    val nums = Regex("\\d+").findAll(trimmed).map { it.value.toLong() }.toList()
-                    if (nums.isNotEmpty()) totalPss = nums[0]
-                }
-                lower.contains("java heap") || lower.contains("dalvik heap") -> {
-                    val nums = Regex("\\d+").findAll(trimmed).map { it.value.toLong() }.toList()
-                    if (nums.isNotEmpty()) dalvik = nums[0]
-                }
-                lower.contains("native heap") -> {
-                    val nums = Regex("\\d+").findAll(trimmed).map { it.value.toLong() }.toList()
-                    if (nums.isNotEmpty()) native = nums[0]
-                }
-                lower.contains("graphics") || lower.contains("egl mtrack") -> {
-                    val nums = Regex("\\d+").findAll(trimmed).map { it.value.toLong() }.toList()
-                    if (nums.isNotEmpty()) graphics += nums[0]
-                }
-            }
-        }
+        val (totalPss, dalvik, native, graphics) = AppRootInspector.parseMeminfo(sampleMeminfo)
 
         assertEquals(120000L, totalPss)
         assertEquals(32768L, dalvik)
         assertEquals(45056L, native)
         assertEquals(16384L, graphics)
+    }
+
+    @Test
+    fun `parseMeminfo parses multi-process dumpsys output properly`() {
+        val sampleMultiProcessMeminfo = """
+            Total PSS by process:
+                152,342K: com.android.vending (pid 12345)
+                 43,210K: com.android.vending:download_service (pid 12346)
+        """.trimIndent()
+
+        val (totalPss, _, _, _) = AppRootInspector.parseMeminfo(sampleMultiProcessMeminfo)
+
+        assertEquals(195552L, totalPss)
+    }
+
+    @Test
+    fun `parseSmaps extracts PSS Anon and File correctly from kernel rollup`() {
+        val sampleSmaps = """
+            ---PID:12345---
+            Rss:              200384 kB
+            Pss:               75899 kB
+            Pss_Anon:          59971 kB
+            Pss_File:           6461 kB
+            ---PID:12346---
+            Rss:               50000 kB
+            Pss:               25000 kB
+            Pss_Anon:          15000 kB
+            Pss_File:           2000 kB
+        """.trimIndent()
+
+        val (totalPss, dalvik, native, totalRss) = AppRootInspector.parseSmaps(sampleSmaps)
+
+        assertEquals(100899L, totalPss)
+        assertEquals(74971L, dalvik)
+        assertEquals(8461L, native)
+        assertEquals(250384L, totalRss)
+    }
+
+    @Test
+    fun `parseNetstatsOutput extracts bytes from eBPF netstats correctly`() {
+        val sampleNetstats = """
+            ident=[type=WIFI, subType=COMBINED] uid=10185 set=DEFAULT tag=0x0 rxBytes=15829381 rxPackets=12984 txBytes=1492042 txPackets=9812
+            ident=[type=WIFI, subType=COMBINED] uid=10185 set=BACKGROUND tag=0x0 rxBytes=50000 rxPackets=20 txBytes=10000 txPackets=10
+            ident=[type=WIFI, subType=COMBINED] uid=10185 set=DEFAULT tag=0x123 rxBytes=99999 txBytes=99999
+            ident=[type=WIFI, subType=COMBINED] uid=10099 set=DEFAULT tag=0x0 rxBytes=888888 txBytes=888888
+        """.trimIndent()
+
+        val (rx, tx) = AppRootInspector.parseNetstatsOutput(sampleNetstats, 10185)
+
+        assertEquals(15879381L, rx)
+        assertEquals(1502042L, tx)
+    }
+
+    @Test
+    fun `parseNetstatsOutput supports rb and tb format`() {
+        val sampleNetstats = """
+            uid=10185 set=DEFAULT tag=0x0 rb=1024 rp=1 tb=512 tp=1
+        """.trimIndent()
+
+        val (rx, tx) = AppRootInspector.parseNetstatsOutput(sampleNetstats, 10185)
+
+        assertEquals(1024L, rx)
+        assertEquals(512L, tx)
+    }
+
+    @Test
+    fun `isAppInForeground accurately verifies current focused package`() {
+        val activitiesTextWithLauncherFocused = """
+            mCurrentFocus=Window{12345 u0 dev.victorialauncher/dev.victorialauncher.MainActivity}
+            topResumedActivity=ActivityRecord{67890 u0 dev.victorialauncher/dev.victorialauncher.MainActivity t1}
+            mResumedActivity: ActivityRecord{67890 u0 dev.victorialauncher/dev.victorialauncher.MainActivity t1}
+        """.trimIndent()
+
+        assertFalse(AppRootInspector.isAppInForeground(activitiesTextWithLauncherFocused, "com.android.vending"))
+        assertTrue(AppRootInspector.isAppInForeground(activitiesTextWithLauncherFocused, "dev.victorialauncher"))
+
+        val activitiesTextWithPlayStoreFocused = """
+            mCurrentFocus=Window{11111 u0 com.android.vending/com.google.android.finsky.activities.MainActivity}
+            topResumedActivity=ActivityRecord{22222 u0 com.android.vending/com.google.android.finsky.activities.MainActivity t5}
+        """.trimIndent()
+
+        assertTrue(AppRootInspector.isAppInForeground(activitiesTextWithPlayStoreFocused, "com.android.vending"))
+    }
+
+    @Test
+    fun `parseTopOutput extracts real-time CPU and memory percent`() {
+        val sampleTop = """
+            24192 root 10 -10 17G 207M 123M S 13.5 2.1 35:54.31 com.android.vending
+            24890 root 10 -10 5G  100M  50M S  4.2 1.0 10:20.10 com.android.vending:download_service
+            12345 root 10 -10 1G   50M  20M S  0.0 0.5  1:00.00 com.other.app
+        """.trimIndent()
+
+        val procs = AppRootInspector.parseTopOutput(sampleTop, "com.android.vending")
+
+        assertEquals(2, procs.size)
+        assertEquals(24192, procs[0].pid)
+        assertEquals(13.5, procs[0].cpuPercent, 0.01)
+        assertEquals(2.1, procs[0].memPercent, 0.01)
+        assertEquals(24890, procs[1].pid)
+        assertEquals(4.2, procs[1].cpuPercent, 0.01)
+    }
+
+    @Test
+    fun `formatSpeed formats rates correctly`() {
+        assertEquals("", AppRootInspector.formatSpeed(0L))
+        assertEquals("1.0 KB/s", AppRootInspector.formatSpeed(1024L))
+        assertEquals("2.5 MB/s", AppRootInspector.formatSpeed(2621440L))
     }
 
     @Test

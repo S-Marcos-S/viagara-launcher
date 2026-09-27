@@ -113,6 +113,8 @@ fun AppRootInspectorDialog(
     var isRefreshing by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(InspectorTab.MEMORY) }
 
+    var isAutoRefreshEnabled by remember { mutableStateOf(true) }
+
     fun refreshData(showIndicator: Boolean = false) {
         scope.launch {
             if (showIndicator) isRefreshing = true
@@ -123,8 +125,17 @@ fun AppRootInspectorDialog(
         }
     }
 
-    LaunchedEffect(app.packageName) {
-        refreshData(showIndicator = false)
+    LaunchedEffect(app.packageName, isAutoRefreshEnabled) {
+        if (!isAutoRefreshEnabled) {
+            refreshData(showIndicator = false)
+            return@LaunchedEffect
+        }
+        while (kotlinx.coroutines.isActive) {
+            val result = AppRootInspector.inspectApp(context, app.packageName)
+            inspectionData = result.getOrNull()
+            isLoading = false
+            kotlinx.coroutines.delay(2000L)
+        }
     }
 
     DisposableEffect(view) {
@@ -225,27 +236,55 @@ fun AppRootInspectorDialog(
                                 AppProcessStatus.STOPPED -> stringResource(R.string.root_inspector_status_stopped)
                             }
 
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(badgeColor.copy(alpha = 0.12f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Box(
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(badgeColor),
-                                )
-                                Spacer(Modifier.width(5.dp))
-                                Text(
-                                    text = badgeText,
-                                    color = badgeColor,
-                                    fontSize = 9.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp,
-                                )
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(badgeColor.copy(alpha = 0.12f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(badgeColor),
+                                    )
+                                    Spacer(Modifier.width(5.dp))
+                                    Text(
+                                        text = badgeText,
+                                        color = badgeColor,
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.5.sp,
+                                    )
+                                }
+
+                                if (isAutoRefreshEnabled && currentStatus != AppProcessStatus.STOPPED) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(Color(0xFF10B981).copy(alpha = 0.12f))
+                                            .padding(horizontal = 5.dp, vertical = 2.dp),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(5.dp)
+                                                .clip(CircleShape)
+                                                .background(Color(0xFF10B981)),
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            text = "AO VIVO",
+                                            color = Color(0xFF10B981),
+                                            fontSize = 8.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 0.5.sp,
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -354,6 +393,7 @@ fun AppRootInspectorDialog(
                                     modifier = Modifier.weight(1f),
                                     title = stringResource(R.string.root_inspector_download),
                                     value = AppRootInspector.formatBytes(data.rxBytes),
+                                    subtitle = if (data.rxSpeedBps > 0) "↓ ${AppRootInspector.formatSpeed(data.rxSpeedBps)}" else null,
                                     icon = Icons.Filled.NetworkCheck,
                                     accentColor = Color(0xFF10B981),
                                 )
@@ -361,6 +401,7 @@ fun AppRootInspectorDialog(
                                     modifier = Modifier.weight(1f),
                                     title = stringResource(R.string.root_inspector_upload),
                                     value = AppRootInspector.formatBytes(data.txBytes),
+                                    subtitle = if (data.txSpeedBps > 0) "↑ ${AppRootInspector.formatSpeed(data.txSpeedBps)}" else null,
                                     icon = Icons.Filled.NetworkCheck,
                                     accentColor = Color(0xFF06B6D4),
                                 )
@@ -525,6 +566,7 @@ private fun MetricCard(
     icon: ImageVector,
     accentColor: Color,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     Box(
@@ -551,12 +593,25 @@ private fun MetricCard(
                 )
             }
             Spacer(Modifier.height(3.dp))
-            Text(
-                text = value,
-                color = colorScheme.onSurface,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = value,
+                    color = colorScheme.onSurface,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        color = accentColor,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
         }
     }
 }
