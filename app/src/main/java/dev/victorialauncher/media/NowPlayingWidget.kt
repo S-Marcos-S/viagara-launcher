@@ -3,6 +3,8 @@ package dev.victorialauncher.media
 
 import android.content.Context
 import android.content.Intent
+import android.media.MediaMetadata
+import android.os.SystemClock
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -433,24 +435,46 @@ fun NowPlayingWidget(
     val dismissX = remember(current.controller.sessionToken) { Animatable(0f) }
     val dismissThresholdPx = with(LocalDensity.current) { 120.dp.toPx() }
 
-    var currentPosition by remember(current.controller.sessionToken, current.positionMs, current.lastUpdateTime) {
-        mutableStateOf(current.positionMs)
-    }
+    val liveDuration = current.controller.metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION)?.takeIf { it > 0L } ?: current.durationMs
 
-    // Advance position locally while playing
-    LaunchedEffect(current.isPlaying, current.positionMs, current.lastUpdateTime, current.speed) {
-        if (!current.isPlaying || current.durationMs <= 0L) return@LaunchedEffect
-        while (true) {
-            val elapsed = System.currentTimeMillis() - current.lastUpdateTime
-            val calculated = current.positionMs + (elapsed * current.speed).toLong()
-            currentPosition = calculated.coerceIn(0L, current.durationMs)
-            kotlinx.coroutines.delay(500L)
+    val initialPosition = remember(current.controller.sessionToken, current.positionMs, current.lastUpdateTime) {
+        val liveState = current.controller.playbackState
+        val basePosition = liveState?.position ?: current.positionMs
+        val baseUpdateTime = liveState?.lastPositionUpdateTime?.takeIf { it > 0L } ?: current.lastUpdateTime
+        val speed = liveState?.playbackSpeed?.takeIf { it > 0f } ?: current.speed
+        if (current.isPlaying && baseUpdateTime > 0L) {
+            val now = if (baseUpdateTime > 1_000_000_000_000L) System.currentTimeMillis() else SystemClock.elapsedRealtime()
+            val elapsed = (now - baseUpdateTime).coerceAtLeast(0L)
+            (basePosition + (elapsed * speed).toLong()).coerceIn(0L, if (liveDuration > 0L) liveDuration else Long.MAX_VALUE)
+        } else {
+            basePosition
         }
     }
 
-    val isIndeterminate = current.durationMs <= 0L
+    var currentPosition by remember(current.controller.sessionToken, current.positionMs, current.lastUpdateTime) {
+        mutableStateOf(initialPosition)
+    }
+
+    // Advance position locally while playing
+    LaunchedEffect(current.isPlaying, current.positionMs, current.lastUpdateTime, current.speed, liveDuration) {
+        if (!current.isPlaying || liveDuration <= 0L) return@LaunchedEffect
+        while (true) {
+            val liveState = current.controller.playbackState
+            val basePosition = liveState?.position ?: current.positionMs
+            val baseUpdateTime = liveState?.lastPositionUpdateTime?.takeIf { it > 0L } ?: current.lastUpdateTime
+            val speed = liveState?.playbackSpeed?.takeIf { it > 0f } ?: current.speed
+
+            val now = if (baseUpdateTime > 1_000_000_000_000L) System.currentTimeMillis() else SystemClock.elapsedRealtime()
+            val elapsed = (now - baseUpdateTime).coerceAtLeast(0L)
+            val calculated = basePosition + (elapsed * speed).toLong()
+            currentPosition = calculated.coerceIn(0L, liveDuration)
+            kotlinx.coroutines.delay(250L)
+        }
+    }
+
+    val isIndeterminate = liveDuration <= 0L
     val progressFraction = if (!isIndeterminate) {
-        (currentPosition.toFloat() / current.durationMs.toFloat()).coerceIn(0f, 1f)
+        (currentPosition.toFloat() / liveDuration.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
     Surface(
@@ -596,7 +620,7 @@ fun NowPlayingWidget(
                 color = contentColor.copy(alpha = 0.85f),
                 trackColor = contentColor.copy(alpha = 0.20f),
                 onSeek = if (!isIndeterminate) { fraction ->
-                    val targetMs = (fraction * current.durationMs).toLong()
+                    val targetMs = (fraction * liveDuration).toLong()
                     currentPosition = targetMs
                     runCatching { current.controller.transportControls.seekTo(targetMs) }
                 } else null,

@@ -11,6 +11,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import dev.victorialauncher.notification.AppNotificationItem
 import dev.victorialauncher.notification.NotificationBus
 import dev.victorialauncher.notification.NotificationMessage
@@ -252,7 +253,7 @@ class NowPlayingListenerService : NotificationListenerService() {
         val durationMs = metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L
         val positionMs = state?.position ?: 0L
         val speed = state?.playbackSpeed ?: 1f
-        val lastUpdateTime = state?.lastPositionUpdateTime ?: System.currentTimeMillis()
+        val lastUpdateTime = state?.lastPositionUpdateTime?.takeIf { it > 0L } ?: SystemClock.elapsedRealtime()
 
         NowPlayingBus.update(
             NowPlaying(
