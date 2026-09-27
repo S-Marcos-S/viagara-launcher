@@ -149,7 +149,7 @@ fun HomeOptionsBottomSheet(
                             ),
                         ) + fadeOut(animationSpec = tween(durationMillis = 150)),
                     )
-                    .offset { IntOffset(0, dragOffsetY.value.roundToInt()) }
+                    .offset { IntOffset(0, dragOffsetY.value.coerceAtLeast(0f).roundToInt()) }
                     .draggable(
                         state = rememberDraggableState { delta ->
                             coroutineScope.launch {
@@ -160,12 +160,25 @@ fun HomeOptionsBottomSheet(
                         orientation = Orientation.Vertical,
                         onDragStopped = { velocity ->
                             coroutineScope.launch {
-                                if (dragOffsetY.value > 120f || velocity > 800f) {
+                                // velocity < 0: gesture moving/flung UPWARDS
+                                // velocity > 0: gesture moving/flung DOWNWARDS
+                                val isFlingUp = velocity < -150f
+                                val isFlingDown = velocity > 600f
+
+                                val shouldDismiss = when {
+                                    isFlingUp -> false
+                                    isFlingDown -> true
+                                    velocity < 0f -> dragOffsetY.value > 280f
+                                    else -> dragOffsetY.value > 160f
+                                }
+
+                                if (shouldDismiss) {
                                     onDismiss()
-                                    dragOffsetY.snapTo(0f)
                                 } else {
+                                    val initialVel = if (velocity < 0f) velocity else 0f
                                     dragOffsetY.animateTo(
-                                        0f,
+                                        targetValue = 0f,
+                                        initialVelocity = initialVel,
                                         animationSpec = spring(
                                             dampingRatio = Spring.DampingRatioNoBouncy,
                                             stiffness = Spring.StiffnessMediumLow,

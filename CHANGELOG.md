@@ -25,6 +25,10 @@
   - **Processos do Sistema:** Seção colapsável opcional para visualizar daemons e serviços do sistema Android.
   - **Barra de Pesquisa Expressiva:** Filtro em tempo real por nome do app, pacote ou PID.
 
+- **Aprimoramento da Física e Gestos do Menu Rápido (Bottom Sheet):**
+  - **Inércia e Continuidade no Gesto de Subida:** Ao rolar o menu para baixo e depois jogá-lo para cima ("fling up"), a folha agora respeita a velocidade e o vetor de arraste do usuário (`initialVelocity`), continuando a subida e reabrindo na mesma velocidade com desaceleração orgânica.
+  - **Eliminação de Fechamento Prematuro e Saltos Visuais:** Corrigida a condição de descarte acidental que fechava o menu caso o movimento de subida não chegasse ao topo imediato, e removido o snap instantâneo de offset que causava um salto visual brusco durante a transição de saída.
+
 ### Novidades e Melhorias da Versão 0.59.28
 
 - **Captura e Gravação de Logs (Logcat) por Aplicativo com Root:**
