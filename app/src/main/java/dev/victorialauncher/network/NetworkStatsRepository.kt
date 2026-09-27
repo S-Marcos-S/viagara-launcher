@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.Process
 import androidx.core.graphics.drawable.toBitmap
 import dev.victorialauncher.root.AppRootInspector
+import dev.victorialauncher.update.RootInstaller
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -46,7 +47,7 @@ class NetworkStatsRepository(private val context: Context) {
         }
 
         // Auto-grant via root if device is rooted
-        if (AppRootInspector.isRootAvailable()) {
+        if (RootInstaller.isRootAvailable()) {
             val cmd = "pm grant ${context.packageName} android.permission.PACKAGE_USAGE_STATS 2>/dev/null; appops set ${context.packageName} GET_USAGE_STATS allow 2>/dev/null"
             AppRootInspector.runSuCommand(cmd)
 

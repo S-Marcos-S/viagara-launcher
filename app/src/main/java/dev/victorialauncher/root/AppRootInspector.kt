@@ -84,6 +84,11 @@ data class AppInspectionData(
 
 object AppRootInspector {
 
+    /**
+     * Checks whether superuser / root privileges are available on the device.
+     */
+    fun isRootAvailable(): Boolean = dev.victorialauncher.update.RootInstaller.isRootAvailable()
+
     private data class ExtendedNetSnapshot(
         val timestamp: Long,
         val netstatsRx: Long,
