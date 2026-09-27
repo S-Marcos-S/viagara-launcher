@@ -479,12 +479,13 @@ fun VictoriaNavHost(
                 ) + fadeOut(animationSpec = tween(150))
             },
         ) {
+            val view = androidx.compose.ui.platform.LocalView.current
             SearchScreen(
                 allApps = allApps,
                 nameOverrides = nameOverrides,
                 config = searchConfig,
-                onLaunchApp = { appInfo ->
-                    app.appRepository.launch(appInfo.componentName)
+                onLaunchApp = { appInfo, bounds ->
+                    app.appRepository.launch(appInfo.componentName, sourceBounds = bounds, sourceView = view)
                     navController.popBackStack()
                 },
                 onBack = { navController.popBackStack() },

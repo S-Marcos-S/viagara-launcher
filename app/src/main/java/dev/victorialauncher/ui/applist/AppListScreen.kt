@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.applist
 
+import android.graphics.Rect
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -155,7 +158,7 @@ fun AppListScreen(
     viewportHeightPx: Int,
     visible: Boolean,
     favoriteKeys: Set<String>,
-    onLaunch: (AppInfo) -> Unit,
+    onLaunch: (AppInfo, Rect?) -> Unit,
     onSetFavorite: (AppInfo, Boolean) -> Unit,
     onSetName: (AppInfo, String?) -> Unit,
     onChangeIcon: (AppInfo) -> Unit,
@@ -695,7 +698,7 @@ fun AppListScreen(
                                 activeDialogNotification = notif to row.app
                             },
                             touchPosition = touchPosition,
-                            onLaunch = { onLaunch(row.app) },
+                            onLaunch = { bounds -> onLaunch(row.app, bounds) },
                             onLongPress = { _ -> appMenuFor = row.app },
                             startPadding = rowStart,
                             endPadding = rowEnd,
@@ -956,7 +959,7 @@ fun AppListScreen(
                         context = context,
                         item = targetNotif,
                         appInfo = app,
-                        onLaunchFallback = { onLaunch(app) },
+                        onLaunchFallback = { onLaunch(app, null) },
                     )
                     currentDismiss()
                 },
@@ -1159,7 +1162,7 @@ private fun AppRow(
     iconSizeDp: Int,
     labelSizeSp: Int,
     isFavorite: Boolean,
-    onLaunch: () -> Unit,
+    onLaunch: (Rect?) -> Unit,
     onLongPress: (DpOffset) -> Unit,
     notification: dev.victorialauncher.notification.AppNotificationItem? = null,
     onNotificationClick: (dev.victorialauncher.notification.AppNotificationItem) -> Unit = {},
@@ -1171,11 +1174,36 @@ private fun AppRow(
     // wallpaper, and without any feedback a tap that did register reads as one that didn't.
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.95f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "appRowPressScale",
+    )
     val density = LocalDensity.current
+    var iconBounds by remember { mutableStateOf<Rect?>(null) }
+
+    val iconModifier = Modifier.onGloballyPositioned { coords ->
+        if (coords.isAttached) {
+            val b = coords.boundsInWindow()
+            iconBounds = Rect(
+                b.left.toInt(),
+                b.top.toInt(),
+                b.right.toInt(),
+                b.bottom.toInt(),
+            )
+        }
+    }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
             // Ahead of the inset, so the long-press menu is still placed against the
             // whole row rather than 20dp to the left of the finger.
             .then(if (enabled) Modifier.recordTouchPosition(touchPosition) else Modifier)
@@ -1191,7 +1219,7 @@ private fun AppRow(
                 interactionSource = interaction,
                 indication = null,
                 enabled = enabled,
-                onClick = onLaunch,
+                onClick = { onLaunch(iconBounds) },
                 onLongClick = {
                     onLongPress(
                         with(density) {
@@ -1256,9 +1284,9 @@ private fun AppRow(
                 notificationContent()
             }
             Spacer(Modifier.width(16.dp))
-            AppIcon(app = app, sizeDp = iconSizeDp)
+            AppIcon(app = app, sizeDp = iconSizeDp, modifier = iconModifier)
         } else {
-            AppIcon(app = app, sizeDp = iconSizeDp)
+            AppIcon(app = app, sizeDp = iconSizeDp, modifier = iconModifier)
             Spacer(Modifier.width(16.dp))
             Column(
                 modifier = Modifier.weight(1f),

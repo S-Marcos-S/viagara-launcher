@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.home
 
+import android.graphics.Rect
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -84,7 +87,7 @@ fun DynamicActionButton(
     side: EdgeSide,
     hapticsEnabled: Boolean,
     contentColor: Color,
-    onLaunch: (AppInfo) -> Unit,
+    onLaunch: (AppInfo, Rect?) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     isInteractiveDemo: Boolean = false,
@@ -107,6 +110,7 @@ fun DynamicActionButton(
     var isDragging by remember { mutableStateOf(false) }
     var thresholdCrossed by remember { mutableStateOf(false) }
     var currentGesture by remember { mutableStateOf<DynamicGesture>(DynamicGesture.NONE) }
+    var buttonBounds by remember { mutableStateOf<Rect?>(null) }
 
     val transformOrigin = remember(dragOffsetY.value) {
         if (dragOffsetY.value < 0f) {
@@ -150,10 +154,10 @@ fun DynamicActionButton(
             if (!isInteractiveDemo) {
                 when (gesture) {
                     DynamicGesture.SWIPE_UP -> {
-                        if (swipeUpApp != null) onLaunch(swipeUpApp) else onOpenSettings()
+                        if (swipeUpApp != null) onLaunch(swipeUpApp, buttonBounds) else onOpenSettings()
                     }
                     DynamicGesture.SWIPE_DOWN -> {
-                        if (swipeDownApp != null) onLaunch(swipeDownApp) else onOpenSettings()
+                        if (swipeDownApp != null) onLaunch(swipeDownApp, buttonBounds) else onOpenSettings()
                     }
                     else -> Unit
                 }
@@ -169,6 +173,17 @@ fun DynamicActionButton(
     Box(
         modifier = modifier
             .size(buttonSizeDp)
+            .onGloballyPositioned { coords ->
+                if (coords.isAttached) {
+                    val b = coords.boundsInWindow()
+                    buttonBounds = Rect(
+                        b.left.toInt(),
+                        b.top.toInt(),
+                        b.right.toInt(),
+                        b.bottom.toInt(),
+                    )
+                }
+            }
             .pointerInput(clickApp, swipeUpApp, swipeDownApp, hapticsEnabled) {
                 val touchSlop = viewConfig.touchSlop.toFloat()
                 awaitEachGesture {
@@ -255,7 +270,7 @@ fun DynamicActionButton(
                             pressScale.animateTo(1.0f, pressSpring)
                         }
                         if (clickApp != null) {
-                            onLaunch(clickApp)
+                            onLaunch(clickApp, buttonBounds)
                         } else if (!isInteractiveDemo) {
                             onOpenSettings()
                         }

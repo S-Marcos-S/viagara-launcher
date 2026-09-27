@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.graphics.Rect
 import android.os.Build
 import android.view.WindowManager
 import android.widget.Toast
@@ -14,9 +15,11 @@ import dev.victorialauncher.data.DailyQuote
 import dev.victorialauncher.data.DailyQuoteManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.spring
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -197,9 +200,9 @@ fun HomeScreen(
     nowPlayingHeightDp: Int,
     onResizeNowPlaying: (Int) -> Unit,
     widgetActions: WidgetSlotActions,
-    onLaunch: (AppInfo) -> Unit,
+    onLaunch: (AppInfo, Rect?) -> Unit,
     onRemoveFavorite: (AppInfo) -> Unit,
-    onOpenFolderApp: (AppInfo) -> Unit,
+    onOpenFolderApp: (AppInfo, Rect?) -> Unit,
     onRenameFolder: (Folder, String) -> Unit,
     onChangeFolderIcon: (Folder) -> Unit,
     onResetFolderIcon: (Folder) -> Unit,
@@ -936,7 +939,7 @@ fun HomeScreen(
                                 menuExpanded = false,
                                 menuOffset = menuOffset,
                                 touchPosition = touchPosition,
-                                onLaunch = { onLaunch(item.app) },
+                                onLaunch = { bounds -> onLaunch(item.app, bounds) },
                                 onOpenMenu = { _ -> appMenuFor = item.app },
                                 onDismissMenu = { menuForKey = null },
                                 onMoveToFolder = { menuForKey = null; onMoveToFolder(item.app) },
@@ -1255,7 +1258,7 @@ fun HomeScreen(
                     context = context,
                     item = targetNotif,
                     appInfo = app,
-                    onLaunchFallback = { onLaunch(app) },
+                    onLaunchFallback = { onLaunch(app, null) },
                 )
             },
             onDismissNotification = { targetNotif ->
@@ -1286,7 +1289,7 @@ private fun FavoriteRow(
     menuExpanded: Boolean,
     menuOffset: DpOffset,
     touchPosition: MutableState<Offset>,
-    onLaunch: () -> Unit,
+    onLaunch: (Rect?) -> Unit,
     onOpenMenu: (DpOffset) -> Unit,
     onDismissMenu: () -> Unit,
     onMoveToFolder: () -> Unit,
@@ -1302,12 +1305,37 @@ private fun FavoriteRow(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "favoriteRowPressScale",
+    )
     val density = LocalDensity.current
+    var iconBounds by remember { mutableStateOf<Rect?>(null) }
+
+    val iconModifier = Modifier.onGloballyPositioned { coords ->
+        if (coords.isAttached) {
+            val b = coords.boundsInWindow()
+            iconBounds = Rect(
+                b.left.toInt(),
+                b.top.toInt(),
+                b.right.toInt(),
+                b.bottom.toInt(),
+            )
+        }
+    }
 
     Box {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = pressScale
+                    scaleY = pressScale
+                }
                 .padding(
                     start = (contentStart - 8.dp).coerceAtLeast(0.dp),
                     end = (contentEnd - 8.dp).coerceAtLeast(0.dp),
@@ -1327,7 +1355,7 @@ private fun FavoriteRow(
                             .combinedClickable(
                                 interactionSource = interaction,
                                 indication = null,
-                                onClick = onLaunch,
+                                onClick = { onLaunch(iconBounds) },
                                 onLongClick = {
                                     onOpenMenu(
                                         with(density) {
@@ -1394,9 +1422,9 @@ private fun FavoriteRow(
                 } else {
                     Spacer(Modifier.weight(1f))
                 }
-                AppIcon(app = app, sizeDp = iconSizeDp)
+                AppIcon(app = app, sizeDp = iconSizeDp, modifier = iconModifier)
             } else {
-                AppIcon(app = app, sizeDp = iconSizeDp)
+                AppIcon(app = app, sizeDp = iconSizeDp, modifier = iconModifier)
                 if (showLabels) {
                     Spacer(Modifier.width(16.dp))
                     Column(
@@ -1479,7 +1507,7 @@ private fun FolderRow(
     onEdit: () -> Unit,
     onEditLayout: () -> Unit,
     onDelete: () -> Unit,
-    onOpenApp: (AppInfo) -> Unit,
+    onOpenApp: (AppInfo, Rect?) -> Unit,
     onRemoveApp: (AppInfo) -> Unit,
     contentStart: Dp = sidePaddingDp.dp,
     contentEnd: Dp = sidePaddingDp.dp,
@@ -1577,18 +1605,49 @@ private fun FolderRow(
             val folderSubEnd = if (alignRight) contentEnd + 24.dp else contentEnd
             Column {
                 members.forEach { member ->
+                    var memberIconBounds by remember { mutableStateOf<Rect?>(null) }
+                    val memberInteraction = remember { MutableInteractionSource() }
+                    val memberPressed by memberInteraction.collectIsPressedAsState()
+                    val memberPressScale by animateFloatAsState(
+                        targetValue = if (memberPressed) 0.95f else 1.0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow,
+                        ),
+                        label = "memberPressScale",
+                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .graphicsLayer {
+                                scaleX = memberPressScale
+                                scaleY = memberPressScale
+                            }
                             .padding(start = folderSubStart, end = folderSubEnd)
                             .combinedClickable(
-                                onClick = { onOpenApp(member) },
+                                interactionSource = memberInteraction,
+                                indication = null,
+                                onClick = { onOpenApp(member, memberIconBounds) },
                                 onLongClick = { onRemoveApp(member) },
                             )
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        AppIcon(app = member, sizeDp = (iconSizeDp * 0.8f).toInt())
+                        AppIcon(
+                            app = member,
+                            sizeDp = (iconSizeDp * 0.8f).toInt(),
+                            modifier = Modifier.onGloballyPositioned { coords ->
+                                if (coords.isAttached) {
+                                    val b = coords.boundsInWindow()
+                                    memberIconBounds = Rect(
+                                        b.left.toInt(),
+                                        b.top.toInt(),
+                                        b.right.toInt(),
+                                        b.bottom.toInt(),
+                                    )
+                                }
+                            },
+                        )
                         if (showLabels) {
                             Spacer(Modifier.width(16.dp))
                             Text(displayName(member), color = contentColor, fontSize = labelSizeSp.sp)

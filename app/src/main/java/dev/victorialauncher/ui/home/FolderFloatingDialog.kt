@@ -1,18 +1,29 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.home
 
+import android.graphics.Rect
 import android.os.Build
 import android.view.WindowManager
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,7 +83,7 @@ fun FolderFloatingDialog(
     iconSizeDp: Int,
     labelSizeSp: Int,
     displayName: (AppInfo) -> String,
-    onOpenApp: (AppInfo) -> Unit,
+    onOpenApp: (AppInfo, Rect?) -> Unit,
     onManageFolder: () -> Unit,
     onDismissRequest: () -> Unit,
     onAppLongClick: ((AppInfo) -> Unit)? = null,
@@ -227,13 +238,30 @@ fun FolderFloatingDialog(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             items(members, key = { it.key }) { app ->
+                                var itemIconBounds by remember { mutableStateOf<Rect?>(null) }
+                                val itemInteraction = remember { MutableInteractionSource() }
+                                val itemPressed by itemInteraction.collectIsPressedAsState()
+                                val itemPressScale by animateFloatAsState(
+                                    targetValue = if (itemPressed) 0.94f else 1.0f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow,
+                                    ),
+                                    label = "folderItemScale",
+                                )
                                 Column(
                                     modifier = Modifier
+                                        .graphicsLayer {
+                                            scaleX = itemPressScale
+                                            scaleY = itemPressScale
+                                        }
                                         .clip(RoundedCornerShape(16.dp))
                                         .combinedClickable(
+                                            interactionSource = itemInteraction,
+                                            indication = null,
                                             onClick = {
                                                 onDismissRequest()
-                                                onOpenApp(app)
+                                                onOpenApp(app, itemIconBounds)
                                             },
                                             onLongClick = onAppLongClick?.let { callback ->
                                                 {
@@ -248,6 +276,17 @@ fun FolderFloatingDialog(
                                     AppIcon(
                                         app = app,
                                         sizeDp = iconSizeDp.coerceIn(40, 56),
+                                        modifier = Modifier.onGloballyPositioned { coords ->
+                                            if (coords.isAttached) {
+                                                val b = coords.boundsInWindow()
+                                                itemIconBounds = Rect(
+                                                    b.left.toInt(),
+                                                    b.top.toInt(),
+                                                    b.right.toInt(),
+                                                    b.bottom.toInt(),
+                                                )
+                                            }
+                                        },
                                     )
                                     Spacer(Modifier.height(6.dp))
                                     Text(

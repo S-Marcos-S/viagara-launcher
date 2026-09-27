@@ -7,12 +7,20 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.net.Uri
 import android.provider.ContactsContract
 import android.widget.Toast
 import android.app.Activity
 import android.os.Build
 import android.view.WindowManager
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -105,7 +113,7 @@ fun SearchScreen(
     allApps: List<AppInfo>,
     nameOverrides: Map<String, String>,
     config: SearchConfig,
-    onLaunchApp: (AppInfo) -> Unit,
+    onLaunchApp: (AppInfo, Rect?) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -519,7 +527,7 @@ fun SearchScreen(
                         ) { appItem ->
                             SearchAppRow(
                                 item = appItem,
-                                onClick = { onLaunchApp(appItem.app) },
+                                onClick = { bounds -> onLaunchApp(appItem.app, bounds) },
                             )
                         }
                     }
@@ -642,16 +650,50 @@ private fun SearchSectionHeader(title: String, count: Int?) {
 @Composable
 private fun SearchAppRow(
     item: SearchResult.AppItem,
-    onClick: () -> Unit,
+    onClick: (Rect?) -> Unit,
 ) {
+    var iconBounds by remember { mutableStateOf<Rect?>(null) }
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "searchAppRowPressScale",
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = { onClick(iconBounds) },
+            )
             .padding(horizontal = 18.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AppIcon(app = item.app, sizeDp = 42)
+        AppIcon(
+            app = item.app,
+            sizeDp = 42,
+            modifier = Modifier.onGloballyPositioned { coords ->
+                if (coords.isAttached) {
+                    val b = coords.boundsInWindow()
+                    iconBounds = Rect(
+                        b.left.toInt(),
+                        b.top.toInt(),
+                        b.right.toInt(),
+                        b.bottom.toInt(),
+                    )
+                }
+            },
+        )
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(

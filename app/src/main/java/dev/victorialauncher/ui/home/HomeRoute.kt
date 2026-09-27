@@ -403,9 +403,13 @@ fun HomeRoute(
                 nowPlayingHeightDp = settings.nowPlayingHeightDp,
                 onResizeNowPlaying = { scope.launch { app.prefs.setNowPlayingHeightDp(it) } },
                 widgetActions = widgetActions,
-                onLaunch = { app.appRepository.launch(it.componentName) },
+                onLaunch = { appInfo, bounds ->
+                    app.appRepository.launch(appInfo.componentName, sourceBounds = bounds, sourceView = view)
+                },
                 onRemoveFavorite = { scope.launch { app.prefs.removeFavorite(it.key) } },
-                onOpenFolderApp = { app.appRepository.launch(it.componentName) },
+                onOpenFolderApp = { appInfo, bounds ->
+                    app.appRepository.launch(appInfo.componentName, sourceBounds = bounds, sourceView = view)
+                },
                 onRenameFolder = { folder, name ->
                     scope.launch { app.prefs.upsertFolder(folder.copy(name = name)) }
                 },
@@ -457,7 +461,7 @@ fun HomeRoute(
                 onManageFavorites = { onNavigate("favorites") },
                 onSetName = { appInfo, name -> scope.launch { app.prefs.setNameOverride(appInfo.key, name) } },
                 onChangeIcon = { appInfo -> onNavigate(iconPickerRoute(appInfo.key)) },
-                onAppInfo = { app.appRepository.openAppInfo(it.packageName) },
+                onAppInfo = { app.appRepository.openAppInfo(it.packageName, sourceView = view) },
                 onOpenSettings = { onNavigate("settings") },
                 onOpenHomeOptions = { showHomeOptions = true },
                 showAppNotifications = settings.showAppNotifications,
@@ -496,9 +500,13 @@ fun HomeRoute(
                 viewportHeightPx = viewportHeightPx,
                 visible = appListVisible,
                 favoriteKeys = remember(favoriteKeys) { favoriteKeys.toSet() },
-                onLaunch = { appInfo ->
+                onLaunch = { appInfo, bounds ->
                     // A launch that never got off the ground leaves nothing to wait for.
-                    if (app.appRepository.launch(appInfo.componentName)) closeAfterLaunch() else closeAppList()
+                    if (app.appRepository.launch(appInfo.componentName, sourceBounds = bounds, sourceView = view)) {
+                        closeAfterLaunch()
+                    } else {
+                        closeAppList()
+                    }
                 },
                 onSetFavorite = { appInfo, add ->
                     scope.launch {
@@ -510,7 +518,7 @@ fun HomeRoute(
                     closeAppList()
                     onNavigate(iconPickerRoute(appInfo.key))
                 },
-                onAppInfo = { app.appRepository.openAppInfo(it.packageName) },
+                onAppInfo = { app.appRepository.openAppInfo(it.packageName, sourceView = view) },
                 onHideApp = { appInfo -> scope.launch { app.prefs.setHidden(appInfo.key, true) } },
                 onMoveToFolder = { appInfo -> closeAppList(); folderPickerFor = appInfo },
                 onOpenSettings = { closeAppList(); onNavigate("settings") },
@@ -619,8 +627,8 @@ fun HomeRoute(
                 side = scrub.side,
                 hapticsEnabled = settings.hapticsEnabled,
                 contentColor = settings.contentColor,
-                onLaunch = { appInfo ->
-                    app.appRepository.launch(appInfo.componentName)
+                onLaunch = { appInfo, bounds ->
+                    app.appRepository.launch(appInfo.componentName, sourceBounds = bounds, sourceView = view)
                 },
                 onOpenSettings = {
                     onNavigate("settings/dynamic_button")
