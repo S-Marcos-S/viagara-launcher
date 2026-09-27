@@ -368,7 +368,7 @@ object AppRootInspector {
         return services
     }
 
-    private fun parseConnections(text: String): List<NetworkConnection> {
+    fun parseConnections(text: String): List<NetworkConnection> {
         val connections = mutableListOf<NetworkConnection>()
         text.lineSequence().forEach { line ->
             val trimmed = line.trim()
@@ -376,9 +376,23 @@ object AppRootInspector {
                 val parts = trimmed.split(Regex("\\s+"))
                 if (parts.size >= 5) {
                     val proto = parts[0].uppercase(Locale.ROOT)
-                    val state = parts.getOrNull(1) ?: "UNKNOWN"
-                    val local = parts.getOrNull(3) ?: ""
-                    val remote = parts.getOrNull(4) ?: ""
+                    val secondPart = parts.getOrNull(1) ?: ""
+                    val isSsFormat = secondPart.toIntOrNull() == null
+
+                    val state: String
+                    val local: String
+                    val remote: String
+
+                    if (isSsFormat) {
+                        state = secondPart
+                        local = parts.getOrNull(4) ?: ""
+                        remote = parts.getOrNull(5) ?: ""
+                    } else {
+                        local = parts.getOrNull(3) ?: ""
+                        remote = parts.getOrNull(4) ?: ""
+                        state = parts.getOrNull(5) ?: "ESTABLISHED"
+                    }
+
                     if (remote.isNotBlank() && remote != "*:*" && !remote.startsWith("0.0.0.0") && !remote.startsWith("[::]")) {
                         connections.add(
                             NetworkConnection(

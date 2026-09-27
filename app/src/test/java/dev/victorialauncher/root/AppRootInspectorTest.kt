@@ -82,26 +82,27 @@ class AppRootInspectorTest {
             tcp   LISTEN 0      128      0.0.0.0:8080          0.0.0.0:*
         """.trimIndent()
 
-        val connections = mutableListOf<NetworkConnection>()
-        sampleSsOutput.lineSequence().forEach { line ->
-            val trimmed = line.trim()
-            if (trimmed.startsWith("tcp") || trimmed.startsWith("udp")) {
-                val parts = trimmed.split(Regex("\\s+"))
-                if (parts.size >= 5) {
-                    val proto = parts[0].uppercase()
-                    val state = parts[1]
-                    val local = parts[3]
-                    val remote = parts[4]
-                    if (remote.isNotBlank() && remote != "*:*" && !remote.startsWith("0.0.0.0")) {
-                        connections.add(NetworkConnection(proto, local, remote, state))
-                    }
-                }
-            }
-        }
+        val connections = AppRootInspector.parseConnections(sampleSsOutput)
 
         assertEquals(1, connections.size)
         assertEquals("TCP", connections[0].protocol)
         assertEquals("ESTAB", connections[0].state)
+        assertEquals("142.250.190.46:443", connections[0].remoteAddress)
+    }
+
+    @Test
+    fun `connection parser recognizes netstat active TCP connections`() {
+        val sampleNetstatOutput = """
+            Proto Recv-Q Send-Q Local Address          Foreign Address        State
+            tcp        0      0 192.168.1.50:48210     142.250.190.46:443     ESTABLISHED
+            tcp        0      0 0.0.0.0:8080           0.0.0.0:*              LISTEN
+        """.trimIndent()
+
+        val connections = AppRootInspector.parseConnections(sampleNetstatOutput)
+
+        assertEquals(1, connections.size)
+        assertEquals("TCP", connections[0].protocol)
+        assertEquals("ESTABLISHED", connections[0].state)
         assertEquals("142.250.190.46:443", connections[0].remoteAddress)
     }
 }
