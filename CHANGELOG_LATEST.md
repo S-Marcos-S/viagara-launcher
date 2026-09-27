@@ -1,11 +1,10 @@
-### 🚀 Novidades e Melhorias da Versão 0.59.17
+### 🚀 Novidades e Melhorias da Versão 0.59.18
 
-- **Novo Nome Oficial: Viagra Launcher:**
-  - O aplicativo e todo o ecossistema foram atualizados com a nova identidade visual e nome **Viagra Launcher**.
-  - Atualização completa de todas as traduções e referências no sistema (Português e Inglês).
-  - Repositório oficial atualizado para `S-Marcos-S/viagra-launcher`.
+- **Ajuste Fino e Zoom no Ícone do Viagra Launcher:**
+  - Removido o recorte residual de borda clara na parte inferior da imagem original.
+  - Aplicado zoom inteligente (~10-12%) e enquadramento ideal no ícone, fazendo com que o logo preencha perfeitamente a máscara de exibição sem sobrar nenhuma faixa branca indesejada na base.
+  - Regeneradas todas as densidades de drawables e mipmaps (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`).
 
-- **Novo Ícone do Aplicativo:**
-  - Novo design do ícone do launcher implementado com suporte total a ícones adaptativos do Android moderno (adaptive icons com fundo e primeiro plano separados em camadas).
-  - Geração completa de todas as densidades de mipmaps (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`) e ícone circular (`ic_launcher_round`).
-  - Atualizado o sistema de auto-atualização (`UpdateManager`) e os fluxos do GitHub Actions para a nova distribuição.
+- **Otimização do Fluxo de Integração Contínua (CI/CD):**
+  - Removido o job redundante e demorado de verificação paralela do GitHub Actions.
+  - Testes unitários integrados diretamente no job de compilação, reduzindo o tempo de entrega do APK em mais de 50%.
