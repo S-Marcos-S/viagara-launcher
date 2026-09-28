@@ -1330,42 +1330,13 @@ private fun FavoriteRow(
         }
     }
 
-    val returningPackage by dev.victorialauncher.ui.transition.AppLaunchTransitionManager.returningPackage
-    val isReturning = returningPackage == app.packageName
-    val settleAnim = remember { androidx.compose.animation.core.Animatable(1f) }
-    LaunchedEffect(isReturning) {
-        if (isReturning) {
-            settleAnim.snapTo(0f)
-            settleAnim.animateTo(
-                targetValue = 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow,
-                ),
-            )
-        }
-    }
-
-    val settleProgress = settleAnim.value
-    val settleScale = if (settleProgress < 1f) {
-        1f + (0.28f * (1f - settleProgress))
-    } else 1.0f
-    val settleTranslationX = if (settleProgress < 1f) {
-        (if (alignRight) 16f else -16f) * (1f - settleProgress)
-    } else 0f
-    val settleTranslationY = if (settleProgress < 1f) {
-        12f * (1f - settleProgress)
-    } else 0f
-
     Box {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
-                    scaleX = pressScale * settleScale
-                    scaleY = pressScale * settleScale
-                    translationX = settleTranslationX
-                    translationY = settleTranslationY
+                    scaleX = pressScale
+                    scaleY = pressScale
                 }
                 .padding(
                     start = (contentStart - 8.dp).coerceAtLeast(0.dp),
@@ -1647,40 +1618,12 @@ private fun FolderRow(
                         ),
                         label = "memberPressScale",
                     )
-                    val returningPackage by dev.victorialauncher.ui.transition.AppLaunchTransitionManager.returningPackage
-                    val isMemberReturning = returningPackage == member.packageName
-                    val memberSettleAnim = remember { androidx.compose.animation.core.Animatable(1f) }
-                    LaunchedEffect(isMemberReturning) {
-                        if (isMemberReturning) {
-                            memberSettleAnim.snapTo(0f)
-                            memberSettleAnim.animateTo(
-                                targetValue = 1f,
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessLow,
-                                ),
-                            )
-                        }
-                    }
-                    val memberSettleProgress = memberSettleAnim.value
-                    val memberSettleScale = if (memberSettleProgress < 1f) {
-                        1f + (0.28f * (1f - memberSettleProgress))
-                    } else 1.0f
-                    val memberSettleX = if (memberSettleProgress < 1f) {
-                        (if (alignRight) 16f else -16f) * (1f - memberSettleProgress)
-                    } else 0f
-                    val memberSettleY = if (memberSettleProgress < 1f) {
-                        12f * (1f - memberSettleProgress)
-                    } else 0f
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .graphicsLayer {
-                                scaleX = memberPressScale * memberSettleScale
-                                scaleY = memberPressScale * memberSettleScale
-                                translationX = memberSettleX
-                                translationY = memberSettleY
+                                scaleX = memberPressScale
+                                scaleY = memberPressScale
                             }
                             .padding(start = folderSubStart, end = folderSubEnd)
                             .combinedClickable(

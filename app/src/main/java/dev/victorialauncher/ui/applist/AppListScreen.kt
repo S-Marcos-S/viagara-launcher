@@ -1199,41 +1199,12 @@ private fun AppRow(
         }
     }
 
-    val returningPackage by dev.victorialauncher.ui.transition.AppLaunchTransitionManager.returningPackage
-    val isReturning = returningPackage == app.packageName
-    val settleAnim = remember { androidx.compose.animation.core.Animatable(1f) }
-    LaunchedEffect(isReturning) {
-        if (isReturning) {
-            settleAnim.snapTo(0f)
-            settleAnim.animateTo(
-                targetValue = 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow,
-                ),
-            )
-        }
-    }
-
-    val settleProgress = settleAnim.value
-    val settleScale = if (settleProgress < 1f) {
-        1f + (0.28f * (1f - settleProgress))
-    } else 1.0f
-    val settleTranslationX = if (settleProgress < 1f) {
-        (if (alignRight) 16f else -16f) * (1f - settleProgress)
-    } else 0f
-    val settleTranslationY = if (settleProgress < 1f) {
-        12f * (1f - settleProgress)
-    } else 0f
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer {
-                scaleX = pressScale * settleScale
-                scaleY = pressScale * settleScale
-                translationX = settleTranslationX
-                translationY = settleTranslationY
+                scaleX = pressScale
+                scaleY = pressScale
             }
             // Ahead of the inset, so the long-press menu is still placed against the
             // whole row rather than 20dp to the left of the finger.

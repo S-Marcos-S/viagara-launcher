@@ -14,13 +14,12 @@ import android.os.Message
 import android.os.Messenger
 import android.os.SystemClock
 import android.util.Log
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Manages app launch and exit transition animations, including the Android GestureNavContract
- * protocol and the icon settle/return animation on the home screen.
+ * Manages app launch and exit transition coordinate synchronization via the Android
+ * GestureNavContract protocol, allowing the system gesture navigation to smoothly morph
+ * the closing application window directly into its icon position on the launcher.
  */
 object AppLaunchTransitionManager {
     private const val TAG = "AppTransition"
@@ -42,13 +41,6 @@ object AppLaunchTransitionManager {
     private var lastLaunchedPackage: String? = null
     @Volatile
     private var lastLaunchTime: Long = 0L
-
-    /** Observable state in Compose: package name of the app currently returning/closing */
-    private val _returningPackage = mutableStateOf<String?>(null)
-    val returningPackage: State<String?> get() = _returningPackage
-
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private var resetRunnable: Runnable? = null
 
     /** Messenger used to receive on-finish callback from SystemUI gesture navigation */
     private val finishMessenger = Messenger(Handler(Looper.getMainLooper()) { msg ->
@@ -112,8 +104,6 @@ object AppLaunchTransitionManager {
         val replyMessenger = callback?.replyTo ?: return false
         val pkg = componentName?.packageName ?: lastLaunchedPackage ?: return false
 
-        triggerReturnAnimation(pkg)
-
         // Find target position on screen
         val bounds = iconBoundsMap[pkg] ?: run {
             val dm = context.resources.displayMetrics
@@ -157,43 +147,9 @@ object AppLaunchTransitionManager {
     }
 
     /**
-     * Called when MainActivity is resumed. Triggers the return animation for the
-     * last launched app if returning within a reasonable time window.
+     * Called when MainActivity is resumed. Cleans up last launched app reference.
      */
     fun onLauncherResume() {
-        val pkg = lastLaunchedPackage
-        val launchTime = lastLaunchTime
-        if (pkg != null && SystemClock.elapsedRealtime() - launchTime < 30 * 60 * 1000L) {
-            triggerReturnAnimation(pkg)
-            lastLaunchedPackage = null
-        }
-    }
-
-    /**
-     * Triggers the visual return/settle animation for the given package.
-     */
-    fun triggerReturnAnimation(packageName: String) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            doTriggerReturn(packageName)
-        } else {
-            mainHandler.post { doTriggerReturn(packageName) }
-        }
-    }
-
-    private fun doTriggerReturn(packageName: String) {
-        resetRunnable?.let { mainHandler.removeCallbacks(it) }
-        _returningPackage.value = packageName
-
-        val runnable = Runnable {
-            if (_returningPackage.value == packageName) {
-                _returningPackage.value = null
-            }
-        }
-        resetRunnable = runnable
-        mainHandler.postDelayed(runnable, 900L)
-    }
-
-    fun isReturningApp(packageName: String): Boolean {
-        return _returningPackage.value == packageName
+        lastLaunchedPackage = null
     }
 }
