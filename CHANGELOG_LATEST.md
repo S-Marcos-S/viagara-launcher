@@ -30,3 +30,9 @@
   - Suporte a Superusuário (Root) e modo direto via permissão `android.permission.READ_LOGS`.
   - Botão de 1 toque para conceder automaticamente a permissão `READ_LOGS` usando Root (`pm grant`).
   - Botão para copiar o comando exato de ADB para a área de transferência para aparelhos sem root.
+
+- **Correções de Compilação & Integração da UI:**
+  - Correção na sincronização de funções assíncronas no `LogRecordingsManager`.
+  - Resolução de importações e referências nos componentes Compose (`HomeScreen`, `AppListScreen` e `AppLogViewerDialog`).
+  - Suporte à abertura da Central de Logs com identificadores de pacotes avulsos ou não indexados.
+

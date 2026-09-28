@@ -129,7 +129,6 @@ class LogRecordingsManager(private val context: Context) {
         }
     }
 
-    @Synchronized
     suspend fun stopAndSave(asZipWithDeviceInfo: Boolean = true): File? = withContext(Dispatchers.IO) {
         val sessionInfo = _session.value
         if (sessionInfo.state == RecordingState.IDLE) return@withContext null

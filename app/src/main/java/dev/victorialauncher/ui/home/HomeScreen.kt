@@ -63,6 +63,7 @@ import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AlignHorizontalLeft
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
@@ -87,6 +88,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -256,13 +258,15 @@ fun HomeScreen(
     var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
     var rootInspectorFor by remember { mutableStateOf<AppInfo?>(null) }
     var logViewerFor by remember { mutableStateOf<AppInfo?>(null) }
+    var logViewerInitialPkg by remember { mutableStateOf<String?>(null) }
     var logViewerInitialTab by remember { mutableStateOf<String?>(null) }
 
     val logViewerRequest by dev.victorialauncher.root.log.LogViewerEvents.request.collectAsState()
     LaunchedEffect(logViewerRequest) {
         val req = logViewerRequest ?: return@LaunchedEffect
-        val foundApp = req.packageName?.let { pkg -> installedApps.find { it.packageName == pkg } }
+        val foundApp = req.packageName?.let { pkg -> appsByKey.values.find { it.packageName == pkg } }
         logViewerFor = foundApp
+        logViewerInitialPkg = req.packageName
         logViewerInitialTab = req.initialTab
         dev.victorialauncher.root.log.LogViewerEvents.consume()
     }
@@ -1258,12 +1262,14 @@ fun HomeScreen(
         )
     }
 
-    if (logViewerFor != null || logViewerInitialTab != null) {
+    if (logViewerFor != null || logViewerInitialPkg != null || logViewerInitialTab != null) {
         dev.victorialauncher.ui.root.AppLogViewerDialog(
             initialApp = logViewerFor,
+            initialPackageName = logViewerInitialPkg,
             initialTab = logViewerInitialTab,
             onDismissRequest = {
                 logViewerFor = null
+                logViewerInitialPkg = null
                 logViewerInitialTab = null
             },
         )

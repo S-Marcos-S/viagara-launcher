@@ -134,6 +134,7 @@ private enum class LogViewerTab(val title: String, val icon: ImageVector) {
 @Composable
 fun AppLogViewerDialog(
     initialApp: AppInfo? = null,
+    initialPackageName: String? = null,
     initialTab: String? = null,
     onDismissRequest: () -> Unit,
 ) {
@@ -154,6 +155,7 @@ fun AppLogViewerDialog(
     }
 
     var targetApp by remember { mutableStateOf(initialApp) }
+    var targetPackageName by remember { mutableStateOf(initialApp?.packageName ?: initialPackageName) }
     var searchQuery by remember { mutableStateOf("") }
     var caseSensitive by remember { mutableStateOf(false) }
     var selectedLevel by remember { mutableStateOf<LogLevel?>(null) }
@@ -192,14 +194,14 @@ fun AppLogViewerDialog(
     }
 
     // Filtered logs
-    val filteredLogs = remember(rawLogs, userFilters, searchQuery, caseSensitive, selectedLevel, targetApp) {
+    val filteredLogs = remember(rawLogs, userFilters, searchQuery, caseSensitive, selectedLevel, targetApp, targetPackageName) {
         LogFilterEngine.filterAndSearch(
             lines = rawLogs,
             filters = userFilters,
             query = searchQuery,
             caseSensitive = caseSensitive,
             selectedLevel = selectedLevel,
-            targetPackage = targetApp?.packageName,
+            targetPackage = targetApp?.packageName ?: targetPackageName,
         )
     }
 
@@ -271,7 +273,10 @@ fun AppLogViewerDialog(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
                                             .background(colorScheme.primary.copy(alpha = 0.15f))
-                                            .clickable { targetApp = null }
+                                            .clickable {
+                                                targetApp = null
+                                                targetPackageName = null
+                                            }
                                             .padding(horizontal = 6.dp, vertical = 2.dp),
                                     ) {
                                         Text(
@@ -289,6 +294,57 @@ fun AppLogViewerDialog(
                                     fontFamily = FontFamily.Monospace,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        } else if (targetPackageName != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(colorScheme.primary.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.BugReport,
+                                    contentDescription = null,
+                                    tint = colorScheme.primary,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = targetPackageName!!,
+                                        color = colorScheme.onSurface,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(colorScheme.primary.copy(alpha = 0.15f))
+                                            .clickable {
+                                                targetPackageName = null
+                                            }
+                                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    ) {
+                                        Text(
+                                            text = "✕ Todos os apps",
+                                            color = colorScheme.primary,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "Filtro ativo por pacote",
+                                    color = colorScheme.onSurface.copy(alpha = 0.6f),
+                                    fontSize = 10.sp,
                                 )
                             }
                         } else {
@@ -435,7 +491,11 @@ fun AppLogViewerDialog(
                                     isRecording = recordingSession.state != RecordingState.IDLE,
                                     onToggleRecording = {
                                         if (recordingSession.state == RecordingState.IDLE) {
-                                            AppLogCaptureService.startCapture(context, targetApp?.packageName, targetApp?.name)
+                                            AppLogCaptureService.startCapture(
+                                                context,
+                                                targetApp?.packageName ?: targetPackageName,
+                                                targetApp?.name ?: targetPackageName,
+                                            )
                                         } else {
                                             AppLogCaptureService.saveLog(context)
                                         }
@@ -448,6 +508,7 @@ fun AppLogViewerDialog(
                                     session = recordingSession,
                                     savedRecordings = savedRecordings,
                                     targetApp = targetApp,
+                                    targetPackageName = targetPackageName,
                                     onStartRecording = { pkg, name ->
                                         AppLogCaptureService.startCapture(context, pkg, name)
                                     },
@@ -500,7 +561,7 @@ fun AppLogViewerDialog(
     // Create Filter Dialog
     if (createFilterDialogOpen) {
         CreateFilterDialog(
-            targetAppPackage = targetApp?.packageName,
+            targetAppPackage = targetApp?.packageName ?: targetPackageName,
             onDismiss = { createFilterDialogOpen = false },
             onSave = { filter ->
                 filterStorage.addFilter(filter)
@@ -923,6 +984,7 @@ private fun RecordingsTab(
     session: dev.victorialauncher.root.log.ActiveSessionInfo,
     savedRecordings: List<SavedLogRecording>,
     targetApp: AppInfo?,
+    targetPackageName: String? = null,
     onStartRecording: (pkg: String?, name: String?) -> Unit,
     onPauseRecording: () -> Unit,
     onStopSaveRecording: () -> Unit,
@@ -1016,7 +1078,7 @@ private fun RecordingsTab(
                                 .background(Color(0xFFEF4444).copy(alpha = 0.16f))
                                 .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                                 .clickable {
-                                    onStartRecording(targetApp?.packageName, targetApp?.name)
+                                    onStartRecording(targetApp?.packageName ?: targetPackageName, targetApp?.name ?: targetPackageName)
                                 }
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
@@ -1030,7 +1092,7 @@ private fun RecordingsTab(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = if (targetApp != null) "Gravar ${targetApp.name}" else "Iniciar Gravação Global",
+                                    text = if (targetApp != null) "Gravar ${targetApp.name}" else if (targetPackageName != null) "Gravar $targetPackageName" else "Iniciar Gravação Global",
                                     color = Color(0xFFEF4444),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
