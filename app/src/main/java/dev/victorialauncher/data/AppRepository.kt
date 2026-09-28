@@ -80,16 +80,27 @@ class AppRepository(private val context: Context) {
             val startY = targetBounds.top.coerceAtLeast(0)
             val width = targetBounds.width().coerceAtLeast(1)
             val height = targetBounds.height().coerceAtLeast(1)
-            ActivityOptions.makeScaleUpAnimation(targetView, startX, startY, width, height).toBundle()
+            dev.victorialauncher.ui.transition.AppLaunchTransitionManager.onAppLaunched(componentName.packageName, targetBounds)
+            ActivityOptions.makeClipRevealAnimation(targetView, startX, startY, width, height).toBundle()
         } else {
+            dev.victorialauncher.ui.transition.AppLaunchTransitionManager.onAppLaunched(componentName.packageName, targetBounds)
             null
         }
 
+        val activity = VictoriaApp.currentActivity?.get()
         return try {
-            if (optionsBundle != null) {
-                context.startActivity(intent, optionsBundle)
+            if (activity != null) {
+                if (optionsBundle != null) {
+                    activity.startActivity(intent, optionsBundle)
+                } else {
+                    activity.startActivity(intent)
+                }
             } else {
-                context.startActivity(intent)
+                if (optionsBundle != null) {
+                    context.startActivity(intent, optionsBundle)
+                } else {
+                    context.startActivity(intent)
+                }
             }
             true
         } catch (e: Exception) {
@@ -125,20 +136,33 @@ class AppRepository(private val context: Context) {
             val startY = targetBounds.top.coerceAtLeast(0)
             val width = targetBounds.width().coerceAtLeast(1)
             val height = targetBounds.height().coerceAtLeast(1)
-            ActivityOptions.makeScaleUpAnimation(targetView, startX, startY, width, height).toBundle()
+            ActivityOptions.makeClipRevealAnimation(targetView, startX, startY, width, height).toBundle()
         } else {
             null
         }
 
+        val activity = VictoriaApp.currentActivity?.get()
         try {
             if (optionsBundle != null) {
-                context.startActivity(intent, optionsBundle)
+                if (activity != null) {
+                    activity.startActivity(intent, optionsBundle)
+                } else {
+                    context.startActivity(intent, optionsBundle)
+                }
             } else {
-                context.startActivity(intent)
+                if (activity != null) {
+                    activity.startActivity(intent)
+                } else {
+                    context.startActivity(intent)
+                }
             }
         } catch (e: Exception) {
             try {
-                context.startActivity(intent)
+                if (activity != null) {
+                    activity.startActivity(intent)
+                } else {
+                    context.startActivity(intent)
+                }
             } catch (_: Exception) {}
         }
     }

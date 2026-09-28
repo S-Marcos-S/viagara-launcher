@@ -279,12 +279,14 @@ fun FolderFloatingDialog(
                                         modifier = Modifier.onGloballyPositioned { coords ->
                                             if (coords.isAttached) {
                                                 val b = coords.boundsInWindow()
-                                                itemIconBounds = Rect(
+                                                val r = Rect(
                                                     b.left.toInt(),
                                                     b.top.toInt(),
                                                     b.right.toInt(),
                                                     b.bottom.toInt(),
                                                 )
+                                                itemIconBounds = r
+                                                dev.victorialauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(app.packageName, r)
                                             }
                                         },
                                     )

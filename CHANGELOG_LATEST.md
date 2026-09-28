@@ -1,13 +1,16 @@
-### Novidades e Melhorias da Versão 0.59.30
+### Novidades e Melhorias da Versão 0.59.31
 
-- **Animações Nativas de Expansão e Compactação (App Launch & Exit) no Estilo Padrão do Android:**
-  - **Transição de Janela Fluida e Orgânica (`ActivityOptions.makeScaleUpAnimation`):** Ao tocar para abrir qualquer aplicativo em qualquer ponto da launcher, a janela agora se expande suavemente a partir das coordenadas e dimensões exatas do ícone tocado em direção à tela cheia, utilizando o mecanismo nativo do Android WindowManager.
-  - **Retorno Preciso e Efeito de Compactação Nativo (`intent.sourceBounds`):** Ao fechar o aplicativo (seja por gesto de voltar, botão de início ou gesto de retornar à Home), o Android WindowManager e o Predictive Back utilizam as coordenadas de origem registradas no Intent para encolher e compactar a janela de volta exatamente sobre o ícone que disparou a abertura, conferindo consistência espacial e fidelidade visual idêntica à do Pixel Launcher e do sistema Android oficial.
-  - **Rastreamento de Coordenadas Globais em Tempo Real:** Captura contínua dos limites absolutos na janela (`boundsInWindow()`) de todos os elementos interativos através de `Modifier.onGloballyPositioned`:
-    - **Favoritos da Tela Inicial (`FavoriteRow`):** Ícone em grade ou lista.
-    - **Itens de Pastas Integradas e Janela Flutuante (`FolderRow` e `FolderFloatingDialog`):** Ícones nos modos de pasta em linha e pop-up flutuante.
-    - **Gaveta de Aplicativos (`AppListScreen`):** Todas as linhas e ícones da lista alfabética.
-    - **Pesquisa (`SearchScreen`):** Itens de aplicativos resultantes da pesquisa rápida.
-    - **Botão de Ação Dinâmica (`DynamicActionButton`):** Disparo por toque simples ou gestos direcionais de deslizar para cima/baixo.
-  - **Feedback Tátil e Físico de Toque com Molas (*Spring Press Scale*):** Adicionada animação de compressão elástica suave com amortecimento orgânico (`scale ~ 0.94f - 0.95f` com `Spring.DampingRatioMediumBouncy`) ao pressionar ícones de favoritos, gaveta de apps, resultados de busca e pastas, proporcionando resposta física instantânea antes da expansão da janela.
-  - **Gerenciamento de Ciclo de Vida da Janela Principal (`VictoriaApp`):** Implementado registro de `ActivityLifecycleCallbacks` com referência fraca (`WeakReference<Activity>`) para garantir acesso seguro e ininterrupto à `decorView` do topo da hierarquia de janelas durante o disparo de qualquer transição.
+- **Implementação do Protocolo `GestureNavContract` e Animação de Retorno do Ícone (Estilo Niagara Launcher):**
+  - **Suporte ao Handshake de Gestos do Sistema (`GestureNavContract`):**
+    - Implementada a captura e resposta ao contrato de navegação por gestos do Android (`gesture_nav_contract_v1`) em `MainActivity` (`onCreate` e `onNewIntent`).
+    - Ao realizar o gesto de deslizar para cima para voltar à tela inicial, o launcher intercepta a requisição do SystemUI e envia as coordenadas exatas (`RectF`) do ícone do aplicativo fechado via `Messenger` (`gesture_nav_contract_icon_position`), permitindo que o sistema operacional encolha e realize o morphing da janela diretamente sobre o ícone na tela inicial.
+  - **Animação Física de Reentrada e Fixação do Ícone na Lista (*Icon Settle Spring*):**
+    - Quando o aplicativo é fechado e a tela inicial volta ao primeiro plano (seja via gesto de navegação, botão de voltar ou navegação por 3 botões), o ícone do aplicativo correspondente realiza uma animação orgânica de reentrada com física de mola elástica (`Spring.DampingRatioMediumBouncy` e `Spring.StiffnessLow`), partindo de uma leve expansão e deslocamento dinâmico até travar suavemente no seu devido lugar na lista.
+    - Suporte integrado em todas as superfícies da interface:
+      - **Favoritos da Tela Inicial (`FavoriteRow`):** Animação fluida da linha e do ícone no retorno.
+      - **Pastas em Linha e Flutuantes (`FolderRow` e `FolderFloatingDialog`):** Atualização dinâmica de coordenadas de todos os membros.
+      - **Gaveta de Aplicativos (`AppListScreen`):** Animação de fixação do ícone na lista alfabética.
+      - **Pesquisa (`SearchScreen`) e Botão de Ação Dinâmica (`DynamicActionButton`).**
+  - **Abertura Expressiva com Máscara e Contexto de Atividade (`makeClipRevealAnimation`):**
+    - Atualizada a inicialização de aplicativos em `AppRepository` para utilizar `ActivityOptions.makeClipRevealAnimation`, criando o efeito de revelação circular/retangular a partir do ícone tocado.
+    - Disparo de `startActivity` a partir do contexto da `Activity` em primeiro plano (`MainActivity`), impedindo que o WindowManager descarte o bundle de animação personalizada.

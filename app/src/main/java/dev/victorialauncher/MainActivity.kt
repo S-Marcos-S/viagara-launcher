@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        dev.victorialauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -90,7 +91,13 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         // Pressing HOME re-delivers the intent to us; treat it as "go back to the home screen".
         homeIntentTick++
+        dev.victorialauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        dev.victorialauncher.ui.transition.AppLaunchTransitionManager.onLauncherResume()
     }
 
     private fun handleUpdateIntent(intent: Intent?) {

@@ -176,12 +176,16 @@ fun DynamicActionButton(
             .onGloballyPositioned { coords ->
                 if (coords.isAttached) {
                     val b = coords.boundsInWindow()
-                    buttonBounds = Rect(
+                    val r = Rect(
                         b.left.toInt(),
                         b.top.toInt(),
                         b.right.toInt(),
                         b.bottom.toInt(),
                     )
+                    buttonBounds = r
+                    clickApp?.let { dev.victorialauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(it.packageName, r) }
+                    swipeUpApp?.let { dev.victorialauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(it.packageName, r) }
+                    swipeDownApp?.let { dev.victorialauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(it.packageName, r) }
                 }
             }
             .pointerInput(clickApp, swipeUpApp, swipeDownApp, hapticsEnabled) {

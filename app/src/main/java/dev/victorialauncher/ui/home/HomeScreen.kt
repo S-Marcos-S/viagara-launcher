@@ -1319,22 +1319,53 @@ private fun FavoriteRow(
     val iconModifier = Modifier.onGloballyPositioned { coords ->
         if (coords.isAttached) {
             val b = coords.boundsInWindow()
-            iconBounds = Rect(
+            val r = Rect(
                 b.left.toInt(),
                 b.top.toInt(),
                 b.right.toInt(),
                 b.bottom.toInt(),
             )
+            iconBounds = r
+            dev.victorialauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(app.packageName, r)
         }
     }
+
+    val returningPackage by dev.victorialauncher.ui.transition.AppLaunchTransitionManager.returningPackage
+    val isReturning = returningPackage == app.packageName
+    val settleAnim = remember { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(isReturning) {
+        if (isReturning) {
+            settleAnim.snapTo(0f)
+            settleAnim.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow,
+                ),
+            )
+        }
+    }
+
+    val settleProgress = settleAnim.value
+    val settleScale = if (settleProgress < 1f) {
+        1f + (0.28f * (1f - settleProgress))
+    } else 1.0f
+    val settleTranslationX = if (settleProgress < 1f) {
+        (if (alignRight) 16f else -16f) * (1f - settleProgress)
+    } else 0f
+    val settleTranslationY = if (settleProgress < 1f) {
+        12f * (1f - settleProgress)
+    } else 0f
 
     Box {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
-                    scaleX = pressScale
-                    scaleY = pressScale
+                    scaleX = pressScale * settleScale
+                    scaleY = pressScale * settleScale
+                    translationX = settleTranslationX
+                    translationY = settleTranslationY
                 }
                 .padding(
                     start = (contentStart - 8.dp).coerceAtLeast(0.dp),
@@ -1616,12 +1647,40 @@ private fun FolderRow(
                         ),
                         label = "memberPressScale",
                     )
+                    val returningPackage by dev.victorialauncher.ui.transition.AppLaunchTransitionManager.returningPackage
+                    val isMemberReturning = returningPackage == member.packageName
+                    val memberSettleAnim = remember { androidx.compose.animation.core.Animatable(1f) }
+                    LaunchedEffect(isMemberReturning) {
+                        if (isMemberReturning) {
+                            memberSettleAnim.snapTo(0f)
+                            memberSettleAnim.animateTo(
+                                targetValue = 1f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow,
+                                ),
+                            )
+                        }
+                    }
+                    val memberSettleProgress = memberSettleAnim.value
+                    val memberSettleScale = if (memberSettleProgress < 1f) {
+                        1f + (0.28f * (1f - memberSettleProgress))
+                    } else 1.0f
+                    val memberSettleX = if (memberSettleProgress < 1f) {
+                        (if (alignRight) 16f else -16f) * (1f - memberSettleProgress)
+                    } else 0f
+                    val memberSettleY = if (memberSettleProgress < 1f) {
+                        12f * (1f - memberSettleProgress)
+                    } else 0f
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .graphicsLayer {
-                                scaleX = memberPressScale
-                                scaleY = memberPressScale
+                                scaleX = memberPressScale * memberSettleScale
+                                scaleY = memberPressScale * memberSettleScale
+                                translationX = memberSettleX
+                                translationY = memberSettleY
                             }
                             .padding(start = folderSubStart, end = folderSubEnd)
                             .combinedClickable(
@@ -1639,12 +1698,14 @@ private fun FolderRow(
                             modifier = Modifier.onGloballyPositioned { coords ->
                                 if (coords.isAttached) {
                                     val b = coords.boundsInWindow()
-                                    memberIconBounds = Rect(
+                                    val r = Rect(
                                         b.left.toInt(),
                                         b.top.toInt(),
                                         b.right.toInt(),
                                         b.bottom.toInt(),
                                     )
+                                    memberIconBounds = r
+                                    dev.victorialauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(member.packageName, r)
                                 }
                             },
                         )

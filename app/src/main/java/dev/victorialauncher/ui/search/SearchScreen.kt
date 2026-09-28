@@ -685,12 +685,14 @@ private fun SearchAppRow(
             modifier = Modifier.onGloballyPositioned { coords ->
                 if (coords.isAttached) {
                     val b = coords.boundsInWindow()
-                    iconBounds = Rect(
+                    val r = Rect(
                         b.left.toInt(),
                         b.top.toInt(),
                         b.right.toInt(),
                         b.bottom.toInt(),
                     )
+                    iconBounds = r
+                    dev.victorialauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(item.app.packageName, r)
                 }
             },
         )
