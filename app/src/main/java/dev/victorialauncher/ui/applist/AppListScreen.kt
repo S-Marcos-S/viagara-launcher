@@ -183,6 +183,7 @@ fun AppListScreen(
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
     var rootInspectorFor by remember { mutableStateOf<AppInfo?>(null) }
+    var logViewerFor by remember { mutableStateOf<AppInfo?>(null) }
     var confirmUninstallFor by remember { mutableStateOf<AppInfo?>(null) }
     val context = LocalContext.current
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
@@ -804,6 +805,15 @@ fun AppListScreen(
                         onClick = { onSetFavorite(app, !isFavorite) },
                     )
                 )
+                if (isRootAvailable || dev.victorialauncher.root.log.TerminalEngine.hasReadLogsPermission(context)) {
+                    add(
+                        dev.victorialauncher.ui.common.AppMenuItem(
+                            title = stringResource(R.string.action_inspect_logs),
+                            icon = Icons.Filled.BugReport,
+                            onClick = { logViewerFor = app },
+                        )
+                    )
+                }
                 if (isRootAvailable) {
                     add(
                         dev.victorialauncher.ui.common.AppMenuItem(
@@ -816,7 +826,7 @@ fun AppListScreen(
                     add(
                         dev.victorialauncher.ui.common.AppMenuItem(
                             title = stringResource(if (isCurrentlyCapturing) R.string.action_stop_save_logs else R.string.action_capture_logs),
-                            icon = Icons.Filled.BugReport,
+                            icon = Icons.Filled.FiberManualRecord,
                             onClick = {
                                 if (isCurrentlyCapturing) {
                                     AppLogCaptureService.saveLog(context)
@@ -932,6 +942,13 @@ fun AppListScreen(
                 app = target,
                 displayName = displayName(target),
                 onDismissRequest = { rootInspectorFor = null },
+            )
+        }
+
+        logViewerFor?.let { target ->
+            dev.victorialauncher.ui.root.AppLogViewerDialog(
+                initialApp = target,
+                onDismissRequest = { logViewerFor = null },
             )
         }
 

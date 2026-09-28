@@ -33,6 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DataUsage
@@ -124,6 +125,7 @@ fun AppRootInspectorDialog(
     var isRefreshing by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(InspectorTab.MEMORY) }
     var selectedPeriod by remember { mutableStateOf(DataPeriod.TODAY) }
+    var showLogViewer by remember { mutableStateOf(false) }
 
     var isAutoRefreshEnabled by remember { mutableStateOf(true) }
 
@@ -319,6 +321,18 @@ fun AppRootInspectorDialog(
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
+                        }
+
+                        IconButton(
+                            onClick = { showLogViewer = true },
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.BugReport,
+                                contentDescription = stringResource(R.string.action_inspect_logs),
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(20.dp),
+                            )
                         }
 
                         IconButton(
@@ -575,6 +589,13 @@ fun AppRootInspectorDialog(
                 }
             }
         }
+    }
+
+    if (showLogViewer) {
+        dev.victorialauncher.ui.root.AppLogViewerDialog(
+            initialApp = app,
+            onDismissRequest = { showLogViewer = false },
+        )
     }
 }
 

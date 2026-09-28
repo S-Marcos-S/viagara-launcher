@@ -421,6 +421,13 @@
     <string name="log_toast_discarded">Gravação de log descartada</string>
     <string name="log_toast_deleted">Arquivo de log apagado</string>
     <string name="log_toast_crash_detected">Erro detectado em %1$s! Log salvo na pasta Downloads</string>
+    <string name="log_global_system_title">Sistema Global</string>
+    <string name="log_notif_crashes_channel_name">Crashes e ANRs do Sistema</string>
+    <string name="log_notif_crashes_channel_desc">Alertas em tempo real de falhas e congelamentos de aplicativos</string>
+    <string name="log_action_view_crash">Ver Stacktrace</string>
+    <string name="log_action_copy_trace">Copiar Stacktrace</string>
+    <string name="log_toast_copied_trace">Stacktrace copiado para a área de transferência</string>
+    <string name="action_inspect_logs">Central de Logs &amp; Crashes (LogFox)</string>
 
     <!-- Task Manager -->
     <string name="task_manager_title">Gerenciador de tarefas</string>

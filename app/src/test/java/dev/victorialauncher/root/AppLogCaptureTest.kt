@@ -99,4 +99,80 @@ class AppLogCaptureTest {
         val noUidLine = "09-27 13:00:00.123 1234 1250 D SomeTag: test"
         assertEquals(1234, AppLogCaptureService.extractPidFromLine(noUidLine))
     }
+
+    @Test
+    fun `LogFilterEngine correctly applies level, package, search query, and user filters`() {
+        val line1 = dev.victorialauncher.root.log.LogLine(
+            id = 1,
+            timestamp = System.currentTimeMillis(),
+            uid = "10185",
+            pid = "1234",
+            tid = "1234",
+            packageName = "com.example.myapp",
+            level = dev.victorialauncher.root.log.LogLevel.ERROR,
+            tag = "NetworkWorker",
+            content = "SocketTimeoutException: failed to connect to api",
+            originalContent = "raw line 1",
+        )
+        val line2 = dev.victorialauncher.root.log.LogLine(
+            id = 2,
+            timestamp = System.currentTimeMillis(),
+            uid = "1000",
+            pid = "500",
+            tid = "500",
+            packageName = "android",
+            level = dev.victorialauncher.root.log.LogLevel.DEBUG,
+            tag = "WindowManager",
+            content = "Relayout window complete",
+            originalContent = "raw line 2",
+        )
+
+        val allLines = listOf(line1, line2)
+
+        // 1. Filter by Level
+        val errorOnly = dev.victorialauncher.root.log.LogFilterEngine.filterAndSearch(
+            lines = allLines,
+            selectedLevel = dev.victorialauncher.root.log.LogLevel.ERROR,
+        )
+        assertEquals(1, errorOnly.size)
+        assertEquals("NetworkWorker", errorOnly[0].tag)
+
+        // 2. Filter by Package
+        val appOnly = dev.victorialauncher.root.log.LogFilterEngine.filterAndSearch(
+            lines = allLines,
+            targetPackage = "com.example.myapp",
+        )
+        assertEquals(1, appOnly.size)
+        assertEquals(1L, appOnly[0].id)
+
+        // 3. Search Query
+        val searchResults = dev.victorialauncher.root.log.LogFilterEngine.filterAndSearch(
+            lines = allLines,
+            query = "SocketTimeout",
+        )
+        assertEquals(1, searchResults.size)
+        assertEquals(1L, searchResults[0].id)
+
+        // 4. Custom Exclude Filter
+        val excludeNetworkFilter = dev.victorialauncher.root.log.UserLogFilter(
+            name = "Exclude Network",
+            including = false,
+            tag = "NetworkWorker",
+            enabled = true,
+        )
+        val afterExclude = dev.victorialauncher.root.log.LogFilterEngine.filterAndSearch(
+            lines = allLines,
+            filters = listOf(excludeNetworkFilter),
+        )
+        assertEquals(1, afterExclude.size)
+        assertEquals("WindowManager", afterExclude[0].tag)
+    }
+
+    @Test
+    fun `DeviceInfoProvider generates non-empty device telemetry text`() {
+        val text = dev.victorialauncher.root.log.DeviceInfoProvider.getDeviceInfoText()
+        assertTrue(text.contains("VIAGRA LAUNCHER - INFORMAÇÕES DO DISPOSITIVO"))
+        assertTrue(text.contains("SDK_INT"))
+        assertTrue(text.contains("MANUFACTURER"))
+    }
 }

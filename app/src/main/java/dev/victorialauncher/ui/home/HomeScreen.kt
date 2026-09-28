@@ -255,6 +255,17 @@ fun HomeScreen(
     var floatingFolderDialog by remember { mutableStateOf<Folder?>(null) }
     var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
     var rootInspectorFor by remember { mutableStateOf<AppInfo?>(null) }
+    var logViewerFor by remember { mutableStateOf<AppInfo?>(null) }
+    var logViewerInitialTab by remember { mutableStateOf<String?>(null) }
+
+    val logViewerRequest by dev.victorialauncher.root.log.LogViewerEvents.request.collectAsState()
+    LaunchedEffect(logViewerRequest) {
+        val req = logViewerRequest ?: return@LaunchedEffect
+        val foundApp = req.packageName?.let { pkg -> installedApps.find { it.packageName == pkg } }
+        logViewerFor = foundApp
+        logViewerInitialTab = req.initialTab
+        dev.victorialauncher.root.log.LogViewerEvents.consume()
+    }
     var menuForKey by remember { mutableStateOf<String?>(null) }
     var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     var renameDialogFor by remember { mutableStateOf<AppInfo?>(null) }
@@ -1097,6 +1108,18 @@ fun HomeScreen(
                     onClick = { onMoveToFolder(app) },
                 )
             )
+            if (isRootAvailable || dev.victorialauncher.root.log.TerminalEngine.hasReadLogsPermission(context)) {
+                add(
+                    dev.victorialauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.action_inspect_logs),
+                        icon = Icons.Filled.BugReport,
+                        onClick = {
+                            logViewerFor = app
+                            logViewerInitialTab = "logs"
+                        },
+                    )
+                )
+            }
             if (isRootAvailable) {
                 add(
                     dev.victorialauncher.ui.common.AppMenuItem(
@@ -1109,7 +1132,7 @@ fun HomeScreen(
                 add(
                     dev.victorialauncher.ui.common.AppMenuItem(
                         title = stringResource(if (isCurrentlyCapturing) R.string.action_stop_save_logs else R.string.action_capture_logs),
-                        icon = Icons.Filled.BugReport,
+                        icon = Icons.Filled.FiberManualRecord,
                         onClick = {
                             if (isCurrentlyCapturing) {
                                 AppLogCaptureService.saveLog(context)
@@ -1232,6 +1255,17 @@ fun HomeScreen(
             app = target,
             displayName = displayName(target),
             onDismissRequest = { rootInspectorFor = null },
+        )
+    }
+
+    if (logViewerFor != null || logViewerInitialTab != null) {
+        dev.victorialauncher.ui.root.AppLogViewerDialog(
+            initialApp = logViewerFor,
+            initialTab = logViewerInitialTab,
+            onDismissRequest = {
+                logViewerFor = null
+                logViewerInitialTab = null
+            },
         )
     }
 

@@ -420,6 +420,13 @@
     <string name="log_toast_discarded">Log recording discarded</string>
     <string name="log_toast_deleted">Log file deleted</string>
     <string name="log_toast_crash_detected">Error detected in %1$s! Log saved to Downloads</string>
+    <string name="log_global_system_title">Global System</string>
+    <string name="log_notif_crashes_channel_name">System Crashes &amp; ANRs</string>
+    <string name="log_notif_crashes_channel_desc">Real-time alerts for application crashes and ANR freezes</string>
+    <string name="log_action_view_crash">View Stacktrace</string>
+    <string name="log_action_copy_trace">Copy Stacktrace</string>
+    <string name="log_toast_copied_trace">Stacktrace copied to clipboard</string>
+    <string name="action_inspect_logs">LogFox Live &amp; Crash Center</string>
 
     <!-- Task Manager -->
     <string name="task_manager_title">Task Manager</string>

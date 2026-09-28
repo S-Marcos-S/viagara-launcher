@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         dev.victorialauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
+        handleLogViewerIntent(intent)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
@@ -93,6 +94,7 @@ class MainActivity : ComponentActivity() {
         homeIntentTick++
         dev.victorialauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
+        handleLogViewerIntent(intent)
     }
 
     override fun onResume() {
@@ -106,6 +108,15 @@ class MainActivity : ComponentActivity() {
             intent.getBooleanExtra(dev.victorialauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false)
         ) {
             dev.victorialauncher.update.UpdateManager.requestShowUpdateChangelog()
+        }
+    }
+
+    private fun handleLogViewerIntent(intent: Intent?) {
+        if (intent == null) return
+        val crashId = intent.getStringExtra(dev.victorialauncher.root.log.CrashManager.EXTRA_OPEN_CRASH_ID)
+        val crashPkg = intent.getStringExtra(dev.victorialauncher.root.log.CrashManager.EXTRA_CRASH_PACKAGE)
+        if (crashId != null || crashPkg != null) {
+            dev.victorialauncher.root.log.LogViewerEvents.open(crashPkg, "crashes")
         }
     }
 
