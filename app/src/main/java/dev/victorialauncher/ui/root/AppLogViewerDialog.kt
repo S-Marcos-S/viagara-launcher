@@ -261,7 +261,7 @@ fun AppLogViewerDialog(
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = targetApp!!.name,
+                                        text = targetApp!!.label,
                                         color = colorScheme.onSurface,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
@@ -494,7 +494,7 @@ fun AppLogViewerDialog(
                                             AppLogCaptureService.startCapture(
                                                 context,
                                                 targetApp?.packageName ?: targetPackageName,
-                                                targetApp?.name ?: targetPackageName,
+                                                targetApp?.label ?: targetPackageName,
                                             )
                                         } else {
                                             AppLogCaptureService.saveLog(context)
@@ -1078,7 +1078,7 @@ private fun RecordingsTab(
                                 .background(Color(0xFFEF4444).copy(alpha = 0.16f))
                                 .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                                 .clickable {
-                                    onStartRecording(targetApp?.packageName ?: targetPackageName, targetApp?.name ?: targetPackageName)
+                                    onStartRecording(targetApp?.packageName ?: targetPackageName, targetApp?.label ?: targetPackageName)
                                 }
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
@@ -1092,7 +1092,7 @@ private fun RecordingsTab(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = if (targetApp != null) "Gravar ${targetApp.name}" else if (targetPackageName != null) "Gravar $targetPackageName" else "Iniciar Gravação Global",
+                                    text = if (targetApp != null) "Gravar ${targetApp.label}" else if (targetPackageName != null) "Gravar $targetPackageName" else "Iniciar Gravação Global",
                                     color = Color(0xFFEF4444),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,

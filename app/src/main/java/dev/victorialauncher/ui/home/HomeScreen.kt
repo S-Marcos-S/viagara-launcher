@@ -2185,7 +2185,19 @@ private fun BottomDailyQuoteBlock(
     ) {
         val widthFactor = (maxWidth / 340.dp).coerceIn(0.70f, 1.0f)
 
-        Column(
+        AutoSizedDailyQuoteView(
+            quote = quote,
+            contentColor = contentColor,
+            alignRight = alignRight,
+            widthFactor = widthFactor,
+            baseQuoteFontSizeSp = 15f,
+            minQuoteFontSizeSp = 11.5f,
+            baseAuthorFontSizeSp = 13f,
+            minAuthorFontSizeSp = 9.5f,
+            targetMaxLines = 3,
+            maxAllowedLines = 4,
+            authorFontWeight = FontWeight.Medium,
+            authorAlpha = 0.6f,
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
@@ -2200,26 +2212,6 @@ private fun BottomDailyQuoteBlock(
                     },
                 )
                 .padding(vertical = 6.dp),
-            horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
-        ) {
-            Text(
-                text = "“${quote.quote}”",
-                color = contentColor.copy(alpha = 0.9f),
-                fontSize = (15 * widthFactor).sp,
-                fontStyle = FontStyle.Italic,
-                lineHeight = (21 * widthFactor).sp,
-                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
-            )
-
-            Spacer(Modifier.height(4.dp))
-
-            Text(
-                text = "— ${quote.author}",
-                color = contentColor.copy(alpha = 0.6f),
-                fontSize = (13 * widthFactor).sp,
-                fontWeight = FontWeight.Medium,
-                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
-            )
-        }
+        )
     }
 }

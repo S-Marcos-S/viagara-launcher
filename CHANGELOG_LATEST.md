@@ -1,3 +1,15 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.34
+
+- **Auto-Ajuste Inteligente de Fonte para Widgets com Frase do Dia:**
+  - **Mecanismo Dinâmico de Medição Tipográfica (`AutoSizedDailyQuoteView`):** Implementado cálculo em tempo real utilizando o `TextMeasurer` nativo do Jetpack Compose para avaliar com exatidão os limites horizontais e verticais disponíveis para a citação e autor.
+  - **Eliminação Completa de Frases Incompletas e Reticências ("..."):** Frases longas não sofrem mais corte ou truncamento com reticências nos widgets de relógio com citação diária (`DAILY_REFLECTION` e `DAILY_REFLECTION_STATS`) nem no bloco de citação inferior da tela inicial.
+  - **Redução Gradual e Proporcional de Fonte:** O algoritmo reduz a tipografia em passos suaves (de 13sp até 8.5sp no relógio, e de 15sp até 11.5sp no bloco inferior), ajustando simultaneamente a entrelinha (`lineHeight`) para que 100% das 98 frases da curadoria caibam com perfeição e elegância visual sem desalinhar a altura do relógio.
+  - **Escala Harmônica do Nome do Autor:** O autor da frase tem sua escala calibrada dinamicamente para manter a hierarquia visual em relação à frase e garantir que caiba em linha única sem quebras inadequadas.
+  - **Adaptação Responsiva a Acessibilidade e Dispositivos:** Suporte total a telas estreitas, aparelhos compactos, larguras personalizadas de margem lateral e escalas de fonte aumentadas nas opções de acessibilidade do Android.
+- **Correção de Compilação na Central de Logs (`AppLogViewerDialog`):** Ajustada a referência de propriedade do aplicativo para `AppInfo.label`, corrigindo o erro de compilação (`Unresolved reference 'name'`) durante as etapas de build.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.33
 
 - **Central de Logs, Diagnóstico e Crashes Avançada (Motor LogFox Integrado):**
@@ -35,4 +47,3 @@
   - Correção na sincronização de funções assíncronas no `LogRecordingsManager`.
   - Resolução de importações e referências nos componentes Compose (`HomeScreen`, `AppListScreen` e `AppLogViewerDialog`).
   - Suporte à abertura da Central de Logs com identificadores de pacotes avulsos ou não indexados.
-

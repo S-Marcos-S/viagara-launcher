@@ -1395,35 +1395,25 @@ private fun DailyReflectionClockContent(
     }
 
     val quoteBlock: @Composable (Modifier) -> Unit = { mod ->
-        Column(
+        AutoSizedDailyQuoteView(
+            quote = quote,
+            contentColor = contentColor,
+            alignRight = alignRight,
+            widthFactor = widthFactor,
+            baseQuoteFontSizeSp = 13f,
+            minQuoteFontSizeSp = 8.5f,
+            baseAuthorFontSizeSp = 10.5f,
+            minAuthorFontSizeSp = 7.5f,
+            targetMaxLines = 4,
+            maxAllowedLines = 5,
+            authorFontWeight = FontWeight.SemiBold,
+            authorAlpha = 0.65f,
             modifier = mod.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onQuoteClick,
             ),
-            horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
-        ) {
-            Text(
-                text = "“${quote.quote}”",
-                color = contentColor.copy(alpha = 0.9f),
-                fontSize = (13 * widthFactor).sp,
-                fontStyle = FontStyle.Italic,
-                lineHeight = (17 * widthFactor).sp,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "— ${quote.author}",
-                color = contentColor.copy(alpha = 0.65f),
-                fontSize = (10.5f * widthFactor).sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
-            )
-        }
+        )
     }
 
     val dividerSpacing = if (isCompact) 8.dp else 12.dp
