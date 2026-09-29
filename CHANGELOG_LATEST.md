@@ -1,3 +1,15 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.40
+
+- **Redesign Completo e Otimização de Espaço da Tela de Inspeção de Aplicativos (`AppRootInspectorDialog`):**
+  - **Alinhamento Preciso do Ícone com o Nome do App:** Corrigido o alinhamento vertical do cabeçalho (`Alignment.Top` com calibração visual), alinhando o topo do ícone perfeitamente com o título do aplicativo e eliminando o aspecto desalinhado/torto causado pela centralização vertical anterior.
+  - **Botões de Ação Superiores Compactos:** Os botões de recarregar, logs e fechar foram reposicionados no topo à direita com dimensões reduzidas (28dp), liberando largura horizontal e altura no cabeçalho.
+  - **Selo "AO VIVO" em Linha Única Sem Quebras:** Prevenção estrita de quebra de linha (`maxLines = 1, softWrap = false`) no selo de telemetria em tempo real, garantindo que o texto "AO VIVO" seja sempre exibido em uma única linha com espaçamento impecável.
+  - **Cards de Métricas Compactos (CPU, RAM, Velocidades):** Reestruturação dos blocos de CPU, RAM, Download e Upload em cartões horizontais reduzidos (nome e ícone à esquerda, valor à direita), economizando dezenas de pixels verticais.
+  - **Nomenclatura Concisa de Transferência:** Redução dos títulos de rede de "Velocidade Download" e "Velocidade Upload" para os termos diretos "Download" e "Upload", eliminando poluição visual e texto excessivo.
+  - **Área Ampla Expandida para Processos e Memória:** Todo o espaço vertical recuperado do topo e a calibração de altura da janela foram revertidos integralmente para a seção inferior (`weight(1f)`), aumentando substancialmente a quantidade de processos ativos, gráficos de memória PSS, conexões e permissões visíveis simultaneamente na tela sem necessidade de rolagem excessiva e sem alterar a escala tipográfica.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.39
 
 - **Correção de Referência no Gerenciador de Sobreposição (`FloatingLogOverlayManager`):**

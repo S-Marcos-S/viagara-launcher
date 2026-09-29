@@ -184,60 +184,63 @@ fun AppRootInspectorDialog(
         ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .fillMaxHeight(0.86f)
-                    .clip(RoundedCornerShape(26.dp))
-                    .border(1.dp, dynamicBorderColor(), RoundedCornerShape(26.dp))
+                    .fillMaxWidth(0.94f)
+                    .fillMaxHeight(0.91f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .border(1.dp, dynamicBorderColor(), RoundedCornerShape(24.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {}, // Prevents click-through dismiss
                     ),
-                color = dynamicSurfaceColor().copy(alpha = 0.95f),
+                color = dynamicSurfaceColor().copy(alpha = 0.96f),
                 tonalElevation = 8.dp,
                 shadowElevation = 16.dp,
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(18.dp),
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
                 ) {
-                    // Header: Icon + Name + Status Badge + Close Button
+                    // Header: Icon + Name + Status Badge + Top Action Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment = Alignment.Top,
                     ) {
                         AppIcon(
                             app = app,
-                            sizeDp = 46,
+                            sizeDp = 38,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                                .padding(top = 1.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
                         )
 
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(10.dp))
 
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Top,
+                        ) {
                             Text(
                                 text = displayName,
                                 color = colorScheme.onSurface,
-                                fontSize = 17.sp,
+                                fontSize = 15.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            Spacer(Modifier.height(1.dp))
                             Text(
                                 text = app.packageName,
-                                color = colorScheme.onSurface.copy(alpha = 0.60f),
-                                fontSize = 10.5.sp,
+                                color = colorScheme.onSurface.copy(alpha = 0.55f),
+                                fontSize = 9.5.sp,
                                 fontFamily = FontFamily.Monospace,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(3.dp))
 
-                            // Status Badge
+                            // Status Badge + AO VIVO badge
                             val currentStatus = inspectionData?.status ?: AppProcessStatus.STOPPED
                             val badgeColor = when (currentStatus) {
                                 AppProcessStatus.FOREGROUND -> Color(0xFF10B981) // Emerald Green
@@ -250,38 +253,42 @@ fun AppRootInspectorDialog(
                                 AppProcessStatus.STOPPED -> stringResource(R.string.root_inspector_status_stopped)
                             }
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
+                                        .clip(RoundedCornerShape(5.dp))
                                         .background(badgeColor.copy(alpha = 0.12f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                        .padding(horizontal = 5.dp, vertical = 1.5.dp),
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(6.dp)
+                                            .size(5.dp)
                                             .clip(CircleShape)
                                             .background(badgeColor),
                                     )
-                                    Spacer(Modifier.width(5.dp))
+                                    Spacer(Modifier.width(4.dp))
                                     Text(
                                         text = badgeText,
                                         color = badgeColor,
-                                        fontSize = 9.5.sp,
+                                        fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        letterSpacing = 0.5.sp,
+                                        letterSpacing = 0.3.sp,
+                                        maxLines = 1,
+                                        softWrap = false,
                                     )
                                 }
 
                                 if (isAutoRefreshEnabled && currentStatus != AppProcessStatus.STOPPED) {
-                                    Spacer(Modifier.width(6.dp))
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
+                                            .clip(RoundedCornerShape(5.dp))
                                             .background(Color(0xFF10B981).copy(alpha = 0.12f))
-                                            .padding(horizontal = 5.dp, vertical = 2.dp),
+                                            .padding(horizontal = 5.dp, vertical = 1.5.dp),
                                     ) {
                                         Box(
                                             modifier = Modifier
@@ -293,62 +300,70 @@ fun AppRootInspectorDialog(
                                         Text(
                                             text = "AO VIVO",
                                             color = Color(0xFF10B981),
-                                            fontSize = 8.5.sp,
+                                            fontSize = 8.sp,
                                             fontWeight = FontWeight.Bold,
-                                            letterSpacing = 0.5.sp,
+                                            letterSpacing = 0.3.sp,
+                                            maxLines = 1,
+                                            softWrap = false,
                                         )
                                     }
                                 }
                             }
                         }
 
-                        IconButton(
-                            onClick = { refreshData(showIndicator = true) },
-                            enabled = !isRefreshing,
-                            modifier = Modifier.size(34.dp),
+                        // Top action buttons: compact and positioned higher up
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(0.dp),
                         ) {
-                            if (isRefreshing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = colorScheme.primary,
-                                )
-                            } else {
+                            IconButton(
+                                onClick = { refreshData(showIndicator = true) },
+                                enabled = !isRefreshing,
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                if (isRefreshing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(13.dp),
+                                        strokeWidth = 2.dp,
+                                        color = colorScheme.primary,
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Filled.Refresh,
+                                        contentDescription = stringResource(R.string.action_reset),
+                                        tint = colorScheme.onSurface.copy(alpha = 0.75f),
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = { showLogViewer = true },
+                                modifier = Modifier.size(28.dp),
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Refresh,
-                                    contentDescription = stringResource(R.string.action_reset),
-                                    tint = colorScheme.onSurface.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(20.dp),
+                                    imageVector = Icons.Filled.BugReport,
+                                    contentDescription = stringResource(R.string.action_inspect_logs),
+                                    tint = colorScheme.primary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+
+                            IconButton(
+                                onClick = onDismissRequest,
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = stringResource(R.string.action_close),
+                                    tint = colorScheme.onSurface.copy(alpha = 0.75f),
+                                    modifier = Modifier.size(17.dp),
                                 )
                             }
                         }
-
-                        IconButton(
-                            onClick = { showLogViewer = true },
-                            modifier = Modifier.size(34.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.BugReport,
-                                contentDescription = stringResource(R.string.action_inspect_logs),
-                                tint = colorScheme.primary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-
-                        IconButton(
-                            onClick = onDismissRequest,
-                            modifier = Modifier.size(34.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = stringResource(R.string.action_close),
-                                tint = colorScheme.onSurface.copy(alpha = 0.8f),
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
                     }
 
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(6.dp))
 
                     if (isLoading) {
                         Box(
@@ -388,10 +403,10 @@ fun AppRootInspectorDialog(
                                 )
                             }
                         } else {
-                            // Hardware Metrics: CPU & RAM
+                            // Hardware Metrics: CPU & RAM (compact, name left, value right)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 MetricCard(
                                     modifier = Modifier.weight(1f),
@@ -409,12 +424,12 @@ fun AppRootInspectorDialog(
                                 )
                             }
 
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(5.dp))
 
-                            // Dedicated Real-time Speed Cards (Download & Upload)
+                            // Dedicated Real-time Speed Cards: Download & Upload (compact, name left, value right)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 RealtimeSpeedCard(
                                     modifier = Modifier.weight(1f),
@@ -430,7 +445,7 @@ fun AppRootInspectorDialog(
                                 )
                             }
 
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(5.dp))
 
                             // Native Data Usage Card with Period Selector (Hoje / 7 Dias / Total)
                             DataUsageCard(
@@ -440,12 +455,12 @@ fun AppRootInspectorDialog(
                                 modifier = Modifier.fillMaxWidth(),
                             )
 
-                            Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.height(6.dp))
 
                             // Tab selector row
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
                             ) {
                                 TabButton(
                                     title = stringResource(R.string.root_inspector_tab_memory),
@@ -477,17 +492,17 @@ fun AppRootInspectorDialog(
                                 )
                             }
 
-                            Spacer(Modifier.height(10.dp))
+                            Spacer(Modifier.height(6.dp))
 
-                            // Scrollable Tab Body
+                            // Scrollable Tab Body (significantly expanded area for processes, memory, etc.)
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
+                                    .clip(RoundedCornerShape(12.dp))
                                     .background(colorScheme.onSurface.copy(alpha = 0.04f))
-                                    .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
-                                    .padding(12.dp),
+                                    .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                    .padding(10.dp),
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -526,12 +541,12 @@ fun AppRootInspectorDialog(
                         }
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(8.dp))
 
                     // Root Action Footer
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         // Force Stop Button
@@ -611,44 +626,58 @@ private fun MetricCard(
     val colorScheme = MaterialTheme.colorScheme
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(colorScheme.onSurface.copy(alpha = 0.05f))
-            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f, fill = false),
+            ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = accentColor,
                     modifier = Modifier.size(13.dp),
                 )
-                Spacer(Modifier.width(5.dp))
+                Spacer(Modifier.width(4.dp))
                 Text(
                     text = title,
-                    color = colorScheme.onSurface.copy(alpha = 0.65f),
-                    fontSize = 10.sp,
+                    color = colorScheme.onSurface.copy(alpha = 0.7f),
+                    fontSize = 10.5.sp,
                     fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
-            Spacer(Modifier.height(3.dp))
+            Spacer(Modifier.width(4.dp))
             Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
                     text = value,
                     color = colorScheme.onSurface,
-                    fontSize = 14.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    softWrap = false,
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
                         color = accentColor,
-                        fontSize = 10.5.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                 }
             }
@@ -671,64 +700,60 @@ private fun RealtimeSpeedCard(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(colorScheme.onSurface.copy(alpha = 0.05f))
-            .border(1.dp, if (isLive) accentColor.copy(alpha = 0.35f) else colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .border(
+                1.dp,
+                if (isLive) accentColor.copy(alpha = 0.35f) else colorScheme.outline.copy(alpha = 0.12f),
+                RoundedCornerShape(10.dp),
+            )
+            .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
-        Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.weight(1f, fill = false),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false),
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(13.dp),
-                    )
-                    Spacer(Modifier.width(5.dp))
-                    Text(
-                        text = title,
-                        color = colorScheme.onSurface.copy(alpha = 0.65f),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(13.dp),
+                )
                 Spacer(Modifier.width(4.dp))
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(if (isLive) accentColor.copy(alpha = 0.14f) else colorScheme.onSurface.copy(alpha = 0.08f))
-                        .padding(horizontal = 4.dp, vertical = 1.dp),
-                ) {
-                    Text(
-                        text = if (isLive) stringResource(R.string.root_inspector_live_active) else stringResource(R.string.root_inspector_live_idle),
-                        color = if (isLive) accentColor else colorScheme.onSurface.copy(alpha = 0.45f),
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
+                Text(
+                    text = title,
+                    color = colorScheme.onSurface.copy(alpha = 0.7f),
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                if (isLive) {
+                    Spacer(Modifier.width(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(5.dp)
+                            .clip(CircleShape)
+                            .background(accentColor),
                     )
                 }
             }
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.width(4.dp))
 
             Text(
                 text = "${if (isDownload) "↓" else "↑"} $formattedSpeed",
                 color = if (isLive) accentColor else colorScheme.onSurface,
-                fontSize = 13.5.sp,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
+                maxLines = 1,
+                softWrap = false,
             )
         }
     }
@@ -752,10 +777,10 @@ private fun DataUsageCard(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(colorScheme.onSurface.copy(alpha = 0.05f))
-            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
         Column {
             // Header: Title + Period Selector Pills
@@ -772,15 +797,15 @@ private fun DataUsageCard(
                         imageVector = Icons.Filled.DataUsage,
                         contentDescription = null,
                         tint = colorScheme.primary,
-                        modifier = Modifier.size(13.dp),
+                        modifier = Modifier.size(12.dp),
                     )
-                    Spacer(Modifier.width(5.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = stringResource(R.string.root_inspector_data_usage),
                         color = colorScheme.onSurface.copy(alpha = 0.65f),
-                        fontSize = 10.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
+                        letterSpacing = 0.4.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -790,7 +815,7 @@ private fun DataUsageCard(
 
                 // Selector Pills: Hoje | 7 Dias | Total
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     PeriodPill(
@@ -811,7 +836,7 @@ private fun DataUsageCard(
                 }
             }
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
 
             // 3-Metric Row: Download | Upload | Total
             Row(
@@ -823,13 +848,13 @@ private fun DataUsageCard(
                     Text(
                         text = stringResource(R.string.root_inspector_download),
                         color = colorScheme.onSurface.copy(alpha = 0.55f),
-                        fontSize = 9.sp,
+                        fontSize = 8.5.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Text(
                         text = AppRootInspector.formatBytes(rxBytes),
                         color = Color(0xFF10B981),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
                     )
@@ -839,13 +864,13 @@ private fun DataUsageCard(
                     Text(
                         text = stringResource(R.string.root_inspector_upload),
                         color = colorScheme.onSurface.copy(alpha = 0.55f),
-                        fontSize = 9.sp,
+                        fontSize = 8.5.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Text(
                         text = AppRootInspector.formatBytes(txBytes),
                         color = Color(0xFF06B6D4),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
                     )
@@ -855,13 +880,13 @@ private fun DataUsageCard(
                     Text(
                         text = stringResource(R.string.root_inspector_total_data),
                         color = colorScheme.onSurface.copy(alpha = 0.55f),
-                        fontSize = 9.sp,
+                        fontSize = 8.5.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Text(
                         text = AppRootInspector.formatBytes(totalBytes),
                         color = colorScheme.primary,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
                     )
@@ -884,22 +909,24 @@ private fun PeriodPill(
 
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(5.dp))
             .background(bg)
-            .border(1.dp, borderCol, RoundedCornerShape(6.dp))
+            .border(1.dp, borderCol, RoundedCornerShape(5.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .padding(horizontal = 5.dp, vertical = 1.5.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
             color = textCol,
-            fontSize = 9.sp,
+            fontSize = 8.5.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }
@@ -919,15 +946,15 @@ private fun TabButton(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(bg)
-            .border(1.dp, borderCol, RoundedCornerShape(10.dp))
+            .border(1.dp, borderCol, RoundedCornerShape(8.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick,
             )
-            .padding(vertical = 6.dp, horizontal = 2.dp),
+            .padding(vertical = 5.dp, horizontal = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -935,15 +962,16 @@ private fun TabButton(
                 imageVector = icon,
                 contentDescription = null,
                 tint = contentColor,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(15.dp),
             )
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(1.dp))
             Text(
                 text = title,
                 color = contentColor,
-                fontSize = 9.sp,
+                fontSize = 8.5.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Ellipsis,
             )
         }
@@ -1441,15 +1469,15 @@ private fun ActionButton(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(backgroundColor)
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick,
             )
-            .padding(vertical = 10.dp, horizontal = 4.dp),
+            .padding(vertical = 7.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(
@@ -1460,15 +1488,16 @@ private fun ActionButton(
                 imageVector = icon,
                 contentDescription = null,
                 tint = textColor,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(15.dp),
             )
             Spacer(Modifier.width(4.dp))
             Text(
                 text = label,
                 color = textColor,
-                fontSize = 11.sp,
+                fontSize = 10.5.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
+                softWrap = false,
             )
         }
     }
