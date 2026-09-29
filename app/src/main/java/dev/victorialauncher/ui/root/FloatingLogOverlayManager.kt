@@ -754,7 +754,7 @@ private fun FloatingLogOverlayRoot(context: Context) {
                         LogViewerTab.CRASHES -> {
                             CrashesTab(
                                 crashes = crashes,
-                                onClearCrashes = { crashManager.clearAllCrashes() },
+                                onClearCrashes = { crashManager.clearCrashes() },
                                 onDeleteCrash = { crashId -> crashManager.deleteCrash(crashId) },
                             )
                         }

@@ -1,3 +1,10 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.39
+
+- **Correção de Referência no Gerenciador de Sobreposição (`FloatingLogOverlayManager`):**
+  - **Resolução de Chamada de Método em Crashes:** Corrigida a referência da ação de limpeza de crashes na aba de falhas (`LogViewerTab.CRASHES`), invocando corretamente `crashManager.clearCrashes()` em vez de `clearAllCrashes()`, assegurando compilação limpa na pipeline de release.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.38
 
 - **Bolinha e Janela Flutuante Globais do Sistema (`FloatingLogOverlayManager`):**
