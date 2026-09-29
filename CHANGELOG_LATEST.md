@@ -1,3 +1,13 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.37
+
+- **Desbloqueio Total de Toques e Rolagem do Alfabeto com a Bolinha Minimizada:**
+  - **Transição Não-Modal com `Popup`:** A bolinha flutuante minimizada foi desacoplada da janela modal do Android (`Dialog`), que cobria a tela inteira e impedia toques na atividade subjacente. Ao minimizar, o `Dialog` é desativado e a bolinha passa a ser exibida como um `Popup` não-modal e não-focalizável (`focusable = false`).
+  - **Rolagem do Alfabeto e Gaveta 100% Funcionais:** Toda a área da tela (exceto a própria bolinha de 56dp) fica livre para interação imediata, permitindo rolar a barra alfabética rápida (A-Z), navegar na lista de aplicativos e abrir apps normalmente enquanto o monitoramento de log continua ativo.
+  - **Limites de Tela Inteligentes:** A bolinha possui detecção de limites da tela (`screenWidthPx` e `screenHeightPx`), evitando que seja arrastada para fora do display ou sobreposta indevidamente.
+  - **Gesto de Toque vs. Arraste Aperfeiçoado:** O toque na bolinha restaura instantaneamente a janela flutuante completa, enquanto o movimento contínuo desloca a bolinha suavemente pela tela.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.36
 
 - **Janela Flutuante Totalmente Arrastável & Minimizar para Bolinha ("Floating Bubble"):**

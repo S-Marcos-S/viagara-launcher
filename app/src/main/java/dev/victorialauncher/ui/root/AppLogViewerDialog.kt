@@ -92,7 +92,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -106,6 +108,8 @@ import androidx.compose.ui.window.Dialog
 import kotlin.math.roundToInt
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.FileProvider
 import dev.victorialauncher.R
 import dev.victorialauncher.data.AppInfo
@@ -180,10 +184,20 @@ fun AppLogViewerDialog(
     var windowOffsetX by remember { mutableFloatStateOf(0f) }
     var windowOffsetY by remember { mutableFloatStateOf(0f) }
 
-    // Minimized floating bubble state
+    // Minimized floating bubble state & screen bounds
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val maxBubbleX = (screenWidthPx - with(density) { 72.dp.toPx() }).coerceAtLeast(0f)
+    val maxBubbleY = (screenHeightPx - with(density) { 80.dp.toPx() }).coerceAtLeast(0f)
+
+    val defaultBubbleX = with(density) { 20.dp.toPx() }
+    val defaultBubbleY = with(density) { 110.dp.toPx() }
+
     var isMinimized by remember { mutableStateOf(false) }
-    var bubbleOffsetX by remember { mutableFloatStateOf(0f) }
-    var bubbleOffsetY by remember { mutableFloatStateOf(0f) }
+    var bubbleOffsetX by remember { mutableFloatStateOf(defaultBubbleX) }
+    var bubbleOffsetY by remember { mutableFloatStateOf(defaultBubbleY) }
 
     // Repositories & Managers
     val crashManager = remember { AppLogCaptureService.getCrashManager(context) }
@@ -221,29 +235,19 @@ fun AppLogViewerDialog(
         )
     }
 
-    Dialog(
-        onDismissRequest = {
-            if (!isMinimized) {
-                onDismissRequest()
-            }
-        },
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = !isMinimized,
-            usePlatformDefaultWidth = false,
-        ),
-    ) {
-        val dialogView = LocalView.current
+    if (!isMinimized) {
+        Dialog(
+            onDismissRequest = onDismissRequest,
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = false,
+            ),
+        ) {
+            val dialogView = LocalView.current
 
-        LaunchedEffect(dialogView, isMinimized) {
-            val dialogWindow = (dialogView.parent as? DialogWindowProvider)?.window ?: return@LaunchedEffect
-            if (isMinimized) {
-                dialogWindow.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    dialogWindow.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                }
-                dialogWindow.setDimAmount(0f)
-            } else {
+            LaunchedEffect(dialogView) {
+                val dialogWindow = (dialogView.parent as? DialogWindowProvider)?.window ?: return@LaunchedEffect
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                     val params = dialogWindow.attributes
@@ -252,24 +256,18 @@ fun AppLogViewerDialog(
                 }
                 dialogWindow.setDimAmount(0.32f)
             }
-        }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    if (!isMinimized) colorScheme.scrim.copy(alpha = 0.28f)
-                    else Color.Transparent
-                )
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    enabled = !isMinimized,
-                    onClick = onDismissRequest,
-                ),
-            contentAlignment = if (isMinimized) Alignment.TopStart else Alignment.Center,
-        ) {
-            if (!isMinimized) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(colorScheme.scrim.copy(alpha = 0.28f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismissRequest,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth(0.92f)
@@ -621,102 +619,125 @@ fun AppLogViewerDialog(
                     }
                 }
             }
-        } else {
-                // MINIMIZED FLOATING BUBBLE ("BOLINHA FLUTUANTE")
-                Box(
-                    modifier = Modifier
-                        .padding(top = 90.dp, start = 20.dp)
-                        .offset { IntOffset(bubbleOffsetX.roundToInt(), bubbleOffsetY.roundToInt()) }
-                        .pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
-                                change.consume()
-                                bubbleOffsetX += dragAmount.x
-                                bubbleOffsetY += dragAmount.y
-                            }
-                        },
-                ) {
-                    Surface(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                isMinimized = false
-                            },
-                        color = dynamicSurfaceColor().copy(alpha = 0.95f),
-                        tonalElevation = 10.dp,
-                        shadowElevation = 14.dp,
-                        border = BorderStroke(1.5.dp, dynamicBorderColor()),
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            if (sourceApp != null) {
-                                AppIcon(
-                                    app = sourceApp,
-                                    sizeDp = 34,
-                                    modifier = Modifier.clip(RoundedCornerShape(8.dp)),
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Filled.Terminal,
-                                    contentDescription = null,
-                                    tint = colorScheme.primary,
-                                    modifier = Modifier.size(28.dp),
-                                )
-                            }
-
-                            // Live recording indicator
-                            if (recordingSession.state != RecordingState.IDLE) {
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .padding(4.dp)
-                                        .size(10.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFEF4444))
-                                        .border(1.5.dp, dynamicSurfaceColor(), CircleShape),
-                                )
-                            } else if (crashes.isNotEmpty()) {
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(2.dp)
-                                        .size(14.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFEF4444)),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        text = "${crashes.size}",
-                                        color = Color.White,
-                                        fontSize = 8.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
+        }
+    }
+} else {
+        // MINIMIZED FLOATING BUBBLE via non-modal Popup (does NOT block launcher or alphabet scrolling!)
+        Popup(
+            alignment = Alignment.TopStart,
+            offset = IntOffset(bubbleOffsetX.roundToInt(), bubbleOffsetY.roundToInt()),
+            properties = PopupProperties(
+                focusable = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+                clippingEnabled = false,
+            ),
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .pointerInput(Unit) {
+                        var hasMoved = false
+                        detectDragGestures(
+                            onDragStart = { hasMoved = false },
+                            onDragEnd = {
+                                if (!hasMoved) {
+                                    isMinimized = false
                                 }
+                            },
+                            onDragCancel = { hasMoved = false },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                if (kotlin.math.abs(dragAmount.x) > 1.5f || kotlin.math.abs(dragAmount.y) > 1.5f) {
+                                    hasMoved = true
+                                }
+                                bubbleOffsetX = (bubbleOffsetX + dragAmount.x).coerceIn(0f, maxBubbleX)
+                                bubbleOffsetY = (bubbleOffsetY + dragAmount.y).coerceIn(0f, maxBubbleY)
+                            }
+                        )
+                    },
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            isMinimized = false
+                        },
+                    color = dynamicSurfaceColor().copy(alpha = 0.95f),
+                    tonalElevation = 10.dp,
+                    shadowElevation = 14.dp,
+                    border = BorderStroke(1.5.dp, dynamicBorderColor()),
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        if (sourceApp != null) {
+                            AppIcon(
+                                app = sourceApp,
+                                sizeDp = 34,
+                                modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.Terminal,
+                                contentDescription = null,
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(28.dp),
+                            )
+                        }
+
+                        // Live recording indicator
+                        if (recordingSession.state != RecordingState.IDLE) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(4.dp)
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFEF4444))
+                                    .border(1.5.dp, dynamicSurfaceColor(), CircleShape),
+                            )
+                        } else if (crashes.isNotEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(2.dp)
+                                    .size(14.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFEF4444)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "${crashes.size}",
+                                    color = Color.White,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
                             }
                         }
                     }
+                }
 
-                    // Mini close button on the top-end of the bubble
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 4.dp, y = (-4).dp)
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(colorScheme.surfaceVariant)
-                            .border(1.dp, colorScheme.outline.copy(alpha = 0.3f), CircleShape)
-                            .clickable { onDismissRequest() },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Fechar bolinha",
-                            tint = colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(11.dp),
-                        )
-                    }
+                // Mini close button on the top-end of the bubble
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 4.dp, y = (-4).dp)
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(colorScheme.surfaceVariant)
+                        .border(1.dp, colorScheme.outline.copy(alpha = 0.3f), CircleShape)
+                        .clickable { onDismissRequest() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Fechar bolinha",
+                        tint = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(11.dp),
+                    )
                 }
             }
         }
