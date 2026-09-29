@@ -681,6 +681,7 @@ fun AppRootInspectorDialog(
                 }
             }
         }
+    }
     } else {
         // MINIMIZED FLOATING BUBBLE via non-modal Popup (does NOT block launcher or alphabet scrolling!)
         Popup(
