@@ -7,6 +7,7 @@
   - **Escala Harmônica do Nome do Autor:** O autor da frase tem sua escala calibrada dinamicamente para manter a hierarquia visual em relação à frase e garantir que caiba em linha única sem quebras inadequadas.
   - **Adaptação Responsiva a Acessibilidade e Dispositivos:** Suporte total a telas estreitas, aparelhos compactos, larguras personalizadas de margem lateral e escalas de fonte aumentadas nas opções de acessibilidade do Android.
 - **Correção de Compilação na Central de Logs (`AppLogViewerDialog`):** Ajustada a referência de propriedade do aplicativo para `AppInfo.label`, corrigindo o erro de compilação (`Unresolved reference 'name'`) durante as etapas de build.
+- **Proteção Nula em Telemetria de Dispositivo (`DeviceInfoProvider`):** Adicionado tratamento com chamadas seguras na leitura de propriedades de hardware (`Build.SUPPORTED_ABIS`, etc.), prevenindo falhas de `NullPointerException` em ambientes de teste unitário.
 
 ---
 
