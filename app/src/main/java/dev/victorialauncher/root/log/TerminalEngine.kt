@@ -51,6 +51,14 @@ object TerminalEngine {
         }.getOrDefault(false)
     }
 
+    suspend fun grantOverlayViaRoot(context: Context): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val pkg = context.packageName
+            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "appops set $pkg SYSTEM_ALERT_WINDOW allow"))
+            process.waitFor() == 0
+        }.getOrDefault(false)
+    }
+
     fun getAdbCommand(context: Context): String {
         return "adb shell pm grant ${context.packageName} android.permission.READ_LOGS"
     }

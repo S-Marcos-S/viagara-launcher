@@ -136,7 +136,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private enum class LogViewerTab(val title: String, val icon: ImageVector) {
+internal enum class LogViewerTab(val title: String, val icon: ImageVector) {
     LIVE_LOGS("Logs", Icons.Filled.Terminal),
     RECORDINGS("Gravação", Icons.Filled.FiberManualRecord),
     CRASHES("Crashes & ANRs", Icons.Filled.BugReport),
@@ -442,12 +442,35 @@ fun AppLogViewerDialog(
                             // Header Actions (Minimize & Close)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(
-                                    onClick = { isMinimized = true },
+                                    onClick = {
+                                        if (FloatingLogOverlayManager.canDrawOverlays(context)) {
+                                            FloatingLogOverlayManager.show(
+                                                context = context,
+                                                app = currentTargetApp,
+                                                packageName = currentTargetPackage,
+                                                initialTab = selectedTab.name.lowercase(),
+                                                isMinimized = true,
+                                            )
+                                            onDismissRequest()
+                                        } else {
+                                            FloatingLogOverlayManager.requestOverlayPermission(context) {
+                                                FloatingLogOverlayManager.show(
+                                                    context = context,
+                                                    app = currentTargetApp,
+                                                    packageName = currentTargetPackage,
+                                                    initialTab = selectedTab.name.lowercase(),
+                                                    isMinimized = true,
+                                                )
+                                                onDismissRequest()
+                                            }
+                                            isMinimized = true
+                                        }
+                                    },
                                     modifier = Modifier.size(32.dp),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Remove,
-                                        contentDescription = "Minimizar para bolinha flutuante",
+                                        contentDescription = "Minimizar para bolinha flutuante sobre outros apps",
                                         tint = colorScheme.onSurface.copy(alpha = 0.75f),
                                         modifier = Modifier.size(18.dp),
                                     )
@@ -773,7 +796,7 @@ fun AppLogViewerDialog(
 // -------------------------------------------------------------------------------------------------
 
 @Composable
-private fun LiveLogsTab(
+internal fun LiveLogsTab(
     logs: List<LogLine>,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
@@ -1186,7 +1209,7 @@ private fun LogLineItem(
 // -------------------------------------------------------------------------------------------------
 
 @Composable
-private fun RecordingsTab(
+internal fun RecordingsTab(
     session: dev.victorialauncher.root.log.ActiveSessionInfo,
     savedRecordings: List<SavedLogRecording>,
     targetApp: AppInfo?,
@@ -1519,7 +1542,7 @@ private fun SavedRecordingCard(
 // -------------------------------------------------------------------------------------------------
 
 @Composable
-private fun CrashesTab(
+internal fun CrashesTab(
     crashes: List<AppCrashRecord>,
     onClearCrashes: () -> Unit,
     onDeleteCrash: (String) -> Unit,
@@ -1776,7 +1799,7 @@ private fun CrashRecordCard(
 // -------------------------------------------------------------------------------------------------
 
 @Composable
-private fun FiltersTab(
+internal fun FiltersTab(
     filters: List<UserLogFilter>,
     onAddFilterClick: () -> Unit,
     onToggleFilter: (id: Long, enabled: Boolean) -> Unit,
@@ -1947,7 +1970,7 @@ private fun UserFilterCard(
 // -------------------------------------------------------------------------------------------------
 
 @Composable
-private fun TerminalSettingsTab(
+internal fun TerminalSettingsTab(
     preferredTerminal: TerminalType,
     onTerminalSelected: (TerminalType) -> Unit,
 ) {
@@ -2145,7 +2168,7 @@ private fun TerminalSettingsTab(
 // -------------------------------------------------------------------------------------------------
 
 @Composable
-private fun LogLineDetailDialog(
+internal fun LogLineDetailDialog(
     line: LogLine,
     onDismiss: () -> Unit,
     onFilterTag: (String) -> Unit,
@@ -2278,7 +2301,7 @@ private fun DetailRow(label: String, value: String) {
 }
 
 @Composable
-private fun CreateFilterDialog(
+internal fun CreateFilterDialog(
     targetAppPackage: String?,
     onDismiss: () -> Unit,
     onSave: (UserLogFilter) -> Unit,

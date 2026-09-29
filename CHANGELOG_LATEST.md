@@ -1,3 +1,14 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.38
+
+- **Bolinha e Janela Flutuante Globais do Sistema (`FloatingLogOverlayManager`):**
+  - **Sobreposição em Qualquer Aplicativo:** A bolinha flutuante e a janela de logs agora utilizam o gerenciador nativo de janelas do sistema operacional (`WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY`), permanecendo abertas e ativas sobre **qualquer aplicativo** que o usuário abrir (Chrome, WhatsApp, jogos, configurações ou o próprio launcher).
+  - **Expansão e Compactação Interativas:** Em qualquer aplicativo em primeiro plano, o usuário pode tocar na bolinha para expandir a Central de Logs completa flutuando sobre o app em execução. Ao tocar no botão de minimizar (`-`) ou na área externa, a janela se compacta suavemente de volta à bolinha.
+  - **Gerenciamento de Ciclo de Vida Próprio para Compose (`OverlayLifecycleOwner`):** Implementada infraestrutura completa de `LifecycleOwner`, `ViewModelStoreOwner` e `SavedStateRegistryOwner` para renderizar a interface Jetpack Compose diretamente no `WindowManager` do sistema fora de uma Activity.
+  - **Concessão Automatizada de Permissão de Sobreposição:** Adicionada permissão `android.permission.SYSTEM_ALERT_WINDOW` no manifesto. Para usuários com Root, a permissão é concedida instantaneamente via `appops set <pkg> SYSTEM_ALERT_WINDOW allow`; para aparelhos sem root, a tela de configuração do sistema é aberta diretamente com 1 toque.
+  - **Movimentação Livre e Encerramento:** A bolinha e a janela flutuante podem ser arrastadas para qualquer ponto da tela sobre qualquer aplicativo, contando com botão dedicado `✕` para encerramento a qualquer momento.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.37
 
 - **Desbloqueio Total de Toques e Rolagem do Alfabeto com a Bolinha Minimizada:**
