@@ -620,7 +620,8 @@ fun AppLogViewerDialog(
                         }
                     }
                 }
-            } else {
+            }
+        } else {
                 // MINIMIZED FLOATING BUBBLE ("BOLINHA FLUTUANTE")
                 Box(
                     modifier = Modifier

@@ -13,6 +13,9 @@
 - **Correção de Cursor e Alinhamento na Barra de Pesquisa:**
   - **Alinhamento Vertical Preciso:** Corrigido o salto de altura do cursor e do texto na barra de busca de logs. O campo de digitação e o placeholder agora utilizam alinhamento vertical compartilhado (`Alignment.CenterStart`), garantindo que o cursor apareça exatamente no centro vertical desde o primeiro clique antes de iniciar a digitação.
 
+- **Correção de Compilação na Central de Logs (`AppLogViewerDialog`):**
+  - Ajustado o fechamento de blocos de interface (`Surface` e `Box`) do diálogo modal, corrigindo o erro de escopo de funções internas e garantindo compilação limpa na pipeline de release.
+
 ---
 
 ### 🚀 Novidades e Melhorias da Versão 0.59.35
