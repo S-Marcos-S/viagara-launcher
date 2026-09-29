@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -124,7 +125,7 @@ import java.util.Locale
 
 private enum class LogViewerTab(val title: String, val icon: ImageVector) {
     LIVE_LOGS("Logs", Icons.Filled.Terminal),
-    RECORDINGS("Gravações", Icons.Filled.FiberManualRecord),
+    RECORDINGS("Gravação", Icons.Filled.FiberManualRecord),
     CRASHES("Crashes & ANRs", Icons.Filled.BugReport),
     FILTERS("Filtros", Icons.Filled.FilterList),
     SETTINGS("Terminal", Icons.Filled.History),
@@ -139,7 +140,6 @@ fun AppLogViewerDialog(
     onDismissRequest: () -> Unit,
 ) {
     val context = LocalContext.current
-    val view = LocalView.current
     val colorScheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
 
@@ -177,20 +177,12 @@ fun AppLogViewerDialog(
     var lineDetailDialogFor by remember { mutableStateOf<LogLine?>(null) }
     var createFilterDialogOpen by remember { mutableStateOf(false) }
 
-    // Start background monitoring/service on launch if not running
-    LaunchedEffect(Unit) {
+    // Start background monitoring/service on launch and stop when dismissed (if not recording)
+    DisposableEffect(Unit) {
         AppLogCaptureService.startMonitoring(context)
-    }
-
-    DisposableEffect(view) {
-        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dialogWindow != null) {
-            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-            val params = dialogWindow.attributes
-            params.blurBehindRadius = 36
-            dialogWindow.attributes = params
+        onDispose {
+            AppLogCaptureService.stopMonitoring(context)
         }
-        onDispose {}
     }
 
     // Filtered logs
@@ -213,10 +205,25 @@ fun AppLogViewerDialog(
             usePlatformDefaultWidth = false,
         ),
     ) {
+        val dialogView = LocalView.current
+        DisposableEffect(dialogView) {
+            val dialogWindow = (dialogView.parent as? DialogWindowProvider)?.window
+            if (dialogWindow != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    val params = dialogWindow.attributes
+                    params.blurBehindRadius = 40
+                    dialogWindow.attributes = params
+                }
+                dialogWindow.setDimAmount(0.32f)
+            }
+            onDispose {}
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(colorScheme.scrim.copy(alpha = 0.55f))
+                .background(colorScheme.scrim.copy(alpha = 0.28f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -226,16 +233,16 @@ fun AppLogViewerDialog(
         ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .fillMaxHeight(0.92f)
-                    .clip(RoundedCornerShape(26.dp))
-                    .border(1.dp, dynamicBorderColor(), RoundedCornerShape(26.dp))
+                    .fillMaxWidth(0.92f)
+                    .fillMaxHeight(0.82f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .border(1.dp, dynamicBorderColor(), RoundedCornerShape(24.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                color = dynamicSurfaceColor().copy(alpha = 0.96f),
+                color = dynamicSurfaceColor().copy(alpha = 0.94f),
                 tonalElevation = 8.dp,
                 shadowElevation = 18.dp,
             ) {
@@ -267,6 +274,7 @@ fun AppLogViewerDialog(
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false),
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Box(
@@ -322,6 +330,7 @@ fun AppLogViewerDialog(
                                         fontFamily = FontFamily.Monospace,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false),
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Box(
@@ -345,6 +354,8 @@ fun AppLogViewerDialog(
                                     text = "Filtro ativo por pacote",
                                     color = colorScheme.onSurface.copy(alpha = 0.6f),
                                     fontSize = 10.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         } else {
@@ -369,11 +380,15 @@ fun AppLogViewerDialog(
                                     color = colorScheme.onSurface,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                                 Text(
                                     text = "Logcat • Crashes • ANRs • LogFox Engine",
                                     color = colorScheme.onSurface.copy(alpha = 0.6f),
                                     fontSize = 10.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }
@@ -396,8 +411,10 @@ fun AppLogViewerDialog(
 
                     // Tab Selector Navigation
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         LogViewerTab.entries.forEach { tab ->
                             val isSelected = selectedTab == tab
@@ -410,7 +427,6 @@ fun AppLogViewerDialog(
 
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(
                                         if (isSelected) colorScheme.primary.copy(alpha = 0.18f)
@@ -423,7 +439,7 @@ fun AppLogViewerDialog(
                                         RoundedCornerShape(10.dp),
                                     )
                                     .clickable { selectedTab = tab }
-                                    .padding(vertical = 7.dp),
+                                    .padding(horizontal = 11.dp, vertical = 7.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -431,28 +447,28 @@ fun AppLogViewerDialog(
                                         imageVector = tab.icon,
                                         contentDescription = null,
                                         tint = if (isSelected) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.6f),
-                                        modifier = Modifier.size(13.dp),
+                                        modifier = Modifier.size(14.dp),
                                     )
-                                    Spacer(Modifier.width(4.dp))
+                                    Spacer(Modifier.width(5.dp))
                                     Text(
                                         text = tab.title,
                                         color = if (isSelected) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.75f),
-                                        fontSize = 10.5.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         maxLines = 1,
                                     )
                                     if (activeBadgeCount > 0) {
-                                        Spacer(Modifier.width(3.dp))
+                                        Spacer(Modifier.width(4.dp))
                                         Box(
                                             modifier = Modifier
                                                 .clip(CircleShape)
                                                 .background(if (tab == LogViewerTab.CRASHES) Color(0xFFEF4444) else colorScheme.primary)
-                                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                                                .padding(horizontal = 5.dp, vertical = 1.dp),
                                         ) {
                                             Text(
                                                 text = activeBadgeCount.toString(),
                                                 color = Color.White,
-                                                fontSize = 8.sp,
+                                                fontSize = 8.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
                                         }
@@ -1083,7 +1099,10 @@ private fun RecordingsTab(
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                            ) {
                                 Icon(
                                     imageVector = Icons.Filled.FiberManualRecord,
                                     contentDescription = null,
@@ -1096,6 +1115,8 @@ private fun RecordingsTab(
                                     color = Color(0xFFEF4444),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }

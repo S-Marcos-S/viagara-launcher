@@ -1,3 +1,17 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.35
+
+- **Aprimoramentos Visuais e de Layout na Central de Logs (`AppLogViewerDialog`):**
+  - **Efeito Translúcido com Desfoque de Fundo (Background Blur):** Corrigido o ponto de captura do `DialogWindowProvider` movendo o efeito imperativo para dentro do escopo do `Dialog`, ativando o flag `FLAG_BLUR_BEHIND` com raio de desfoque calibrado (40px) no Android 12+ e ajustando a opacidade do scrim escuro para destacar o efeito de vidro fosco (frosted glass) sobre o papel de parede.
+  - **Visual Realmente Flutuante e Proporções Aperfeiçoadas:** Ajustadas as dimensões da janela modal flutuante de 92% para 82% da altura e 92% da largura, garantindo margens simétricas e bordas arredondadas (24dp) claramente suspensas acima da tela, sem colidir ou se estender até a barra inferior do dispositivo.
+  - **Barra de Abas Responsiva com Rolagem Horizontal:** A navegação superior agora utiliza rolagem horizontal suave com espaçamento e preenchimento adequados, impedindo que textos como "Gravação", "Crashes & ANRs" e contadores de badge sejam espremidos ou sofram corte em qualquer tamanho de tela ou escala de fonte.
+  - **Ajustes Tipográficos e Prevenção de Overflow:** O botão de início de gravação de sessão e os títulos de aplicativo no cabeçalho agora possuem limitação inteligente de linha única com reticências (`TextOverflow.Ellipsis`), assegurando alinhamento visual impecável mesmo com nomes extensos de aplicativos.
+
+- **Estabilidade e Correção Crítica de Foreground Service (`AppLogCaptureService`):**
+  - **Resolução do Crash `ForegroundServiceDidNotStartInTimeException`:** Corrigida a inicialização de monitoramento passivo (`startMonitoring`), que chamava indevidamente `startForegroundService` sem invocar `startForeground()`. O monitoramento agora utiliza o ciclo padrão de serviço iniciado e é interrompido de forma limpa ao fechar a janela (quando não houver gravação ativa).
+  - **Chamada Imediata de `startForeground` na Gravação:** A inicialização de sessões gravadas (`ACTION_START_CAPTURE`) agora invoca imediatamente a notificação persistente de primeiro plano com tipo explícito `FOREGROUND_SERVICE_TYPE_DATA_SYNC` no Android 10+ (Q+), prevenindo estritamente timeouts de inicialização e garantindo estabilidade absoluta.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.34
 
 - **Auto-Ajuste Inteligente de Fonte para Widgets com Frase do Dia:**

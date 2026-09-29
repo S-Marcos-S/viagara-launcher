@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
@@ -149,10 +150,14 @@ class AppLogCaptureService : Service() {
                 if (packageName != null) putExtra(EXTRA_PACKAGE_NAME, packageName)
                 if (appName != null) putExtra(EXTRA_APP_NAME, appName)
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Throwable) {
+                android.util.Log.e("AppLogCaptureService", "startCapture failed", e)
             }
         }
 
@@ -160,10 +165,19 @@ class AppLogCaptureService : Service() {
             val intent = Intent(context, AppLogCaptureService::class.java).apply {
                 action = ACTION_START_MONITORING
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
+            try {
                 context.startService(intent)
+            } catch (e: Throwable) {
+                android.util.Log.e("AppLogCaptureService", "startMonitoring failed", e)
+            }
+        }
+
+        fun stopMonitoring(context: Context) {
+            if (_capturingPackage.value == null && recordingsManagerInstance?.session?.value?.state == RecordingState.IDLE) {
+                val intent = Intent(context, AppLogCaptureService::class.java)
+                try {
+                    context.stopService(intent)
+                } catch (_: Throwable) {}
             }
         }
 
@@ -311,8 +325,8 @@ class AppLogCaptureService : Service() {
                 seenPids.clear()
 
                 recordingsManager.startSession(pkg, name)
-                startStreamingProcess()
                 startOngoingNotificationLoop()
+                startStreamingProcess()
             }
             ACTION_START_MONITORING -> {
                 if (logcatProcess == null) {
@@ -431,7 +445,15 @@ class AppLogCaptureService : Service() {
     private fun startOngoingNotificationLoop() {
         notificationUpdaterJob?.cancel()
         val notif = buildRecordingNotification()
-        startForeground(NOTIFICATION_ID_RECORDING, notif)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIFICATION_ID_RECORDING,
+                notif,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+            )
+        } else {
+            startForeground(NOTIFICATION_ID_RECORDING, notif)
+        }
 
         notificationUpdaterJob = serviceScope.launch {
             while (isActive && recordingsManager.session.value.state != RecordingState.IDLE) {
