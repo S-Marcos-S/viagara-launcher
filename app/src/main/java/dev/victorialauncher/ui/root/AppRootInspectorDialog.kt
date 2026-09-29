@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -185,7 +186,8 @@ fun AppRootInspectorDialog(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth(0.94f)
-                    .fillMaxHeight(0.91f)
+                    .fillMaxHeight(0.89f)
+                    .offset(y = (-8).dp)
                     .clip(RoundedCornerShape(24.dp))
                     .border(1.dp, dynamicBorderColor(), RoundedCornerShape(24.dp))
                     .clickable(

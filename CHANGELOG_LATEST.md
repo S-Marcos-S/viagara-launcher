@@ -1,3 +1,10 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.41
+
+- **Ajuste Fino de Posicionamento e Elevação da Janela de Inspeção (`AppRootInspectorDialog`):**
+  - **Elevação da Base do Diálogo (~2 mm):** Aplicado deslocamento vertical e calibração de altura proporcional (`fillMaxHeight(0.89f)` e `offset(y = -8.dp)`), subindo a base da tela de inspeção em aproximadamente 2 milímetros em relação à borda inferior do display. O diálogo não colide mais com a barra de navegação/gestos do sistema e mantém um espaçamento visual equilibrado e confortável.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.40
 
 - **Redesign Completo e Otimização de Espaço da Tela de Inspeção de Aplicativos (`AppRootInspectorDialog`):**
