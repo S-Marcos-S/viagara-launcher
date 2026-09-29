@@ -8,9 +8,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +44,7 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
@@ -58,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -67,17 +71,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import dev.victorialauncher.R
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.root.AppInspectionData
@@ -130,6 +140,24 @@ fun AppRootInspectorDialog(
 
     var isAutoRefreshEnabled by remember { mutableStateOf(true) }
 
+    // Floating window state & bounds
+    var isMinimized by remember { mutableStateOf(false) }
+    var windowOffsetX by remember { mutableFloatStateOf(0f) }
+    var windowOffsetY by remember { mutableFloatStateOf(0f) }
+
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val maxBubbleX = (screenWidthPx - with(density) { 72.dp.toPx() }).coerceAtLeast(0f)
+    val maxBubbleY = (screenHeightPx - with(density) { 80.dp.toPx() }).coerceAtLeast(0f)
+
+    val defaultBubbleX = with(density) { 20.dp.toPx() }
+    val defaultBubbleY = with(density) { 110.dp.toPx() }
+
+    var bubbleOffsetX by remember { mutableFloatStateOf(defaultBubbleX) }
+    var bubbleOffsetY by remember { mutableFloatStateOf(defaultBubbleY) }
+
     fun refreshData(showIndicator: Boolean = false) {
         scope.launch {
             if (showIndicator) isRefreshing = true
@@ -155,75 +183,110 @@ fun AppRootInspectorDialog(
 
     DisposableEffect(view) {
         val dialogWindow = (view.parent as? DialogWindowProvider)?.window
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dialogWindow != null) {
-            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-            val params = dialogWindow.attributes
-            params.blurBehindRadius = 36
-            dialogWindow.attributes = params
+        if (dialogWindow != null) {
+            dialogWindow.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            dialogWindow.setDimAmount(0f)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                val params = dialogWindow.attributes
+                params.blurBehindRadius = 36
+                dialogWindow.attributes = params
+            }
         }
         onDispose {}
     }
 
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = false,
-        ),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(colorScheme.scrim.copy(alpha = 0.52f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismissRequest,
-                ),
-            contentAlignment = Alignment.Center,
+    if (!isMinimized) {
+        Dialog(
+            onDismissRequest = onDismissRequest,
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = false,
+            ),
         ) {
-            Surface(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.94f)
-                    .fillMaxHeight(0.89f)
-                    .offset(y = (-8).dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .border(1.dp, dynamicBorderColor(), RoundedCornerShape(24.dp))
+                    .fillMaxSize()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = {}, // Prevents click-through dismiss
+                        onClick = onDismissRequest,
                     ),
-                color = dynamicSurfaceColor().copy(alpha = 0.96f),
-                tonalElevation = 8.dp,
-                shadowElevation = 16.dp,
+                contentAlignment = Alignment.Center,
             ) {
-                Column(
+                Surface(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .fillMaxWidth(0.94f)
+                        .fillMaxHeight(0.89f)
+                        .offset { IntOffset(windowOffsetX.roundToInt(), (windowOffsetY - with(density) { 8.dp.toPx() }).roundToInt()) }
+                        .clip(RoundedCornerShape(24.dp))
+                        .border(1.dp, dynamicBorderColor(), RoundedCornerShape(24.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}, // Prevents click-through dismiss
+                        ),
+                    color = dynamicSurfaceColor().copy(alpha = 0.96f),
+                    tonalElevation = 8.dp,
+                    shadowElevation = 16.dp,
                 ) {
-                    // Header: Icon + Name + Status Badge + Top Action Buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top,
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                     ) {
-                        AppIcon(
-                            app = app,
-                            sizeDp = 38,
+                        // Drag handle pill at the top (draggable!)
+                        Box(
                             modifier = Modifier
-                                .padding(top = 1.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
-                        )
-
-                        Spacer(Modifier.width(10.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.Top,
+                                .fillMaxWidth()
+                                .padding(bottom = 5.dp)
+                                .pointerInput(Unit) {
+                                    detectDragGestures { change, dragAmount ->
+                                        change.consume()
+                                        windowOffsetX += dragAmount.x
+                                        windowOffsetY += dragAmount.y
+                                    }
+                                },
+                            contentAlignment = Alignment.Center,
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(38.dp)
+                                    .height(3.5.dp)
+                                    .clip(CircleShape)
+                                    .background(colorScheme.onSurface.copy(alpha = 0.22f)),
+                            )
+                        }
+
+                        // Header: Icon + Name + Status Badge + Top Action Buttons
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(Unit) {
+                                    detectDragGestures { change, dragAmount ->
+                                        change.consume()
+                                        windowOffsetX += dragAmount.x
+                                        windowOffsetY += dragAmount.y
+                                    }
+                                },
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            AppIcon(
+                                app = app,
+                                sizeDp = 38,
+                                modifier = Modifier
+                                    .padding(top = 1.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                            )
+
+                            Spacer(Modifier.width(10.dp))
+
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.Top,
+                            ) {
                             Text(
                                 text = displayName,
                                 color = colorScheme.onSurface,
@@ -347,6 +410,18 @@ fun AppRootInspectorDialog(
                                     imageVector = Icons.Filled.BugReport,
                                     contentDescription = stringResource(R.string.action_inspect_logs),
                                     tint = colorScheme.primary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { isMinimized = true },
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Remove,
+                                    contentDescription = "Minimizar",
+                                    tint = colorScheme.onSurface.copy(alpha = 0.75f),
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
@@ -603,6 +678,104 @@ fun AppRootInspectorDialog(
                             },
                         )
                     }
+                }
+            }
+        }
+    } else {
+        // MINIMIZED FLOATING BUBBLE via non-modal Popup (does NOT block launcher or alphabet scrolling!)
+        Popup(
+            alignment = Alignment.TopStart,
+            offset = IntOffset(bubbleOffsetX.roundToInt(), bubbleOffsetY.roundToInt()),
+            properties = PopupProperties(
+                focusable = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+                clippingEnabled = false,
+            ),
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .pointerInput(Unit) {
+                        var hasMoved = false
+                        detectDragGestures(
+                            onDragStart = { hasMoved = false },
+                            onDragEnd = {
+                                if (!hasMoved) {
+                                    isMinimized = false
+                                }
+                            },
+                            onDragCancel = { hasMoved = false },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                if (kotlin.math.abs(dragAmount.x) > 1.5f || kotlin.math.abs(dragAmount.y) > 1.5f) {
+                                    hasMoved = true
+                                }
+                                bubbleOffsetX = (bubbleOffsetX + dragAmount.x).coerceIn(0f, maxBubbleX)
+                                bubbleOffsetY = (bubbleOffsetY + dragAmount.y).coerceIn(0f, maxBubbleY)
+                            }
+                        )
+                    },
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            isMinimized = false
+                        },
+                    color = dynamicSurfaceColor().copy(alpha = 0.95f),
+                    tonalElevation = 10.dp,
+                    shadowElevation = 14.dp,
+                    border = BorderStroke(1.5.dp, dynamicBorderColor()),
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        AppIcon(
+                            app = app,
+                            sizeDp = 34,
+                            modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+                        )
+
+                        // Status dot indicator at bottom end
+                        val currentStatus = inspectionData?.status ?: AppProcessStatus.STOPPED
+                        val statusDotColor = when (currentStatus) {
+                            AppProcessStatus.FOREGROUND -> Color(0xFF10B981)
+                            AppProcessStatus.BACKGROUND -> Color(0xFF3B82F6)
+                            AppProcessStatus.STOPPED -> colorScheme.onSurface.copy(alpha = 0.45f)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(4.dp)
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(statusDotColor)
+                                .border(1.5.dp, dynamicSurfaceColor(), CircleShape),
+                        )
+                    }
+                }
+
+                // Mini close button on the top-end of the bubble
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 4.dp, y = (-4).dp)
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(colorScheme.surfaceVariant)
+                        .border(1.dp, colorScheme.outline.copy(alpha = 0.3f), CircleShape)
+                        .clickable { onDismissRequest() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.action_close),
+                        tint = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(13.dp),
+                    )
                 }
             }
         }

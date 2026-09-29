@@ -108,6 +108,8 @@ object FloatingLogOverlayManager {
 
     var bubbleX = 24
     var bubbleY = 120
+    var windowX = 0
+    var windowY = 0
 
     fun canDrawOverlays(context: Context): Boolean {
         return Settings.canDrawOverlays(context)
@@ -202,6 +204,8 @@ object FloatingLogOverlayManager {
                 val metrics = appContext.resources.displayMetrics
                 width = (metrics.widthPixels * 0.94f).roundToInt()
                 height = (metrics.heightPixels * 0.84f).roundToInt()
+                x = windowX
+                y = windowY
             }
         }
         layoutParams = params
@@ -251,8 +255,8 @@ object FloatingLogOverlayManager {
             params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
             params.gravity = Gravity.CENTER
-            params.x = 0
-            params.y = 0
+            params.x = windowX
+            params.y = windowY
         }
 
         try {
@@ -271,6 +275,21 @@ object FloatingLogOverlayManager {
         bubbleY = (bubbleY + dy.roundToInt()).coerceIn(0, maxY)
         params.x = bubbleX
         params.y = bubbleY
+
+        try {
+            wm.updateViewLayout(view, params)
+        } catch (_: Exception) {}
+    }
+
+    fun moveWindow(dx: Float, dy: Float) {
+        val wm = windowManager ?: return
+        val view = overlayView ?: return
+        val params = layoutParams ?: return
+
+        windowX += dx.roundToInt()
+        windowY += dy.roundToInt()
+        params.x = windowX
+        params.y = windowY
 
         try {
             wm.updateViewLayout(view, params)
@@ -486,11 +505,17 @@ private fun FloatingLogOverlayRoot(context: Context) {
                     .fillMaxSize()
                     .padding(14.dp),
             ) {
-                // Drag handle pill at the top
+                // Drag handle pill at the top (draggable!)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 6.dp),
+                        .padding(bottom = 6.dp)
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                FloatingLogOverlayManager.moveWindow(dragAmount.x, dragAmount.y)
+                            }
+                        },
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
@@ -502,9 +527,16 @@ private fun FloatingLogOverlayRoot(context: Context) {
                     )
                 }
 
-                // Header bar
+                // Header bar (also draggable!)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                FloatingLogOverlayManager.moveWindow(dragAmount.x, dragAmount.y)
+                            }
+                        },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (hasSourceApp) {

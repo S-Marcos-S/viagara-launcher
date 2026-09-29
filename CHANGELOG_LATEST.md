@@ -1,3 +1,18 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.42
+
+- **Fundo Limpo Sem Escurecimento / Dimming:**
+  - **Launcher e Lista de Apps Nítidos ao Fundo:** Removido o escurecimento de fundo (*dimming* e *scrim*) tanto na janela de inspeção (`AppRootInspectorDialog`) quanto no visualizador de logs (`AppLogViewerDialog`). As bandeiras `FLAG_DIM_BEHIND` e valores de `dimAmount` foram zerados, permitindo visualizar com total nitidez o papel de parede, os aplicativos e o launcher por trás das janelas flutuantes com efeito sutil de desfoque (*blur*).
+
+- **Janela de Inspeção Flutuante e Arrastável (`AppRootInspectorDialog`):**
+  - **Barra de Arraste e Cabeçalho Móvel:** A tela de inspeção de apps agora é uma janela flutuante completa com pílula de arraste superior e suporte a gestos (`detectDragGestures`) no cabeçalho e na barra de arraste, permitindo reposicioná-la livremente na tela.
+  - **Minimização para Bolinha Flutuante:** Adicionado botão de minimizar (`-`) no cabeçalho que compacta a tela de inspeção em uma bolinha circular flutuante de 56dp com o ícone do aplicativo e indicador de status (em execução/foreground, background ou parado).
+  - **Interação Livre Sem Bloqueio:** A bolinha pode ser arrastada para qualquer canto da tela ou fechada diretamente pelo botão `✕`. Um toque simples na bolinha restaura a janela de inspeção instantaneamente sem travar a navegação do launcher.
+
+- **Correção da Janela de Logs ao Expandir da Bolinha (`FloatingLogOverlayManager`):**
+  - **Movimentação Livre Após Expandir:** Corrigida a falta de movimentação da janela quando expandida a partir da bolinha sobre outros apps. Agora a barra de arraste e o cabeçalho possuem suporte nativo a arraste interativo, atualizando as coordenadas do `WindowManager` em tempo real para que o usuário possa reposicionar a janela expandida livremente.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.41
 
 - **Ajuste Fino de Posicionamento e Elevação da Janela de Inspeção (`AppRootInspectorDialog`):**

@@ -248,19 +248,19 @@ fun AppLogViewerDialog(
 
             LaunchedEffect(dialogView) {
                 val dialogWindow = (dialogView.parent as? DialogWindowProvider)?.window ?: return@LaunchedEffect
+                dialogWindow.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                dialogWindow.setDimAmount(0f)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                     val params = dialogWindow.attributes
                     params.blurBehindRadius = 40
                     dialogWindow.attributes = params
                 }
-                dialogWindow.setDimAmount(0.32f)
             }
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(colorScheme.scrim.copy(alpha = 0.28f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
