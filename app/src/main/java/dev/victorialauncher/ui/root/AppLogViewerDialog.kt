@@ -12,9 +12,11 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -52,9 +55,11 @@ import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
@@ -75,6 +80,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -85,6 +91,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -92,9 +99,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import kotlin.math.roundToInt
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.content.FileProvider
@@ -154,12 +163,27 @@ fun AppLogViewerDialog(
         )
     }
 
-    var targetApp by remember { mutableStateOf(initialApp) }
-    var targetPackageName by remember { mutableStateOf(initialApp?.packageName ?: initialPackageName) }
+    val sourceApp = initialApp
+    val sourcePackageName = initialPackageName
+    val hasSourceApp = sourceApp != null || sourcePackageName != null
+    var isFilteringByApp by remember { mutableStateOf(hasSourceApp) }
+
+    val currentTargetApp = if (isFilteringByApp) sourceApp else null
+    val currentTargetPackage = if (isFilteringByApp) (sourceApp?.packageName ?: sourcePackageName) else null
+
     var searchQuery by remember { mutableStateOf("") }
     var caseSensitive by remember { mutableStateOf(false) }
     var selectedLevel by remember { mutableStateOf<LogLevel?>(null) }
     var autoScrollToBottom by remember { mutableStateOf(true) }
+
+    // Window dragging offsets
+    var windowOffsetX by remember { mutableFloatStateOf(0f) }
+    var windowOffsetY by remember { mutableFloatStateOf(0f) }
+
+    // Minimized floating bubble state
+    var isMinimized by remember { mutableStateOf(false) }
+    var bubbleOffsetX by remember { mutableFloatStateOf(0f) }
+    var bubbleOffsetY by remember { mutableFloatStateOf(0f) }
 
     // Repositories & Managers
     val crashManager = remember { AppLogCaptureService.getCrashManager(context) }
@@ -186,29 +210,40 @@ fun AppLogViewerDialog(
     }
 
     // Filtered logs
-    val filteredLogs = remember(rawLogs, userFilters, searchQuery, caseSensitive, selectedLevel, targetApp, targetPackageName) {
+    val filteredLogs = remember(rawLogs, userFilters, searchQuery, caseSensitive, selectedLevel, currentTargetPackage) {
         LogFilterEngine.filterAndSearch(
             lines = rawLogs,
             filters = userFilters,
             query = searchQuery,
             caseSensitive = caseSensitive,
             selectedLevel = selectedLevel,
-            targetPackage = targetApp?.packageName ?: targetPackageName,
+            targetPackage = currentTargetPackage,
         )
     }
 
     Dialog(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = {
+            if (!isMinimized) {
+                onDismissRequest()
+            }
+        },
         properties = DialogProperties(
             dismissOnBackPress = true,
-            dismissOnClickOutside = true,
+            dismissOnClickOutside = !isMinimized,
             usePlatformDefaultWidth = false,
         ),
     ) {
         val dialogView = LocalView.current
-        DisposableEffect(dialogView) {
-            val dialogWindow = (dialogView.parent as? DialogWindowProvider)?.window
-            if (dialogWindow != null) {
+
+        LaunchedEffect(dialogView, isMinimized) {
+            val dialogWindow = (dialogView.parent as? DialogWindowProvider)?.window ?: return@LaunchedEffect
+            if (isMinimized) {
+                dialogWindow.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    dialogWindow.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                }
+                dialogWindow.setDimAmount(0f)
+            } else {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                     val params = dialogWindow.attributes
@@ -217,195 +252,222 @@ fun AppLogViewerDialog(
                 }
                 dialogWindow.setDimAmount(0.32f)
             }
-            onDispose {}
         }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(colorScheme.scrim.copy(alpha = 0.28f))
+                .background(
+                    if (!isMinimized) colorScheme.scrim.copy(alpha = 0.28f)
+                    else Color.Transparent
+                )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
+                    enabled = !isMinimized,
                     onClick = onDismissRequest,
                 ),
-            contentAlignment = Alignment.Center,
+            contentAlignment = if (isMinimized) Alignment.TopStart else Alignment.Center,
         ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .fillMaxHeight(0.82f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .border(1.dp, dynamicBorderColor(), RoundedCornerShape(24.dp))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {},
-                    ),
-                color = dynamicSurfaceColor().copy(alpha = 0.94f),
-                tonalElevation = 8.dp,
-                shadowElevation = 18.dp,
-            ) {
-                Column(
+            if (!isMinimized) {
+                Surface(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(14.dp),
+                        .fillMaxWidth(0.92f)
+                        .fillMaxHeight(0.82f)
+                        .offset { IntOffset(windowOffsetX.roundToInt(), windowOffsetY.roundToInt()) }
+                        .clip(RoundedCornerShape(24.dp))
+                        .border(1.dp, dynamicBorderColor(), RoundedCornerShape(24.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                        ),
+                    color = dynamicSurfaceColor().copy(alpha = 0.94f),
+                    tonalElevation = 8.dp,
+                    shadowElevation = 18.dp,
                 ) {
-                    // Header Bar
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(14.dp),
                     ) {
-                        if (targetApp != null) {
-                            AppIcon(
-                                app = targetApp!!,
-                                sizeDp = 38,
+                        // Drag Handle at the top of the floating window
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp)
+                                .pointerInput(Unit) {
+                                    detectDragGestures { change, dragAmount ->
+                                        change.consume()
+                                        windowOffsetX += dragAmount.x
+                                        windowOffsetY += dragAmount.y
+                                    }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                                    .width(42.dp)
+                                    .height(4.dp)
+                                    .clip(CircleShape)
+                                    .background(colorScheme.onSurface.copy(alpha = 0.2f))
                             )
-                            Spacer(Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                        }
+
+                        // Header Bar (also draggable!)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(Unit) {
+                                    detectDragGestures { change, dragAmount ->
+                                        change.consume()
+                                        windowOffsetX += dragAmount.x
+                                        windowOffsetY += dragAmount.y
+                                    }
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (hasSourceApp) {
+                                val appLabel = sourceApp?.label ?: sourcePackageName ?: "App"
+                                val pkgName = sourceApp?.packageName ?: sourcePackageName ?: ""
+
+                                if (sourceApp != null) {
+                                    AppIcon(
+                                        app = sourceApp,
+                                        sizeDp = 38,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(colorScheme.primary.copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.BugReport,
+                                            contentDescription = null,
+                                            tint = colorScheme.primary,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = if (isFilteringByApp) appLabel else "Todos os logs",
+                                            color = colorScheme.onSurface,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false),
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Surface(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .clickable { isFilteringByApp = !isFilteringByApp },
+                                            color = if (isFilteringByApp) colorScheme.primary.copy(alpha = 0.12f) else colorScheme.primary.copy(alpha = 0.22f),
+                                            border = BorderStroke(1.dp, if (isFilteringByApp) colorScheme.primary.copy(alpha = 0.35f) else colorScheme.primary),
+                                            shape = RoundedCornerShape(6.dp),
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (isFilteringByApp) Icons.Filled.Language else Icons.Filled.FilterList,
+                                                    contentDescription = null,
+                                                    tint = colorScheme.primary,
+                                                    modifier = Modifier.size(11.dp),
+                                                )
+                                                Text(
+                                                    text = if (isFilteringByApp) "Ver todos" else "Filtrar $appLabel",
+                                                    color = colorScheme.primary,
+                                                    fontSize = 9.5.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                )
+                                            }
+                                        }
+                                    }
                                     Text(
-                                        text = targetApp!!.label,
+                                        text = if (isFilteringByApp) pkgName else "Logs de todo o sistema (toque para voltar ao $appLabel)",
+                                        color = colorScheme.onSurface.copy(alpha = 0.6f),
+                                        fontSize = 10.sp,
+                                        fontFamily = if (isFilteringByApp) FontFamily.Monospace else FontFamily.Default,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(colorScheme.primary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Terminal,
+                                        contentDescription = null,
+                                        tint = colorScheme.primary,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Central de Logs & Diagnóstico",
                                         color = colorScheme.onSurface,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f, fill = false),
                                     )
-                                    Spacer(Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(colorScheme.primary.copy(alpha = 0.15f))
-                                            .clickable {
-                                                targetApp = null
-                                                targetPackageName = null
-                                            }
-                                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                                    ) {
-                                        Text(
-                                            text = "✕ Todos os apps",
-                                            color = colorScheme.primary,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
-                                }
-                                Text(
-                                    text = targetApp!!.packageName,
-                                    color = colorScheme.onSurface.copy(alpha = 0.6f),
-                                    fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        } else if (targetPackageName != null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(colorScheme.primary.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.BugReport,
-                                    contentDescription = null,
-                                    tint = colorScheme.primary,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                            Spacer(Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = targetPackageName!!,
-                                        color = colorScheme.onSurface,
-                                        fontSize = 13.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Monospace,
+                                        text = "Logcat • Crashes • ANRs • LogFox Engine",
+                                        color = colorScheme.onSurface.copy(alpha = 0.6f),
+                                        fontSize = 10.sp,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f, fill = false),
                                     )
-                                    Spacer(Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(colorScheme.primary.copy(alpha = 0.15f))
-                                            .clickable {
-                                                targetPackageName = null
-                                            }
-                                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                                    ) {
-                                        Text(
-                                            text = "✕ Todos os apps",
-                                            color = colorScheme.primary,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
                                 }
-                                Text(
-                                    text = "Filtro ativo por pacote",
-                                    color = colorScheme.onSurface.copy(alpha = 0.6f),
-                                    fontSize = 10.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
                             }
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(colorScheme.primary.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Terminal,
-                                    contentDescription = null,
-                                    tint = colorScheme.primary,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                            Spacer(Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Central de Logs & Diagnóstico",
-                                    color = colorScheme.onSurface,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    text = "Logcat • Crashes • ANRs • LogFox Engine",
-                                    color = colorScheme.onSurface.copy(alpha = 0.6f),
-                                    fontSize = 10.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
 
-                        // Close button
-                        IconButton(
-                            onClick = onDismissRequest,
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = stringResource(R.string.action_close),
-                                tint = colorScheme.onSurface.copy(alpha = 0.8f),
-                                modifier = Modifier.size(18.dp),
-                            )
+                            // Header Actions (Minimize & Close)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = { isMinimized = true },
+                                    modifier = Modifier.size(32.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Remove,
+                                        contentDescription = "Minimizar para bolinha flutuante",
+                                        tint = colorScheme.onSurface.copy(alpha = 0.75f),
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                                Spacer(Modifier.width(2.dp))
+                                IconButton(
+                                    onClick = onDismissRequest,
+                                    modifier = Modifier.size(32.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = stringResource(R.string.action_close),
+                                        tint = colorScheme.onSurface.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
                         }
-                    }
 
                     Spacer(Modifier.height(8.dp))
 
@@ -509,8 +571,8 @@ fun AppLogViewerDialog(
                                         if (recordingSession.state == RecordingState.IDLE) {
                                             AppLogCaptureService.startCapture(
                                                 context,
-                                                targetApp?.packageName ?: targetPackageName,
-                                                targetApp?.label ?: targetPackageName,
+                                                currentTargetPackage,
+                                                currentTargetApp?.label ?: currentTargetPackage,
                                             )
                                         } else {
                                             AppLogCaptureService.saveLog(context)
@@ -523,8 +585,8 @@ fun AppLogViewerDialog(
                                 RecordingsTab(
                                     session = recordingSession,
                                     savedRecordings = savedRecordings,
-                                    targetApp = targetApp,
-                                    targetPackageName = targetPackageName,
+                                    targetApp = currentTargetApp,
+                                    targetPackageName = currentTargetPackage,
                                     onStartRecording = { pkg, name ->
                                         AppLogCaptureService.startCapture(context, pkg, name)
                                     },
@@ -558,6 +620,103 @@ fun AppLogViewerDialog(
                         }
                     }
                 }
+            } else {
+                // MINIMIZED FLOATING BUBBLE ("BOLINHA FLUTUANTE")
+                Box(
+                    modifier = Modifier
+                        .padding(top = 90.dp, start = 20.dp)
+                        .offset { IntOffset(bubbleOffsetX.roundToInt(), bubbleOffsetY.roundToInt()) }
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                bubbleOffsetX += dragAmount.x
+                                bubbleOffsetY += dragAmount.y
+                            }
+                        },
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                isMinimized = false
+                            },
+                        color = dynamicSurfaceColor().copy(alpha = 0.95f),
+                        tonalElevation = 10.dp,
+                        shadowElevation = 14.dp,
+                        border = BorderStroke(1.5.dp, dynamicBorderColor()),
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            if (sourceApp != null) {
+                                AppIcon(
+                                    app = sourceApp,
+                                    sizeDp = 34,
+                                    modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Terminal,
+                                    contentDescription = null,
+                                    tint = colorScheme.primary,
+                                    modifier = Modifier.size(28.dp),
+                                )
+                            }
+
+                            // Live recording indicator
+                            if (recordingSession.state != RecordingState.IDLE) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(4.dp)
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFEF4444))
+                                        .border(1.5.dp, dynamicSurfaceColor(), CircleShape),
+                                )
+                            } else if (crashes.isNotEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(2.dp)
+                                        .size(14.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFEF4444)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "${crashes.size}",
+                                        color = Color.White,
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Mini close button on the top-end of the bubble
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 4.dp, y = (-4).dp)
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(colorScheme.surfaceVariant)
+                            .border(1.dp, colorScheme.outline.copy(alpha = 0.3f), CircleShape)
+                            .clickable { onDismissRequest() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Fechar bolinha",
+                            tint = colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(11.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -577,7 +736,7 @@ fun AppLogViewerDialog(
     // Create Filter Dialog
     if (createFilterDialogOpen) {
         CreateFilterDialog(
-            targetAppPackage = targetApp?.packageName ?: targetPackageName,
+            targetAppPackage = currentTargetPackage,
             onDismiss = { createFilterDialogOpen = false },
             onSave = { filter ->
                 filterStorage.addFilter(filter)
@@ -657,16 +816,25 @@ private fun LiveLogsTab(
                             fontFamily = FontFamily.Monospace,
                         ),
                         cursorBrush = SolidColor(colorScheme.primary),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                         decorationBox = { innerTextField ->
-                            if (searchQuery.isEmpty()) {
-                                Text(
-                                    text = "Pesquisar tag, mensagem, PID...",
-                                    color = colorScheme.onSurface.copy(alpha = 0.4f),
-                                    fontSize = 11.sp,
-                                )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = "Pesquisar tag, mensagem, PID...",
+                                        color = colorScheme.onSurface.copy(alpha = 0.4f),
+                                        fontSize = 11.5.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        maxLines = 1,
+                                    )
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
                         },
                     )
                     if (searchQuery.isNotEmpty()) {

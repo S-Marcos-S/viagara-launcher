@@ -1,3 +1,20 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.36
+
+- **Janela Flutuante Totalmente Arrastável & Minimizar para Bolinha ("Floating Bubble"):**
+  - **Movimentação Livre da Janela:** Adicionada barra de arraste (*drag handle*) no topo da Central de Logs e suporte a gestos de arrasto contínuos (`detectDragGestures`) no cabeçalho, permitindo mover e reposicionar a janela livremente em qualquer lugar da tela.
+  - **Minimização para Bolinha Flutuante:** Novo botão de minimizar (`-`) no cabeçalho que compacta a janela em um ícone circular flutuante de 56dp. A bolinha pode ser arrastada livremente por toda a tela e possui botão dedicado para fechamento rápido.
+  - **Telemetria e Status em Tempo Real na Bolinha:** A bolinha exibe o ícone do aplicativo em análise (ou ícone de terminal), ponto indicador vermelho durante gravações de sessão ativas e selo numérico de alerta quando novos crashes são detectados.
+  - **Restauração Instantânea com 1 Toque:** Toque simples na bolinha expande a Central de Logs de volta ao seu estado flutuante com animação e foco preservados. Ao minimizar, o scrim escuro e o desfoque de fundo são dispensados dinamicamente para manter a tela limpa e acessível.
+
+- **Alternador de Filtro de Aplicativo Reversível e Intuitivo no Cabeçalho:**
+  - **Design Contextual Claro:** Substituição do botão anterior por uma pílula de ação expressiva que deixa inequívoca a ação do usuário: exibe `[ 🌐 Ver todos ]` ao filtrar pelo app e `[ 🎯 Filtrar <Nome do App> ]` ao exibir o log geral do sistema.
+  - **Memória de Contexto:** A janela preserva o aplicativo de origem em memória (`sourceApp`), possibilitando alternar quantas vezes quiser entre os logs globais do Android e os logs exclusivos daquele app sem perder o contexto original.
+
+- **Correção de Cursor e Alinhamento na Barra de Pesquisa:**
+  - **Alinhamento Vertical Preciso:** Corrigido o salto de altura do cursor e do texto na barra de busca de logs. O campo de digitação e o placeholder agora utilizam alinhamento vertical compartilhado (`Alignment.CenterStart`), garantindo que o cursor apareça exatamente no centro vertical desde o primeiro clique antes de iniciar a digitação.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.35
 
 - **Aprimoramentos Visuais e de Layout na Central de Logs (`AppLogViewerDialog`):**
