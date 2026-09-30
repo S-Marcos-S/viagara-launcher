@@ -600,6 +600,13 @@ object AppRootInspector {
         return map.mapValues { it.value.toString().trim() }
     }
 
+    private fun uidStatStatFallback(text: String): Pair<Long, Long> {
+        val parts = text.split("---TX---")
+        val rx = parts.getOrNull(0)?.trim()?.toLongOrNull() ?: 0L
+        val tx = parts.getOrNull(1)?.trim()?.toLongOrNull() ?: 0L
+        return Pair(rx, tx)
+    }
+
     fun parseBatteryStats(rawText: String, uid: Int, deviceBatteryCapacityMah: Double = 4500.0): AppBatteryInspectionData {
         if (rawText.isBlank()) return AppBatteryInspectionData()
 
