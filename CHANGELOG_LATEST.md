@@ -1,3 +1,18 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.43
+
+- **Analisador de Uso de Bateria & Energia no Gerenciador de Tarefas:**
+  - **Indicador de Impacto Energético em Tempo Real:** Cada aplicativo e processo (primeiro plano, segundo plano e processos do sistema) agora exibe uma classificação clara de impacto de bateria (`⚡ Mínimo`, `⚡ Baixo`, `⚡ Médio`, `⚡ Alto` ou `⚡ Muito Alto`) diretamente na lista de processos do Gerenciador de Tarefas (`TaskManagerScreen`), permitindo identificar instantaneamente processos drenando bateria em segundo plano.
+  - **Card de Bateria & Alimentação na Aba Desempenho:** Integrado card completo de bateria com taxa de descarga/recarga instantânea física do hardware (em mA e Watts), tensão (voltagem em V), temperatura (°C), estado de saúde e gráfico em tempo real de histórico de consumo de energia ao lado dos gráficos de CPU, RAM e Rede.
+
+- **Aba Dedicada de Bateria no Inspetor de Apps (`AppRootInspectorDialog`):**
+  - **Dreno Estimado em mAh e %:** Exibe o consumo consolidado do aplicativo desde a última carga total com base nos dados do subsistema `dumpsys batterystats`.
+  - **Divisão Primeiro Plano vs Segundo Plano:** Gráfico comparativo detalhado mostrando exatamente quanto da energia foi gasta com tela ligada (foreground) versus tarefas silenciosas em segundo plano (background).
+  - **Wakelocks & Alarmes em Segundo Plano:** Rastreamento rigoroso do tempo em que o aplicativo manteve o processador acordado com a tela desligada (Wakelocks parciais) e contagem de despertares por alarmes de sistema.
+  - **Consumo por Componente de Hardware:** Discriminação do consumo em mAh de processamento (CPU), CPU acordada (Wakelocks), dados móveis (4G/5G) e conexões Wi-Fi.
+  - **Atalho Rápido de Otimização:** Botão integrado com acesso direto às opções de restrição e otimização de bateria do sistema operacional para o aplicativo selecionado.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.42
 
 - **Fundo Limpo Sem Escurecimento / Dimming:**

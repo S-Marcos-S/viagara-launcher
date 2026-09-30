@@ -4,11 +4,14 @@ package dev.victorialauncher.root
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.TrafficStats
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Environment
 import android.os.StatFs
@@ -22,6 +25,15 @@ import java.io.RandomAccessFile
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.roundToInt
+
+enum class PowerImpactLevel(val labelPt: String, val labelEn: String) {
+    MINIMAL("Mínimo", "Minimal"),
+    LOW("Baixo", "Low"),
+    MEDIUM("Médio", "Medium"),
+    HIGH("Alto", "High"),
+    VERY_HIGH("Muito Alto", "Very High")
+}
 
 data class SystemPerformanceSnapshot(
     val totalCpuPercent: Double = 0.0,
@@ -48,6 +60,14 @@ data class SystemPerformanceSnapshot(
     val storageTotalGb: Double = 0.0,
     val storageUsedGb: Double = 0.0,
     val storageAvailableGb: Double = 0.0,
+    val batteryPercent: Int = 0,
+    val isCharging: Boolean = false,
+    val batteryCurrentNowMa: Long? = null,
+    val batteryVoltageMv: Long? = null,
+    val batteryPowerWatts: Double? = null,
+    val batteryTempCelsius: Float = 0f,
+    val batteryHealth: String = "Boa",
+    val chargeTimeRemainingMs: Long? = null,
     val timestamp: Long = System.currentTimeMillis(),
 )
 
@@ -62,6 +82,8 @@ data class TaskProcessItem(
     val isForeground: Boolean,
     val isSystemProcess: Boolean = false,
     val appInfo: AppInfo? = null,
+    val powerImpact: PowerImpactLevel = PowerImpactLevel.LOW,
+    val estimatedPowerMw: Double = 0.0,
 )
 
 data class RunningTasksSnapshot(
@@ -149,6 +171,9 @@ object SystemTaskInspector {
         // 6. Process and Thread counts from /proc/loadavg
         val (procCount, threadCount) = readLoadAvgProcCounts()
 
+        // 7. Battery & Power Hardware Telemetry
+        val batteryInfo = sampleBatteryInfo(context)
+
         SystemPerformanceSnapshot(
             totalCpuPercent = cpuUsage,
             cpuCores = coresCount,
@@ -174,6 +199,14 @@ object SystemTaskInspector {
             storageTotalGb = storageTotal,
             storageUsedGb = storageUsed,
             storageAvailableGb = storageAvail,
+            batteryPercent = batteryInfo.percent,
+            isCharging = batteryInfo.isCharging,
+            batteryCurrentNowMa = batteryInfo.currentNowMa,
+            batteryVoltageMv = batteryInfo.voltageMv,
+            batteryPowerWatts = batteryInfo.powerWatts,
+            batteryTempCelsius = batteryInfo.tempCelsius,
+            batteryHealth = batteryInfo.health,
+            chargeTimeRemainingMs = batteryInfo.chargeTimeRemainingMs,
             timestamp = System.currentTimeMillis(),
         )
     }
@@ -255,6 +288,7 @@ object SystemTaskInspector {
                 val pkg = matchedApp.packageName
                 val isFg = foregroundPackages.contains(pkg)
                 val ramMb = (proc.memPercent / 100.0) * totalRamMb
+                val (impact, powerMw) = calculatePowerImpact(proc.cpuPercent, isFg, isSystem = false)
                 val item = TaskProcessItem(
                     pid = proc.pid,
                     packageName = pkg,
@@ -266,6 +300,8 @@ object SystemTaskInspector {
                     isForeground = isFg,
                     isSystemProcess = false,
                     appInfo = matchedApp,
+                    powerImpact = impact,
+                    estimatedPowerMw = powerMw,
                 )
                 if (isFg) {
                     foregroundList.add(item)
@@ -299,6 +335,7 @@ object SystemTaskInspector {
                     }
 
                     val ramMb = (proc.memPercent / 100.0) * totalRamMb
+                    val (impact, powerMw) = calculatePowerImpact(proc.cpuPercent, isFg, isSystem = false)
                     val item = TaskProcessItem(
                         pid = proc.pid,
                         packageName = pkgName,
@@ -310,6 +347,8 @@ object SystemTaskInspector {
                         isForeground = isFg,
                         isSystemProcess = false,
                         appInfo = null,
+                        powerImpact = impact,
+                        estimatedPowerMw = powerMw,
                     )
 
                     if (isFg) {
@@ -320,6 +359,7 @@ object SystemTaskInspector {
                 } else {
                     // System daemon / kernel thread
                     val ramMb = (proc.memPercent / 100.0) * totalRamMb
+                    val (impact, powerMw) = calculatePowerImpact(proc.cpuPercent, isForeground = false, isSystem = true)
                     systemList.add(
                         TaskProcessItem(
                             pid = proc.pid,
@@ -332,6 +372,8 @@ object SystemTaskInspector {
                             isForeground = false,
                             isSystemProcess = true,
                             appInfo = null,
+                            powerImpact = impact,
+                            estimatedPowerMw = powerMw,
                         )
                     )
                 }
@@ -559,6 +601,122 @@ object SystemTaskInspector {
             }
             Pair(0, 0)
         }.getOrDefault(Pair(0, 0))
+    }
+
+    data class BatteryInfoSample(
+        val percent: Int = 0,
+        val isCharging: Boolean = false,
+        val currentNowMa: Long? = null,
+        val voltageMv: Long? = null,
+        val powerWatts: Double? = null,
+        val tempCelsius: Float = 0f,
+        val health: String = "Boa",
+        val chargeTimeRemainingMs: Long? = null,
+    )
+
+    fun sampleBatteryInfo(context: Context): BatteryInfoSample {
+        var percent = 0
+        var isCharging = false
+        var voltageMv: Long? = null
+        var tempCelsius = 0f
+        var healthStr = "Boa"
+
+        runCatching {
+            val ifilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+            val intent = context.registerReceiver(null, ifilter)
+            if (intent != null) {
+                val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+                if (level >= 0 && scale > 0) {
+                    percent = ((level * 100f) / scale).roundToInt().coerceIn(0, 100)
+                }
+                val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+                isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                    status == BatteryManager.BATTERY_STATUS_FULL
+
+                val v = intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)
+                if (v > 0) voltageMv = v.toLong()
+
+                val temp = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0)
+                if (temp > 0) tempCelsius = temp / 10f
+
+                healthStr = when (intent.getIntExtra(BatteryManager.EXTRA_HEALTH, BatteryManager.BATTERY_HEALTH_UNKNOWN)) {
+                    BatteryManager.BATTERY_HEALTH_GOOD -> "Boa"
+                    BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Superaquecendo"
+                    BatteryManager.BATTERY_HEALTH_DEAD -> "Esgotada"
+                    BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Sobretensão"
+                    BatteryManager.BATTERY_HEALTH_COLD -> "Fria"
+                    else -> "Normal"
+                }
+            }
+        }
+
+        val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        var currentMicro = runCatching {
+            bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)?.toLong()
+        }.getOrNull()
+
+        if (currentMicro == null || currentMicro == 0L || currentMicro == Long.MIN_VALUE || currentMicro == Int.MIN_VALUE.toLong()) {
+            currentMicro = runCatching {
+                File("/sys/class/power_supply/battery/current_now").readText().trim().toLongOrNull()
+            }.getOrNull()
+        }
+
+        var currentMa: Long? = null
+        if (currentMicro != null && currentMicro != 0L && currentMicro != Long.MIN_VALUE && currentMicro != Int.MIN_VALUE.toLong()) {
+            currentMa = if (kotlin.math.abs(currentMicro) > 10_000L) {
+                currentMicro / 1000L
+            } else {
+                currentMicro
+            }
+        }
+
+        val powerWatts = if (currentMa != null && voltageMv != null && voltageMv > 0L) {
+            val amps = kotlin.math.abs(currentMa) / 1000.0
+            val volts = voltageMv / 1000.0
+            amps * volts
+        } else null
+
+        val chargeRemaining = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            runCatching { bm?.computeChargeTimeRemaining()?.takeIf { it > 0L } }.getOrNull()
+        } else null
+
+        return BatteryInfoSample(
+            percent = percent,
+            isCharging = isCharging,
+            currentNowMa = currentMa,
+            voltageMv = voltageMv,
+            powerWatts = powerWatts,
+            tempCelsius = tempCelsius,
+            health = healthStr,
+            chargeTimeRemainingMs = chargeRemaining,
+        )
+    }
+
+    fun calculatePowerImpact(
+        cpuPercent: Double,
+        isForeground: Boolean,
+        isSystem: Boolean,
+    ): Pair<PowerImpactLevel, Double> {
+        val level = if (isForeground) {
+            when {
+                cpuPercent >= 25.0 -> PowerImpactLevel.VERY_HIGH
+                cpuPercent >= 10.0 -> PowerImpactLevel.HIGH
+                cpuPercent >= 3.0 -> PowerImpactLevel.MEDIUM
+                cpuPercent >= 0.5 -> PowerImpactLevel.LOW
+                else -> PowerImpactLevel.MINIMAL
+            }
+        } else {
+            when {
+                cpuPercent >= 8.0 -> PowerImpactLevel.VERY_HIGH
+                cpuPercent >= 3.0 -> PowerImpactLevel.HIGH
+                cpuPercent >= 0.8 -> PowerImpactLevel.MEDIUM
+                cpuPercent >= 0.1 -> PowerImpactLevel.LOW
+                else -> PowerImpactLevel.MINIMAL
+            }
+        }
+        val estimatedMw = (cpuPercent / 100.0) * 2800.0
+        return Pair(level, estimatedMw)
     }
 
     private fun extractForegroundPackages(text: String): Set<String> {

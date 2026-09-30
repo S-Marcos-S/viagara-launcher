@@ -401,4 +401,9 @@
     <string name="task_manager_net_download">Download</string>
     <string name="task_manager_net_upload">Upload</string>
     <string name="task_manager_storage_title">Armazenamento</string>
+    <string name="task_manager_battery_title">Bateria &amp; Energia</string>
+    <string name="task_manager_power_impact">Impacto Energético</string>
+    <string name="task_manager_battery_voltage">Tensão</string>
+    <string name="task_manager_battery_temp">Temperatura</string>
+    <string name="task_manager_battery_health">Saúde</string>
 </resources>

@@ -54,6 +54,22 @@ data class NetBreakdown(
     val tx7Days: Long = 0L,
 )
 
+data class AppBatteryInspectionData(
+    val totalMah: Double = 0.0,
+    val foregroundMah: Double = 0.0,
+    val backgroundMah: Double = 0.0,
+    val cpuMah: Double = 0.0,
+    val wakelockMah: Double = 0.0,
+    val mobileRadioMah: Double = 0.0,
+    val wifiMah: Double = 0.0,
+    val percentTotalDrain: Double = 0.0,
+    val wakelockTimeSec: Long = 0L,
+    val foregroundTimeSec: Long = 0L,
+    val backgroundTimeSec: Long = 0L,
+    val wakeupAlarmsCount: Int = 0,
+    val powerImpact: PowerImpactLevel = PowerImpactLevel.LOW,
+)
+
 data class AppInspectionData(
     val packageName: String,
     val appName: String,
@@ -79,6 +95,7 @@ data class AppInspectionData(
     val topActivity: String?,
     val activeServices: List<String>,
     val permissions: List<AppPermissionItem>,
+    val batteryData: AppBatteryInspectionData? = null,
     val timestamp: Long = System.currentTimeMillis(),
 )
 
@@ -234,6 +251,8 @@ object AppRootInspector {
                 dumpsys activity activities 2>/dev/null | grep -E "topResumedActivity|mResumedActivity"
                 echo "===SERVICES==="
                 dumpsys activity services $packageName 2>/dev/null | grep -E "ServiceRecord|app=ProcessRecord"
+                echo "===BATTERYSTATS==="
+                dumpsys batterystats --charged $packageName 2>/dev/null || dumpsys batterystats $packageName 2>/dev/null
             """.trimIndent()
 
             val rawOutput = runSuCommand(shellScript).getOrDefault("")
@@ -474,6 +493,10 @@ object AppRootInspector {
             // 7. Permissions
             val permissions = parsePermissions(packageInfo)
 
+            // 8. Battery & Power Telemetry
+            val batteryText = sections["BATTERYSTATS"] ?: ""
+            val batteryData = parseBatteryStats(batteryText, uid)
+
             AppInspectionData(
                 packageName = packageName,
                 appName = appName,
@@ -499,6 +522,7 @@ object AppRootInspector {
                 topActivity = topActivity,
                 activeServices = activeServices,
                 permissions = permissions,
+                batteryData = batteryData,
             )
         }
     }
@@ -576,11 +600,135 @@ object AppRootInspector {
         return map.mapValues { it.value.toString().trim() }
     }
 
-    private fun uidStatStatFallback(text: String): Pair<Long, Long> {
-        val parts = text.split("---TX---")
-        val rx = parts.getOrNull(0)?.trim()?.toLongOrNull() ?: 0L
-        val tx = parts.getOrNull(1)?.trim()?.toLongOrNull() ?: 0L
-        return Pair(rx, tx)
+    fun parseBatteryStats(rawText: String, uid: Int, deviceBatteryCapacityMah: Double = 4500.0): AppBatteryInspectionData {
+        if (rawText.isBlank()) return AppBatteryInspectionData()
+
+        var totalMah = 0.0
+        var cpuMah = 0.0
+        var wakelockMah = 0.0
+        var radioMah = 0.0
+        var wifiMah = 0.0
+
+        var fgTimeSec = 0L
+        var bgTimeSec = 0L
+        var wlTimeSec = 0L
+        var wakeups = 0
+
+        rawText.lineSequence().forEach { line ->
+            val trimmed = line.trim()
+
+            // 1. Drain extraction: "Computed drain: 14.2" or "drain: 14.2"
+            if (trimmed.contains("Computed drain:") || trimmed.contains("drain:")) {
+                val match = Regex("(?:Computed drain|drain):\\s*([0-9]+(?:\\.[0-9]+)?)").find(trimmed)
+                if (match != null) {
+                    val d = match.groupValues[1].toDoubleOrNull() ?: 0.0
+                    if (d > totalMah) totalMah = d
+                }
+            }
+
+            // 2. Component breakdowns: ( cpu=12.4 wake=1.2 radio=0.5 wifi=0.1 )
+            if (trimmed.contains("cpu=") || trimmed.contains("wake=")) {
+                Regex("cpu=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
+                    cpuMah = it.groupValues[1].toDoubleOrNull() ?: cpuMah
+                }
+                Regex("wake=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
+                    wakelockMah = it.groupValues[1].toDoubleOrNull() ?: wakelockMah
+                }
+                Regex("radio=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
+                    radioMah = it.groupValues[1].toDoubleOrNull() ?: radioMah
+                }
+                Regex("wifi=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
+                    wifiMah = it.groupValues[1].toDoubleOrNull() ?: wifiMah
+                }
+            }
+
+            // 3. Foreground activity time
+            if (trimmed.startsWith("Foreground activities:") || trimmed.startsWith("Foreground:") || trimmed.startsWith("Foreground for:")) {
+                val timeStr = trimmed.substringAfter(":").substringBefore("(").trim()
+                val sec = parseDurationSec(timeStr)
+                if (sec > fgTimeSec) fgTimeSec = sec
+            }
+
+            // 4. Background time
+            if (trimmed.startsWith("Background:") || trimmed.startsWith("Background for:") || trimmed.startsWith("Background cpu time:")) {
+                val timeStr = trimmed.substringAfter(":").trim()
+                val sec = parseDurationSec(timeStr)
+                if (sec > bgTimeSec) bgTimeSec = sec
+            }
+
+            // 5. Wakelocks
+            if (trimmed.startsWith("Partial wakelocks:") || trimmed.startsWith("Wakelocks:") || trimmed.contains("wakelock")) {
+                val timeMatch = Regex("([0-9]+h\\s*)?([0-9]+m\\s*)?([0-9]+s\\s*)?([0-9]+ms)?").find(trimmed.substringAfter(":"))
+                if (timeMatch != null && timeMatch.value.isNotBlank()) {
+                    val sec = parseDurationSec(timeMatch.value)
+                    if (sec > wlTimeSec) wlTimeSec = sec
+                }
+            }
+
+            // 6. Wakeups / Alarms
+            if (trimmed.startsWith("Wakeups:") || trimmed.startsWith("Alarms:")) {
+                val count = Regex("\\d+").find(trimmed.substringAfter(":"))?.value?.toIntOrNull() ?: 0
+                if (count > wakeups) wakeups = count
+            }
+        }
+
+        // Fallback: If totalMah is 0 but components are known, sum them
+        val sumComponents = cpuMah + wakelockMah + radioMah + wifiMah
+        if (totalMah <= 0.0 && sumComponents > 0.0) {
+            totalMah = sumComponents
+        }
+
+        // Foreground vs Background proportional division
+        val totalActiveTime = (fgTimeSec + bgTimeSec).coerceAtLeast(1L)
+        val fgRatio = fgTimeSec.toDouble() / totalActiveTime.toDouble()
+
+        val fgMah = when {
+            fgTimeSec > 0 && bgTimeSec > 0 -> totalMah * fgRatio
+            fgTimeSec > 0 -> totalMah
+            bgTimeSec > 0 -> 0.0
+            else -> totalMah * 0.5
+        }
+
+        val bgMah = (totalMah - fgMah).coerceAtLeast(0.0)
+
+        val percentDrain = if (deviceBatteryCapacityMah > 0) {
+            (totalMah / deviceBatteryCapacityMah) * 100.0
+        } else 0.0
+
+        val impact = when {
+            totalMah > 50.0 || wlTimeSec > 600 || wakeups > 100 -> PowerImpactLevel.VERY_HIGH
+            totalMah > 20.0 || wlTimeSec > 180 || wakeups > 30 -> PowerImpactLevel.HIGH
+            totalMah > 5.0 || wlTimeSec > 30 || wakeups > 10 -> PowerImpactLevel.MEDIUM
+            totalMah > 0.5 || wlTimeSec > 0 -> PowerImpactLevel.LOW
+            else -> PowerImpactLevel.MINIMAL
+        }
+
+        return AppBatteryInspectionData(
+            totalMah = totalMah,
+            foregroundMah = fgMah,
+            backgroundMah = bgMah,
+            cpuMah = cpuMah,
+            wakelockMah = wakelockMah,
+            mobileRadioMah = radioMah,
+            wifiMah = wifiMah,
+            percentTotalDrain = percentDrain,
+            wakelockTimeSec = wlTimeSec,
+            foregroundTimeSec = fgTimeSec,
+            backgroundTimeSec = bgTimeSec,
+            wakeupAlarmsCount = wakeups,
+            powerImpact = impact,
+        )
+    }
+
+    private fun parseDurationSec(str: String): Long {
+        if (str.isBlank()) return 0L
+        var total = 0L
+        Regex("(\\d+)\\s*d").find(str)?.groupValues?.get(1)?.toLongOrNull()?.let { total += it * 86400L }
+        Regex("(\\d+)\\s*h").find(str)?.groupValues?.get(1)?.toLongOrNull()?.let { total += it * 3600L }
+        Regex("(\\d+)\\s*m(?!s)").find(str)?.groupValues?.get(1)?.toLongOrNull()?.let { total += it * 60L }
+        Regex("(\\d+)\\s*s").find(str)?.groupValues?.get(1)?.toLongOrNull()?.let { total += it }
+        Regex("(\\d+)\\s*ms").find(str)?.groupValues?.get(1)?.toLongOrNull()?.let { if (it >= 500) total += 1L }
+        return total
     }
 
     fun isPackageProcess(cmd: String, packageName: String): Boolean {

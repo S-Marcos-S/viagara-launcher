@@ -47,6 +47,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.BatteryStd
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
@@ -108,6 +110,7 @@ import androidx.compose.ui.unit.sp
 import dev.victorialauncher.R
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.root.AppRootInspector
+import dev.victorialauncher.root.PowerImpactLevel
 import dev.victorialauncher.root.RunningTasksSnapshot
 import dev.victorialauncher.root.SystemPerformanceSnapshot
 import dev.victorialauncher.root.SystemTaskInspector
@@ -165,6 +168,7 @@ fun TaskManagerScreen(
     val ramHistory = remember { mutableStateListOf<Float>() }
     val netRxHistory = remember { mutableStateListOf<Float>() }
     val netTxHistory = remember { mutableStateListOf<Float>() }
+    val batteryDischargeHistory = remember { mutableStateListOf<Float>() }
 
     // Detail dialog trigger for selecting an app
     var inspectingApp by remember { mutableStateOf<AppInfo?>(null) }
@@ -183,6 +187,7 @@ fun TaskManagerScreen(
             val ramVal = perf.ramUsedPercent.toFloat().coerceIn(0f, 100f)
             val rxKb = (perf.rxSpeedBps / 1024f).coerceAtLeast(0f)
             val txKb = (perf.txSpeedBps / 1024f).coerceAtLeast(0f)
+            val battMa = kotlin.math.abs(perf.batteryCurrentNowMa ?: 0L).toFloat()
 
             if (cpuHistory.size >= 30) cpuHistory.removeAt(0)
             cpuHistory.add(cpuVal)
@@ -195,6 +200,9 @@ fun TaskManagerScreen(
 
             if (netTxHistory.size >= 30) netTxHistory.removeAt(0)
             netTxHistory.add(txKb)
+
+            if (batteryDischargeHistory.size >= 30) batteryDischargeHistory.removeAt(0)
+            batteryDischargeHistory.add(battMa)
 
             isRefreshing = false
         }
@@ -289,6 +297,7 @@ fun TaskManagerScreen(
                             ramHistory = ramHistory,
                             netRxHistory = netRxHistory,
                             netTxHistory = netTxHistory,
+                            batteryHistory = batteryDischargeHistory,
                             onNavigateToNetworkStats = onNavigateToNetworkStats,
                         )
                     }
@@ -784,6 +793,22 @@ private fun ProcessRowCard(
                     fontWeight = FontWeight.Medium,
                     fontFamily = FontFamily.Monospace,
                 )
+                Spacer(Modifier.height(2.dp))
+                // Power Impact Metric
+                val (impactColor, impactText) = when (item.powerImpact) {
+                    PowerImpactLevel.VERY_HIGH -> Pair(Color(0xFFEF4444), "⚡ Muito Alto")
+                    PowerImpactLevel.HIGH -> Pair(Color(0xFFF97316), "⚡ Alto")
+                    PowerImpactLevel.MEDIUM -> Pair(Color(0xFFF59E0B), "⚡ Médio")
+                    PowerImpactLevel.LOW -> Pair(Color(0xFF10B981), "⚡ Baixo")
+                    PowerImpactLevel.MINIMAL -> Pair(colorScheme.onSurface.copy(alpha = 0.45f), "⚡ Mínimo")
+                }
+                Text(
+                    text = impactText,
+                    fontSize = 9.5.sp,
+                    color = impactColor,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = FontFamily.Monospace,
+                )
             }
 
             Spacer(Modifier.width(6.dp))
@@ -839,6 +864,7 @@ private fun PerformanceScreen(
     ramHistory: List<Float>,
     netRxHistory: List<Float>,
     netTxHistory: List<Float>,
+    batteryHistory: List<Float> = emptyList(),
     onNavigateToNetworkStats: () -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -922,6 +948,61 @@ private fun PerformanceScreen(
                     SpecItem(label = stringResource(R.string.task_manager_net_download), value = formatSpeed(rxSpeed))
                     SpecItem(label = stringResource(R.string.task_manager_net_upload), value = formatSpeed(txSpeed))
                     SpecItem(label = "Total Trafegado", value = formatBytes(snapshot?.totalRxBytes ?: 0L))
+                }
+            }
+        }
+
+        item {
+            // 4. BATTERY & POWER RESOURCE CARD
+            val battPct = snapshot?.batteryPercent ?: 0
+            val isCharging = snapshot?.isCharging ?: false
+            val currentMa = snapshot?.batteryCurrentNowMa
+            val powerWatts = snapshot?.batteryPowerWatts
+            val voltageMv = snapshot?.batteryVoltageMv
+            val tempC = snapshot?.batteryTempCelsius ?: 0f
+            val health = snapshot?.batteryHealth ?: "Boa"
+
+            val battAccent = when {
+                isCharging -> Color(0xFF10B981) // Green
+                battPct <= 20 -> Color(0xFFEF4444) // Red
+                battPct <= 40 -> Color(0xFFF59E0B) // Amber
+                else -> Color(0xFF10B981) // Green
+            }
+
+            val headline = "$battPct% · ${if (isCharging) "Carregando" else "Em Descarga"}"
+            val subHeadline = if (currentMa != null && currentMa != 0L) {
+                val sign = if (currentMa > 0 && isCharging) "+" else ""
+                val wattStr = if (powerWatts != null) " (${String.format(Locale.US, "%.2f", powerWatts)} W)" else ""
+                "$sign${currentMa} mA$wattStr"
+            } else {
+                "Alimentação via Bateria"
+            }
+
+            PerformanceResourceCard(
+                title = stringResource(R.string.task_manager_battery_title),
+                icon = if (isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.BatteryStd,
+                accentColor = battAccent,
+                headline = headline,
+                subHeadline = subHeadline,
+                history = batteryHistory,
+                chartColor = battAccent,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    SpecItem(
+                        label = stringResource(R.string.task_manager_battery_voltage),
+                        value = if (voltageMv != null) "${String.format(Locale.US, "%.2f", voltageMv / 1000.0)} V" else "—",
+                    )
+                    SpecItem(
+                        label = stringResource(R.string.task_manager_battery_temp),
+                        value = "${String.format(Locale.US, "%.1f", tempC)} °C",
+                    )
+                    SpecItem(
+                        label = stringResource(R.string.task_manager_battery_health),
+                        value = health,
+                    )
                 }
             }
         }

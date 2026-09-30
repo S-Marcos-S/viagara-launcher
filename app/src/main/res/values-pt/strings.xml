@@ -377,6 +377,7 @@
     <string name="root_inspector_tab_memory">Memória</string>
     <string name="root_inspector_tab_processes">Processos</string>
     <string name="root_inspector_tab_network">Rede</string>
+    <string name="root_inspector_tab_battery">Bateria</string>
     <string name="root_inspector_tab_permissions">Permissões</string>
     <string name="root_inspector_action_force_stop">Forçar Parada</string>
     <string name="root_inspector_action_clear_cache">Limpar Cache</string>
@@ -449,4 +450,9 @@
     <string name="task_manager_net_download">Download</string>
     <string name="task_manager_net_upload">Upload</string>
     <string name="task_manager_storage_title">Armazenamento</string>
+    <string name="task_manager_battery_title">Bateria &amp; Energia</string>
+    <string name="task_manager_power_impact">Impacto Energético</string>
+    <string name="task_manager_battery_voltage">Tensão</string>
+    <string name="task_manager_battery_temp">Temperatura</string>
+    <string name="task_manager_battery_health">Saúde</string>
 </resources>

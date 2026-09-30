@@ -32,10 +32,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.BatteryAlert
+import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
@@ -90,9 +95,11 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import dev.victorialauncher.R
 import dev.victorialauncher.data.AppInfo
+import dev.victorialauncher.root.AppBatteryInspectionData
 import dev.victorialauncher.root.AppInspectionData
 import dev.victorialauncher.root.AppProcessStatus
 import dev.victorialauncher.root.AppRootInspector
+import dev.victorialauncher.root.PowerImpactLevel
 import dev.victorialauncher.ui.common.AppIcon
 import dev.victorialauncher.ui.theme.dynamicBorderColor
 import dev.victorialauncher.ui.theme.dynamicSurfaceColor
@@ -106,6 +113,7 @@ private enum class InspectorTab {
     MEMORY,
     PROCESSES,
     NETWORK,
+    BATTERY,
     PERMISSIONS,
 }
 
@@ -562,6 +570,13 @@ fun AppRootInspectorDialog(
                                     modifier = Modifier.weight(1f),
                                 )
                                 TabButton(
+                                    title = stringResource(R.string.root_inspector_tab_battery),
+                                    icon = Icons.Filled.BatteryChargingFull,
+                                    selected = selectedTab == InspectorTab.BATTERY,
+                                    onClick = { selectedTab = InspectorTab.BATTERY },
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TabButton(
                                     title = stringResource(R.string.root_inspector_tab_permissions),
                                     icon = Icons.Filled.Security,
                                     selected = selectedTab == InspectorTab.PERMISSIONS,
@@ -609,6 +624,9 @@ fun AppRootInspectorDialog(
                                         }
                                         InspectorTab.NETWORK -> {
                                             NetworkTabContent(data)
+                                        }
+                                        InspectorTab.BATTERY -> {
+                                            BatteryTabContent(data)
                                         }
                                         InspectorTab.PERMISSIONS -> {
                                             PermissionsTabContent(data)
@@ -1631,6 +1649,278 @@ private fun PermissionsTabContent(data: AppInspectionData) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun BatteryTabContent(data: AppInspectionData) {
+    val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val battery = data.batteryData ?: AppBatteryInspectionData()
+
+    Column {
+        Text(
+            text = "TELEMETRIA DE BATERIA & ENERGIA",
+            color = colorScheme.onSurface.copy(alpha = 0.55f),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+        )
+        Spacer(Modifier.height(8.dp))
+
+        // Power Impact Banner
+        val (impactBg, impactBorder, impactColor, impactLabel) = when (battery.powerImpact) {
+            PowerImpactLevel.VERY_HIGH -> listOf(
+                Color(0xFFEF4444).copy(alpha = 0.15f),
+                Color(0xFFEF4444).copy(alpha = 0.4f),
+                Color(0xFFEF4444),
+                "Impacto Muito Alto — Dreno Severo",
+            )
+            PowerImpactLevel.HIGH -> listOf(
+                Color(0xFFF97316).copy(alpha = 0.15f),
+                Color(0xFFF97316).copy(alpha = 0.4f),
+                Color(0xFFF97316),
+                "Impacto Alto — Consumo Significativo",
+            )
+            PowerImpactLevel.MEDIUM -> listOf(
+                Color(0xFFF59E0B).copy(alpha = 0.15f),
+                Color(0xFFF59E0B).copy(alpha = 0.4f),
+                Color(0xFFF59E0B),
+                "Impacto Moderado",
+            )
+            PowerImpactLevel.LOW -> listOf(
+                Color(0xFF10B981).copy(alpha = 0.15f),
+                Color(0xFF10B981).copy(alpha = 0.4f),
+                Color(0xFF10B981),
+                "Impacto Baixo — Econômico",
+            )
+            PowerImpactLevel.MINIMAL -> listOf(
+                colorScheme.onSurface.copy(alpha = 0.06f),
+                colorScheme.outline.copy(alpha = 0.15f),
+                colorScheme.onSurface.copy(alpha = 0.6f),
+                "Impacto Mínimo — Ocioso",
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(impactBg as Color)
+                .border(1.dp, impactBorder as Color, RoundedCornerShape(10.dp))
+                .padding(horizontal = 10.dp, vertical = 7.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Speed,
+                    contentDescription = null,
+                    tint = impactColor as Color,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = impactLabel as String,
+                    color = impactColor,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // Total Drain Metric Cards
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            MetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Dreno Estimado",
+                value = "${String.format(Locale.US, "%.1f", battery.totalMah)} mAh",
+                icon = Icons.Filled.BatteryChargingFull,
+                accentColor = Color(0xFF10B981),
+                subtitle = "${String.format(Locale.US, "%.2f", battery.percentTotalDrain)}% da bateria",
+            )
+            MetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Wakelocks em BG",
+                value = formatDurationSecLabel(battery.wakelockTimeSec),
+                icon = Icons.Filled.Security,
+                accentColor = if (battery.wakelockTimeSec > 60) Color(0xFFF97316) else Color(0xFF3B82F6),
+                subtitle = "${battery.wakeupAlarmsCount} alarmes",
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Foreground vs Background Drain Bars
+        Text(
+            text = "DIVISÃO DE CONSUMO (PRIMEIRO PLANO vs SEGUNDO PLANO)",
+            color = colorScheme.onSurface.copy(alpha = 0.55f),
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.8.sp,
+        )
+        Spacer(Modifier.height(6.dp))
+
+        val totalCalc = (battery.foregroundMah + battery.backgroundMah).coerceAtLeast(0.01)
+        val fgPct = ((battery.foregroundMah / totalCalc) * 100.0).toFloat().coerceIn(0f, 100f)
+        val bgPct = ((battery.backgroundMah / totalCalc) * 100.0).toFloat().coerceIn(0f, 100f)
+
+        BatteryProgressItem(
+            label = "Primeiro Plano (Tela Ligada)",
+            valueMah = battery.foregroundMah,
+            percentage = fgPct,
+            color = Color(0xFF10B981),
+        )
+        Spacer(Modifier.height(6.dp))
+        BatteryProgressItem(
+            label = "Segundo Plano (Processos Silenciosos)",
+            valueMah = battery.backgroundMah,
+            percentage = bgPct,
+            color = Color(0xFFF97316),
+        )
+
+        Spacer(Modifier.height(12.dp))
+        HorizontalDivider(color = colorScheme.outline.copy(alpha = 0.12f))
+        Spacer(Modifier.height(10.dp))
+
+        // Component breakdown: CPU, Wakelocks, Mobile, Wi-Fi
+        Text(
+            text = "CONSUMO POR COMPONENTE DE HARDWARE",
+            color = colorScheme.onSurface.copy(alpha = 0.55f),
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.8.sp,
+        )
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("Processamento (CPU):", fontSize = 11.sp, color = colorScheme.onSurface.copy(alpha = 0.7f))
+            Text("${String.format(Locale.US, "%.1f", battery.cpuMah)} mAh", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface)
+        }
+        Spacer(Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("CPU Acordada (Wakelocks):", fontSize = 11.sp, color = colorScheme.onSurface.copy(alpha = 0.7f))
+            Text("${String.format(Locale.US, "%.1f", battery.wakelockMah)} mAh", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface)
+        }
+        Spacer(Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("Rede Móvel (4G/5G):", fontSize = 11.sp, color = colorScheme.onSurface.copy(alpha = 0.7f))
+            Text("${String.format(Locale.US, "%.1f", battery.mobileRadioMah)} mAh", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface)
+        }
+        Spacer(Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("Wi-Fi:", fontSize = 11.sp, color = colorScheme.onSurface.copy(alpha = 0.7f))
+            Text("${String.format(Locale.US, "%.1f", battery.wifiMah)} mAh", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface)
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // Open Android System Battery Optimization Settings shortcut
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                    runCatching {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            this.data = Uri.parse("package:${data.packageName}")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    }
+                },
+            color = colorScheme.primary.copy(alpha = 0.08f),
+            border = BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.25f)),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.BatteryAlert,
+                    contentDescription = null,
+                    tint = colorScheme.primary,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "Gerenciar Otimização de Bateria do App",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BatteryProgressItem(
+    label: String,
+    valueMah: Double,
+    percentage: Float,
+    color: Color,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = label,
+                color = colorScheme.onSurface.copy(alpha = 0.8f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = "${String.format(Locale.US, "%.1f", valueMah)} mAh (${String.format(Locale.US, "%.0f", percentage)}%)",
+                color = colorScheme.onSurface,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+        Spacer(Modifier.height(3.dp))
+        LinearProgressIndicator(
+            progress = { (percentage / 100f).coerceIn(0f, 1f) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp)),
+            color = color,
+            trackColor = colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        )
+    }
+}
+
+private fun formatDurationSecLabel(seconds: Long): String {
+    if (seconds <= 0L) return "0s"
+    val h = seconds / 3600L
+    val m = (seconds % 3600L) / 60L
+    val s = seconds % 60L
+    return when {
+        h > 0 -> "${h}h ${m}m"
+        m > 0 -> "${m}m ${s}s"
+        else -> "${s}s"
     }
 }
 
