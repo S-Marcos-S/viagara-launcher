@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Viagara Launcher</string>
     <string name="accessibility_description">Permite que o gesto de deslizar para baixo abra o painel de notificaÃ§Ãµes e que o toque duplo desligue a tela. O Viagara Launcher nÃ£o lÃª nem interage com o conteÃºdo da tela.</string>
@@ -843,18 +843,6 @@
         <item quantity="many">%1$d milhões de configurações importadas</item>
         <item quantity="other">%1$d configurações importadas</item>
     </plurals>
-    <!-- Battery Plurals -->
-    <plurals name="more_count"><item quantity="one">+ %1$d outro</item><item quantity="many">+ %1$d milhões a mais</item><item quantity="other">+ %1$d outros</item></plurals>
-    <plurals name="and_more_count"><item quantity="one">… e %1$d outro</item><item quantity="many">... e %1$d milhões a mais</item><item quantity="other">… e %1$d outros</item></plurals>
-    <plurals name="active_wakelocks_count"><item quantity="one">%1$d wakelock ativo</item><item quantity="many">%1$d milhões de wakelocks ativos</item><item quantity="other">%1$d wakelocks ativos</item></plurals>
-    <plurals name="app_wakelocks_count"><item quantity="one">Wakelock de app (%1$d)</item><item quantity="many">Wakelocks de app (%1$d milhões)</item><item quantity="other">Wakelocks de app (%1$d)</item></plurals>
-    <plurals name="alarms_count_plural"><item quantity="one">Alarme (%1$d)</item><item quantity="many">Alarmes (%1$d milhões)</item><item quantity="other">Alarmes (%1$d)</item></plurals>
-    <plurals name="jobs_count"><item quantity="one">Tarefa (%1$d)</item><item quantity="many">Tarefas (%1$d milhões)</item><item quantity="other">Tarefas (%1$d)</item></plurals>
-    <plurals name="syncs_count"><item quantity="one">Sincronização (%1$d)</item><item quantity="many">Sincronizações (%1$d milhões)</item><item quantity="other">Sincronizações (%1$d)</item></plurals>
-    <plurals name="top_wakelocks_count"><item quantity="one">Principal wakelock por tempo: %1$d</item><item quantity="many">Principais wakelocks por tempo: %1$d milhões</item><item quantity="other">Principais wakelocks por tempo: %1$d</item></plurals>
-    <plurals name="packages_share_uid"><item quantity="one">%1$d pacote partilha este UID</item><item quantity="many">%1$d milhões de pacotes partilham este UID</item><item quantity="other">%1$d pacotes partilham este UID</item></plurals>
-    <plurals name="settings_imported_count"><item quantity="one">%1$d definição importada</item><item quantity="many">%1$d milhões de configurações importadas</item><item quantity="other">%1$d configurações importadas</item></plurals>
-
 </resources>
 
 

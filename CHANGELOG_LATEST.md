@@ -16,6 +16,7 @@
     - Toque na notificação abre instantaneamente o visualizador avançado de bateria no launcher.
     - Chave ativadora/desativadora com persistência automática nas preferências do aplicativo.
   - **Suporte Integrado a Root & ADB:** Concessão e leitura automática de permissões `DUMP` e `BATTERY_STATS` para aparelhos com Superusuário (Magisk, KernelSU, APatch), com comandos rápidos e claros para dispositivos sem root via ADB.
+  - **Consolidação de Recursos e Localização:** Integração e saneamento rigoroso de mais de 380 strings e plurais em português (pt, pt-BR) e inglês para suporte completo aos novos componentes sem duplicações de recursos.
 
 ---
 

@@ -1,4 +1,4 @@
-﻿<resources>
+<resources>
     <string name="app_name">Viagara Launcher</string>
     <string name="accessibility_description">Lets the swipe-down gesture open the notification shade. Viagara Launcher does not read or act on screen content.</string>
     <string name="accessibility_service_label">Viagara Launcher gestures</string>
@@ -881,18 +881,6 @@
         <item quantity="one">%1$d setting imported</item>
         <item quantity="other">%1$d settings imported</item>
     </plurals>
-    <!-- Battery Plurals -->
-    <plurals name="more_count"><item quantity="one">+ %1$d more</item><item quantity="other">+ %1$d more</item></plurals>
-    <plurals name="and_more_count"><item quantity="one">... and %1$d more</item><item quantity="other">... and %1$d more</item></plurals>
-    <plurals name="active_wakelocks_count"><item quantity="one">%1$d active wake lock</item><item quantity="other">%1$d active wake locks</item></plurals>
-    <plurals name="app_wakelocks_count"><item quantity="one">App wakelock (%1$d)</item><item quantity="other">App wakelocks (%1$d)</item></plurals>
-    <plurals name="alarms_count_plural"><item quantity="one">Alarm (%1$d)</item><item quantity="other">Alarms (%1$d)</item></plurals>
-    <plurals name="jobs_count"><item quantity="one">Job (%1$d)</item><item quantity="other">Jobs (%1$d)</item></plurals>
-    <plurals name="syncs_count"><item quantity="one">Sync (%1$d)</item><item quantity="other">Syncs (%1$d)</item></plurals>
-    <plurals name="top_wakelocks_count"><item quantity="one">Top %1$d wakelock by time</item><item quantity="other">Top %1$d wakelocks by time</item></plurals>
-    <plurals name="packages_share_uid"><item quantity="one">%1$d package shares this UID</item><item quantity="other">%1$d packages share this UID</item></plurals>
-    <plurals name="settings_imported_count"><item quantity="one">%1$d setting imported</item><item quantity="other">%1$d settings imported</item></plurals>
-
 </resources>
 
 
