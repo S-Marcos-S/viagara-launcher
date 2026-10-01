@@ -300,6 +300,7 @@ fun TaskManagerScreen(
                             netTxHistory = netTxHistory,
                             batteryHistory = batteryDischargeHistory,
                             onNavigateToNetworkStats = onNavigateToNetworkStats,
+                            onNavigateToBatteryStats = onNavigateToBatteryStats,
                         )
                     }
                 }
@@ -867,6 +868,7 @@ private fun PerformanceScreen(
     netTxHistory: List<Float>,
     batteryHistory: List<Float> = emptyList(),
     onNavigateToNetworkStats: () -> Unit = {},
+    onNavigateToBatteryStats: () -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
