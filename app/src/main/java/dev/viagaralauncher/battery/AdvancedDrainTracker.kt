@@ -1,0 +1,399 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+package dev.viagaralauncher.battery
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import android.os.Build
+import android.os.PowerManager
+import android.os.SystemClock
+import android.util.Log
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.abs
+import kotlin.math.max
+
+/**
+ * Advanced drain tracker that monitors real-time battery drain across different device states:
+ * screen-on (active vs idle), screen-off (awake vs deep sleep), and charging.
+ */
+class AdvancedDrainTracker private constructor(
+    private val context: Context,
+    private val shellRunner: ShellRunner = ShellRunner(context.applicationContext),
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+) {
+    companion object {
+        private const val TAG = "AdvancedDrainTracker"
+        private const val DEEP_SLEEP_THRESHOLD_MS = 30_000L
+        private const val DEFAULT_INTERVAL_MS = 60_000L
+
+        @Volatile
+        private var instance: AdvancedDrainTracker? = null
+
+        fun getInstance(context: Context): AdvancedDrainTracker {
+            return instance ?: synchronized(this) {
+                instance ?: AdvancedDrainTracker(context.applicationContext).also { instance = it }
+            }
+        }
+    }
+
+    private val running = AtomicBoolean(false)
+    private var trackingJob: Job? = null
+
+    private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    private val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+
+    private val _drainState = MutableStateFlow(DrainState())
+    val drainState: StateFlow<DrainState> = _drainState.asStateFlow()
+
+    private val _snapshots = MutableStateFlow<List<DrainSnapshot>>(emptyList())
+    val snapshots: StateFlow<List<DrainSnapshot>> = _snapshots.asStateFlow()
+
+    private val _isTracking = MutableStateFlow(false)
+    val isTracking: StateFlow<Boolean> = _isTracking.asStateFlow()
+
+    private var lastSnapshot: DrainSnapshot? = null
+    private var lastScreenState: Boolean = powerManager.isInteractive
+    private var lastScreenChangeTime: Long = System.currentTimeMillis()
+    private var receiverRegistered = false
+    private var estimatedCapacityMah: Double = 4000.0
+
+    private var lastDumpsysTime: Long = 0L
+    private var cachedAwakeTime: Long = 0L
+    private var cachedDeepSleepTime: Long = 0L
+
+    // Cumulative tracking (ms)
+    private var cumulativeScreenOnTime: Long = 0L
+    private var cumulativeScreenOffTime: Long = 0L
+    private var cumulativeDeepSleepTime: Long = 0L
+    private var cumulativeAwakeTime: Long = 0L
+    private var cumulativeActiveTime: Long = 0L
+    private var cumulativeIdleTime: Long = 0L
+
+    // Cumulative drain (mAh)
+    private var cumulativeScreenOnDrain: Double = 0.0
+    private var cumulativeScreenOffDrain: Double = 0.0
+    private var cumulativeDeepSleepDrain: Double = 0.0
+    private var cumulativeAwakeDrain: Double = 0.0
+    private var cumulativeActiveDrain: Double = 0.0
+    private var cumulativeIdleDrain: Double = 0.0
+
+    private var sessionStartTime: Long = System.currentTimeMillis()
+
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_SCREEN_ON -> onScreenStateChanged(true)
+                Intent.ACTION_SCREEN_OFF -> onScreenStateChanged(false)
+            }
+        }
+    }
+
+    fun isRunning(): Boolean = running.get()
+
+    fun start() {
+        if (!running.compareAndSet(false, true)) return
+
+        Log.i(TAG, "Starting advanced drain tracking")
+        _isTracking.value = true
+        resetSession()
+        registerReceivers()
+
+        trackingJob = scope.launch {
+            takeSnapshot()?.let { snapshot ->
+                lastSnapshot = snapshot
+            }
+
+            while (isActive && running.get()) {
+                try {
+                    takeSnapshot()?.let { currentSnapshot ->
+                        processSnapshot(currentSnapshot)
+                        lastSnapshot = currentSnapshot
+                        _snapshots.update { (it + currentSnapshot).takeLast(500) }
+                    }
+                    updateDrainState()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in tracking loop", e)
+                }
+                delay(DEFAULT_INTERVAL_MS)
+            }
+        }
+    }
+
+    fun stop() {
+        if (!running.compareAndSet(true, false)) return
+
+        Log.i(TAG, "Stopping advanced drain tracking")
+        _isTracking.value = false
+        trackingJob?.cancel()
+        trackingJob = null
+        unregisterReceivers()
+    }
+
+    fun resetSession() {
+        sessionStartTime = System.currentTimeMillis()
+
+        cumulativeScreenOnTime = 0L
+        cumulativeScreenOffTime = 0L
+        cumulativeDeepSleepTime = 0L
+        cumulativeAwakeTime = 0L
+        cumulativeActiveTime = 0L
+        cumulativeIdleTime = 0L
+
+        cumulativeScreenOnDrain = 0.0
+        cumulativeScreenOffDrain = 0.0
+        cumulativeDeepSleepDrain = 0.0
+        cumulativeAwakeDrain = 0.0
+        cumulativeActiveDrain = 0.0
+        cumulativeIdleDrain = 0.0
+
+        lastScreenState = powerManager.isInteractive
+        lastScreenChangeTime = System.currentTimeMillis()
+        _snapshots.value = emptyList()
+        _drainState.value = DrainState(sessionStartTime = sessionStartTime)
+
+        Log.i(TAG, "Battery drain tracking session reset")
+    }
+
+    private fun registerReceivers() {
+        if (receiverRegistered) return
+        try {
+            val screenFilter = IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
+            }
+            ContextCompat.registerReceiver(
+                context,
+                screenReceiver,
+                screenFilter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            receiverRegistered = true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register screen receivers", e)
+        }
+    }
+
+    private fun unregisterReceivers() {
+        if (!receiverRegistered) return
+        receiverRegistered = false
+        try {
+            context.unregisterReceiver(screenReceiver)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to unregister screen receivers", e)
+        }
+    }
+
+    private fun onScreenStateChanged(screenOn: Boolean) {
+        val now = System.currentTimeMillis()
+        val duration = (now - lastScreenChangeTime).coerceAtLeast(0L)
+
+        if (lastScreenState) {
+            cumulativeScreenOnTime += duration
+        } else {
+            cumulativeScreenOffTime += duration
+        }
+
+        lastScreenState = screenOn
+        lastScreenChangeTime = now
+
+        scope.launch {
+            takeSnapshot()?.let { snapshot ->
+                processSnapshot(snapshot)
+                lastSnapshot = snapshot
+                updateDrainState()
+            }
+        }
+    }
+
+    private suspend fun takeSnapshot(): DrainSnapshot? {
+        return try {
+            val level = getBatteryLevel()
+            val mah = getCurrentBatteryMah()
+            val currentMa = getCurrentNowMa()
+            val isScreenOn = powerManager.isInteractive
+            val isCharging = isCharging()
+            val isDozing = powerManager.isDeviceIdleMode
+
+            val (cpuAwakeTime, deepSleepTime) = getDeepSleepInfo()
+            val isDeepSleep = !isScreenOn && !isDozing && isInDeepSleep()
+
+            DrainSnapshot(
+                timestamp = System.currentTimeMillis(),
+                batteryLevel = level,
+                batteryMah = mah,
+                currentMa = currentMa,
+                isScreenOn = isScreenOn,
+                isCharging = isCharging,
+                isDeepSleep = isDeepSleep,
+                isDozing = isDozing,
+                cpuAwakeTimeMs = cpuAwakeTime,
+                deepSleepTimeMs = deepSleepTime
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to take snapshot", e)
+            null
+        }
+    }
+
+    private fun processSnapshot(current: DrainSnapshot) {
+        val previous = lastSnapshot ?: return
+        if (current.isCharging || previous.isCharging) return
+
+        val timeDelta = current.timestamp - previous.timestamp
+        if (timeDelta <= 0) return
+
+        val previousMah = previous.batteryMah ?: return
+        val currentMah = current.batteryMah ?: return
+        val drainMah = max(0.0, previousMah - currentMah)
+
+        when {
+            current.isScreenOn -> {
+                cumulativeScreenOnDrain += drainMah
+                if (abs(current.currentMa) > 200) {
+                    cumulativeActiveDrain += drainMah
+                    cumulativeActiveTime += timeDelta
+                } else {
+                    cumulativeIdleDrain += drainMah
+                    cumulativeIdleTime += timeDelta
+                }
+            }
+            current.isDeepSleep -> {
+                cumulativeDeepSleepDrain += drainMah
+                cumulativeDeepSleepTime += timeDelta
+                cumulativeScreenOffDrain += drainMah
+            }
+            else -> {
+                cumulativeAwakeDrain += drainMah
+                cumulativeAwakeTime += timeDelta
+                cumulativeScreenOffDrain += drainMah
+            }
+        }
+    }
+
+    fun updateDrainState() {
+        val now = System.currentTimeMillis()
+
+        val pending = (now - lastScreenChangeTime).coerceAtLeast(0L)
+        val screenOnTimeTotal = cumulativeScreenOnTime + if (lastScreenState) pending else 0L
+        val screenOffTimeTotal = cumulativeScreenOffTime + if (!lastScreenState) pending else 0L
+
+        fun calculateRate(drainMah: Double, timeMs: Long): Double {
+            return if (timeMs > 0) drainMah / (timeMs / 3600000.0) else 0.0
+        }
+
+        _drainState.value = DrainState(
+            timestamp = now,
+            batteryLevel = getBatteryLevel(),
+            batteryLevelMah = getCurrentBatteryMah(),
+            isScreenOn = powerManager.isInteractive,
+            isCharging = isCharging(),
+            isDeepSleep = isInDeepSleep(),
+            isDozing = powerManager.isDeviceIdleMode,
+
+            screenOnDrainMah = cumulativeScreenOnDrain,
+            screenOffDrainMah = cumulativeScreenOffDrain,
+            activeDrainMah = cumulativeActiveDrain,
+            idleDrainMah = cumulativeIdleDrain,
+            deepSleepDrainMah = cumulativeDeepSleepDrain,
+            awakeDrainMah = cumulativeAwakeDrain,
+
+            screenOnTimeMs = screenOnTimeTotal,
+            screenOffTimeMs = screenOffTimeTotal,
+            activeTimeMs = cumulativeActiveTime,
+            idleTimeMs = cumulativeIdleTime,
+            deepSleepTimeMs = cumulativeDeepSleepTime,
+            awakeTimeMs = cumulativeAwakeTime,
+
+            screenOnDrainRate = calculateRate(cumulativeScreenOnDrain, screenOnTimeTotal),
+            screenOffDrainRate = calculateRate(cumulativeScreenOffDrain, screenOffTimeTotal),
+            activeDrainRate = calculateRate(cumulativeActiveDrain, cumulativeActiveTime),
+            idleDrainRate = calculateRate(cumulativeIdleDrain, cumulativeIdleTime),
+            deepSleepDrainRate = calculateRate(cumulativeDeepSleepDrain, cumulativeDeepSleepTime),
+            awakeDrainRate = calculateRate(cumulativeAwakeDrain, cumulativeAwakeTime),
+
+            sessionStartTime = sessionStartTime,
+            lastUpdateTime = now
+        )
+    }
+
+    fun getBatteryLevel(): Int? {
+        val level = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        if (level in 0..100) return level
+
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val raw = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+        return if (raw >= 0 && scale > 0) (raw * 100 / scale) else null
+    }
+
+    fun getCurrentBatteryMah(): Double? {
+        val chargeCounter = batteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+        return if (chargeCounter > 0) {
+            chargeCounter / 1000.0
+        } else {
+            getBatteryLevel()?.div(100.0)?.times(estimatedCapacityMah)
+        }
+    }
+
+    fun getCurrentNowMa(): Int {
+        var current = batteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+        if (current == 0L || current == Long.MIN_VALUE) {
+            current = batteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
+        }
+        return (current / 1000).toInt()
+    }
+
+    fun isCharging(): Boolean {
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val plugged = intent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
+        return plugged != 0
+    }
+
+    private fun isInDeepSleep(): Boolean {
+        if (powerManager.isInteractive) return false
+        val uptime = SystemClock.uptimeMillis()
+        val elapsedRealtime = SystemClock.elapsedRealtime()
+        val sleepTime = elapsedRealtime - uptime
+        return sleepTime > DEEP_SLEEP_THRESHOLD_MS
+    }
+
+    private suspend fun getDeepSleepInfo(): Pair<Long, Long> {
+        val now = System.currentTimeMillis()
+        if (now - lastDumpsysTime < 300_000L && cachedAwakeTime > 0) {
+            return Pair(cachedAwakeTime, cachedDeepSleepTime)
+        }
+
+        try {
+            val result = shellRunner.run("dumpsys batterystats --checkin")
+            if (result != null) {
+                val snapshot = BatteryStatsParser.parseCheckin(result.output)
+                val awakeTime = snapshot.batteryRealtimeMs - (snapshot.doze?.deepIdleTimeMs ?: 0L)
+                val sleepTime = snapshot.doze?.deepIdleTimeMs ?: 0L
+                cachedAwakeTime = awakeTime
+                cachedDeepSleepTime = sleepTime
+                if (snapshot.estimatedCapacityMah > 0) {
+                    estimatedCapacityMah = snapshot.estimatedCapacityMah.toDouble()
+                }
+                lastDumpsysTime = System.currentTimeMillis()
+                return Pair(awakeTime, sleepTime)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting deep sleep info", e)
+        }
+
+        val uptime = SystemClock.uptimeMillis()
+        val elapsedRealtime = SystemClock.elapsedRealtime()
+        cachedAwakeTime = uptime
+        cachedDeepSleepTime = elapsedRealtime - uptime
+        lastDumpsysTime = System.currentTimeMillis()
+        return Pair(uptime, elapsedRealtime - uptime)
+    }
+}

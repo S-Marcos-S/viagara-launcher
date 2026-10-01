@@ -98,6 +98,14 @@ fun ViagaraNavHost(
     // Enumerating every installed app costs a PackageManager round trip per app; doing it in
     // the first composition is what stalled the cold start. Load it off the main thread and
     // let the home screen render against an empty list for the first frame.
+    val openBatteryRequested by dev.viagaralauncher.battery.BatteryStatsEvents.openRequested.collectAsState()
+    LaunchedEffect(openBatteryRequested) {
+        if (openBatteryRequested) {
+            dev.viagaralauncher.battery.BatteryStatsEvents.consume()
+            navController.navigate("battery_stats")
+        }
+    }
+
     var allApps by remember { mutableStateOf(emptyList<AppInfo>()) }
     suspend fun reloadApps() {
         allApps = withContext(Dispatchers.Default) { app.appRepository.queryAllApps() }
@@ -650,6 +658,7 @@ fun ViagaraNavHost(
                 allApps = allApps,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToNetworkStats = { navController.navigate("network_monitor") },
+                onNavigateToBatteryStats = { navController.navigate("battery_stats") },
             )
         }
 
@@ -661,6 +670,17 @@ fun ViagaraNavHost(
         ) {
             dev.viagaralauncher.ui.network.NetworkStatsScreen(
                 onNavigateBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = "battery_stats",
+            enterTransition = { fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 8 } },
+            exitTransition = { fadeOut(tween(200)) },
+            popExitTransition = { fadeOut(tween(200)) + slideOutVertically(tween(250)) { it / 8 } },
+        ) {
+            dev.viagaralauncher.ui.battery.BatteryStatsScreen(
+                onBack = { navController.popBackStack() },
             )
         }
     }

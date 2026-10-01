@@ -22,6 +22,10 @@
         tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.BATTERY_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.DUMP"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_LOGS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -121,6 +125,14 @@
         <receiver
             android:name=".root.LogNotificationReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name=".battery.DrainNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="dev.viagaralauncher.battery.ACTION_RESET" />
+            </intent-filter>
+        </receiver>
 
     </application>
 </manifest>

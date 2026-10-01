@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="app_name">Viagara Launcher</string>
     <string name="accessibility_description">Lets the swipe-down gesture open the notification shade. Viagara Launcher does not read or act on screen content.</string>
     <string name="accessibility_service_label">Viagara Launcher gestures</string>
@@ -20,8 +20,8 @@
     <string name="toast_aligned_elements">All elements aligned based on apps</string>
     <string name="action_resize">Resize</string>
     <string name="action_edit_icon_and_name">Edit icon &amp; name</string>
-    <string name="action_move_to_folder">Move to folder…</string>
-    <string name="action_change_icon">Change icon…</string>
+    <string name="action_move_to_folder">Move to folderâ€¦</string>
+    <string name="action_change_icon">Change iconâ€¦</string>
     <string name="action_open_settings">Viagara Launcher settings</string>
     <string name="action_not_now">Not now</string>
     <string name="action_set_default">Set as default</string>
@@ -41,9 +41,9 @@
     <string name="home_no_favorites_title">No favorites yet</string>
     <string name="home_no_favorites_body">Touch the screen edge to open the app list, or pick your favorites from the list below.</string>
     <string name="home_choose_favorites">Choose favorites</string>
-    <string name="home_folder_choose_apps">Choose apps…</string>
+    <string name="home_folder_choose_apps">Choose appsâ€¦</string>
     <string name="home_folder_delete">Delete folder</string>
-    <string name="home_folder_empty">Empty — long-press the folder to choose apps</string>
+    <string name="home_folder_empty">Empty â€” long-press the folder to choose apps</string>
     <string name="home_folder_name_label">Folder name</string>
     <string name="home_folder_use_previews">Use app previews</string>
     <string name="home_display_name_label">Display name</string>
@@ -56,9 +56,9 @@
     <string name="update_dialog_title">What\'s new</string>
     <string name="update_build_prefix">Build %1$s</string>
     <string name="update_compiled_at">Compiled on %1$s</string>
-    <string name="update_downloading_notification_desc">Downloading update%1$s…</string>
-    <string name="update_downloading_progress">Downloading %1$d%%…</string>
-    <string name="update_toast_downloading">Downloading update… Track progress in notifications</string>
+    <string name="update_downloading_notification_desc">Downloading update%1$sâ€¦</string>
+    <string name="update_downloading_progress">Downloading %1$d%%â€¦</string>
+    <string name="update_toast_downloading">Downloading updateâ€¦ Track progress in notifications</string>
     <string name="update_toast_download_completed">Download completed! APK saved to Downloads folder</string>
     <string name="update_toast_error">Error starting download: %1$s</string>
     <string name="update_notification_channel_name">App updates</string>
@@ -68,14 +68,14 @@
     <string name="update_root_install_option">Install via Root (No Play Protect)</string>
     <string name="update_root_install_desc">Direct silent install bypassing Google Play Protect</string>
     <string name="update_action_install_root">Install via Root</string>
-    <string name="update_status_installing_root">Installing via Root…</string>
+    <string name="update_status_installing_root">Installing via Rootâ€¦</string>
     <string name="update_toast_root_success">Update successfully installed via Root!</string>
-    <string name="update_toast_root_failed">Root install failed: %1$s. Opening default installer…</string>
+    <string name="update_toast_root_failed">Root install failed: %1$s. Opening default installerâ€¦</string>
 
     <!-- Edit-mode drag handles -->
-    <string name="handle_side_padding">↔ Side padding · %1$ddp</string>
-    <string name="handle_alphabet_side_padding">↔ Alphabet side padding · %1$ddp</string>
-    <string name="handle_vertical">↕ %1$s · %2$ddp</string>
+    <string name="handle_side_padding">â†” Side padding Â· %1$ddp</string>
+    <string name="handle_alphabet_side_padding">â†” Alphabet side padding Â· %1$ddp</string>
+    <string name="handle_vertical">â†• %1$s Â· %2$ddp</string>
     <string name="handle_widget_top">Widget top</string>
     <string name="handle_widget_bottom">Widget bottom</string>
     <string name="handle_widget_height">Widget height</string>
@@ -91,8 +91,8 @@
     <string name="applist_hide">Hide from list</string>
 
     <!-- Toasts -->
-    <string name="toast_enable_accessibility_shade">Enable Viagara Launcher in Settings → Accessibility to open notifications</string>
-    <string name="toast_enable_accessibility_lock">Enable Viagara Launcher in Settings → Accessibility to lock the screen</string>
+    <string name="toast_enable_accessibility_shade">Enable Viagara Launcher in Settings â†’ Accessibility to open notifications</string>
+    <string name="toast_enable_accessibility_lock">Enable Viagara Launcher in Settings â†’ Accessibility to lock the screen</string>
 
     <!-- Settings -->
     <string name="settings_title">Viagara Launcher settings</string>
@@ -148,7 +148,7 @@
     <string name="settings_double_tap_lock_not_ready">Accessibility service required to lock the screen; tap Enable to grant permission</string>
     <string name="settings_always_show_az">Always show A-Z</string>
     <string name="settings_shade_gesture">Swipe down for notifications</string>
-    <string name="settings_shade_ready">Ready — pull down on the home screen</string>
+    <string name="settings_shade_ready">Ready â€” pull down on the home screen</string>
     <string name="settings_shade_not_ready">Android has no public way to open the shade; enable Viagara Launcher under Accessibility to allow it</string>
     <string name="settings_enable">Enable</string>
     <string name="settings_now_playing_show">Show Now Playing widget</string>
@@ -193,30 +193,30 @@
     <string name="folder_title_fallback">Folder</string>
     <string name="folder_gone">This folder no longer exists.</string>
     <string name="folder_member_count">%1$d in this folder</string>
-    <string name="folder_picker_title">Move %1$s to…</string>
+    <string name="folder_picker_title">Move %1$s toâ€¦</string>
     <string name="folder_picker_app_count">%1$d apps</string>
     <string name="folder_picker_new">New folder</string>
     <string name="folder_picker_new_detail">The app moves into the new folder on your home screen.</string>
 
     <!-- Icon picker -->
     <string name="icon_picker_title">Icon for %1$s</string>
-    <string name="icon_picker_gallery">Gallery…</string>
+    <string name="icon_picker_gallery">Galleryâ€¦</string>
     <string name="icon_picker_reset">Reset to default</string>
     <string name="icon_picker_no_packs">No icon packs installed. Install an icon pack from the Play Store, or pick an image from your gallery.</string>
     <string name="icon_picker_search">Search icons</string>
     <string name="icon_picker_clear_search">Clear search</string>
     <string name="icon_picker_not_browsable">This pack didn\'t expose a browsable icon list.</string>
-    <string name="icon_picker_no_matches">No icons match “%1$s”.</string>
+    <string name="icon_picker_no_matches">No icons match â€œ%1$sâ€.</string>
 
     <!-- Widgets -->
     <string name="widget_add">Add widget</string>
     <string name="widget_add_custom">Add custom widget</string>
     <string name="widget_change_settings">Change widget settings</string>
     <string name="widget_none_found">No widgets found on this device.</string>
-    <string name="widget_search_hint">Search widgets or apps…</string>
+    <string name="widget_search_hint">Search widgets or appsâ€¦</string>
     <string name="widget_count">%1$d widgets</string>
     <string name="widget_count_single">1 widget</string>
-    <string name="widget_no_matches">No widgets match “%1$s”.</string>
+    <string name="widget_no_matches">No widgets match â€œ%1$sâ€.</string>
     <string name="widget_unavailable">Widget unavailable</string>
     <string name="widget_tap_to_remove">Tap or hold to remove</string>
 
@@ -243,9 +243,9 @@
     <string name="settings_dynamic_button_swipe_up_action">Swipe up action</string>
     <string name="settings_dynamic_button_swipe_down_action">Swipe down action</string>
     <string name="settings_dynamic_button_none">None</string>
-    <string name="settings_dynamic_button_select_app">Select app…</string>
+    <string name="settings_dynamic_button_select_app">Select appâ€¦</string>
     <string name="settings_dynamic_button_pick_title">Choose app for %1$s</string>
-    <string name="settings_dynamic_button_search_hint">Search installed apps…</string>
+    <string name="settings_dynamic_button_search_hint">Search installed appsâ€¦</string>
     <string name="settings_dynamic_button_clear">Clear action</string>
     <string name="dynamic_button_swipe_up_hint">Pull up</string>
     <string name="dynamic_button_swipe_down_hint">Pull down</string>
@@ -278,7 +278,7 @@
     <string name="settings_search_source_play_store_detail">Suggest searching for apps in Google Play Store</string>
     <string name="settings_search_engine_title">Web search engine</string>
     <string name="settings_search_engine_subtitle">Choose which search engine to use for web queries</string>
-    <string name="search_hint_complete">Search apps, contacts, settings…</string>
+    <string name="search_hint_complete">Search apps, contacts, settingsâ€¦</string>
     <string name="search_category_all">All</string>
     <string name="search_category_apps">Apps</string>
     <string name="search_category_contacts">Contacts</string>
@@ -287,7 +287,7 @@
     <string name="search_contacts_permission_title">Contacts permission</string>
     <string name="search_contacts_permission_desc">Grant access to search and call your contacts quickly.</string>
     <string name="search_permission_granted_toast">Contacts permission granted!</string>
-    <string name="search_no_results">No results for “%1$s”</string>
+    <string name="search_no_results">No results for â€œ%1$sâ€</string>
     <string name="search_action_web">Search Web</string>
     <string name="search_action_play_store">Play Store</string>
     <string name="search_action_call">Call</string>
@@ -295,9 +295,9 @@
     <string name="search_section_contacts">Contacts</string>
     <string name="search_section_settings">Device Settings</string>
     <string name="search_section_online">Online Search</string>
-    <string name="search_web_prompt">Search “%1$s” on %2$s</string>
+    <string name="search_web_prompt">Search â€œ%1$sâ€ on %2$s</string>
     <string name="search_web_detail">Open search results in your default browser via %1$s</string>
-    <string name="search_play_store_prompt">Search “%1$s” on Play Store</string>
+    <string name="search_play_store_prompt">Search â€œ%1$sâ€ on Play Store</string>
     <string name="search_play_store_detail">Find new apps and games on Google Play Store</string>
     <string name="search_calc_copied">Result %1$s copied to clipboard</string>
     <string name="search_copy_result">Copy result</string>
@@ -312,11 +312,11 @@
     <string name="backup_create_card_title">Create Backup</string>
     <string name="backup_create_card_desc">Saves all your favorites, folders, customized settings, and wallpaper.</string>
     <string name="backup_create_now">Create backup now</string>
-    <string name="backup_creating">Creating backup…</string>
+    <string name="backup_creating">Creating backupâ€¦</string>
     <string name="backup_created_success">Backup created successfully</string>
     <string name="backup_create_failed">Failed to create backup</string>
-    <string name="backup_restore_from_file">Restore from file…</string>
-    <string name="backup_restoring">Restoring backup…</string>
+    <string name="backup_restore_from_file">Restore from fileâ€¦</string>
+    <string name="backup_restoring">Restoring backupâ€¦</string>
     <string name="backup_restore_success">Backup restored successfully!</string>
     <string name="backup_restore_failed">Failed to restore backup</string>
     <string name="backup_auto_title">Automatic backup</string>
@@ -388,30 +388,30 @@
     <string name="root_inspector_toast_kill_error">Failed to kill process.</string>
     <string name="root_inspector_no_connections">No active network connections at the moment</string>
     <string name="root_inspector_no_services">No running services</string>
-    <string name="root_inspector_loading">Inspecting application via Superuser…</string>
+    <string name="root_inspector_loading">Inspecting application via Superuserâ€¦</string>
 
     <!-- App Uninstallation -->
     <string name="action_uninstall">Uninstall</string>
     <string name="dialog_uninstall_system_app_title">Uninstall system app?</string>
     <string name="dialog_uninstall_system_app_warning">System Application</string>
-    <string name="dialog_uninstall_system_app_message">“%1$s” is a system application. Removing it may cause system instability or device malfunctions.\n\nAre you sure you want to uninstall this application via root?</string>
+    <string name="dialog_uninstall_system_app_message">â€œ%1$sâ€ is a system application. Removing it may cause system instability or device malfunctions.\n\nAre you sure you want to uninstall this application via root?</string>
     <string name="dialog_uninstall_app_title">Uninstall application?</string>
-    <string name="dialog_uninstall_app_message">Are you sure you want to uninstall “%1$s” via root?</string>
-    <string name="uninstall_toast_progress">Uninstalling %1$s…</string>
-    <string name="uninstall_toast_success">“%1$s” uninstalled successfully</string>
+    <string name="dialog_uninstall_app_message">Are you sure you want to uninstall â€œ%1$sâ€ via root?</string>
+    <string name="uninstall_toast_progress">Uninstalling %1$sâ€¦</string>
+    <string name="uninstall_toast_success">â€œ%1$sâ€ uninstalled successfully</string>
     <string name="uninstall_toast_failed">Failed to uninstall %1$s: %2$s</string>
 
     <!-- App Log Capture -->
     <string name="action_capture_logs">Capture Logs (Root)</string>
-    <string name="action_stop_save_logs">Save Logs (Recording…)</string>
+    <string name="action_stop_save_logs">Save Logs (Recordingâ€¦)</string>
     <string name="log_notif_channel_name">Logcat Capture</string>
     <string name="log_notif_channel_desc">Notifications for ongoing app logcat captures and saved logs</string>
     <string name="log_notif_recording_title">Recording logs: %1$s</string>
-    <string name="log_notif_recording_text">Capturing real-time logs via root…</string>
+    <string name="log_notif_recording_text">Capturing real-time logs via rootâ€¦</string>
     <string name="log_notif_action_save">Save log</string>
     <string name="log_notif_action_discard">Discard</string>
     <string name="log_notif_saved_title">Log saved successfully</string>
-    <string name="log_notif_crash_title">%1$s closed with error — Log saved</string>
+    <string name="log_notif_crash_title">%1$s closed with error â€” Log saved</string>
     <string name="log_notif_saved_text">Saved to Downloads/%1$s</string>
     <string name="log_notif_action_share">Share</string>
     <string name="log_notif_action_view">View file</string>
@@ -436,7 +436,7 @@
     <string name="task_manager_group_foreground">Foreground Apps</string>
     <string name="task_manager_group_background">Background Processes</string>
     <string name="task_manager_group_system">System Processes</string>
-    <string name="task_manager_search_hint">Search apps, processes or PID…</string>
+    <string name="task_manager_search_hint">Search apps, processes or PIDâ€¦</string>
     <string name="task_manager_live_badge">LIVE</string>
     <string name="task_manager_end_task">End Task</string>
     <string name="task_manager_cpu_cores">Cores</string>
@@ -454,4 +454,13 @@
     <string name="task_manager_battery_voltage">Voltage</string>
     <string name="task_manager_battery_temp">Temperature</string>
     <string name="task_manager_battery_health">Health</string>
+    <!-- Battery Stats & Drain Monitor strings -->
+    <string name="battery_monitor_title">Battery Usage</string>
+    <string name="drain_notification_toggle">Real-time Drain Notification</string>
+    <string name="drain_notification_toggle_desc">Show active drain rate, deep sleep ratio, and session consumption in notification bar</string>
+    <string name="reset_session">Reset Session</string>
+    <string name="session_reset_done">Session drain statistics reset</string>
+    <string name="live_drain_card_title">Real-time Drain Monitor</string>
+
 </resources>
+

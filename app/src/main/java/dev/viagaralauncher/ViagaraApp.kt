@@ -49,6 +49,9 @@ class ViagaraApp : Application() {
         iconPackRepository = IconPackRepository(this)
         widgetHost = ViagaraAppWidgetHost(this, HOST_ID)
         dev.viagaralauncher.backup.BackupAlarmReceiver.schedulePeriodicCheck(this)
+        if (dev.viagaralauncher.battery.DrainNotificationManager.isNotificationEnabled(this)) {
+            dev.viagaralauncher.battery.DrainNotificationManager.getInstance(this).startNotification()
+        }
     }
 
     companion object {

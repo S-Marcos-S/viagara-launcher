@@ -1,3 +1,24 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.45
+
+- **Visualizador Avançado de Uso da Bateria & Monitor de Drenagem em Tempo Real (Inspirado no BatStats):**
+  - **Acesso Rápido pelo Gerenciador de Tarefas:** Adicionado botão interativo "Ver mais" no card de Bateria e Alimentação da tela do Gerenciador de Tarefas (`TaskManagerScreen`), abrindo a nova tela dedicada de monitoramento avançado com fluxo UX idêntico ao monitor de Rede & Internet.
+  - **Tela Dedicada com 7 Abas de Estatísticas Detalhadas (`BatteryStatsScreen`):**
+    - **Aba 1: Visão Geral (Overview):** Card de monitoramento em tempo real com taxa de consumo atual, resumo de tempo de tela ligada (SOT) vs. tela desligada, capacidade estimada da bateria em mAh, gráficos de descarga, análise de sinal de rede móvel/Wi-Fi, estatísticas do Doze e status de sono.
+    - **Aba 2: Aplicativos (Apps):** Lista completa de consumo por aplicativo com cálculo de drenagem em mAh, tempo de processador (CPU), tempo de wakelocks ativos, tráfego de dados móveis e Wi-Fi, e discriminação foreground/background. Inclui ordenação dinâmica por Consumo de Energia, CPU, Wakelocks, Rede e Primeiro Plano, com filtro de Apps de Usuário vs. Sistema e pesquisa instantânea.
+    - **Aba 3: Wakelocks:** Detalhamento profundo de wakelocks parciais de aplicativos e wakelocks do kernel do sistema operacional, exibindo contadores de disparo, duração acumulada e duração máxima.
+    - **Aba 4: Rede (Network):** Consumo minucioso de dados móveis e Wi-Fi por aplicativo durante a sessão de bateria, ordenável por tráfego total, celular ou rede sem fio.
+    - **Aba 5: Alarmes, Tarefas & Sincronizações (Alarms & Jobs):** Rastreamento de alarmes agendados do sistema, despertares do processador (*wakeups*), tarefas em lote executadas pelo `JobScheduler` e sincronizações de contas pelo `SyncManager`.
+    - **Aba 6: Sistema (System):** Inspeção profunda dos estados de economia de energia, modos Doze profundo (*Deep Doze*) e leve (*Light Doze*), janelas de manutenção, lista de exceções (*whitelist*) e gerenciador de suspensão `PowerManager`.
+    - **Aba 7: Kernel / Root (Root Tab):** Para dispositivos com acesso Root, leitura direta dos nós de baixo nível do hardware (`/sys/class/power_supply/battery/*`), exibindo contagem real de ciclos de carga, capacidade atual real vs. capacidade de projeto, porcentagem de degradação da bateria (saúde real), temperatura precisa por zonas térmicas (`thermal_zones`), tempos de clock do processador por frequência (`time_in_state`) e governadores da CPU.
+  - **Notificação Persistente de Drenagem em Tempo Real (`DrainNotificationManager`):**
+    - Notificação contínua na barra de status exibindo porcentagem da bateria, estado atual (Carregando, Tela Ligada, Tela Apagada ou Sono Profundo), taxas de drenagem instantâneas e médias (mA/h), porcentagem de sono profundo (*Deep Sleep %*), tempo total de sessão e consumo total acumulado em mAh.
+    - Botão de ação "Zerar" diretamente na notificação para reiniciar a contagem da sessão a qualquer momento.
+    - Toque na notificação abre instantaneamente o visualizador avançado de bateria no launcher.
+    - Chave ativadora/desativadora com persistência automática nas preferências do aplicativo.
+  - **Suporte Integrado a Root & ADB:** Concessão e leitura automática de permissões `DUMP` e `BATTERY_STATS` para aparelhos com Superusuário (Magisk, KernelSU, APatch), com comandos rápidos e claros para dispositivos sem root via ADB.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.44
 
 - **Mudança Profunda de Identidade para Viagara Launcher:**

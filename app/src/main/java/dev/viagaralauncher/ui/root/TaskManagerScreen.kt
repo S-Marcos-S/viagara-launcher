@@ -139,6 +139,7 @@ fun TaskManagerScreen(
     allApps: List<AppInfo>,
     onNavigateBack: () -> Unit,
     onNavigateToNetworkStats: () -> Unit = {},
+    onNavigateToBatteryStats: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
@@ -986,6 +987,18 @@ private fun PerformanceScreen(
                 subHeadline = subHeadline,
                 history = batteryHistory,
                 chartColor = battAccent,
+                actionButton = {
+                    Text(
+                        text = "Ver mais",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = battAccent,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable(onClick = onNavigateToBatteryStats)
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                    )
+                },
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

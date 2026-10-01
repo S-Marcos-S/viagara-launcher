@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
         handleLogViewerIntent(intent)
+        handleBatteryStatsIntent(intent)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
@@ -95,6 +96,7 @@ class MainActivity : ComponentActivity() {
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
         handleLogViewerIntent(intent)
+        handleBatteryStatsIntent(intent)
     }
 
     override fun onResume() {
@@ -108,6 +110,13 @@ class MainActivity : ComponentActivity() {
             intent.getBooleanExtra(dev.viagaralauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false)
         ) {
             dev.viagaralauncher.update.UpdateManager.requestShowUpdateChangelog()
+        }
+    }
+
+    private fun handleBatteryStatsIntent(intent: Intent?) {
+        if (intent == null) return
+        if (intent.getBooleanExtra("open_battery_stats", false)) {
+            dev.viagaralauncher.battery.BatteryStatsEvents.open()
         }
     }
 
