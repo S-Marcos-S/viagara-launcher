@@ -27,12 +27,12 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        android:name=".VictoriaApp"
+        android:name=".ViagaraApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher"
-        android:theme="@style/Theme.VictoriaLauncher"
+        android:theme="@style/Theme.ViagaraLauncher"
         android:supportsRtl="true"
         android:largeHeap="true">
 
@@ -44,7 +44,7 @@
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.VictoriaLauncher"
+            android:theme="@style/Theme.ViagaraLauncher"
             android:windowSoftInputMode="adjustPan"
             android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
@@ -62,10 +62,10 @@
             android:name=".widget.WidgetPickerActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.VictoriaLauncher" />
+            android:theme="@style/Theme.ViagaraLauncher" />
 
         <service
-            android:name=".service.VictoriaAccessibilityService"
+            android:name=".service.ViagaraAccessibilityService"
             android:exported="false"
             android:label="@string/accessibility_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

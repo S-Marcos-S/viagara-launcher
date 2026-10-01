@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">Viagra Launcher</string>
-    <string name="accessibility_description">Lets the swipe-down gesture open the notification shade. Viagra Launcher does not read or act on screen content.</string>
-    <string name="accessibility_service_label">Viagra Launcher gestures</string>
-    <string name="notification_service_label">Viagra Launcher Now Playing</string>
+    <string name="app_name">Viagara Launcher</string>
+    <string name="accessibility_description">Lets the swipe-down gesture open the notification shade. Viagara Launcher does not read or act on screen content.</string>
+    <string name="accessibility_service_label">Viagara Launcher gestures</string>
+    <string name="notification_service_label">Viagara Launcher Now Playing</string>
 
     <!-- Shared actions -->
     <string name="action_back">Back</string>
@@ -22,17 +22,17 @@
     <string name="action_edit_icon_and_name">Edit icon &amp; name</string>
     <string name="action_move_to_folder">Move to folder…</string>
     <string name="action_change_icon">Change icon…</string>
-    <string name="action_open_settings">Viagra Launcher settings</string>
+    <string name="action_open_settings">Viagara Launcher settings</string>
     <string name="action_not_now">Not now</string>
     <string name="action_set_default">Set as default</string>
     <string name="default_launcher_dialog_title">Set as default launcher</string>
-    <string name="default_launcher_dialog_message">Set Viagra Launcher as your default home app to enjoy a clean, fast, and distraction-free experience every time you press Home or unlock your device.</string>
+    <string name="default_launcher_dialog_message">Set Viagara Launcher as your default home app to enjoy a clean, fast, and distraction-free experience every time you press Home or unlock your device.</string>
     <string name="default_launcher_feature_home">Instant return when pressing Home</string>
     <string name="default_launcher_feature_apps">Smooth A-Z navigation and universal search</string>
     <string name="default_launcher_feature_minimal">Clean, focused, and customizable setup</string>
     <string name="settings_default_launcher">Default launcher</string>
-    <string name="settings_default_launcher_is_default">Viagra Launcher is set as default</string>
-    <string name="settings_default_launcher_set">Tap to set Viagra Launcher as default</string>
+    <string name="settings_default_launcher_is_default">Viagara Launcher is set as default</string>
+    <string name="settings_default_launcher_set">Tap to set Viagara Launcher as default</string>
 
     <!-- Home screen -->
     <string name="options_title">Options</string>
@@ -62,8 +62,8 @@
     <string name="update_toast_download_completed">Download completed! APK saved to Downloads folder</string>
     <string name="update_toast_error">Error starting download: %1$s</string>
     <string name="update_notification_channel_name">App updates</string>
-    <string name="update_notification_channel_desc">Alerts for new versions of Viagra Launcher</string>
-    <string name="update_notification_title">Viagra Launcher %1$s available</string>
+    <string name="update_notification_channel_desc">Alerts for new versions of Viagara Launcher</string>
+    <string name="update_notification_title">Viagara Launcher %1$s available</string>
     <string name="update_notification_text">Tap to see what\'s new and update</string>
     <string name="update_root_install_option">Install via Root (No Play Protect)</string>
     <string name="update_root_install_desc">Direct silent install bypassing Google Play Protect</string>
@@ -91,11 +91,11 @@
     <string name="applist_hide">Hide from list</string>
 
     <!-- Toasts -->
-    <string name="toast_enable_accessibility_shade">Enable Viagra Launcher in Settings → Accessibility to open notifications</string>
-    <string name="toast_enable_accessibility_lock">Enable Viagra Launcher in Settings → Accessibility to lock the screen</string>
+    <string name="toast_enable_accessibility_shade">Enable Viagara Launcher in Settings → Accessibility to open notifications</string>
+    <string name="toast_enable_accessibility_lock">Enable Viagara Launcher in Settings → Accessibility to lock the screen</string>
 
     <!-- Settings -->
-    <string name="settings_title">Viagra Launcher settings</string>
+    <string name="settings_title">Viagara Launcher settings</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_section_behavior">Behavior</string>
     <string name="settings_section_now_playing">Now Playing</string>
@@ -149,7 +149,7 @@
     <string name="settings_always_show_az">Always show A-Z</string>
     <string name="settings_shade_gesture">Swipe down for notifications</string>
     <string name="settings_shade_ready">Ready — pull down on the home screen</string>
-    <string name="settings_shade_not_ready">Android has no public way to open the shade; enable Viagra Launcher under Accessibility to allow it</string>
+    <string name="settings_shade_not_ready">Android has no public way to open the shade; enable Viagara Launcher under Accessibility to allow it</string>
     <string name="settings_enable">Enable</string>
     <string name="settings_now_playing_show">Show Now Playing widget</string>
     <string name="settings_notification_access_granted">Notification access granted</string>

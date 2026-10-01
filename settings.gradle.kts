@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Viagra Launcher"
+rootProject.name = "Viagara Launcher"
 include(":app")

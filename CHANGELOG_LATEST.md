@@ -1,3 +1,26 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.44
+
+- **Mudança Profunda de Identidade para Viagara Launcher:**
+  - **Novo Identificador de Pacote Android (Application ID & Namespace):** Migração completa de `dev.victorialauncher` para `dev.viagaralauncher` em todo o código-fonte Kotlin, manifesto e scripts de compilação Gradle, operando como um aplicativo novo e independente.
+  - **Refatoração Estrutural de Classes & Componentes:**
+    - Renomeação da classe raiz de aplicação para `ViagaraApp` (`app/src/main/java/dev/viagaralauncher/ViagaraApp.kt`).
+    - Renomeação do serviço de acessibilidade para `ViagaraAccessibilityService`.
+    - Renomeação da árvore de navegação para `ViagaraNavHost` e do tema Compose para `ViagaraTheme`.
+    - Renomeação do hospedeiro de widgets para `ViagaraAppWidgetHost` e `ViagaraAppWidgetHostView`.
+    - Atualização dos temas nativos do Android para `@style/Theme.ViagaraLauncher`.
+  - **Canais de Notificação, Intenções e Serviços:**
+    - Atualização dos canais de notificação para `viagara_launcher_updates`, `viagara_app_log_capture_channel` e `viagara_crashes_channel`.
+    - Atualização de todas as ações de Intent e filtros do sistema para `dev.viagaralauncher.action.*`.
+  - **Sistema de Backups & Compatibilidade Retroativa (`BackupManager`):**
+    - Nova extensão padrão de backups `.viagarabackup` com suporte retroativo transparente para leitura e importação de backups antigos com extensão `.victoriabackup`.
+    - Atualização do armazenamento de preferências para `viagara_prefs`.
+  - **Workflows e Ferramental de Integração Contínua:**
+    - Atualização das rotinas do GitHub Actions (`build.yml` e `release.yml`) para gerar e distribuir os artefatos como `viagara-launcher-release.apk`.
+    - Atualização do monitor e instalador automático via root `watch_build.py` com suporte para detecção dos novos binários e retrocompatibilidade com artefatos anteriores.
+    - Atualização de todos os metadados do Fastlane, documentações (`README.md`, `GEMINI.md`, `docs/`) e recursos de strings para a identidade oficial **Viagara Launcher**.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.43
 
 - **Analisador de Uso de Bateria & Energia no Gerenciador de Tarefas:**

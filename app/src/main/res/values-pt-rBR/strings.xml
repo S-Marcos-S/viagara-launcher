@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Viagra Launcher</string>
-    <string name="accessibility_description">Permite que o gesto de deslizar para baixo abra o painel de notificações e que o toque duplo desligue a tela. O Viagra Launcher não lê nem interage com o conteúdo da tela.</string>
-    <string name="accessibility_service_label">Gestos do Viagra Launcher</string>
-    <string name="notification_service_label">Músicas em Reprodução do Viagra Launcher</string>
+    <string name="app_name">Viagara Launcher</string>
+    <string name="accessibility_description">Permite que o gesto de deslizar para baixo abra o painel de notificações e que o toque duplo desligue a tela. O Viagara Launcher não lê nem interage com o conteúdo da tela.</string>
+    <string name="accessibility_service_label">Gestos do Viagara Launcher</string>
+    <string name="notification_service_label">Músicas em Reprodução do Viagara Launcher</string>
 
     <!-- Ações compartilhadas -->
     <string name="action_back">Voltar</string>
@@ -23,16 +23,16 @@
     <string name="action_edit_icon_and_name">Editar ícone e nome</string>
     <string name="action_move_to_folder">Mover para pasta…</string>
     <string name="action_change_icon">Alterar ícone…</string>
-    <string name="action_open_settings">Configurações do Viagra Launcher</string>
+    <string name="action_open_settings">Configurações do Viagara Launcher</string>
     <string name="action_not_now">Agora não</string>
     <string name="action_set_default">Definir como padrão</string>
     <string name="default_launcher_dialog_title">Definir como inicializador padrão</string>
-    <string name="default_launcher_dialog_message">Defina o Viagra Launcher como seu aplicativo de tela inicial padrão para desfrutar de uma experiência limpa, ultra rápida e sem distrações sempre que pressionar o botão Home ou desbloquear o aparelho.</string>
+    <string name="default_launcher_dialog_message">Defina o Viagara Launcher como seu aplicativo de tela inicial padrão para desfrutar de uma experiência limpa, ultra rápida e sem distrações sempre que pressionar o botão Home ou desbloquear o aparelho.</string>
     <string name="default_launcher_feature_home">Acesso instantâneo ao pressionar o botão Home</string>
     <string name="default_launcher_feature_apps">Navegação A-Z fluida e pesquisa universal</string>
     <string name="default_launcher_feature_minimal">Interface limpa, focada e personalizável</string>
     <string name="settings_default_launcher">Inicializador padrão</string>
-    <string name="settings_default_launcher_is_default">Viagra Launcher é o app padrão</string>
+    <string name="settings_default_launcher_is_default">Viagara Launcher é o app padrão</string>
     <string name="settings_default_launcher_set">Toque para definir como padrão</string>
 
     <!-- Tela inicial -->
@@ -63,8 +63,8 @@
     <string name="update_toast_download_completed">Download concluído! APK salvo na pasta Downloads</string>
     <string name="update_toast_error">Erro ao iniciar download: %1$s</string>
     <string name="update_notification_channel_name">Atualizações do aplicativo</string>
-    <string name="update_notification_channel_desc">Avisos sobre novas versões disponíveis do Viagra Launcher</string>
-    <string name="update_notification_title">Viagra Launcher %1$s disponível</string>
+    <string name="update_notification_channel_desc">Avisos sobre novas versões disponíveis do Viagara Launcher</string>
+    <string name="update_notification_title">Viagara Launcher %1$s disponível</string>
     <string name="update_notification_text">Toque para ver o que há de novo e atualizar</string>
     <string name="update_root_install_option">Instalar via Root (Sem Play Protect)</string>
     <string name="update_root_install_desc">Instalação silenciosa direta sem passar pelo Google Play Protect</string>
@@ -92,11 +92,11 @@
     <string name="applist_hide">Ocultar da lista</string>
 
     <!-- Mensagens (Toasts) -->
-    <string name="toast_enable_accessibility_shade">Ative o Viagra Launcher em Configurações → Acessibilidade para abrir as notificações</string>
-    <string name="toast_enable_accessibility_lock">Ative o Viagra Launcher em Configurações → Acessibilidade para desligar a tela</string>
+    <string name="toast_enable_accessibility_shade">Ative o Viagara Launcher em Configurações → Acessibilidade para abrir as notificações</string>
+    <string name="toast_enable_accessibility_lock">Ative o Viagara Launcher em Configurações → Acessibilidade para desligar a tela</string>
 
     <!-- Configurações -->
-    <string name="settings_title">Configurações do Viagra Launcher</string>
+    <string name="settings_title">Configurações do Viagara Launcher</string>
     <string name="settings_section_appearance">Aparência</string>
     <string name="settings_section_behavior">Comportamento</string>
     <string name="settings_section_now_playing">Em Reprodução</string>
@@ -150,7 +150,7 @@
     <string name="settings_always_show_az">Sempre exibir índice A-Z</string>
     <string name="settings_shade_gesture">Deslizar para baixo para notificações</string>
     <string name="settings_shade_ready">Pronto — puxe para baixo na tela inicial</string>
-    <string name="settings_shade_not_ready">O Android não possui API pública para abrir o painel; ative o Viagra Launcher em Acessibilidade para permitir</string>
+    <string name="settings_shade_not_ready">O Android não possui API pública para abrir o painel; ative o Viagara Launcher em Acessibilidade para permitir</string>
     <string name="settings_enable">Ativar</string>
     <string name="settings_now_playing_show">Exibir widget Em Reprodução</string>
     <string name="settings_notification_access_granted">Acesso a notificações concedido</string>

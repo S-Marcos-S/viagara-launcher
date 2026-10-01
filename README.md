@@ -1,4 +1,4 @@
-# Viagra Launcher
+# Viagara Launcher
 
 Um launcher minimalista e elegante para Android baseado em lista — uma alternativa de código aberto inspirada no [Niagara Launcher](https://niagaralauncher.app).
 
@@ -30,7 +30,7 @@ Um launcher minimalista e elegante para Android baseado em lista — uma alterna
 
 Baixe a versão mais recente em formato APK diretamente na seção de **[Releases](https://github.com/S-Marcos-S/viagra-launcher/releases)** deste repositório.
 
-Após instalar, defina o Viagra Launcher como inicializador padrão:
+Após instalar, defina o Viagara Launcher como inicializador padrão:
 **Configurações → Aplicativos → Aplicativos padrão → App de início (Home)**.
 
 > **Requisitos:** Android 8.0 (API 26) ou superior.

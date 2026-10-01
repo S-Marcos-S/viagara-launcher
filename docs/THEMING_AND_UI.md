@@ -1,6 +1,6 @@
-# 🎨 Sistema de Design, Cores Dinâmicas (Monet) e Interface do Victoria Launcher
+# 🎨 Sistema de Design, Cores Dinâmicas (Monet) e Interface do Viagara Launcher
 
-Este documento detalha as decisões de design, a engenharia de cores dinâmicas (Material You / Monet), o modelo de superfícies vítreas translúcidas (*frosted glass*), a tipografia e os efeitos visuais implementados no **Victoria Launcher**.
+Este documento detalha as decisões de design, a engenharia de cores dinâmicas (Material You / Monet), o modelo de superfícies vítreas translúcidas (*frosted glass*), a tipografia e os efeitos visuais implementados no **Viagara Launcher**.
 
 ---
 
@@ -20,7 +20,7 @@ Este documento detalha as decisões de design, a engenharia de cores dinâmicas 
 
 ## 1. Filosofia Visual e Janelas Transparentes
 
-Diferente de launchers convencionais que desenham um bitmap do papel de parede dentro de sua própria visualização, o Victoria Launcher adota a flag nativa do sistema operacional:
+Diferente de launchers convencionais que desenham um bitmap do papel de parede dentro de sua própria visualização, o Viagara Launcher adota a flag nativa do sistema operacional:
 
 ```xml
 <item name="android:windowShowWallpaper">true</item>
@@ -36,11 +36,11 @@ Diferente de launchers convencionais que desenham um bitmap do papel de parede d
 
 ## 2. Motor Monet e Extração de Cores do Wallpaper
 
-O Victoria Launcher implementa integração dinâmica com a paleta de cores do usuário, adaptando-se do **Android 8.1 (API 27) ao Android 15+ (API 35)**.
+O Viagara Launcher implementa integração dinâmica com a paleta de cores do usuário, adaptando-se do **Android 8.1 (API 27) ao Android 15+ (API 35)**.
 
 ```mermaid
 flowchart TD
-    A[Início do VictoriaTheme] --> B{Android 12+ / API 31+?}
+    A[Início do ViagaraTheme] --> B{Android 12+ / API 31+?}
     B -- Sim --> C[dynamicDarkColorScheme / dynamicLightColorScheme]
     B -- Não --> D{Android 8.1 a 11 / API 27 a 30?}
     D -- Sim --> E[WallpaperManager.getWallpaperColors]
@@ -52,7 +52,7 @@ flowchart TD
     H --> I[MaterialTheme Aplicado]
 ```
 
-### Implementação ([`Theme.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/theme/Theme.kt)):
+### Implementação ([`Theme.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/theme/Theme.kt)):
 - **Android 12+ (Material You):** Carrega os tons tonais do sistema operacional através de `dynamicDarkColorScheme(context)` ou `dynamicLightColorScheme(context)`.
 - **Android 8.1 a 11 (Fallback com WallpaperManager):** Extrai a cor primária dominante do papel de parede via:
   ```kotlin
@@ -67,7 +67,7 @@ flowchart TD
 
 Muitas interfaces modernas falham ao apresentar diálogos em tons de cinza estáticos e neutros, desvinculando visualmente a janela do papel de parede que está logo atrás.
 
-No Victoria Launcher, o algoritmo `dynamicSurfaceColor` aplica interpolação linear (`lerp`) entre o container de superfície do Material 3 e a cor primária dinâmica Monet:
+No Viagara Launcher, o algoritmo `dynamicSurfaceColor` aplica interpolação linear (`lerp`) entre o container de superfície do Material 3 e a cor primária dinâmica Monet:
 
 ```kotlin
 @Composable
@@ -81,11 +81,11 @@ fun dynamicSurfaceColor(
 ```
 
 ### Onde é Utilizado:
-- Diálogo de Opções da Tela Inicial ([`HomeOptionsBottomSheet.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/home/HomeOptionsBottomSheet.kt)).
-- Menu de Contexto do Aplicativo ([`AppMenuDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/common/AppMenuDialog.kt)).
-- Janela Flutuante de Pastas ([`FolderFloatingDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/home/FolderFloatingDialog.kt)).
-- Diálogo de Atualização e Mudanças ([`UpdateChangelogDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/home/UpdateChangelogDialog.kt)).
-- Detalhes de Notificações ([`NotificationDetailDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/notification/NotificationDetailDialog.kt)).
+- Diálogo de Opções da Tela Inicial ([`HomeOptionsBottomSheet.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/home/HomeOptionsBottomSheet.kt)).
+- Menu de Contexto do Aplicativo ([`AppMenuDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/common/AppMenuDialog.kt)).
+- Janela Flutuante de Pastas ([`FolderFloatingDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/home/FolderFloatingDialog.kt)).
+- Diálogo de Atualização e Mudanças ([`UpdateChangelogDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/home/UpdateChangelogDialog.kt)).
+- Detalhes de Notificações ([`NotificationDetailDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/notification/NotificationDetailDialog.kt)).
 
 ---
 
@@ -127,7 +127,7 @@ Isso garante que o conteúdo da tela inicial fique artisticamente desfocado ao f
 
 ## 6. Contraste e Modos de Cor de Texto
 
-O arquivo [`ContentColor.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/theme/ContentColor.kt) calcula dinamicamente a cor ideal do texto para garantir legibilidade sobre qualquer imagem de fundo:
+O arquivo [`ContentColor.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/theme/ContentColor.kt) calcula dinamicamente a cor ideal do texto para garantir legibilidade sobre qualquer imagem de fundo:
 
 - **`TextColorMode.LIGHT`:** Força texto branco com ligeira sombra semântica para papéis de parede escuros.
 - **`TextColorMode.DARK`:** Força texto escuro/preto para papéis de parede claros.
@@ -137,7 +137,7 @@ O arquivo [`ContentColor.kt`](file:///data/data/com.termux/files/home/storage/ko
 
 ## 7. Sistema Tipográfico
 
-O usuário pode escolher entre 4 famílias tipográficas essenciais ([`AppFont`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/data/Prefs.kt)):
+O usuário pode escolher entre 4 famílias tipográficas essenciais ([`AppFont`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/data/Prefs.kt)):
 
 | Identificador | `FontFamily` Android | Característica |
 |---|---|---|
@@ -154,14 +154,14 @@ A fonte selecionada propaga-se de forma homogênea por todas as variantes de tex
 
 A experiência física do launcher é acentuada por feedback tátil proporcional:
 
-- **[`HapticUtil.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/service/HapticUtil.kt):** Utiliza a API `VibrationEffect.createPredefined(EFFECT_TICK)` em dispositivos compatíveis, respeitando a configuração global do sistema e a opção dedicada nas preferências do launcher.
+- **[`HapticUtil.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/service/HapticUtil.kt):** Utiliza a API `VibrationEffect.createPredefined(EFFECT_TICK)` em dispositivos compatíveis, respeitando a configuração global do sistema e a opção dedicada nas preferências do launcher.
 - **Física de Molas (Spring Physics):** Os elementos utilizam curvas de mola (`Spring.DampingRatioMediumBouncy`) para retornar suavemente à posição original após gestos de arrasto.
 
 ---
 
 ## 9. Ícones Temáticos Dinâmicos do Monet (Geração Própria)
 
-A Victoria Launcher inclui um motor nativo de geração de ícones temáticos (`ThemedAppIcon`) baseado no Material You / Monet, desenhado para abranger **100% dos aplicativos instalados**:
+A Viagara Launcher inclui um motor nativo de geração de ícones temáticos (`ThemedAppIcon`) baseado no Material You / Monet, desenhado para abranger **100% dos aplicativos instalados**:
 
 ### Arquitetura de Geração e Extração:
 1. **Camada Monocromática Oficial (Android 13+):** Extrai a camada `AdaptiveIconDrawable.monochrome` quando disponível nativamente.

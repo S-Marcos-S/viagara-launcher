@@ -56,7 +56,7 @@ jobs:
               -validity 10000 \
               -storepass android \
               -keypass android \
-              -dname "CN=ViagraLauncher, OU=Dev, O=Viagra, C=BR"
+              -dname "CN=ViagaraLauncher, OU=Dev, O=Viagara, C=BR"
             cat > keystore.properties <<EOF
           storeFile=release.keystore
           storePassword=android
@@ -79,16 +79,16 @@ jobs:
         run: |
           mkdir -p artifacts
           if [ -f app/build/outputs/apk/release/app-release.apk ]; then
-            cp app/build/outputs/apk/release/app-release.apk artifacts/viagra-launcher-release.apk
+            cp app/build/outputs/apk/release/app-release.apk artifacts/viagara-launcher-release.apk
           elif [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
-            cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/viagra-launcher-release.apk
+            cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/viagara-launcher-release.apk
           fi
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: viagra-launcher-release
-          path: artifacts/viagra-launcher-release.apk
+          name: viagara-launcher-release
+          path: artifacts/viagara-launcher-release.apk
           retention-days: 30
 
       - name: Detect Version and Check for New Release
@@ -114,14 +114,14 @@ jobs:
           awk 'BEGIN{p=1} /^---/{p=0} p{print}' CHANGELOG_LATEST.md > RELEASE_NOTES.md
 
           if [ ! -s RELEASE_NOTES.md ]; then
-            echo "### Viagra Launcher ${{ steps.version_check.outputs.TAG_NAME }}" > RELEASE_NOTES.md
+            echo "### Viagara Launcher ${{ steps.version_check.outputs.TAG_NAME }}" > RELEASE_NOTES.md
             echo "Atualizações e melhorias de estabilidade." >> RELEASE_NOTES.md
           fi
 
           cat >> RELEASE_NOTES.md <<EOF
 
           ### Direct APK Download
-          - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/viagra-launcher-release.apk)
+          - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/viagara-launcher-release.apk)
 
           Built automatically from commit \`${{ github.sha }}\`.
           EOF
@@ -131,11 +131,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version_check.outputs.TAG_NAME }}
-          name: "Viagra Launcher ${{ steps.version_check.outputs.TAG_NAME }}"
+          name: "Viagara Launcher ${{ steps.version_check.outputs.TAG_NAME }}"
           body_path: RELEASE_NOTES.md
           prerelease: false
           files: |
-            artifacts/viagra-launcher-release.apk
+            artifacts/viagara-launcher-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -144,10 +144,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "Viagra Launcher - Latest APKs (${{ steps.version_check.outputs.TAG_NAME }})"
+          name: "Viagara Launcher - Latest APKs (${{ steps.version_check.outputs.TAG_NAME }})"
           body_path: RELEASE_NOTES.md
           prerelease: false
           files: |
-            artifacts/viagra-launcher-release.apk
+            artifacts/viagara-launcher-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

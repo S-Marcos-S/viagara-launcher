@@ -1,8 +1,8 @@
-# 📚 Central de Documentação do Victoria Launcher
+# 📚 Central de Documentação do Viagara Launcher
 
-Bem-vindo à documentação oficial do **Victoria Launcher**, um launcher minimalista, ergonômico e de código aberto para Android construído em **Kotlin** e **Jetpack Compose**.
+Bem-vindo à documentação oficial do **Viagara Launcher**, um launcher minimalista, ergonômico e de código aberto para Android construído em **Kotlin** e **Jetpack Compose**.
 
-![Victoria Launcher Banner](banner.png)
+![Viagara Launcher Banner](banner.png)
 
 ---
 

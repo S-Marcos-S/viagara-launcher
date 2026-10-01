@@ -1,6 +1,6 @@
-# Architecture of Victoria Launcher
+# Architecture of Viagara Launcher
 
-Victoria Launcher is a single-module Android home-screen launcher built with Kotlin, Jetpack Compose, `minSdk 26`, and `compileSdk`/`targetSdk 35`. It is privacy-first: no ads, no analytics, no trackers, and no user accounts.
+Viagara Launcher is a single-module Android home-screen launcher built with Kotlin, Jetpack Compose, `minSdk 26`, and `compileSdk`/`targetSdk 35`. It is privacy-first: no ads, no analytics, no trackers, and no user accounts.
 
 ---
 
@@ -9,7 +9,7 @@ Victoria Launcher is a single-module Android home-screen launcher built with Kot
 ```mermaid
 flowchart TD
     subgraph UI_Layer["Presentation Layer (Jetpack Compose)"]
-        Nav[VictoriaNavHost]
+        Nav[ViagaraNavHost]
         Home[HomeRoute / HomeScreen]
         AppList[AppListScreen & EdgeScrubber]
         Clock[NiagaraClockWidget]
@@ -36,9 +36,9 @@ flowchart TD
     subgraph System_Layer["Android Framework & System Services"]
         PM[PackageManager]
         WM[WindowManager / BlurBehind]
-        Host[VictoriaAppWidgetHost / View]
+        Host[ViagaraAppWidgetHost / View]
         MediaSvc[NowPlayingListenerService]
-        AccessSvc[VictoriaAccessibilityService]
+        AccessSvc[ViagaraAccessibilityService]
         Updater[GitHub Releases API / MediaStore]
     end
 
@@ -60,12 +60,12 @@ flowchart TD
 
 ---
 
-## 📦 Package Layout (`dev.victorialauncher`)
+## 📦 Package Layout (`dev.viagaralauncher`)
 
 ```
-dev.victorialauncher
+dev.viagaralauncher
 ├── MainActivity.kt                      Activity, window insets, status-bar peek, update receivers
-├── VictoriaApp.kt                       Application singleton; initializes repositories, Prefs, widget host
+├── ViagaraApp.kt                       Application singleton; initializes repositories, Prefs, widget host
 ├── data/
 │   ├── AppInfo.kt                       Component name + label; flattened key representation
 │   ├── AppRepository.kt                 PackageManager querying, launch intents, package change receivers
@@ -83,9 +83,9 @@ dev.victorialauncher
 │   ├── HapticUtil.kt                    VibrationEffect tick generator respecting system feedback settings
 │   ├── StatusBarFader.kt                Window inset animator for peek status bar behavior
 │   ├── SystemUi.kt                      System UI flags and status bar visibility controls
-│   └── VictoriaAccessibilityService.kt  Sanctioned service for screen locking and shade expansion
+│   └── ViagaraAccessibilityService.kt  Sanctioned service for screen locking and shade expansion
 ├── ui/
-│   ├── VictoriaNavHost.kt               Global navigation graph, collects preferences once
+│   ├── ViagaraNavHost.kt               Global navigation graph, collects preferences once
 │   ├── applist/
 │   │   ├── AppListModel.kt              Flattens installed apps into headers and items
 │   │   ├── AppListScreen.kt             A-Z list overlay with real-time search, pull-to-collapse
@@ -127,7 +127,7 @@ dev.victorialauncher
 │   └── UpdateManager.kt                 GitHub Releases polling, download via MediaStore, notifications
 └── widget/
     ├── LongPressFrameLayout.kt          Touch event arbiter for embedded Android widgets
-    ├── VictoriaAppWidgetHost.kt         AppWidgetHost and VictoriaAppWidgetHostView (zero-padding enforcement)
+    ├── ViagaraAppWidgetHost.kt         AppWidgetHost and ViagaraAppWidgetHostView (zero-padding enforcement)
     ├── WidgetPickerActivity.kt          System widget picker integration
     └── WidgetSlot.kt                    Widget container, dynamic resizing handles, long-press menu
 ```
@@ -142,8 +142,8 @@ The launcher **never draws the wallpaper**. `Theme.VictoriaLauncher` sets `andro
 ### 2. Touch Arbitration with Android Widgets (`LongPressFrameLayout`)
 Compose pointer inputs claim exclusive ownership of the touch stream once tracked, which would break touch buttons inside hosted Android widgets (such as music playback buttons). `LongPressFrameLayout` uses Android's traditional `onInterceptTouchEvent` pattern: it monitors touches on `ACTION_DOWN` without intercepting, only stealing the touch stream if its long-press timer expires.
 
-### 3. Suppression of Framework Widget Padding (`VictoriaAppWidgetHostView`)
-Since Android 4.0 (API 14), Android's standard `AppWidgetHostView` automatically calculates default system padding (`getDefaultPaddingForWidget`) and sets it on itself. Because Victoria Launcher manages precise margin boundaries via Compose (`contentStart` and `contentEnd`), `VictoriaAppWidgetHostView` overrides `setPadding(0, 0, 0, 0)` so widgets align flush with the clock, apps, and now playing controls.
+### 3. Suppression of Framework Widget Padding (`ViagaraAppWidgetHostView`)
+Since Android 4.0 (API 14), Android's standard `AppWidgetHostView` automatically calculates default system padding (`getDefaultPaddingForWidget`) and sets it on itself. Because Viagara Launcher manages precise margin boundaries via Compose (`contentStart` and `contentEnd`), `ViagaraAppWidgetHostView` overrides `setPadding(0, 0, 0, 0)` so widgets align flush with the clock, apps, and now playing controls.
 
 ### 4. Gaussian Bowing Without Glyph Scaling (`EdgeScrubber`)
 Scaling font glyphs during fast dragging causes pixelation and font cache thrashing. `EdgeScrubber` translates each letter along a Gaussian curve on the X axis without changing its font scale. Touch positions arrive as lambdas executed inside `Modifier.graphicsLayer { ... }`, evaluating purely during the draw phase and bypassing the recomposition phase.

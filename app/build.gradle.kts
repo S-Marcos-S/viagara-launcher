@@ -24,15 +24,15 @@ val gitCommitSha: String = providers.environmentVariable("GITHUB_SHA").orNull?.i
 val buildTimeMillis: Long = System.currentTimeMillis()
 
 android {
-    namespace = "dev.victorialauncher"
+    namespace = "dev.viagaralauncher"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.victorialauncher"
+        applicationId = "dev.viagaralauncher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 118
-        versionName = "0.59.43"
+        versionCode = 119
+        versionName = "0.59.44"
 
         buildConfigField("String", "GIT_SHA", "\"$gitCommitSha\"")
         buildConfigField("Long", "BUILD_TIME_MILLIS", "${buildTimeMillis}L")

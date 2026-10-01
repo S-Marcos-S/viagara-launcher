@@ -45,7 +45,7 @@ def get_repo():
         m = re.search(r"github\.com[:/]([^/]+/[^/\.]+)", out)
         if m:
             return m.group(1).replace(".git", "")
-    return "S-Marcos-S/victoria-launcher"
+    return "S-Marcos-S/viagra-launcher"
 
 def get_head_commit():
     """Get current HEAD commit SHA."""
@@ -225,7 +225,7 @@ def download_and_install_apk(repo, run_id):
 
     # 1. Tenta baixar via artefato de release específico da run atual
     print(f"{C_DIM}Baixando artefato de release da execução {run_id}...{C_RESET}")
-    cmd = f"gh run download {run_id} -R {repo} -n victoria-launcher-release -D '{tmp_dir}'"
+    cmd = f"gh run download {run_id} -R {repo} -n viagara-launcher-release -D '{tmp_dir}'"
     code, _, err = run_cmd(cmd)
 
     apk_file = None
@@ -244,14 +244,16 @@ def download_and_install_apk(repo, run_id):
             if apks:
                 apk_file = apks[0]
 
-    # 3. Fallback para execuções legadas com o bundle 'victoria-launcher-apks'
+    # 3. Fallback para execuções legadas com nomes anteriores de artefato
     if not apk_file:
-        cmd = f"gh run download {run_id} -R {repo} -n victoria-launcher-apks -D '{tmp_dir}'"
-        code, _, _ = run_cmd(cmd)
-        if code == 0:
-            apks = list(tmp_dir.glob("**/*release*.apk"))
-            if apks:
-                apk_file = apks[0]
+        for legacy_name in ["viagra-launcher-release", "victoria-launcher-release", "victoria-launcher-apks"]:
+            cmd = f"gh run download {run_id} -R {repo} -n {legacy_name} -D '{tmp_dir}'"
+            code, _, _ = run_cmd(cmd)
+            if code == 0:
+                apks = list(tmp_dir.glob("**/*release*.apk"))
+                if apks:
+                    apk_file = apks[0]
+                    break
             # Remove qualquer APK de debug que possa ter vindo junto
             for dbg in tmp_dir.glob("**/*debug*.apk"):
                 try:
@@ -277,7 +279,7 @@ def download_and_install_apk(repo, run_id):
     for d in download_dirs:
         try:
             if d.exists():
-                dest = d / "victoria-launcher-release.apk"
+                dest = d / "viagara-launcher-release.apk"
                 shutil.copy2(str(apk_file), str(dest))
                 saved_download_path = dest
                 break
@@ -288,7 +290,7 @@ def download_and_install_apk(repo, run_id):
         print(f"\n{C_BOLD}{C_GREEN}📁 APK salvo na pasta Downloads:{C_RESET} {saved_download_path}")
 
     # 4. Tenta instalação automática via root se pm estiver disponível
-    dest_apk = "/data/local/tmp/victoria-launcher-release.apk"
+    dest_apk = "/data/local/tmp/viagara-launcher-release.apk"
     print(f"{C_CYAN}📲 Tentando instalação automática via Root...{C_RESET}")
     run_cmd(f"su -c \"cp '{apk_file.resolve()}' '{dest_apk}' && chmod 644 '{dest_apk}'\"")
 
@@ -299,7 +301,7 @@ def download_and_install_apk(repo, run_id):
 
     if "Success" in combined_output:
         print(f"\n{C_BOLD}{C_GREEN}=================================================================={C_RESET}")
-        print(f"{C_BOLD}{C_GREEN}🎉 VICTORIA LAUNCHER INSTALADO COM SUCESSO VIA ROOT!{C_RESET}")
+        print(f"{C_BOLD}{C_GREEN}🎉 VIAGARA LAUNCHER INSTALADO COM SUCESSO VIA ROOT!{C_RESET}")
         print(f"{C_BOLD}{C_GREEN}=================================================================={C_RESET}")
         print(f"{C_WHITE}A versão mais recente foi aplicada no seu dispositivo.{C_RESET}")
         return True
@@ -368,7 +370,7 @@ def main():
     head_commit = get_head_commit()
     branch = get_branch()
 
-    print(f"{C_BOLD}{C_CYAN}Victoria Launcher — Monitor de Build & Auto Instalador{C_RESET}")
+    print(f"{C_BOLD}{C_CYAN}Viagara Launcher — Monitor de Build & Auto Instalador{C_RESET}")
     print(f"Repositório: {C_WHITE}{repo}{C_RESET} | Branch: {C_WHITE}{branch}{C_RESET}\n")
 
     # Verifica status git local

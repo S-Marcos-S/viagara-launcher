@@ -1,0 +1,1326 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+package dev.viagaralauncher.ui.applist
+
+import android.graphics.Rect
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VisibilityOff
+import android.widget.Toast
+import dev.viagaralauncher.root.AppLogCaptureService
+import dev.viagaralauncher.root.AppUninstallManager
+import dev.viagaralauncher.ui.common.ConfirmUninstallDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.zIndex
+import dev.viagaralauncher.service.HapticUtil
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.viagaralauncher.data.AppInfo
+import dev.viagaralauncher.data.EdgeSide
+import dev.viagaralauncher.ui.common.AppIcon
+import dev.viagaralauncher.ui.common.recordTouchPosition
+import dev.viagaralauncher.ui.common.EditAppDialog
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
+import dev.viagaralauncher.R
+import androidx.compose.ui.res.stringResource
+
+/** Where the selected letter's section sits, as a fraction down the screen. */
+private const val SECTION_TOP_FRACTION = 0.26f
+
+/** How long a background tap waits for a second one before it dismisses the list. */
+private const val DOUBLE_TAP_WINDOW_MS = 280L
+
+/** Breathing room above A and below the settings row when no scrub has placed the list. */
+private val IDLE_TOP_PADDING = 64.dp
+private val IDLE_BOTTOM_PADDING = 32.dp
+
+/** Smallest comfortable row, so a tap beside a small icon still lands on its app. */
+private val MIN_ROW_HEIGHT = 48.dp
+
+/** How far either end of the list may be dragged past its content. */
+private val MAX_EDGE_STRETCH = 40.dp
+
+/**
+ * Damping for the edge elastic. Under 1 so a fling into an end overshoots and comes back
+ * once — a bumper, not a bounce.
+ */
+private const val EDGE_STRETCH_DAMPING = 0.55f
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AppListScreen(
+    model: AppListModel,
+    nameOverrides: Map<String, String>,
+    scrub: ScrubState,
+    dimAlpha: Float,
+    iconSizeDp: Int,
+    labelSizeSp: Int,
+    band: ScrubBand,
+    viewportHeightPx: Int,
+    visible: Boolean,
+    favoriteKeys: Set<String>,
+    onLaunch: (AppInfo, Rect?) -> Unit,
+    onSetFavorite: (AppInfo, Boolean) -> Unit,
+    onSetName: (AppInfo, String?) -> Unit,
+    onChangeIcon: (AppInfo) -> Unit,
+    onAppInfo: (AppInfo) -> Unit,
+    onHideApp: (AppInfo) -> Unit,
+    onMoveToFolder: (AppInfo) -> Unit,
+    onOpenSettings: () -> Unit,
+    onDismiss: () -> Unit,
+    contentColor: Color,
+    showAlphabet: Boolean,
+    alignRight: Boolean,
+    doubleTapToLock: Boolean,
+    onDoubleTapLock: (Offset) -> Unit,
+    showAppNotifications: Boolean = false,
+    notificationsByPackage: Map<String, List<dev.viagaralauncher.notification.AppNotificationItem>> = emptyMap(),
+    sidePaddingDp: Int = 20,
+    alphabetSidePaddingDp: Int = 20,
+    searchButtonEnabled: Boolean = true,
+    hapticsEnabled: Boolean = true,
+    onOpenSearch: () -> Unit = {},
+) {
+    var activeDialogNotification by remember { mutableStateOf<Pair<dev.viagaralauncher.notification.AppNotificationItem, AppInfo>?>(null) }
+    var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
+    var rootInspectorFor by remember { mutableStateOf<AppInfo?>(null) }
+    var logViewerFor by remember { mutableStateOf<AppInfo?>(null) }
+    var confirmUninstallFor by remember { mutableStateOf<AppInfo?>(null) }
+    val context = LocalContext.current
+    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
+
+    // The gesture handlers below outlive the composition that created them, so they must not
+    // capture this frame's callbacks — a dismiss half a minute old still has to close the
+    // list that is up now.
+    val currentDismiss by rememberUpdatedState(onDismiss)
+    val currentDoubleTapLock by rememberUpdatedState(onDoubleTapLock)
+
+    // Reading these here confines the invalidation to this composable: the home screen
+    // behind the overlay never sees the letter change. currentY/currentPull stay as
+    // function references so their callers read them in the draw phase, not composition.
+    val scrubLetter = scrub.letter
+    val scrubbing = scrub.scrubbing
+    val activeSide = scrub.side
+    val scrubY = remember(scrub) { scrub::currentY }
+    val pullPx = remember(scrub) { scrub::currentPull }
+
+    val alphabetClearance = (alphabetSidePaddingDp + 32).dp
+    val rowStart = if (activeSide == EdgeSide.LEFT && showAlphabet) maxOf(sidePaddingDp.dp, alphabetClearance) else sidePaddingDp.dp
+    val rowEnd = if (activeSide != EdgeSide.LEFT && showAlphabet) maxOf(sidePaddingDp.dp, alphabetClearance) else sidePaddingDp.dp
+
+    val listState = rememberLazyListState()
+    // Rows outside the scrubbed letter fade out; the section itself never moves, because it
+    // is the same list the whole time. Only ever read inside a graphicsLayer, so the fade
+    // runs in the draw phase instead of recomposing every visible row 60 times a second.
+    val othersAlpha by animateFloatAsState(
+        // Only while a finger is travelling through the alphabet: a tap on the edge sets a
+        // letter too, and fading out for it cost a quarter of a second of ghosted list on
+        // every open.
+        targetValue = if (scrubLetter != null && scrubbing) 0f else 1f,
+        animationSpec = tween(durationMillis = 180),
+        label = "othersAlpha",
+    )
+    val sectionTopPx = (viewportHeightPx * SECTION_TOP_FRACTION).roundToInt()
+
+    // The LazyColumn always holds the full list — while scrubbing it's just hidden and
+    // pre-scrolled, with the letter's apps drawn over the top. Filtering the rows themselves
+    // meant that on release the unfiltered list was briefly parked back at A.
+    val scrubRowIndex = remember(model, scrubLetter) {
+        val letter = scrubLetter ?: return@remember -1
+        if (letter == SCRUBBER_STAR) return@remember 0
+        model.letterIndex.firstOrNull { it.first == letter }?.second ?: -1
+    }
+
+    // Row indices of the highlighted section. Applied *after* the scroll lands, otherwise
+    // the new letter lights up a frame before the list moves to it — that was the jitter.
+    var highlightRange by remember { mutableStateOf(IntRange.EMPTY) }
+
+    // Dismissing on the first tap is what made double-tap-to-lock unreachable: the overlay
+    // stops receiving touches the moment it hides, so the second tap never arrived. With the
+    // setting on, the dismiss waits out the double-tap window and a second tap cancels it.
+    var pendingDismiss by remember { mutableStateOf<Job?>(null) }
+
+    // Pull-to-collapse from either end, done the way pull-to-refresh is done: one
+    // nested-scroll connection that actually *consumes* the drag. Held signed throughout —
+    // positive is pulled down off the top, negative is pulled up off the bottom — so one
+    // gesture serves both ends rather than each needing its own path.
+    //
+    // The previous versions watched the raw pointer stream without consuming, so the list
+    // scrolled and the overlay tracked the pull at the same time, and reversing direction
+    // left the two disagreeing. Consuming means the list can't scroll while there's a pull
+    // outstanding, and winding back up spends the pull before the list moves again — so the
+    // gesture is always in exactly one state.
+    val density = LocalDensity.current
+    val dismissPullPx = with(density) { 150.dp.toPx() }
+    val maxPullPx = with(density) { 320.dp.toPx() }
+    val maxStretchPx = with(density) { MAX_EDGE_STRETCH.toPx() }
+    val idleTopPaddingPx = with(density) { IDLE_TOP_PADDING.roundToPx() }
+    val idleBottomPaddingPx = with(density) { IDLE_BOTTOM_PADDING.roundToPx() }
+
+    /** Signed: positive pulled down off the top of the list, negative up off the bottom. */
+    var overPull by remember { mutableFloatStateOf(0f) }
+    val collapseAnim = remember { Animatable(0f) }
+    var collapsing by remember { mutableStateOf(false) }
+    val collapseProvider: () -> Float = { if (collapsing) collapseAnim.value else overPull }
+
+    // Both ends of the list share one elastic. A drag past an end stretches it, a fling into
+    // an end seeds it with the leftover *velocity*, and it always springs back to rest.
+    // Seeding from velocity rather than jumping to a fixed peak is what stops a second fling
+    // from snapping the list: the new spring carries on from wherever the old one was.
+    var stretchPx by remember { mutableFloatStateOf(0f) }
+    val stretchAnim = remember { Animatable(0f) }
+    var stretchSettling by remember { mutableStateOf(false) }
+    val stretchProvider: () -> Float = {
+        val raw = if (stretchSettling) stretchAnim.value else stretchPx
+        raw.coerceIn(-maxStretchPx, maxStretchPx)
+    }
+
+    // Everything the overlay left behind has to be cleared explicitly, because it stays
+    // composed while hidden: the tail padding and the collapse transform from the last scrub
+    // would otherwise still be there the next time it opens.
+    LaunchedEffect(visible) {
+        if (!visible) {
+            pendingDismiss?.cancel()
+            pendingDismiss = null
+            highlightRange = IntRange.EMPTY
+            overPull = 0f
+            stretchPx = 0f
+            collapsing = false
+            listState.scrollToItem(0)
+        }
+    }
+
+    // How much of the scrub placement padding is still sitting on screen at each end, over and
+    // above the gap the list idles with. Positive means that end has further to travel.
+    fun topGapRemaining(): Float {
+        val info = listState.layoutInfo
+        val first = info.visibleItemsInfo.firstOrNull() ?: return 0f
+        // Not the first row at the top means the gap is long gone above us.
+        if (first.index > 0) return 0f
+        return (first.offset - info.viewportStartOffset).toFloat() - idleTopPaddingPx
+    }
+
+    /**
+     * How much further the list could still scroll forward. Large whenever the end is not even
+     * on screen; zero when parked against it.
+     */
+    fun forwardRoom(): Float {
+        val info = listState.layoutInfo
+        val last = info.visibleItemsInfo.lastOrNull() ?: return Float.MAX_VALUE
+        if (last.index < model.rows.size) return Float.MAX_VALUE
+        val bottom = (last.offset - info.viewportStartOffset + last.size).toFloat()
+        return bottom + idleBottomPaddingPx - viewportHeightPx
+    }
+
+    /**
+     * Whether the placement padding can be retired without anything appearing to move.
+     *
+     * A list short enough to show both ends at once can never clear either gap by scrolling,
+     * so it is let through rather than left holding the padding for good.
+     */
+    fun placementSettled(): Boolean {
+        val items = listState.layoutInfo.visibleItemsInfo
+        val first = items.firstOrNull() ?: return true
+        if (first.index == 0 && items.last().index >= model.rows.size) return true
+        return topGapRemaining() <= 0f
+    }
+
+    // A manual scroll means the scrub placement has served its purpose, so the alignment gap
+    // can go — but it is ordinary scrollable space, so the finger is allowed to travel through
+    // it rather than having it pulled out from underneath. That matters at A, which the scrub
+    // parks against the top of the scroll range: there is nothing above to scroll back into, so
+    // retiring the gap there could only shift the rows themselves and the first section would
+    // snap upward. Waiting until it has scrolled off the top makes the change invisible, and
+    // once gone the idle gap is all that is left, so there is no scrolling back into it unless
+    // A is picked again.
+    var userDragged by remember { mutableStateOf(false) }
+    LaunchedEffect(userDragged, scrubLetter) {
+        if (!userDragged || scrubLetter != null || highlightRange.isEmpty()) {
+            return@LaunchedEffect
+        }
+        snapshotFlow { placementSettled() }.first { it }
+        if (highlightRange.isEmpty()) return@LaunchedEffect
+
+        // The top padding falls from the scrub line back to the idle gap, so that is exactly
+        // how far the content would rise — compensating by anything else (this used to use a
+        // bare 8dp) leaves the list jumping by the difference.
+        //
+        // Except against the bottom, where shrinking the padding shortens the scroll range by
+        // the same amount and the clamp slides us back by whatever no longer fits, doing part
+        // of the job already. Compensating the full amount on top of that is itself a jump, so
+        // only what the clamp cannot absorb is asked for.
+        val shrinkBy = (sectionTopPx - idleTopPaddingPx).toFloat()
+        val compensate = minOf(shrinkBy, forwardRoom()).coerceAtLeast(0f)
+        highlightRange = IntRange.EMPTY
+        // dispatchRawDelta rather than scrollBy: the drag that got us here holds the scroll
+        // mutex at UserInput priority, and a scrollBy would just be cancelled by it.
+        if (compensate > 0f) listState.dispatchRawDelta(-compensate)
+    }
+
+    val currentScrubRowIndex by rememberUpdatedState(scrubRowIndex)
+    val isScrubbing by rememberUpdatedState(scrubbing)
+
+    LaunchedEffect(model) {
+        var lastScrolledIndex = -1
+        while (true) {
+            val targetIndex = snapshotFlow {
+                if (userDragged || currentScrubRowIndex < 0) {
+                    lastScrolledIndex = -1
+                }
+                currentScrubRowIndex
+            }.first { it >= 0 && it != lastScrolledIndex }
+
+            listState.scrollToItem(targetIndex)
+            lastScrolledIndex = targetIndex
+            val end = model.letterIndex.firstOrNull { it.second > targetIndex }?.second ?: model.rows.size
+            highlightRange = targetIndex until end
+            userDragged = false
+
+            // Throttling during active scrubbing prevents flooding the UI thread with
+            // 20+ instantaneous full LazyColumn layout passes per second.
+            // When the finger pauses or lifts (isScrubbing = false), this throttle does not wait.
+            if (isScrubbing) {
+                delay(30L)
+            }
+        }
+    }
+
+    val scope = rememberCoroutineScope()
+
+    val listConnection = remember(dismissPullPx, maxPullPx, maxStretchPx, viewportHeightPx, listState) {
+        object : NestedScrollConnection {
+            /** True between the first drag of a gesture and the fling that ends it. */
+            private var dragging = false
+
+            /**
+             * Whether the drag in progress began with the list already parked against that
+             * end, which is what makes a pull from it a collapse rather than a scroll.
+             */
+            private var topPullEligible = false
+            private var bottomPullEligible = false
+
+            private fun stretch(delta: Float) {
+                // Rubber band: the further it goes, the less each pixel counts.
+                val resistance = 1f - (abs(stretchPx) / maxStretchPx).coerceIn(0f, 0.9f)
+                stretchPx = (stretchPx + delta * resistance).coerceIn(-maxStretchPx, maxStretchPx)
+            }
+
+            private suspend fun settleStretch(velocity: Float) {
+                val headroom = (1f - abs(stretchPx) / maxStretchPx).coerceIn(0f, 1f)
+                stretchSettling = true
+                try {
+                    stretchAnim.snapTo(stretchPx.coerceIn(-maxStretchPx, maxStretchPx))
+                    stretchPx = 0f
+                    stretchAnim.animateTo(
+                        targetValue = 0f,
+                        animationSpec = spring(
+                            dampingRatio = EDGE_STRETCH_DAMPING,
+                            stiffness = Spring.StiffnessMediumLow,
+                        ),
+                        // Scaled by what headroom is left before the clamp: seeding a full
+                        // fling on top of an already-stretched edge drives the spring past
+                        // maxStretchPx, and the draw clamps it there for a few frames — a
+                        // flat spot in the middle of the motion, which reads as a hitch.
+                        initialVelocity = (velocity * headroom).coerceIn(
+                            -maxStretchPx * 12f,
+                            maxStretchPx * 12f,
+                        ),
+                    )
+                } finally {
+                    // Handing the live value back means an interrupted settle continues from
+                    // where it was instead of snapping flat.
+                    stretchPx = stretchAnim.value.coerceIn(-maxStretchPx, maxStretchPx)
+                    stretchSettling = false
+                }
+            }
+
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (source == NestedScrollSource.Drag && !dragging) {
+                    dragging = true
+                    // A finger on the list, as opposed to a programmatic scrub scroll.
+                    userDragged = true
+                    // Collapsing has to be a deliberate pull from rest. Letting a scroll that
+                    // merely *arrives* at an end turn into one is what made a fast flick
+                    // shrink and fade the whole list halfway through the gesture.
+                    topPullEligible = !listState.canScrollBackward
+                    bottomPullEligible = !listState.canScrollForward
+                }
+                if (collapsing || stretchSettling) return Offset.Zero
+                // Spend whatever is outstanding before the list is allowed to move again, so
+                // winding a gesture back never has the two running at once.
+                if (overPull > 0f && available.y < 0f) {
+                    val used = maxOf(available.y, -overPull)
+                    overPull = (overPull + used).coerceAtLeast(0f)
+                    return Offset(0f, used)
+                }
+                if (overPull < 0f && available.y > 0f) {
+                    val used = minOf(available.y, -overPull)
+                    overPull = (overPull + used).coerceAtMost(0f)
+                    return Offset(0f, used)
+                }
+                if (stretchPx > 0f && available.y < 0f) {
+                    val used = maxOf(available.y, -stretchPx)
+                    stretchPx += used
+                    return Offset(0f, used)
+                }
+                if (stretchPx < 0f && available.y > 0f) {
+                    val used = minOf(available.y, -stretchPx)
+                    stretchPx += used
+                    return Offset(0f, used)
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                // Only a finger stretches an end; a fling that runs out of content is dealt
+                // with in onPostFling, where its velocity is still known.
+                if (collapsing || stretchSettling || source != NestedScrollSource.Drag) {
+                    return Offset.Zero
+                }
+                if (available.y == 0f) return Offset.Zero
+                val pulling = if (available.y > 0f) topPullEligible else bottomPullEligible
+                if (pulling) {
+                    // Signed: pulled down off the top is positive, pulled up off the bottom is
+                    // negative, and every reader below works off the sign rather than a
+                    // separate flag for which end is in play.
+                    val resistance = 1f - (abs(overPull) / maxPullPx).coerceIn(0f, 0.75f)
+                    overPull = (overPull + available.y * resistance).coerceIn(-maxPullPx, maxPullPx)
+                    return available
+                }
+                stretch(available.y)
+                return available
+            }
+
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                dragging = false
+                if (collapsing || stretchSettling) return Velocity.Zero
+                if (overPull != 0f) {
+                    val pulled = overPull
+                    val away = if (pulled > 0f) 1f else -1f
+                    // Flung on past the threshold counts even when the pull itself is short.
+                    val flungAway = available.y * away > 800f
+                    val dismissing = abs(pulled) > dismissPullPx ||
+                        (flungAway && abs(pulled) > dismissPullPx / 3f)
+                    collapsing = true
+                    try {
+                        collapseAnim.snapTo(pulled)
+                        overPull = 0f
+                        if (dismissing) {
+                            collapseAnim.animateTo(
+                                // Off whichever edge it was heading for.
+                                targetValue = viewportHeightPx.toFloat() * away,
+                                animationSpec = tween(240, easing = FastOutLinearInEasing),
+                            )
+                            currentDismiss()
+                        } else {
+                            collapseAnim.animateTo(
+                                targetValue = 0f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioNoBouncy,
+                                    stiffness = Spring.StiffnessMedium,
+                                ),
+                            )
+                        }
+                    } finally {
+                        // Also on the way out of a cancelled fling — the next gesture landing
+                        // on top of this one — or the overlay stays parked halfway down the
+                        // screen for good. Nothing of it is on screen by then either way,
+                        // because a hidden overlay is measured but never placed.
+                        collapsing = false
+                    }
+                    return available
+                }
+                if (stretchPx != 0f) {
+                    settleStretch(available.y)
+                    return available
+                }
+                return Velocity.Zero
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                if (collapsing || stretchSettling || available.y == 0f) return Velocity.Zero
+                settleStretch(available.y)
+                return available
+            }
+        }
+    }
+
+    // Long-press anywhere in the list (not just favorites) to edit that app.
+    var editDialogFor by remember { mutableStateOf<AppInfo?>(null) }
+    val touchPosition = remember { mutableStateOf(Offset.Zero) }
+
+    // The vertical span the rows actually occupy. A tap inside it belongs to the list even
+    // when it misses a label — a section header, the gap under the last app of a letter —
+    // and dismissing on those is what made the list feel like it was fighting you.
+    fun isOnListContent(y: Float): Boolean {
+        val info = listState.layoutInfo
+        val first = info.visibleItemsInfo.firstOrNull() ?: return false
+        val last = info.visibleItemsInfo.last()
+        return y >= first.offset - info.viewportStartOffset &&
+            y < last.offset + last.size - info.viewportStartOffset
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(listConnection)
+            .pointerInput(doubleTapToLock, listState, scrub.active) {
+                if (scrub.active) return@pointerInput
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    val start = down.position
+                    var claimed = false
+                    var moved = false
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Final)
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        if (change.isConsumed) claimed = true
+                        val delta = change.position - start
+                        if (delta.getDistance() > viewConfiguration.touchSlop) moved = true
+
+                        if (!change.pressed) break
+                    }
+
+                    // A tap no row, letter or scroll claimed, landing clear of the list
+                    // itself = a tap on the wallpaper.
+                    if (claimed || moved || isOnListContent(start.y)) return@awaitEachGesture
+
+                    val pending = pendingDismiss
+                    when {
+                        pending != null -> {
+                            pending.cancel()
+                            pendingDismiss = null
+                            currentDoubleTapLock(start)
+                        }
+
+                        doubleTapToLock -> {
+                            pendingDismiss = scope.launch {
+                                delay(DOUBLE_TAP_WINDOW_MS)
+                                pendingDismiss = null
+                                currentDismiss()
+                            }
+                        }
+
+                        // Off by default, so the common case keeps dismissing instantly.
+                        else -> currentDismiss()
+                    }
+                }
+            },
+    ) {
+      val starAlpha by animateFloatAsState(
+          targetValue = if (scrubLetter == SCRUBBER_STAR) 0f else 1f,
+          animationSpec = if (!visible) snap() else tween(120),
+          label = "starAlpha",
+      )
+      Box(
+          modifier = Modifier
+              .fillMaxSize()
+              .graphicsLayer {
+                  val pulled = collapseProvider()
+                  val progress = (abs(pulled) / dismissPullPx).coerceIn(0f, 1f)
+                  translationY = pulled * 0.6f
+                  val scale = 1f - 0.12f * progress
+                  scaleX = scale
+                  scaleY = scale
+                  alpha = (1f - 0.85f * progress) * starAlpha
+              }
+              .background(Color.Black.copy(alpha = dimAlpha)),
+      ) {
+        CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { translationY = stretchProvider() },
+            // Room above A and below Z so any letter can sit on the same line; without it
+            // the ends clamp and land somewhere else entirely.
+            // Room above A so it can sit on the scrub line like every other letter; without
+            // it the top clamps and A lands somewhere else entirely. There is deliberately no
+            // matching room below Z. Reaching the line from the bottom would take most of a
+            // screen of empty space past the settings row, which reads as the list being
+            // broken rather than as placement, so the last letter simply lands as high as its
+            // own content allows.
+            contentPadding = with(density) {
+                val top = if (scrubLetter != null || !highlightRange.isEmpty()) {
+                    sectionTopPx.toDp()
+                } else {
+                    IDLE_TOP_PADDING
+                }
+                PaddingValues(top = top, bottom = IDLE_BOTTOM_PADDING)
+            },
+        ) {
+            itemsIndexed(
+                items = model.rows,
+                key = { _, row ->
+                    when (row) {
+                        is AppListRow.Header -> "header:${row.text}"
+                        is AppListRow.Entry -> row.app.key
+                    }
+                },
+                // Headers and app rows are laid out nothing alike; telling the list so lets
+                // it reuse each kind against its own pool while scrubbing.
+                contentType = { _, row -> row is AppListRow.Header },
+            ) { index, row ->
+                Box(
+                    // Read in the draw phase on purpose: the scrub fade would otherwise
+                    // recompose every visible row on every frame of the 180ms tween.
+                    modifier = Modifier.graphicsLayer {
+                        alpha = if (index in highlightRange) 1f else othersAlpha
+                    },
+                ) {
+                when (row) {
+                    is AppListRow.Header -> SectionHeader(
+                        text = row.text,
+                        labelSizeSp = labelSizeSp,
+                        contentColor = contentColor,
+                        alignRight = alignRight,
+                        startPadding = rowStart,
+                        endPadding = rowEnd,
+                    )
+                    is AppListRow.Entry -> {
+                        val appNotifications = if (showAppNotifications) {
+                            notificationsByPackage[row.app.packageName].orEmpty()
+                        } else emptyList()
+                        val latestNotification = appNotifications.firstOrNull()
+
+                        AppRow(
+                            contentColor = contentColor,
+                            alignRight = alignRight,
+                            app = row.app,
+                            label = displayName(row.app),
+                            iconSizeDp = iconSizeDp,
+                            labelSizeSp = labelSizeSp,
+                            isFavorite = favoriteKeys.contains(row.app.key),
+                            notification = latestNotification,
+                            onNotificationClick = { notif ->
+                                activeDialogNotification = notif to row.app
+                            },
+                            touchPosition = touchPosition,
+                            onLaunch = { bounds -> onLaunch(row.app, bounds) },
+                            onLongPress = { _ -> appMenuFor = row.app },
+                            startPadding = rowStart,
+                            endPadding = rowEnd,
+                            enabled = !scrub.active,
+                        )
+                    }
+                }
+                }
+            }
+
+            // Settings shortcut, pinned after Z.
+            item(key = "settings", contentType = "settings") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer { alpha = othersAlpha }
+                        .clickable(enabled = !scrub.active, onClick = onOpenSettings)
+                        .heightIn(min = MIN_ROW_HEIGHT)
+                        .padding(horizontal = 28.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = if (alignRight) Arrangement.End else Arrangement.Start,
+                ) {
+                    if (alignRight) {
+                        Text(
+                            stringResource(R.string.action_open_settings),
+                            color = contentColor.copy(alpha = 0.8f),
+                            fontSize = labelSizeSp.sp,
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Icon(Icons.Filled.Settings, contentDescription = null, tint = contentColor.copy(alpha = 0.8f))
+                    } else {
+                        Icon(Icons.Filled.Settings, contentDescription = null, tint = contentColor.copy(alpha = 0.8f))
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            stringResource(R.string.action_open_settings),
+                            color = contentColor.copy(alpha = 0.8f),
+                            fontSize = labelSizeSp.sp,
+                        )
+                    }
+                }
+            }
+        }
+        }
+
+        // Fade the list out as it scrolls off the top.
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(56.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Black.copy(alpha = 0.75f), Color.Transparent),
+                    )
+                ),
+        )
+      }
+
+      // Block all secondary touches on the list while scrubbing the alphabet,
+      // mirroring Niagara Launcher's modal scrub behavior and preventing accidental app launches.
+      if (scrub.active) {
+          Box(
+              modifier = Modifier
+                  .fillMaxSize()
+                  .pointerInput(Unit) {
+                      awaitEachGesture {
+                          val down = awaitFirstDown(requireUnconsumed = false)
+                          down.consume()
+                          while (true) {
+                              val event = awaitPointerEvent()
+                              event.changes.forEach { it.consume() }
+                              if (event.changes.none { it.pressed }) break
+                          }
+                      }
+                  },
+          )
+      }
+
+      if (showAlphabet) {
+          val pulled = collapseProvider()
+          val dismissAlpha = 1f - 0.85f * (abs(pulled) / dismissPullPx).coerceIn(0f, 1f)
+          EdgeScrubber(
+              letters = model.letters,
+              scrubY = scrubY,
+              pullPx = pullPx,
+              band = band,
+              side = activeSide,
+              sidePaddingDp = alphabetSidePaddingDp,
+              modifier = Modifier
+                  .align(if (activeSide == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd)
+                  .graphicsLayer { alpha = dismissAlpha },
+          )
+      }
+
+        appMenuFor?.let { app ->
+            val isFavorite = favoriteKeys.contains(app.key)
+            val isRootAvailable = remember { dev.viagaralauncher.update.RootInstaller.isRootAvailable() }
+            val menuItems = buildList {
+                add(
+                    dev.viagaralauncher.ui.common.AppMenuItem(
+                        title = stringResource(if (isFavorite) R.string.applist_remove_favorite else R.string.applist_add_favorite),
+                        icon = if (isFavorite) Icons.Filled.StarBorder else Icons.Filled.Star,
+                        onClick = { onSetFavorite(app, !isFavorite) },
+                    )
+                )
+                if (isRootAvailable || dev.viagaralauncher.root.log.TerminalEngine.hasReadLogsPermission(context)) {
+                    add(
+                        dev.viagaralauncher.ui.common.AppMenuItem(
+                            title = stringResource(R.string.action_inspect_logs),
+                            icon = Icons.Filled.BugReport,
+                            onClick = { logViewerFor = app },
+                        )
+                    )
+                }
+                if (isRootAvailable) {
+                    add(
+                        dev.viagaralauncher.ui.common.AppMenuItem(
+                            title = stringResource(R.string.action_root_inspect_app),
+                            icon = Icons.Filled.Terminal,
+                            onClick = { rootInspectorFor = app },
+                        )
+                    )
+                    val isCurrentlyCapturing = AppLogCaptureService.isCapturingApp(app.packageName)
+                    add(
+                        dev.viagaralauncher.ui.common.AppMenuItem(
+                            title = stringResource(if (isCurrentlyCapturing) R.string.action_stop_save_logs else R.string.action_capture_logs),
+                            icon = Icons.Filled.FiberManualRecord,
+                            onClick = {
+                                if (isCurrentlyCapturing) {
+                                    AppLogCaptureService.saveLog(context)
+                                } else {
+                                    AppLogCaptureService.startCapture(context, app.packageName, displayName(app))
+                                }
+                            },
+                        )
+                    )
+                }
+                add(
+                    dev.viagaralauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.action_edit_icon_and_name),
+                        icon = Icons.Filled.Tune,
+                        onClick = { editDialogFor = app },
+                    )
+                )
+                add(
+                    dev.viagaralauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.action_app_info),
+                        icon = Icons.Filled.Info,
+                        onClick = { onAppInfo(app) },
+                    )
+                )
+                add(
+                    dev.viagaralauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.action_move_to_folder),
+                        icon = Icons.Filled.Folder,
+                        onClick = { onMoveToFolder(app) },
+                    )
+                )
+                add(
+                    dev.viagaralauncher.ui.common.AppMenuItem(
+                        title = stringResource(R.string.applist_hide),
+                        icon = Icons.Filled.VisibilityOff,
+                        onClick = { onHideApp(app) },
+                        isDestructive = true,
+                    )
+                )
+                if (app.packageName != context.packageName) {
+                    add(
+                        dev.viagaralauncher.ui.common.AppMenuItem(
+                            title = stringResource(R.string.action_uninstall),
+                            icon = Icons.Filled.DeleteForever,
+                            onClick = {
+                                val isRoot = AppUninstallManager.isRootAvailable()
+                                val isSystem = AppUninstallManager.isSystemApp(context, app.packageName)
+                                if (isRoot) {
+                                    if (isSystem) {
+                                        confirmUninstallFor = app
+                                    } else {
+                                        val appName = displayName(app)
+                                        Toast.makeText(context, context.getString(R.string.uninstall_toast_progress, appName), Toast.LENGTH_SHORT).show()
+                                        scope.launch {
+                                            val result = AppUninstallManager.uninstallViaRoot(app.packageName)
+                                            if (result.isSuccess) {
+                                                Toast.makeText(context, context.getString(R.string.uninstall_toast_success, appName), Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                val error = result.exceptionOrNull()?.message ?: ""
+                                                Toast.makeText(context, context.getString(R.string.uninstall_toast_failed, appName, error), Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    AppUninstallManager.uninstallStandard(context, app.packageName)
+                                }
+                            },
+                            isDestructive = true,
+                        )
+                    )
+                }
+            }
+
+            dev.viagaralauncher.ui.common.AppMenuDialog(
+                app = app,
+                displayName = displayName(app),
+                onDismissRequest = { appMenuFor = null },
+                items = menuItems,
+            )
+        }
+
+        confirmUninstallFor?.let { target ->
+            val isSystem = remember(target.packageName) { AppUninstallManager.isSystemApp(context, target.packageName) }
+            val isRoot = remember { AppUninstallManager.isRootAvailable() }
+            ConfirmUninstallDialog(
+                app = target,
+                displayName = displayName(target),
+                isSystemApp = isSystem,
+                onDismissRequest = { confirmUninstallFor = null },
+                onConfirm = {
+                    confirmUninstallFor = null
+                    val appName = displayName(target)
+                    if (isRoot) {
+                        Toast.makeText(context, context.getString(R.string.uninstall_toast_progress, appName), Toast.LENGTH_SHORT).show()
+                        scope.launch {
+                            val result = AppUninstallManager.uninstallViaRoot(target.packageName)
+                            if (result.isSuccess) {
+                                Toast.makeText(context, context.getString(R.string.uninstall_toast_success, appName), Toast.LENGTH_SHORT).show()
+                            } else {
+                                val error = result.exceptionOrNull()?.message ?: ""
+                                Toast.makeText(context, context.getString(R.string.uninstall_toast_failed, appName, error), Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        AppUninstallManager.uninstallStandard(context, target.packageName)
+                    }
+                },
+            )
+        }
+
+        rootInspectorFor?.let { target ->
+            dev.viagaralauncher.ui.root.AppRootInspectorDialog(
+                app = target,
+                displayName = displayName(target),
+                onDismissRequest = { rootInspectorFor = null },
+            )
+        }
+
+        logViewerFor?.let { target ->
+            dev.viagaralauncher.ui.root.AppLogViewerDialog(
+                initialApp = target,
+                onDismissRequest = { logViewerFor = null },
+            )
+        }
+
+        editDialogFor?.let { target ->
+            EditAppDialog(
+                currentName = displayName(target),
+                onConfirmName = { name -> onSetName(target, name); editDialogFor = null },
+                onChangeIcon = { onChangeIcon(target); editDialogFor = null },
+                onDismiss = { editDialogFor = null },
+            )
+        }
+
+        activeDialogNotification?.let { (notif, app) ->
+            val appNotifications = notificationsByPackage[app.packageName].orEmpty()
+            val context = LocalContext.current
+            dev.viagaralauncher.ui.notification.NotificationDetailDialog(
+                item = notif,
+                allNotifications = appNotifications,
+                appInfo = app,
+                appName = displayName(app),
+                onDismissRequest = { activeDialogNotification = null },
+                onOpen = { targetNotif ->
+                    activeDialogNotification = null
+                    dev.viagaralauncher.notification.NotificationBus.launchNotification(
+                        context = context,
+                        item = targetNotif,
+                        appInfo = app,
+                        onLaunchFallback = { onLaunch(app, null) },
+                    )
+                    currentDismiss()
+                },
+                onDismissNotification = { targetNotif ->
+                    dev.viagaralauncher.notification.NotificationBus.dismissNotification(targetNotif.key)
+                    val remaining = notificationsByPackage[app.packageName].orEmpty().filter { it.key != targetNotif.key }
+                    if (remaining.isEmpty()) {
+                        activeDialogNotification = null
+                    } else {
+                        activeDialogNotification = remaining.first() to app
+                    }
+                },
+            )
+        }
+
+        // Bubble for the current letter, dragged out from the strip and springing back.
+        if (scrubLetter != null) {
+            val bubble = 72.dp
+            val halfPx = with(density) { (bubble / 2).toPx() }
+            val insetPx = with(density) { 122.dp.toPx() }
+            Surface(
+                color = Color.Black.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(22.dp),
+                modifier = Modifier
+                    .align(if (activeSide == EdgeSide.LEFT) Alignment.TopStart else Alignment.TopEnd)
+                    .offset {
+                        val x = insetPx + pullPx()
+                        IntOffset(
+                            x = if (activeSide == EdgeSide.LEFT) x.roundToInt() else -x.roundToInt(),
+                            y = ((scrubY() ?: 0f) - halfPx).roundToInt(),
+                        )
+                    }
+                    .size(bubble),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    if (scrubLetter == SCRUBBER_STAR) {
+                        Icon(
+                            imageVector = Icons.Rounded.Star,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(38.dp),
+                        )
+                    } else {
+                        Text(
+                            scrubLetter.toString(),
+                            color = Color.White,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+
+        if (searchButtonEnabled && visible) {
+            val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            val searchButtonBottom = maxOf(80.dp, navBarBottom + 68.dp)
+            val isLeft = activeSide == EdgeSide.LEFT
+            val searchBtnAlignment = if (isLeft) Alignment.BottomStart else Alignment.BottomEnd
+            val searchBtnSidePadding = (alphabetSidePaddingDp + 38).coerceAtLeast(58).dp
+
+            val isScrolling by remember { derivedStateOf { listState.isScrollInProgress } }
+            val isScrolled by remember {
+                derivedStateOf {
+                    listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 30
+                }
+            }
+            val showButton = (isScrolling || isScrolled) && scrubLetter == null
+
+            AnimatedVisibility(
+                visible = showButton,
+                enter = fadeIn(animationSpec = tween(200)) + scaleIn(
+                    initialScale = 0.65f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
+                ),
+                exit = fadeOut(animationSpec = tween(160)) + scaleOut(
+                    targetScale = 0.65f,
+                    animationSpec = tween(160),
+                ),
+                modifier = Modifier
+                    .align(searchBtnAlignment)
+                    .padding(
+                        start = if (isLeft) searchBtnSidePadding else 0.dp,
+                        end = if (!isLeft) searchBtnSidePadding else 0.dp,
+                        bottom = searchButtonBottom,
+                    )
+                    .zIndex(2f),
+            ) {
+                AppListFloatingSearchButton(
+                    hapticsEnabled = hapticsEnabled,
+                    onClick = onOpenSearch,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppListFloatingSearchButton(
+    hapticsEnabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    val pressScale = remember { Animatable(1f) }
+    val pressSpring = remember {
+        spring<Float>(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        )
+    }
+
+    val buttonSizeDp = 54.dp
+    val surfaceColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.88f)
+    val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+
+    Box(
+        modifier = modifier
+            .size(buttonSizeDp)
+            .graphicsLayer {
+                scaleX = pressScale.value
+                scaleY = pressScale.value
+            }
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = Color.Black.copy(alpha = 0.25f),
+                spotColor = Color.Black.copy(alpha = 0.35f),
+            )
+            .clip(RoundedCornerShape(22.dp))
+            .background(surfaceColor)
+            .border(
+                BorderStroke(1.dp, borderColor),
+                shape = RoundedCornerShape(22.dp),
+            )
+            .pointerInput(hapticsEnabled) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    down.consume()
+                    scope.launch { pressScale.animateTo(0.88f, pressSpring) }
+                    val up = waitForUpOrCancellation()
+                    if (up != null) {
+                        up.consume()
+                        HapticUtil.tick(view, hapticsEnabled)
+                        scope.launch {
+                            pressScale.animateTo(1.08f, pressSpring)
+                            pressScale.animateTo(1.0f, pressSpring)
+                        }
+                        onClick()
+                    } else {
+                        scope.launch { pressScale.animateTo(1.0f, pressSpring) }
+                    }
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Search,
+            contentDescription = stringResource(R.string.settings_search_title),
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+    }
+}
+
+@Composable
+private fun SectionHeader(
+    text: String,
+    labelSizeSp: Int,
+    contentColor: Color,
+    alignRight: Boolean,
+    startPadding: Dp = 20.dp,
+    endPadding: Dp = 20.dp,
+) {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(start = startPadding, end = endPadding),
+        contentAlignment = if (alignRight) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Text(
+            text = text,
+            color = contentColor,
+            fontSize = (labelSizeSp + 2).sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 18.dp, bottom = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun AppRow(
+    contentColor: Color,
+    alignRight: Boolean,
+    touchPosition: MutableState<Offset>,
+    app: AppInfo,
+    label: String,
+    iconSizeDp: Int,
+    labelSizeSp: Int,
+    isFavorite: Boolean,
+    onLaunch: (Rect?) -> Unit,
+    onLongPress: (DpOffset) -> Unit,
+    notification: dev.viagaralauncher.notification.AppNotificationItem? = null,
+    onNotificationClick: (dev.viagaralauncher.notification.AppNotificationItem) -> Unit = {},
+    startPadding: Dp = 20.dp,
+    endPadding: Dp = 20.dp,
+    enabled: Boolean = true,
+) {
+    // Same press treatment as the home screen: the stock ripple all but vanishes against a
+    // wallpaper, and without any feedback a tap that did register reads as one that didn't.
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.95f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "appRowPressScale",
+    )
+    val density = LocalDensity.current
+    var iconBounds by remember { mutableStateOf<Rect?>(null) }
+
+    val iconModifier = Modifier.onGloballyPositioned { coords ->
+        if (coords.isAttached) {
+            val b = coords.boundsInWindow()
+            val r = Rect(
+                b.left.toInt(),
+                b.top.toInt(),
+                b.right.toInt(),
+                b.bottom.toInt(),
+            )
+            iconBounds = r
+            dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(app.packageName, r)
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            // Ahead of the inset, so the long-press menu is still placed against the
+            // whole row rather than 20dp to the left of the finger.
+            .then(if (enabled) Modifier.recordTouchPosition(touchPosition) else Modifier)
+            .padding(
+                start = (startPadding - 8.dp).coerceAtLeast(0.dp),
+                end = (endPadding - 8.dp).coerceAtLeast(0.dp),
+            )
+            .background(
+                color = if (pressed) contentColor.copy(alpha = 0.15f) else Color.Transparent,
+                shape = RoundedCornerShape(18.dp),
+            )
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                enabled = enabled,
+                onClick = { onLaunch(iconBounds) },
+                onLongClick = {
+                    onLongPress(
+                        with(density) {
+                            DpOffset(touchPosition.value.x.toDp(), touchPosition.value.y.toDp())
+                        }
+                    )
+                },
+            )
+            // The whole row is the target, not the label: at small icon sizes the strip
+            // left to tap was thinner than a fingertip.
+            .heightIn(min = MIN_ROW_HEIGHT)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val notificationContent: @Composable () -> Unit = {
+            if (notification != null) {
+                val notifText = if (notification.messages.isNotEmpty()) {
+                    val lastMsg = notification.messages.last()
+                    val countSuffix = if (notification.messages.size > 1) " (${notification.messages.size})" else ""
+                    if (notification.title.isNotBlank()) {
+                        "${notification.title}: ${lastMsg.text}$countSuffix"
+                    } else {
+                        "${lastMsg.text}$countSuffix"
+                    }
+                } else if (notification.text.isNotBlank()) {
+                    "${notification.title}: ${notification.text}"
+                } else {
+                    notification.title
+                }
+                Text(
+                    text = notifText,
+                    color = contentColor.copy(alpha = 0.65f),
+                    fontSize = (labelSizeSp - 3).coerceAtLeast(11).sp,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            enabled = enabled,
+                            onClick = { onNotificationClick(notification) },
+                        ),
+                )
+            }
+        }
+
+        if (alignRight) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.End,
+            ) {
+                Text(
+                    label,
+                    color = contentColor,
+                    fontSize = labelSizeSp.sp,
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                notificationContent()
+            }
+            Spacer(Modifier.width(16.dp))
+            AppIcon(app = app, sizeDp = iconSizeDp, modifier = iconModifier)
+        } else {
+            AppIcon(app = app, sizeDp = iconSizeDp, modifier = iconModifier)
+            Spacer(Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(
+                    label,
+                    color = contentColor,
+                    fontSize = labelSizeSp.sp,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                notificationContent()
+            }
+        }
+    }
+}

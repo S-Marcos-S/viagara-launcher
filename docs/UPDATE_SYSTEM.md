@@ -1,6 +1,6 @@
-# 🔄 Sistema de Atualização Integrada do Victoria Launcher
+# 🔄 Sistema de Atualização Integrada do Viagara Launcher
 
-Este documento descreve a arquitetura, o fluxo de dados, a camada de rede e a experiência do usuário do sistema de atualizações integradas (**In-App Updates**) do **Victoria Launcher**.
+Este documento descreve a arquitetura, o fluxo de dados, a camada de rede e a experiência do usuário do sistema de atualizações integradas (**In-App Updates**) do **Viagara Launcher**.
 
 ---
 
@@ -19,12 +19,12 @@ Este documento descreve a arquitetura, o fluxo de dados, a camada de rede e a ex
 
 ## 1. Visão Geral da Arquitetura
 
-O sistema de atualização permite que o Victoria Launcher descubra novas versões compiladas pelo GitHub Actions, alerte o usuário de maneira discreta, baixe o APK assinado diretamente pela internet e solicite a instalação sem depender da Google Play Store.
+O sistema de atualização permite que o Viagara Launcher descubra novas versões compiladas pelo GitHub Actions, alerte o usuário de maneira discreta, baixe o APK assinado diretamente pela internet e solicite a instalação sem depender da Google Play Store.
 
 ### Arquivos Principais:
-- [`UpdateManager.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/update/UpdateManager.kt): Objeto singleton (`UpdateManager`) que encapsula requisições à API do GitHub, gerenciamento de notificações, streaming de download e disparo do instalador de pacotes.
-- [`UpdateChangelogDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/home/UpdateChangelogDialog.kt): Modal translúcido com renderização de markdown que exibe as notas de versão e o progresso em tempo real.
-- [`MainActivity.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/MainActivity.kt): Trata a permissão `POST_NOTIFICATIONS` e captura o `PendingIntent` de abertura do diálogo.
+- [`UpdateManager.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/update/UpdateManager.kt): Objeto singleton (`UpdateManager`) que encapsula requisições à API do GitHub, gerenciamento de notificações, streaming de download e disparo do instalador de pacotes.
+- [`UpdateChangelogDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/home/UpdateChangelogDialog.kt): Modal translúcido com renderização de markdown que exibe as notas de versão e o progresso em tempo real.
+- [`MainActivity.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/MainActivity.kt): Trata a permissão `POST_NOTIFICATIONS` e captura o `PendingIntent` de abertura do diálogo.
 
 ---
 
@@ -33,7 +33,7 @@ O sistema de atualização permite que o Victoria Launcher descubra novas versõ
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as VictoriaApp / UI
+    participant App as ViagaraApp / UI
     participant UM as UpdateManager
     participant GH as GitHub Releases API
     participant Notif as Notificação do Android
@@ -41,14 +41,14 @@ sequenceDiagram
     participant Inst as Android PackageInstaller
 
     App->>UM: checkForUpdates(manual = false)
-    UM->>GH: GET /repos/S-Marcos-S/victoria-launcher/releases
+    UM->>GH: GET /repos/S-Marcos-S/viagra-launcher/releases
     GH-->>UM: JSON (tag_name, body, assets)
     UM->>UM: Comparar Versões (VersionCode / Semantic)
     alt Nova Versão Disponível
-        UM->>Notif: Emitir Notificação (Canal: victoria_launcher_updates)
-        Note over Notif: "Victoria Launcher vX.Y.Z disponível"
+        UM->>Notif: Emitir Notificação (Canal: viagara_launcher_updates)
+        Note over Notif: "Viagara Launcher vX.Y.Z disponível"
         User->>Notif: Toca na Notificação
-        Notif->>App: Intent dev.victorialauncher.action.OPEN_UPDATE_CHANGELOG
+        Notif->>App: Intent dev.viagaralauncher.action.OPEN_UPDATE_CHANGELOG
         App->>UM: requestShowChangelog()
         App->>User: Exibe UpdateChangelogDialog
         User->>App: Toca em "Baixar e Atualizar"
@@ -71,9 +71,9 @@ sequenceDiagram
 Anteriormente, o diálogo de atualização surgia automaticamente na tela inicial, interrompendo o uso do launcher. 
 
 Na arquitetura atual:
-1. **Canal de Notificação Dedicado:** Criado em [`UpdateManager.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/update/UpdateManager.kt):
-   - ID: `victoria_launcher_updates`
-   - Nome: `"Atualizações do Victoria Launcher"`
+1. **Canal de Notificação Dedicado:** Criado em [`UpdateManager.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/update/UpdateManager.kt):
+   - ID: `viagara_launcher_updates`
+   - Nome: `"Atualizações do Viagara Launcher"`
    - Importância: `IMPORTANCE_DEFAULT`
 2. **Controle de Notificação Duplicada:** O `UpdateManager` armazena em SharedPreferences a chave da última versão notificada (`last_notified_update`), garantindo que o usuário receba apenas um aviso por nova versão.
 3. **Acesso Direto sob Demanda:** Ao tocar na notificação, um `PendingIntent` com a flag `FLAG_UPDATE_CURRENT` e `FLAG_IMMUTABLE` ativa a `MainActivity`, abrindo imediatamente a janela de mudanças.
@@ -82,7 +82,7 @@ Na arquitetura atual:
 
 ## 4. Diálogo de Mudanças ("O que há de novo")
 
-O diálogo flutuante ([`UpdateChangelogDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/home/UpdateChangelogDialog.kt)) possui as seguintes características:
+O diálogo flutuante ([`UpdateChangelogDialog.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/home/UpdateChangelogDialog.kt)) possui as seguintes características:
 
 - **Efeito Visual Glassmorphism:** Fundo translúcido com `dynamicSurfaceColor` e contorno suave com `dynamicBorderColor`.
 - **Renderização Estruturada de Markdown:** Interpreta seções, cabeçalhos (`###`), listas com marcadores (`-`) e textos em negrito (`**`).
@@ -128,7 +128,7 @@ context.startActivity(installIntent)
 - **Permissão `REQUEST_INSTALL_PACKAGES`:** Declarada no manifesto para permitir que o launcher invoque a instalação de APKs baixados.
 
 ### B. Instalação Direta via Root (`su` - Bypass do Play Protect)
-Em aparelhos rooteados (Magisk, KernelSU, APatch), o Victoria Launcher oferece instalação silenciosa direta via `dev.victorialauncher.update.RootInstaller`:
+Em aparelhos rooteados (Magisk, KernelSU, APatch), o Viagara Launcher oferece instalação silenciosa direta via `dev.viagaralauncher.update.RootInstaller`:
 - **Comando do Sistema:** Executa `pm install -r -d -g -t` como superusuário a partir de área segura (`/data/local/tmp`).
 - **Sem Telas Intermediárias:** Não exibe a interface do instalador de pacotes do Android nem solicita confirmação do usuário.
 - **Bypass do Google Play Protect:** O comando `pm install` executado via `root` atua diretamente no `PackageManagerService` do Android, contornando completamente os avisos e bloqueios do Google Play Protect ("Verificando app...", "App de desenvolvedor desconhecido").
@@ -141,8 +141,8 @@ Em aparelhos rooteados (Magisk, KernelSU, APatch), o Victoria Launcher oferece i
 Para que o arquivo APK baixado não ocupe armazenamento na pasta de Downloads do usuário após a conclusão da atualização:
 1. **Modo Root:** O APK baixado é apagado imediatamente pelo `UpdateManager.cleanupDownloadedApk(context, force = true)` assim que o comando `pm install` retorna `Success`.
 2. **Modo Convencional:**
-   - O receptor de sistema [`MyPackageReplacedReceiver`](file:///c:/Users/Marcos/projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/update/MyPackageReplacedReceiver.kt) escuta a ação nativa `android.intent.action.MY_PACKAGE_REPLACED`.
-   - Na inicialização do aplicativo em `VictoriaApp.onCreate()`, `UpdateManager.cleanupDownloadedApk(this)` verifica se a versão ou commit atual em execução é mais recente que os metadados gravados durante o download.
+   - O receptor de sistema [`MyPackageReplacedReceiver`](file:///c:/Users/Marcos/projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/update/MyPackageReplacedReceiver.kt) escuta a ação nativa `android.intent.action.MY_PACKAGE_REPLACED`.
+   - Na inicialização do aplicativo em `ViagaraApp.onCreate()`, `UpdateManager.cleanupDownloadedApk(this)` verifica se a versão ou commit atual em execução é mais recente que os metadados gravados durante o download.
    - O arquivo é removido com sucesso tanto do `MediaStore.Downloads` (Android 10+) quanto da pasta física de Downloads (`Environment.DIRECTORY_DOWNLOADS`).
 
 ---

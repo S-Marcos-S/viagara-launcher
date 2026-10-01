@@ -1,6 +1,6 @@
-# 💾 Camada de Dados, Persistência e Gerenciamento de Memória do Victoria Launcher
+# 💾 Camada de Dados, Persistência e Gerenciamento de Memória do Viagara Launcher
 
-Este documento aborda a arquitetura de persistência, modelos de dados, serialização, repositórios de sistema e técnicas de gerenciamento de memória e cache de bitmaps implementadas no **Victoria Launcher**.
+Este documento aborda a arquitetura de persistência, modelos de dados, serialização, repositórios de sistema e técnicas de gerenciamento de memória e cache de bitmaps implementadas no **Viagara Launcher**.
 
 ---
 
@@ -17,7 +17,7 @@ Este documento aborda a arquitetura de persistência, modelos de dados, serializ
 
 ## 1. Jetpack DataStore Preferences
 
-O Victoria Launcher utiliza **Jetpack DataStore Preferences** como fonte única da verdade para todas as configurações, ordenação de itens e customizações.
+O Viagara Launcher utiliza **Jetpack DataStore Preferences** como fonte única da verdade para todas as configurações, ordenação de itens e customizações.
 
 ```
                   ┌──────────────────────┐
@@ -44,7 +44,7 @@ O Victoria Launcher utiliza **Jetpack DataStore Preferences** como fonte única 
 
 ## 2. Tabela de Chaves de Preferência (`Prefs.Keys`)
 
-O arquivo [`Prefs.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/data/Prefs.kt) define todas as chaves persistentes do launcher:
+O arquivo [`Prefs.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/data/Prefs.kt) define todas as chaves persistentes do launcher:
 
 | Chave | Tipo | Valor Padrão | Finalidade |
 |---|---|---|---|
@@ -80,13 +80,13 @@ O arquivo [`Prefs.kt`](file:///data/data/com.termux/files/home/storage/kotlin_pr
 
 ## 3. Modelos de Dados e Estratégias de Serialização
 
-### Modelo `AppInfo` ([`AppInfo.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/data/AppInfo.kt))
+### Modelo `AppInfo` ([`AppInfo.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/data/AppInfo.kt))
 Representa um aplicativo instalador com intenção de inicialização:
 - `componentName`: `ComponentName` oficial do Android.
 - `label`: Nome padrão fornecido pelo manifesto do aplicativo.
 - `key`: Chave achatada única (`componentName.flattenToShortString()`).
 
-### Modelo `Folder` ([`Folder.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/data/Folder.kt))
+### Modelo `Folder` ([`Folder.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/data/Folder.kt))
 - `id`: UUID identificador único gerado no momento da criação.
 - `name`: Nome da pasta.
 - `apps`: Lista sequencial de chaves (`AppInfo.key`) contidas na pasta.
@@ -95,13 +95,13 @@ Representa um aplicativo instalador com intenção de inicialização:
 ### Tokenização dos Favoritos:
 Na preferência `favorites_order`, itens são armazenados como linhas separadas por `\n`:
 - Se a linha iniciar com `folder:`, trata-se do token de uma pasta (ex: `folder:8f9a2b...`).
-- Caso contrário, trata-se da chave do aplicativo (`dev.victorialauncher/.MainActivity`).
+- Caso contrário, trata-se da chave do aplicativo (`dev.viagaralauncher/.MainActivity`).
 
 ---
 
 ## 4. Repositório de Aplicativos (`AppRepository`)
 
-O [`AppRepository.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/data/AppRepository.kt) conecta o launcher ao serviço `PackageManager` do sistema operacional:
+O [`AppRepository.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/data/AppRepository.kt) conecta o launcher ao serviço `PackageManager` do sistema operacional:
 
 ```kotlin
 val intent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -115,7 +115,7 @@ val resolveInfos = packageManager.queryIntentActivities(intent, 0)
 
 ## 5. Mecanismo de Pacotes de Ícones (`IconPackRepository`)
 
-O [`IconPackRepository.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/data/IconPackRepository.kt) provê suporte a temas de ícones de terceiros compatíveis com o padrão do Nova/Apex:
+O [`IconPackRepository.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/data/IconPackRepository.kt) provê suporte a temas de ícones de terceiros compatíveis com o padrão do Nova/Apex:
 
 1. **Descoberta de Pacotes:** Consulta pacotes instalados que declarem intents de suporte a temas de ícones (`org.adw.launcher.THEMES`, `com.novalauncher.THEME`, etc.).
 2. **Análise de `appfilter.xml`:** Faz o parsing eficiente via `XmlResourceParser` dos mapeamentos entre o `ComponentName` de cada aplicativo e o identificador do recurso desenhável (drawable).
@@ -127,7 +127,7 @@ O [`IconPackRepository.kt`](file:///data/data/com.termux/files/home/storage/kotl
 
 Ícones de aplicativos em dispositivos móveis modernos possuem resoluções de até 192x192 ou 256x256 pixels em densidades `xxxhdpi`. Em formato ARGB_8888, cada ícone ocupa cerca de **400 KB a 500 KB** de memória RAM.
 
-### Solução Arquitetural ([`AppIcon.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/ui/common/AppIcon.kt)):
+### Solução Arquitetural ([`AppIcon.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/viagaralauncher/ui/common/AppIcon.kt)):
 
 ```kotlin
 val maxMemory = Runtime.getRuntime().maxMemory()
