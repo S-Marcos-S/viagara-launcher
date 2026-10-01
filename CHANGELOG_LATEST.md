@@ -11,6 +11,9 @@
   - **Consumo por Componente de Hardware:** Discriminação do consumo em mAh de processamento (CPU), CPU acordada (Wakelocks), dados móveis (4G/5G) e conexões Wi-Fi.
   - **Atalho Rápido de Otimização:** Botão integrado com acesso direto às opções de restrição e otimização de bateria do sistema operacional para o aplicativo selecionado.
 
+- **Atualização da Apresentação Visual no README:**
+  - **Novos Mockups em Alta Definição:** Substituição da imagem do banner no `README.md` principal por capturas reais do launcher com moldura de dispositivo, apresentando em alta fidelidade a **Tela Inicial** (widgets, notificações e scrubber alfabético), a **Pesquisa Universal**, o **Gerenciador de Processos** e o **Monitor de Desempenho** (CPU por núcleos, RAM e Rede).
+
 ---
 
 ### 🚀 Novidades e Melhorias da Versão 0.59.42

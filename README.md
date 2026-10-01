@@ -2,7 +2,12 @@
 
 Um launcher minimalista e elegante para Android baseado em lista — uma alternativa de código aberto inspirada no [Niagara Launcher](https://niagaralauncher.app).
 
-![Viagra Launcher](docs/banner.png)
+<p align="center">
+  <img src="docs/screenshots/screenshot_home.png" width="24%" alt="Tela Inicial" />
+  <img src="docs/screenshots/screenshot_search.png" width="24%" alt="Pesquisa Universal" />
+  <img src="docs/screenshots/screenshot_processes.png" width="24%" alt="Gerenciador de Processos" />
+  <img src="docs/screenshots/screenshot_performance.png" width="24%" alt="Monitor de Desempenho" />
+</p>
 
 ---
 
