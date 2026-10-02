@@ -11,8 +11,43 @@ permissions:
   contents: write
 
 jobs:
+  check-version:
+    name: Check Version in Commit
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Check commit message for version
+        id: check
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Workflow manually triggered via workflow_dispatch, proceeding with build."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Inspecting commit message:"
+          printf '%s\n' "$COMMIT_MSG"
+
+          # Match version pattern like v0.59.48, 0.59.48, v1.0.0, 1.0.0, etc.
+          if printf '%s' "$COMMIT_MSG" | grep -qE '\b(v?[0-9]+\.[0-9]+(\.[0-9]+)?)\b'; then
+            DETECTED_VERSION=$(printf '%s' "$COMMIT_MSG" | grep -oE '\b(v?[0-9]+\.[0-9]+(\.[0-9]+)?)\b' | head -n 1)
+            echo "Version number detected in commit: $DETECTED_VERSION. Proceeding with build."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            echo "version=$DETECTED_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "No version number found in commit message. Skipping build."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     name: Build Release APK
+    needs: check-version
+    if: needs.check-version.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

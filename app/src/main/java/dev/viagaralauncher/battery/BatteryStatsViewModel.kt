@@ -105,7 +105,12 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     suspend fun resetStats(): Boolean {
         return try {
             if (_hasAdvanced.value) {
-                collector.resetStats()
+                val ok = collector.resetStats()
+                if (ok) {
+                    drainTracker.resetSession()
+                    DrainNotificationManager.getInstance(context).updateNow()
+                }
+                ok
             } else false
         } catch (_: Exception) {
             false

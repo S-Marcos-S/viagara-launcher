@@ -426,7 +426,11 @@ def main():
         conclusion = details.get("conclusion")
 
         if status == "completed":
-            if conclusion == "success":
+            build_job = next((j for j in details.get("jobs", []) if "Build" in j.get("name", "")), None)
+            if build_job and build_job.get("conclusion") == "skipped":
+                print(f"\n{C_YELLOW}ℹ️  A compilação do APK foi pulada (skipped) porque o commit não continha um número de versão.{C_RESET}")
+                print(f"{C_DIM}Para disparar uma nova build automática, inclua o número da versão na mensagem de commit (ex: v0.59.48).{C_RESET}")
+            elif conclusion == "success":
                 print(f"\n{C_GREEN}✓ Todas as etapas foram concluídas com sucesso!{C_RESET}")
                 download_and_install_apk(repo, run_id)
             else:

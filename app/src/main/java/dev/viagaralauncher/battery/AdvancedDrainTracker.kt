@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
@@ -33,6 +34,42 @@ class AdvancedDrainTracker private constructor(
         private const val TAG = "AdvancedDrainTracker"
         private const val DEEP_SLEEP_THRESHOLD_MS = 30_000L
         private const val DEFAULT_INTERVAL_MS = 60_000L
+
+        private const val PREFS_NAME = "battery_drain_session"
+        private const val KEY_HAS_SESSION = "has_session"
+        private const val KEY_SESSION_START_TIME = "session_start_time"
+        private const val KEY_SESSION_START_REALTIME = "session_start_realtime"
+        private const val KEY_SESSION_START_UPTIME = "session_start_uptime"
+        private const val KEY_LAST_SAVE_TIME = "last_save_time"
+        private const val KEY_LAST_SAVE_REALTIME = "last_save_realtime"
+        private const val KEY_LAST_SCREEN_STATE = "last_screen_state"
+        private const val KEY_LAST_SCREEN_CHANGE_REALTIME = "last_screen_change_realtime"
+        private const val KEY_BOOT_TIME = "boot_time"
+        private const val KEY_BOOT_ID = "boot_id"
+        private const val KEY_BOOT_COUNT = "boot_count"
+
+        private const val KEY_CUMULATIVE_SCREEN_ON_TIME = "cumulative_screen_on_time"
+        private const val KEY_CUMULATIVE_SCREEN_OFF_TIME = "cumulative_screen_off_time"
+        private const val KEY_CUMULATIVE_DEEP_SLEEP_TIME = "cumulative_deep_sleep_time"
+        private const val KEY_CUMULATIVE_AWAKE_TIME = "cumulative_awake_time"
+        private const val KEY_CUMULATIVE_ACTIVE_TIME = "cumulative_active_time"
+        private const val KEY_CUMULATIVE_IDLE_TIME = "cumulative_idle_time"
+
+        private const val KEY_CUMULATIVE_SCREEN_ON_DRAIN = "cumulative_screen_on_drain"
+        private const val KEY_CUMULATIVE_SCREEN_OFF_DRAIN = "cumulative_screen_off_drain"
+        private const val KEY_CUMULATIVE_DEEP_SLEEP_DRAIN = "cumulative_deep_sleep_drain"
+        private const val KEY_CUMULATIVE_AWAKE_DRAIN = "cumulative_awake_drain"
+        private const val KEY_CUMULATIVE_ACTIVE_DRAIN = "cumulative_active_drain"
+        private const val KEY_CUMULATIVE_IDLE_DRAIN = "cumulative_idle_drain"
+
+        private const val KEY_LAST_BATTERY_MAH = "last_battery_mah"
+        private const val KEY_LAST_BATTERY_LEVEL = "last_battery_level"
+
+        private fun SharedPreferences.Editor.putDouble(key: String, value: Double): SharedPreferences.Editor =
+            putLong(key, java.lang.Double.doubleToRawLongBits(value))
+
+        private fun SharedPreferences.getDouble(key: String, default: Double): Double =
+            java.lang.Double.longBitsToDouble(getLong(key, java.lang.Double.doubleToRawLongBits(default)))
 
         @Volatile
         private var instance: AdvancedDrainTracker? = null
@@ -138,17 +175,215 @@ class AdvancedDrainTracker private constructor(
 
     fun isRunning(): Boolean = running.get()
 
+    private fun getBootId(): String? {
+        return try {
+            val file = java.io.File("/proc/sys/kernel/random/boot_id")
+            if (file.exists() && file.canRead()) file.readText().trim() else null
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun getBootCount(): Int {
+        return try {
+            android.provider.Settings.Global.getInt(
+                context.contentResolver,
+                android.provider.Settings.Global.BOOT_COUNT,
+                -1
+            )
+        } catch (_: Throwable) {
+            -1
+        }
+    }
+
+    private fun isRebootDetected(prefs: SharedPreferences): Boolean {
+        val nowRealtime = SystemClock.elapsedRealtime()
+        val savedLastSaveRealtime = prefs.getLong(KEY_LAST_SAVE_REALTIME, 0L)
+        if (savedLastSaveRealtime > 0L && nowRealtime < savedLastSaveRealtime) {
+            Log.i(TAG, "Reboot detected: elapsedRealtime ($nowRealtime) < savedRealtime ($savedLastSaveRealtime)")
+            return true
+        }
+
+        val savedBootId = prefs.getString(KEY_BOOT_ID, null)
+        val currentBootId = getBootId()
+        if (!savedBootId.isNullOrEmpty() && !currentBootId.isNullOrEmpty() && savedBootId != currentBootId) {
+            Log.i(TAG, "Reboot detected: boot_id mismatch ($savedBootId != $currentBootId)")
+            return true
+        }
+
+        val savedBootCount = prefs.getInt(KEY_BOOT_COUNT, -1)
+        val currentBootCount = getBootCount()
+        if (savedBootCount != -1 && currentBootCount != -1 && savedBootCount != currentBootCount) {
+            Log.i(TAG, "Reboot detected: boot_count mismatch ($savedBootCount != $currentBootCount)")
+            return true
+        }
+
+        val savedBootTime = prefs.getLong(KEY_BOOT_TIME, 0L)
+        val currentBootTime = System.currentTimeMillis() - nowRealtime
+        if (savedBootTime > 0L && abs(currentBootTime - savedBootTime) > 120_000L) {
+            Log.i(TAG, "Reboot detected: boot time shifted by ${abs(currentBootTime - savedBootTime)}ms")
+            return true
+        }
+
+        return false
+    }
+
+    @Synchronized
+    fun saveSession() {
+        try {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val now = System.currentTimeMillis()
+            val nowRealtime = SystemClock.elapsedRealtime()
+
+            val pending = (nowRealtime - lastScreenChangeRealtime).coerceAtLeast(0L)
+            val screenOnTotal = cumulativeScreenOnTime + if (lastScreenState) pending else 0L
+            val screenOffTotal = cumulativeScreenOffTime + if (!lastScreenState) pending else 0L
+
+            prefs.edit().apply {
+                putBoolean(KEY_HAS_SESSION, true)
+                putLong(KEY_SESSION_START_TIME, sessionStartTime)
+                putLong(KEY_SESSION_START_REALTIME, sessionStartRealtime)
+                putLong(KEY_SESSION_START_UPTIME, sessionStartUptime)
+                putLong(KEY_LAST_SAVE_TIME, now)
+                putLong(KEY_LAST_SAVE_REALTIME, nowRealtime)
+                putBoolean(KEY_LAST_SCREEN_STATE, lastScreenState)
+                putLong(KEY_LAST_SCREEN_CHANGE_REALTIME, lastScreenChangeRealtime)
+
+                putLong(KEY_BOOT_TIME, now - nowRealtime)
+                getBootId()?.let { putString(KEY_BOOT_ID, it) }
+                val bootCount = getBootCount()
+                if (bootCount != -1) putInt(KEY_BOOT_COUNT, bootCount)
+
+                putLong(KEY_CUMULATIVE_SCREEN_ON_TIME, screenOnTotal)
+                putLong(KEY_CUMULATIVE_SCREEN_OFF_TIME, screenOffTotal)
+                putLong(KEY_CUMULATIVE_DEEP_SLEEP_TIME, cumulativeDeepSleepTime)
+                putLong(KEY_CUMULATIVE_AWAKE_TIME, cumulativeAwakeTime)
+                putLong(KEY_CUMULATIVE_ACTIVE_TIME, cumulativeActiveTime)
+                putLong(KEY_CUMULATIVE_IDLE_TIME, cumulativeIdleTime)
+
+                putDouble(KEY_CUMULATIVE_SCREEN_ON_DRAIN, cumulativeScreenOnDrain)
+                putDouble(KEY_CUMULATIVE_SCREEN_OFF_DRAIN, cumulativeScreenOffDrain)
+                putDouble(KEY_CUMULATIVE_DEEP_SLEEP_DRAIN, cumulativeDeepSleepDrain)
+                putDouble(KEY_CUMULATIVE_AWAKE_DRAIN, cumulativeAwakeDrain)
+                putDouble(KEY_CUMULATIVE_ACTIVE_DRAIN, cumulativeActiveDrain)
+                putDouble(KEY_CUMULATIVE_IDLE_DRAIN, cumulativeIdleDrain)
+
+                lastSnapshot?.batteryMah?.let { putDouble(KEY_LAST_BATTERY_MAH, it) }
+                lastSnapshot?.batteryLevel?.let { putInt(KEY_LAST_BATTERY_LEVEL, it) }
+                apply()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save battery drain session", e)
+        }
+    }
+
+    @Synchronized
+    fun restoreSession(): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (!prefs.getBoolean(KEY_HAS_SESSION, false)) {
+            Log.i(TAG, "No active battery drain session to restore")
+            return false
+        }
+
+        if (isRebootDetected(prefs)) {
+            Log.i(TAG, "Device reboot detected since last session. Clearing saved session.")
+            clearSavedSession()
+            return false
+        }
+
+        return try {
+            val now = System.currentTimeMillis()
+            val nowRealtime = SystemClock.elapsedRealtime()
+            val savedLastSaveRealtime = prefs.getLong(KEY_LAST_SAVE_REALTIME, nowRealtime)
+
+            sessionStartTime = prefs.getLong(KEY_SESSION_START_TIME, now)
+            sessionStartRealtime = prefs.getLong(KEY_SESSION_START_REALTIME, nowRealtime)
+            sessionStartUptime = prefs.getLong(KEY_SESSION_START_UPTIME, SystemClock.uptimeMillis())
+
+            var screenOnTime = prefs.getLong(KEY_CUMULATIVE_SCREEN_ON_TIME, 0L)
+            var screenOffTime = prefs.getLong(KEY_CUMULATIVE_SCREEN_OFF_TIME, 0L)
+            cumulativeDeepSleepTime = prefs.getLong(KEY_CUMULATIVE_DEEP_SLEEP_TIME, 0L)
+            cumulativeAwakeTime = prefs.getLong(KEY_CUMULATIVE_AWAKE_TIME, 0L)
+            cumulativeActiveTime = prefs.getLong(KEY_CUMULATIVE_ACTIVE_TIME, 0L)
+            cumulativeIdleTime = prefs.getLong(KEY_CUMULATIVE_IDLE_TIME, 0L)
+
+            cumulativeScreenOnDrain = prefs.getDouble(KEY_CUMULATIVE_SCREEN_ON_DRAIN, 0.0)
+            cumulativeScreenOffDrain = prefs.getDouble(KEY_CUMULATIVE_SCREEN_OFF_DRAIN, 0.0)
+            cumulativeDeepSleepDrain = prefs.getDouble(KEY_CUMULATIVE_DEEP_SLEEP_DRAIN, 0.0)
+            cumulativeAwakeDrain = prefs.getDouble(KEY_CUMULATIVE_AWAKE_DRAIN, 0.0)
+            cumulativeActiveDrain = prefs.getDouble(KEY_CUMULATIVE_ACTIVE_DRAIN, 0.0)
+            cumulativeIdleDrain = prefs.getDouble(KEY_CUMULATIVE_IDLE_DRAIN, 0.0)
+
+            val isInteractive = powerManager.isInteractive
+            val gapMs = (nowRealtime - savedLastSaveRealtime).coerceAtLeast(0L)
+            if (isInteractive) {
+                screenOnTime += gapMs
+            } else {
+                screenOffTime += gapMs
+            }
+
+            cumulativeScreenOnTime = screenOnTime
+            cumulativeScreenOffTime = screenOffTime
+            lastScreenState = isInteractive
+            lastScreenChangeRealtime = nowRealtime
+            lastScreenChangeTime = now
+
+            val lastMah = if (prefs.contains(KEY_LAST_BATTERY_MAH)) prefs.getDouble(KEY_LAST_BATTERY_MAH, 0.0) else null
+            val lastLevel = if (prefs.contains(KEY_LAST_BATTERY_LEVEL)) prefs.getInt(KEY_LAST_BATTERY_LEVEL, -1).takeIf { it != -1 } else null
+            if (lastMah != null) {
+                lastSnapshot = DrainSnapshot(
+                    timestamp = prefs.getLong(KEY_LAST_SAVE_TIME, now),
+                    elapsedRealtime = savedLastSaveRealtime,
+                    uptimeMillis = SystemClock.uptimeMillis(),
+                    batteryLevel = lastLevel,
+                    batteryMah = lastMah,
+                    currentMa = 0,
+                    isScreenOn = isInteractive,
+                    isCharging = isCharging(),
+                    isDeepSleep = !isInteractive,
+                    isDozing = powerManager.isDeviceIdleMode,
+                    cpuAwakeTimeMs = SystemClock.uptimeMillis(),
+                    deepSleepTimeMs = (savedLastSaveRealtime - SystemClock.uptimeMillis()).coerceAtLeast(0L)
+                )
+            }
+
+            updateDrainState()
+            Log.i(TAG, "Battery drain tracking session successfully restored: sessionStart=${sessionStartTime}")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to restore battery drain session", e)
+            false
+        }
+    }
+
+    fun clearSavedSession() {
+        try {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().clear().apply()
+            Log.i(TAG, "Battery drain tracking session preferences cleared")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear battery drain session", e)
+        }
+    }
+
     fun start() {
         if (!running.compareAndSet(false, true)) return
 
         Log.i(TAG, "Starting advanced drain tracking")
         _isTracking.value = true
-        resetSession()
+        if (!restoreSession()) {
+            resetSession()
+        }
         registerReceivers()
 
         trackingJob = scope.launch {
             takeSnapshot()?.let { snapshot ->
+                lastSnapshot?.let { prev ->
+                    processSnapshot(snapshot, wasScreenOn = lastScreenState)
+                }
                 lastSnapshot = snapshot
+                updateDrainState()
+                saveSession()
             }
 
             while (isActive && running.get()) {
@@ -159,6 +394,7 @@ class AdvancedDrainTracker private constructor(
                         _snapshots.update { (it + currentSnapshot).takeLast(500) }
                     }
                     updateDrainState()
+                    saveSession()
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in tracking loop", e)
                 }
@@ -172,12 +408,14 @@ class AdvancedDrainTracker private constructor(
 
         Log.i(TAG, "Stopping advanced drain tracking")
         _isTracking.value = false
+        saveSession()
         trackingJob?.cancel()
         trackingJob = null
         unregisterReceivers()
     }
 
     fun resetSession() {
+        clearSavedSession()
         val now = System.currentTimeMillis()
         val nowRealtime = SystemClock.elapsedRealtime()
         val nowUptime = SystemClock.uptimeMillis()
@@ -213,6 +451,7 @@ class AdvancedDrainTracker private constructor(
         scope.launch {
             lastSnapshot = takeSnapshot()
             updateDrainState()
+            saveSession()
         }
 
         Log.i(TAG, "Battery drain tracking session reset")
@@ -272,6 +511,7 @@ class AdvancedDrainTracker private constructor(
                 processSnapshot(snapshot, wasScreenOn = previousScreenState)
                 lastSnapshot = snapshot
                 updateDrainState()
+                saveSession()
             }
         }
     }

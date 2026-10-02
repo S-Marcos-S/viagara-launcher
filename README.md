@@ -55,6 +55,13 @@ Para notas detalhadas sobre contribuição e arquitetura, consulte [docs/CONTRIB
 
 ---
 
+## 🤝 Créditos / Credits
+
+- **[LogFox](https://github.com/F0x1d/LogFox)** — Referência e base para as rotinas de captura contínua de logs do sistema, visualizador de registros e rastreador de crashes.
+- **[BatStats](https://github.com/mlm-games/BatStats)** — Referência e base para o coletor/parser de telemetria da bateria (`dumpsys batterystats`), análise de consumo e monitor de drenagem em tempo real.
+
+---
+
 ## 📄 Licença / License
 
 Distribuído sob a licença [GPL-3.0-or-later](LICENSE).

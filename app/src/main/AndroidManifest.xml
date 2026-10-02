@@ -128,9 +128,10 @@
 
         <receiver
             android:name=".battery.DrainNotificationReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="dev.viagaralauncher.battery.ACTION_RESET" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

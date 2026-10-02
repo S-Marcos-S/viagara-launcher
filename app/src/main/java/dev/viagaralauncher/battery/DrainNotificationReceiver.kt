@@ -17,11 +17,20 @@ class DrainNotificationReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == ACTION_RESET) {
-            CoroutineScope(Dispatchers.Default).launch {
-                val tracker = AdvancedDrainTracker.getInstance(context)
-                tracker.resetSession()
-                DrainNotificationManager.getInstance(context).updateNow()
+        when (intent.action) {
+            ACTION_RESET -> {
+                CoroutineScope(Dispatchers.Default).launch {
+                    val tracker = AdvancedDrainTracker.getInstance(context)
+                    tracker.resetSession()
+                    DrainNotificationManager.getInstance(context).updateNow()
+                }
+            }
+            Intent.ACTION_BOOT_COMPLETED -> {
+                CoroutineScope(Dispatchers.Default).launch {
+                    val tracker = AdvancedDrainTracker.getInstance(context)
+                    tracker.clearSavedSession()
+                    tracker.resetSession()
+                }
             }
         }
     }

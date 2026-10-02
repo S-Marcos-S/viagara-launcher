@@ -1,3 +1,20 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.48
+
+- **Persistência Completa dos Dados de Drenagem da Bateria entre Atualizações (`AdvancedDrainTracker`):**
+  - **Sobrevivência a Atualizações do App e Reinicializações de Processo:** As estatísticas de drenagem (tempo de tela ligada/desligada, sono profundo, tempo acordado, drenagem em mAh e taxas horárias) agora são salvas de forma resiliente em armazenamento persistente (`SharedPreferences`) a cada ciclo de medição e a cada transição de estado da tela.
+  - **Eliminação de Perda Prematura:** Substituída a redefinição incondicional que zerava o rastreador ao iniciar o launcher. Os dados da sessão só são zerados quando o usuário escolhe explicitamente redefinir ("Zerar") ou quando o dispositivo é reiniciado.
+  - **Detecção Confiável de Reinicialização do Aparelho (Reboot):** Implementada verificação multicamadas que detecta com 100% de precisão reinicializações do celular comparando relógios monotônicos do kernel (`elapsedRealtime`), UUID do kernel (`/proc/sys/kernel/random/boot_id`), contador global de inicializações (`Settings.Global.BOOT_COUNT`) e desvios de tempo de boot, além de escutar o evento `BOOT_COMPLETED`.
+
+- **Otimização do CI/CD com Builds Condicionais por Versão no Commit (`GitHub Actions`):**
+  - **Compilação Apenas para Novas Versões:** O fluxo de trabalho do GitHub Actions (`.github/workflows/build.yml`) agora inspeciona a mensagem do commit e só dispara a compilação completa e geração de APKs de release se houver um número de versão explícito no commit (ex: `v0.59.48` ou `0.59.48`).
+  - **Economia de Minutos e Recursos de CI:** Commits intermediários (como documentação, ajustes internos ou commits parciais) não acionam mais o pipeline pesado de build do Gradle, poupando minutos de execução do GitHub Actions.
+  - **Suporte no Script de Monitoramento (`watch_build.py`):** O script local agora detecta quando a etapa de compilação foi pulada de forma transparente e instrui o desenvolvedor sobre como acionar novas builds.
+
+- **Reconhecimento e Créditos no README (`README.md`):**
+  - Adicionada seção de créditos aos projetos de código aberto [LogFox](https://github.com/F0x1d/LogFox) e [BatStats](https://github.com/mlm-games/BatStats) pelas referências fundamentais utilizadas no subsistema de logs e na telemetria de bateria.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.47
 
 - **Navegação Direta da Notificação de Bateria para a Tela de Consumo (`DrainNotificationManager` & `MainActivity`):**
