@@ -206,6 +206,7 @@ object AppRootInspector {
 
             // High-performance unified shell inspection script without toybox-incompatible regexes (\b, \s, \d)
             val shellScript = """
+                export PATH=/system/bin:/system/xbin:${'$'}PATH
                 appops set dev.viagaralauncher GET_USAGE_STATS allow 2>/dev/null
                 pm grant dev.viagaralauncher android.permission.PACKAGE_USAGE_STATS 2>/dev/null
                 echo "===PIDS==="
@@ -253,6 +254,7 @@ object AppRootInspector {
                 dumpsys activity services $packageName 2>/dev/null | grep -E "ServiceRecord|app=ProcessRecord"
                 echo "===BATTERYSTATS==="
                 dumpsys batterystats --charged $packageName 2>/dev/null || dumpsys batterystats $packageName 2>/dev/null
+                dumpsys batterystats --checkin 2>/dev/null | grep -E "^[0-9]+,$uid,"
             """.trimIndent()
 
             val rawOutput = runSuCommand(shellScript).getOrDefault("")
@@ -620,28 +622,42 @@ object AppRootInspector {
         var bgTimeSec = 0L
         var wlTimeSec = 0L
         var wakeups = 0
+        var totalCpuSec = 0L
 
         rawText.lineSequence().forEach { line ->
             val trimmed = line.trim()
 
-            // 1. Drain extraction: "Computed drain: 14.2" or "drain: 14.2"
-            if (trimmed.contains("Computed drain:") || trimmed.contains("drain:")) {
+            // 1. Checkin line fallback: 9,<uid>,l,pwi,uid,<mah>,...
+            if (trimmed.contains(",pwi,uid,")) {
+                val parts = trimmed.split(",")
+                val pwiUid = parts.getOrNull(1)?.toIntOrNull()
+                if (pwiUid == null || pwiUid == uid) {
+                    val mah = parts.getOrNull(5)?.toDoubleOrNull() ?: 0.0
+                    if (mah > totalMah) totalMah = mah
+                    val checkinCpu = parts.getOrNull(8)?.toDoubleOrNull() ?: 0.0
+                    if (checkinCpu > cpuMah) cpuMah = checkinCpu
+                }
+            }
+
+            // 2. Drain extraction: "Computed drain: 14.2", "drain: 14.2", "Uid u0a124: 14.2" or "Uid 10124: 14.2"
+            if (trimmed.contains("Computed drain:") || trimmed.contains("drain:") || trimmed.startsWith("Uid ")) {
                 val match = Regex("(?:Computed drain|drain):\\s*([0-9]+(?:\\.[0-9]+)?)").find(trimmed)
+                    ?: Regex("""(?:Uid\s+(?:u0[a_]\d+|\d+)|$uid):\s*([0-9]+(?:\.[0-9]+)?)""").find(trimmed)
                 if (match != null) {
                     val d = match.groupValues[1].toDoubleOrNull() ?: 0.0
                     if (d > totalMah) totalMah = d
                 }
             }
 
-            // 2. Component breakdowns: ( cpu=12.4 wake=1.2 radio=0.5 wifi=0.1 )
-            if (trimmed.contains("cpu=") || trimmed.contains("wake=")) {
+            // 3. Component breakdowns: ( cpu=12.4 wake=1.2 mobile_radio=0.5 wifi=0.1 )
+            if (trimmed.contains("cpu=") || trimmed.contains("wake=") || trimmed.contains("radio=")) {
                 Regex("cpu=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
                     cpuMah = it.groupValues[1].toDoubleOrNull() ?: cpuMah
                 }
                 Regex("wake=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
                     wakelockMah = it.groupValues[1].toDoubleOrNull() ?: wakelockMah
                 }
-                Regex("radio=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
+                Regex("(?:mobile_radio|radio)=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
                     radioMah = it.groupValues[1].toDoubleOrNull() ?: radioMah
                 }
                 Regex("wifi=([0-9]+(?:\\.[0-9]+)?)").find(trimmed)?.let {
@@ -649,22 +665,32 @@ object AppRootInspector {
                 }
             }
 
-            // 3. Foreground activity time
-            if (trimmed.startsWith("Foreground activities:") || trimmed.startsWith("Foreground:") || trimmed.startsWith("Foreground for:")) {
+            // 4. CPU time extraction: "Total cpu time: u=1m5s sys=20s" or "CPU: 1m 5s usr + 20s sys"
+            if (trimmed.startsWith("Total cpu time:") || trimmed.startsWith("CPU:") || trimmed.contains("cpu time:")) {
+                val userMatch = Regex("""(?:u=|usr\s*[:=]?\s*|User:\s*)([0-9hmsd ]+)""").find(trimmed)
+                val sysMatch = Regex("""(?:sys\s*[:=]?\s*|System:\s*)([0-9hmsd ]+)""").find(trimmed)
+                val uSec = userMatch?.let { parseDurationSec(it.groupValues[1]) } ?: 0L
+                val sSec = sysMatch?.let { parseDurationSec(it.groupValues[1]) } ?: 0L
+                val cSec = uSec + sSec
+                if (cSec > totalCpuSec) totalCpuSec = cSec
+            }
+
+            // 5. Foreground activity time
+            if (trimmed.startsWith("Foreground activities:") || trimmed.startsWith("Foreground:") || trimmed.startsWith("Foreground for:") || trimmed.startsWith("Top:")) {
                 val timeStr = trimmed.substringAfter(":").substringBefore("(").trim()
                 val sec = parseDurationSec(timeStr)
                 if (sec > fgTimeSec) fgTimeSec = sec
             }
 
-            // 4. Background time
+            // 6. Background time
             if (trimmed.startsWith("Background:") || trimmed.startsWith("Background for:") || trimmed.startsWith("Background cpu time:")) {
                 val timeStr = trimmed.substringAfter(":").trim()
                 val sec = parseDurationSec(timeStr)
                 if (sec > bgTimeSec) bgTimeSec = sec
             }
 
-            // 5. Wakelocks
-            if (trimmed.startsWith("Partial wakelocks:") || trimmed.startsWith("Wakelocks:") || trimmed.contains("wakelock")) {
+            // 7. Wakelocks
+            if (trimmed.startsWith("Wake lock ") || trimmed.startsWith("Partial wakelocks:") || trimmed.startsWith("Wakelocks:") || trimmed.contains("wakelock")) {
                 val timeMatch = Regex("([0-9]+h\\s*)?([0-9]+m\\s*)?([0-9]+s\\s*)?([0-9]+ms)?").find(trimmed.substringAfter(":"))
                 if (timeMatch != null && timeMatch.value.isNotBlank()) {
                     val sec = parseDurationSec(timeMatch.value)
@@ -672,17 +698,29 @@ object AppRootInspector {
                 }
             }
 
-            // 6. Wakeups / Alarms
+            // 8. Wakeups / Alarms
             if (trimmed.startsWith("Wakeups:") || trimmed.startsWith("Alarms:")) {
                 val count = Regex("\\d+").find(trimmed.substringAfter(":"))?.value?.toIntOrNull() ?: 0
                 if (count > wakeups) wakeups = count
             }
         }
 
-        // Fallback: If totalMah is 0 but components are known, sum them
+        // Realistic energy modeling fallback if Android's power profile is disabled or empty in package dump
+        val estimatedCpuMah = (totalCpuSec / 3600.0) * 350.0 // ~350 mA avg active CPU draw
+        val estimatedWlMah = (wlTimeSec / 3600.0) * 60.0    // ~60 mA low-power wakelock draw
+
         val sumComponents = cpuMah + wakelockMah + radioMah + wifiMah
-        if (totalMah <= 0.0 && sumComponents > 0.0) {
-            totalMah = sumComponents
+        if (totalMah <= 0.0) {
+            if (sumComponents > 0.0) {
+                totalMah = sumComponents
+            } else if (estimatedCpuMah + estimatedWlMah > 0.0) {
+                totalMah = estimatedCpuMah + estimatedWlMah
+                if (cpuMah <= 0.0) cpuMah = estimatedCpuMah
+                if (wakelockMah <= 0.0) wakelockMah = estimatedWlMah
+            }
+        } else if (cpuMah <= 0.0 && totalCpuSec > 0L) {
+            val remain = (totalMah - wakelockMah - radioMah - wifiMah).coerceAtLeast(0.0)
+            cpuMah = if (remain > 0) remain else estimatedCpuMah.coerceAtMost(totalMah)
         }
 
         // Foreground vs Background proportional division

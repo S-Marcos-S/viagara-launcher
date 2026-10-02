@@ -1,3 +1,18 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.49
+
+- **Correção e Vínculo Completo dos Dados de Consumo por Aplicativo e Processo (`BatteryStatsParser`):**
+  - **Fim dos Dados Zerados nos Aplicativos:** Corrigida a agregação de dados onde o parser capturava o dreno global (`pwi,uid`), mas deixava o detalhamento de componentes e tempos zerados. Agora todos os tempos de CPU (`processStats`), tempos de wakelocks (`wakelocks`), tráfego de dados móveis e Wi-Fi (`network`) e sensores/GPS são vinculados e consolidados no objeto `AppPowerStats` de cada aplicativo.
+  - **Detalhamento de Consumo Operacional:** Ao expandir qualquer aplicativo na aba "Aplicativos" da tela de bateria, agora são exibidos corretamente o tempo de processador (CPU), tempo de wakelocks, tempo em primeiro plano, tráfego de rede (Rx/Tx) e estimativas precisas de dreno de energia em mAh.
+  - **Ordenação Dinâmica Funcional:** As opções de ordenação por "CPU", "Wakelocks", "Rede" e "Primeiro Plano" passam a refletir os dados reais consolidados de cada app em vez de listas desordenadas por valores zerados.
+  - **Captura Estendida do Checkin AOSP:** O parser agora extrai componentes adicionais de potência (`cpuPowerMah`, `screenPowerMah`, `proportionalSmearMah`) diretamente das linhas de checkin do sistema quando disponíveis.
+
+- **Resiliência e Modernização da Telemetria de Bateria no Inspetor Root (`AppRootInspector`):**
+  - **Compatibilidade com Android Moderno (Android 11 a 15):** Atualizada a expressão regular e o script de extração do `dumpsys batterystats` para reconhecer os padrões contemporâneos do sistema operacional (`Uid u0a...`, `mobile_radio=`, tempos de CPU de usuário e sistema).
+  - **Fallback Confiável por Modelagem Energética:** Caso a ROM do fabricante não forneça o cálculo de dreno direto no dump filtrado por pacote, o inspetor agora calcula dinamicamente o dreno estimado e a divisão entre primeiro e segundo plano com base no tempo de CPU e wakelocks do aplicativo, garantindo que a aba de Bateria nunca mais fique zerada.
+  - **Garantia de Caminho de Execução:** Variável de ambiente `PATH` devidamente exportada no shell de superusuário para assegurar execução imediata de binários do sistema Android (`dumpsys`, `pidof`, `pgrep`).
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.48
 
 - **Persistência Completa dos Dados de Drenagem da Bateria entre Atualizações (`AdvancedDrainTracker`):**

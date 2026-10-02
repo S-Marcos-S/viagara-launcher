@@ -364,6 +364,184 @@ object BatteryStatsParser {
             }
         }
 
+        // Build merged lists for snapshot
+        val mergedWakelocks = wakelocks
+            .mergeBy({ it.uid to it.tag }) { a, b ->
+                a.copy(
+                    count = a.count + b.count,
+                    totalTimeMs = a.totalTimeMs + b.totalTimeMs,
+                    maxTimeMs = maxOf(a.maxTimeMs, b.maxTimeMs),
+                    backgroundTimeMs = a.backgroundTimeMs + b.backgroundTimeMs,
+                    backgroundCount = a.backgroundCount + b.backgroundCount
+                )
+            }
+            .sortedByDescending { it.totalTimeMs }
+
+        val mergedKernelWakelocks = kernelWakelocks
+            .mergeBy({ it.name }) { a, b ->
+                a.copy(count = a.count + b.count, totalTimeMs = a.totalTimeMs + b.totalTimeMs)
+            }
+            .sortedByDescending { it.totalTimeMs }
+
+        val mergedAlarms = alarms
+            .mergeBy({ it.uid to it.tag }) { a, b ->
+                a.copy(
+                    count = a.count + b.count,
+                    wakeups = a.wakeups + b.wakeups,
+                    totalTimeMs = a.totalTimeMs + b.totalTimeMs
+                )
+            }
+            .sortedByDescending { it.count }
+
+        val mergedJobs = jobs
+            .mergeBy({ it.uid to it.jobName }) { a, b ->
+                a.copy(count = a.count + b.count, totalTimeMs = a.totalTimeMs + b.totalTimeMs)
+            }
+            .sortedByDescending { it.totalTimeMs }
+
+        val mergedSyncs = syncs
+            .mergeBy({ it.uid to it.authority }) { a, b ->
+                a.copy(count = a.count + b.count, totalTimeMs = a.totalTimeMs + b.totalTimeMs)
+            }
+            .sortedByDescending { it.totalTimeMs }
+
+        val mergedNetwork = network
+            .mergeBy({ it.uid }) { a, b ->
+                a.copy(
+                    mobileRxBytes = a.mobileRxBytes + b.mobileRxBytes,
+                    mobileTxBytes = a.mobileTxBytes + b.mobileTxBytes,
+                    wifiRxBytes = a.wifiRxBytes + b.wifiRxBytes,
+                    wifiTxBytes = a.wifiTxBytes + b.wifiTxBytes,
+                    mobileActiveTimeMs = a.mobileActiveTimeMs + b.mobileActiveTimeMs,
+                    mobileActiveCount = a.mobileActiveCount + b.mobileActiveCount
+                )
+            }
+            .sortedByDescending {
+                it.mobileRxBytes + it.mobileTxBytes + it.wifiRxBytes + it.wifiTxBytes
+            }
+
+        val mergedSensors = sensors
+            .mergeBy({ it.uid to it.sensorHandle }) { a, b ->
+                a.copy(count = a.count + b.count, totalTimeMs = a.totalTimeMs + b.totalTimeMs)
+            }
+            .sortedByDescending { it.totalTimeMs }
+
+        val mergedProcessStats = processStats
+            .mergeBy({ it.uid to it.processName }) { a, b ->
+                a.copy(
+                    userTimeMs = a.userTimeMs + b.userTimeMs,
+                    systemTimeMs = a.systemTimeMs + b.systemTimeMs,
+                    foregroundTimeMs = a.foregroundTimeMs + b.foregroundTimeMs,
+                    starts = a.starts + b.starts
+                )
+            }
+            .sortedByDescending { it.userTimeMs + it.systemTimeMs }
+
+        // Build complete aggregated AppPowerStats for every active UID
+        val allUids = LinkedHashSet<Int>().apply {
+            addAll(appStats.keys)
+            addAll(mergedProcessStats.map { it.uid })
+            addAll(mergedWakelocks.map { it.uid })
+            addAll(mergedNetwork.map { it.uid })
+            addAll(mergedSensors.map { it.uid })
+        }
+
+        val procByUid = mergedProcessStats.groupBy { it.uid }
+        val wlByUid = mergedWakelocks.groupBy { it.uid }
+        val netByUid = mergedNetwork.associateBy { it.uid }
+        val sensorByUid = mergedSensors.groupBy { it.uid }
+
+        val completeApps = allUids.mapNotNull { uid ->
+            val pkgs = packagesFor(uid, uidToPackages)
+            val label = displayNameFor(uid, pkgs)
+            val existing = appStats[uid]
+
+            val procs = procByUid[uid].orEmpty()
+            val totalCpuTime = procs.sumOf { it.userTimeMs + it.systemTimeMs }
+            val totalFgTime = procs.sumOf { it.foregroundTimeMs }
+
+            val wls = wlByUid[uid].orEmpty()
+            val totalWlTime = wls.sumOf { it.totalTimeMs }
+            val totalBgWlTime = wls.sumOf { it.backgroundTimeMs }
+
+            val net = netByUid[uid]
+            val mobRx = net?.mobileRxBytes ?: 0L
+            val mobTx = net?.mobileTxBytes ?: 0L
+            val wifiRx = net?.wifiRxBytes ?: 0L
+            val wifiTx = net?.wifiTxBytes ?: 0L
+
+            val sns = sensorByUid[uid].orEmpty()
+            val gpsTime = sns.filter { it.sensorHandle == -10000 }.sumOf { it.totalTimeMs }
+            val sensorTime = sns.filter { it.sensorHandle != -10000 }.sumOf { it.totalTimeMs }
+
+            val rawPower = existing?.powerMah ?: 0.0
+            val estimatedCpuMah = (totalCpuTime / 3600000.0) * 350.0
+            val estimatedWlMah = (totalWlTime / 3600000.0) * 60.0
+            val finalPower = if (rawPower > 0.0) rawPower else (estimatedCpuMah + estimatedWlMah)
+
+            if (finalPower <= 0.0 && totalCpuTime == 0L && totalWlTime == 0L && (mobRx + mobTx + wifiRx + wifiTx) == 0L) {
+                return@mapNotNull null
+            }
+
+            val cpuPowerMah = if (existing != null && existing.cpuPowerMah > 0.0) {
+                existing.cpuPowerMah
+            } else if (finalPower > 0.0 && totalCpuTime > 0) {
+                val wlPortion = if (totalWlTime > 0) (finalPower * 0.15).coerceAtMost(estimatedWlMah) else 0.0
+                (finalPower - wlPortion).coerceAtLeast(0.0)
+            } else {
+                estimatedCpuMah
+            }
+
+            val wakeLockPowerMah = if (existing != null && existing.wakeLockPowerMah > 0.0) {
+                existing.wakeLockPowerMah
+            } else if (totalWlTime > 0) {
+                (finalPower - cpuPowerMah).coerceAtLeast(0.0).let { if (it > 0) it else estimatedWlMah }
+            } else 0.0
+
+            AppPowerStats(
+                uid = uid,
+                packageName = existing?.packageName ?: label,
+                packages = if (existing != null && existing.packages.isNotEmpty()) existing.packages else pkgs,
+                powerMah = finalPower,
+                cpuTimeMs = totalCpuTime,
+                cpuPowerMah = cpuPowerMah,
+                wakeLockTimeMs = totalWlTime,
+                wakeLockPowerMah = wakeLockPowerMah,
+                mobilePowerMah = existing?.mobilePowerMah ?: 0.0,
+                wifiPowerMah = existing?.wifiPowerMah ?: 0.0,
+                gpsPowerMah = existing?.gpsPowerMah ?: 0.0,
+                sensorPowerMah = existing?.sensorPowerMah ?: 0.0,
+                cameraPowerMah = existing?.cameraPowerMah ?: 0.0,
+                flashlightPowerMah = existing?.flashlightPowerMah ?: 0.0,
+                audioPowerMah = existing?.audioPowerMah ?: 0.0,
+                videoPowerMah = existing?.videoPowerMah ?: 0.0,
+                bluetoothPowerMah = existing?.bluetoothPowerMah ?: 0.0,
+                screenPowerMah = existing?.screenPowerMah ?: 0.0,
+                proportionalSmearMah = existing?.proportionalSmearMah ?: 0.0,
+                foregroundTimeMs = totalFgTime,
+                foregroundServiceTimeMs = existing?.foregroundServiceTimeMs ?: 0L,
+                backgroundTimeMs = totalBgWlTime,
+                cachedTimeMs = existing?.cachedTimeMs ?: 0L,
+                topTimeMs = existing?.topTimeMs ?: 0L,
+                mobileRxBytes = mobRx,
+                mobileTxBytes = mobTx,
+                wifiRxBytes = wifiRx,
+                wifiTxBytes = wifiTx,
+                mobileRxPackets = existing?.mobileRxPackets ?: 0L,
+                mobileTxPackets = existing?.mobileTxPackets ?: 0L,
+                wifiRxPackets = existing?.wifiRxPackets ?: 0L,
+                wifiTxPackets = existing?.wifiTxPackets ?: 0L,
+                gpsTimeMs = gpsTime,
+                sensorTimeMs = sensorTime,
+                cameraTimeMs = existing?.cameraTimeMs ?: 0L,
+                flashlightTimeMs = existing?.flashlightTimeMs ?: 0L,
+                audioTimeMs = existing?.audioTimeMs ?: 0L,
+                videoTimeMs = existing?.videoTimeMs ?: 0L,
+                bluetoothScanTimeMs = existing?.bluetoothScanTimeMs ?: 0L,
+                bluetoothUnoptimizedScanTimeMs = existing?.bluetoothUnoptimizedScanTimeMs ?: 0L
+            )
+        }.sortedByDescending { it.powerMah }
+
         return FullSnapshot(
             capturedAt = System.currentTimeMillis(),
             batteryRealtimeMs = batteryRealtimeMs,
@@ -372,76 +550,20 @@ object BatteryStatsParser {
             screenOffDischargePercent = screenOffDischarge,
             screenOnDischargePercent = screenOnDischarge,
             estimatedCapacityMah = estCapacity,
-            apps = appStats.values.sortedByDescending { it.powerMah },
-            wakelocks = wakelocks
-                .mergeBy({ it.uid to it.tag }) { a, b ->
-                    a.copy(
-                        count = a.count + b.count,
-                        totalTimeMs = a.totalTimeMs + b.totalTimeMs,
-                        maxTimeMs = maxOf(a.maxTimeMs, b.maxTimeMs),
-                        backgroundTimeMs = a.backgroundTimeMs + b.backgroundTimeMs,
-                        backgroundCount = a.backgroundCount + b.backgroundCount
-                    )
-                }
-                .sortedByDescending { it.totalTimeMs },
-            kernelWakelocks = kernelWakelocks
-                .mergeBy({ it.name }) { a, b ->
-                    a.copy(count = a.count + b.count, totalTimeMs = a.totalTimeMs + b.totalTimeMs)
-                }
-                .sortedByDescending { it.totalTimeMs },
-            alarms = alarms
-                .mergeBy({ it.uid to it.tag }) { a, b ->
-                    a.copy(
-                        count = a.count + b.count,
-                        wakeups = a.wakeups + b.wakeups,
-                        totalTimeMs = a.totalTimeMs + b.totalTimeMs
-                    )
-                }
-                .sortedByDescending { it.count },
-            jobs = jobs
-                .mergeBy({ it.uid to it.jobName }) { a, b ->
-                    a.copy(count = a.count + b.count, totalTimeMs = a.totalTimeMs + b.totalTimeMs)
-                }
-                .sortedByDescending { it.totalTimeMs },
-            syncs = syncs
-                .mergeBy({ it.uid to it.authority }) { a, b ->
-                    a.copy(count = a.count + b.count, totalTimeMs = a.totalTimeMs + b.totalTimeMs)
-                }
-                .sortedByDescending { it.totalTimeMs },
-            network = network
-                .mergeBy({ it.uid }) { a, b ->
-                    a.copy(
-                        mobileRxBytes = a.mobileRxBytes + b.mobileRxBytes,
-                        mobileTxBytes = a.mobileTxBytes + b.mobileTxBytes,
-                        wifiRxBytes = a.wifiRxBytes + b.wifiRxBytes,
-                        wifiTxBytes = a.wifiTxBytes + b.wifiTxBytes,
-                        mobileActiveTimeMs = a.mobileActiveTimeMs + b.mobileActiveTimeMs,
-                        mobileActiveCount = a.mobileActiveCount + b.mobileActiveCount
-                    )
-                }
-                .sortedByDescending {
-                    it.mobileRxBytes + it.mobileTxBytes + it.wifiRxBytes + it.wifiTxBytes
-                },
-            sensors = sensors
-                .mergeBy({ it.uid to it.sensorHandle }) { a, b ->
-                    a.copy(count = a.count + b.count, totalTimeMs = a.totalTimeMs + b.totalTimeMs)
-                }
-                .sortedByDescending { it.totalTimeMs },
+            apps = completeApps,
+            wakelocks = mergedWakelocks,
+            kernelWakelocks = mergedKernelWakelocks,
+            alarms = mergedAlarms,
+            jobs = mergedJobs,
+            syncs = mergedSyncs,
+            network = mergedNetwork,
+            sensors = mergedSensors,
             signalStrength = signalStrength,
             wifiSignal = wifiSignal,
             bluetooth = bluetooth,
             doze = doze,
             cpuFrequency = cpuFreq,
-            processStats = processStats
-                .mergeBy({ it.uid to it.processName }) { a, b ->
-                    a.copy(
-                        userTimeMs = a.userTimeMs + b.userTimeMs,
-                        systemTimeMs = a.systemTimeMs + b.systemTimeMs,
-                        foregroundTimeMs = a.foregroundTimeMs + b.foregroundTimeMs,
-                        starts = a.starts + b.starts
-                    )
-                }
-                .sortedByDescending { it.userTimeMs + it.systemTimeMs }
+            processStats = mergedProcessStats
         )
     }
 
@@ -464,6 +586,9 @@ object BatteryStatsParser {
         val uid = parts[1].toIntOrNull() ?: return
         val type = parts.getOrNull(4) ?: return
         val mah = parts.getOrNull(5)?.toDoubleOrNull() ?: 0.0
+        val smear = parts.getOrNull(6)?.toDoubleOrNull() ?: 0.0
+        val screen = parts.getOrNull(7)?.toDoubleOrNull() ?: 0.0
+        val cpu = parts.getOrNull(8)?.toDoubleOrNull() ?: 0.0
 
         if (type == "uid") {
             val pkgs = packagesFor(uid, uidToPackages)
@@ -472,7 +597,10 @@ object BatteryStatsParser {
             appStats[uid] = existing.copy(
                 packageName = label,
                 packages = pkgs,
-                powerMah = existing.powerMah + mah
+                powerMah = existing.powerMah + mah,
+                proportionalSmearMah = if (smear > 0.0) smear else existing.proportionalSmearMah,
+                screenPowerMah = if (screen > 0.0) screen else existing.screenPowerMah,
+                cpuPowerMah = if (cpu > 0.0) cpu else existing.cpuPowerMah
             )
         }
     }
