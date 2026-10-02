@@ -784,7 +784,7 @@
     <string name="session_section">Session</string>
     <string name="drain_on_off_sleep">On: %1$s • Off: %2$s • Sleep: %3$s</string>
     <string name="drain_screen_on_line">On: %1$s (%2$s)</string>
-    <string name="drain_screen_off_line">Screen Off: %1$s (%2$s)</string>
+    <string name="drain_screen_off_line">Off: %1$s (%2$s)</string>
     <string name="drain_deep_sleep_line">Deep Sleep: %1$s (%2$s) [%3$s]</string>
     <string name="drain_awake_line">Awake: %1$s (%2$s)</string>
     <string name="drain_active_line">Active: %1$s (%2$s)</string>

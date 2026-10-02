@@ -63,7 +63,32 @@ class AdvancedDrainTracker private constructor(
     private var lastScreenState: Boolean = powerManager.isInteractive
     private var lastScreenChangeTime: Long = System.currentTimeMillis()
     private var receiverRegistered = false
-    private var estimatedCapacityMah: Double = 4000.0
+    private var estimatedCapacityMah: Double = getInitialCapacity()
+
+    private fun getInitialCapacity(): Double {
+        try {
+            val powerProfileClass = Class.forName("com.android.internal.os.PowerProfile")
+            val powerProfile = powerProfileClass.getConstructor(Context::class.java).newInstance(context)
+            val cap = powerProfileClass.getMethod("getBatteryCapacity").invoke(powerProfile) as? Double
+            if (cap != null && cap > 0.0) return cap
+        } catch (_: Throwable) {}
+
+        for (path in listOf(
+            "/sys/class/power_supply/battery/charge_full_design",
+            "/sys/class/power_supply/battery/charge_full"
+        )) {
+            try {
+                val file = java.io.File(path)
+                if (file.exists() && file.canRead()) {
+                    val value = file.readText().trim().toLongOrNull() ?: 0L
+                    if (value > 100_000L) return value / 1000.0
+                    if (value in 1000..20000) return value.toDouble()
+                }
+            } catch (_: Throwable) {}
+        }
+
+        return 4000.0
+    }
 
     private var lastDumpsysTime: Long = 0L
     private var cachedAwakeTime: Long = 0L
@@ -157,7 +182,10 @@ class AdvancedDrainTracker private constructor(
         lastScreenState = powerManager.isInteractive
         lastScreenChangeTime = System.currentTimeMillis()
         _snapshots.value = emptyList()
-        _drainState.value = DrainState(sessionStartTime = sessionStartTime)
+        _drainState.value = DrainState(
+            sessionStartTime = sessionStartTime,
+            batteryCapacityMah = estimatedCapacityMah
+        )
 
         Log.i(TAG, "Battery drain tracking session reset")
     }
@@ -293,6 +321,7 @@ class AdvancedDrainTracker private constructor(
             timestamp = now,
             batteryLevel = getBatteryLevel(),
             batteryLevelMah = getCurrentBatteryMah(),
+            batteryCapacityMah = estimatedCapacityMah,
             isScreenOn = powerManager.isInteractive,
             isCharging = isCharging(),
             isDeepSleep = isInDeepSleep(),

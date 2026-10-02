@@ -1,12 +1,17 @@
 ### 🚀 Novidades e Melhorias da Versão 0.59.46
 
+- **Formatação em Porcentagem por Hora e Identificadores On/Off na Notificação (`DrainNotificationManager`):**
+  - **Identificadores On e Off:** Substituição dos termos "Ligado" e "Desligado / Tela desligado" por **"On"** e **"Off"** na primeira linha da notificação e no resumo contraído.
+  - **Taxa Horária em Porcentagem (%/h):** Substituída a exibição de consumo em mAh na primeira linha por taxas relativas de drenagem por hora em porcentagem (`%/h`), calculadas dinamicamente com base na capacidade da bateria (lida via PowerProfile, nós do sysfs ou dumpsys).
+  - **Exibição Compacta e Clara:** A linha principal da notificação expandida passa a exibir de forma limpa e direta: `On: X%/h (tempo) • Off: Y%/h (tempo)`, facilitando a leitura imediata do impacto de bateria por hora.
+
 - **Espaçamento Dinâmico e Compacto entre Widgets e Apps Favoritos (`HomeScreen`):**
   - **Eliminação do Espaçamento Rígido:** Removido o cálculo fixo de 50% da altura da tela que forçava uma lacuna vazia excessiva entre os widgets e a lista de aplicativos favoritos.
   - **Posicionamento Natural e Responsivo:** Os aplicativos favoritos agora se posicionam logo abaixo do widget, respeitando diretamente o tamanho do widget e os paddings configurados pelo usuário (`PaddingSlot.WIDGET_BOTTOM` e `PaddingSlot.FAVORITES_TOP`), permitindo aproximação contínua sem limite mínimo forçado.
 
 - **Redesign Compacto e Profissional da Notificação de Bateria (`DrainNotificationManager`):**
   - **Eliminação Total de Emojis:** Implementado filtro algorítmico rigoroso que remove todos os emojis, símbolos decorativos e dingbats, deixando a notificação 100% limpa, textual e profissional.
-  - **Alta Densidade e Ocupação Reduzida:** Estruturação compactada em apenas 4 linhas pareadas com marcadores sutis (`•`) no modo expandido (`BigTextStyle`), agrupando tela ligada/desligada, sono profundo/ativo, taxas de consumo horário em mA/h e totais da sessão, ocupando o mínimo de espaço na central de notificações.
+  - **Alta Densidade e Ocupação Reduzida:** Estruturação compactada em apenas 4 linhas pareadas com marcadores sutis (`•`) no modo expandido (`BigTextStyle`), agrupando tela ligada/desligada, sono profundo/ativo, taxas de consumo horário e totais da sessão, ocupando o mínimo de espaço na central de notificações.
 
 - **Restauração Completa de Acentos e Codificação das Strings (Eliminação de Mojibake):**
   - **Saneamento Global em UTF-8:** Reparados e normalizados todos os textos e termos com acentos gráficos (`ç`, `ã`, `õ`, `é`, `ê`, `á`, `í`, `ú`) e símbolos tipográficos (`…`, `↔`, `↕`, `→`, `·`) em `values/strings.xml`, `values-pt/strings.xml` e `values-pt-rBR/strings.xml`, eliminando completamente caracteres estranhos em toda a interface do launcher.

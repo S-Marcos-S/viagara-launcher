@@ -43,6 +43,9 @@ data class DrainState(
     val deepSleepDrainRate: Double = 0.0,
     val awakeDrainRate: Double = 0.0,
 
+    // Battery capacity for percentage drain calculations
+    val batteryCapacityMah: Double = 4000.0,
+
     // Session tracking
     val sessionStartTime: Long = System.currentTimeMillis(),
     val lastUpdateTime: Long = System.currentTimeMillis()
@@ -68,6 +71,27 @@ data class DrainState(
         get() = if (screenOffTimeMs > 0) {
             (deepSleepTimeMs.toFloat() / screenOffTimeMs * 100f).coerceIn(0f, 100f)
         } else 0f
+
+    val screenOnDrainRatePercent: Double
+        get() = if (batteryCapacityMah > 0) (screenOnDrainRate / batteryCapacityMah * 100.0) else 0.0
+
+    val screenOffDrainRatePercent: Double
+        get() = if (batteryCapacityMah > 0) (screenOffDrainRate / batteryCapacityMah * 100.0) else 0.0
+
+    val deepSleepDrainRatePercent: Double
+        get() = if (batteryCapacityMah > 0) (deepSleepDrainRate / batteryCapacityMah * 100.0) else 0.0
+
+    val awakeDrainRatePercent: Double
+        get() = if (batteryCapacityMah > 0) (awakeDrainRate / batteryCapacityMah * 100.0) else 0.0
+
+    val activeDrainRatePercent: Double
+        get() = if (batteryCapacityMah > 0) (activeDrainRate / batteryCapacityMah * 100.0) else 0.0
+
+    val idleDrainRatePercent: Double
+        get() = if (batteryCapacityMah > 0) (idleDrainRate / batteryCapacityMah * 100.0) else 0.0
+
+    val averageDrainRatePercent: Double
+        get() = if (batteryCapacityMah > 0) (averageDrainRate / batteryCapacityMah * 100.0) else 0.0
 }
 
 /**
@@ -115,5 +139,13 @@ fun formatDrainRate(rate: Double): String {
         rate < 0.1 -> "< 0.1 mA/h"
         rate < 10 -> String.format(Locale.getDefault(), "%.1f mA/h", rate)
         else -> String.format(Locale.getDefault(), "%.0f mA/h", rate)
+    }
+}
+
+fun formatDrainPercentage(rate: Double): String {
+    return when {
+        rate <= 0.0 -> "0.0%/h"
+        rate < 0.1 -> "< 0.1%/h"
+        else -> String.format(Locale.getDefault(), "%.1f%%/h", rate)
     }
 }

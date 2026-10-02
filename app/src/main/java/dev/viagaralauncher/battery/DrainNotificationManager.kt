@@ -166,13 +166,13 @@ class DrainNotificationManager private constructor(
 
         val contentText = context.getString(
             R.string.drain_on_off_sleep,
-            formatDrainRate(state.screenOnDrainRate),
-            formatDrainRate(state.screenOffDrainRate),
-            formatDrainRate(state.deepSleepDrainRate)
+            formatDrainPercentage(state.screenOnDrainRatePercent),
+            formatDrainPercentage(state.screenOffDrainRatePercent),
+            formatDrainPercentage(state.deepSleepDrainRatePercent)
         ).removeEmojis()
 
-        val screenOnStr = context.getString(R.string.drain_screen_on_line, formatDrainRate(state.screenOnDrainRate), formatDuration(state.screenOnTimeMs)).removeEmojis()
-        val screenOffStr = context.getString(R.string.drain_screen_off_line, formatDrainRate(state.screenOffDrainRate), formatDuration(state.screenOffTimeMs)).removeEmojis()
+        val screenOnStr = context.getString(R.string.drain_screen_on_line, formatDrainPercentage(state.screenOnDrainRatePercent), formatDuration(state.screenOnTimeMs)).removeEmojis()
+        val screenOffStr = context.getString(R.string.drain_screen_off_line, formatDrainPercentage(state.screenOffDrainRatePercent), formatDuration(state.screenOffTimeMs)).removeEmojis()
         val deepSleepStr = context.getString(R.string.drain_deep_sleep_line, formatDrainRate(state.deepSleepDrainRate), formatDuration(state.deepSleepTimeMs), String.format(Locale.getDefault(), "%.0f%%", state.deepSleepPercentage)).removeEmojis()
         val awakeStr = context.getString(R.string.drain_awake_line, formatDrainRate(state.awakeDrainRate), formatDuration(state.awakeTimeMs)).removeEmojis()
         val activeStr = context.getString(R.string.drain_active_line, formatDrainRate(state.activeDrainRate), formatDuration(state.activeTimeMs)).removeEmojis()
