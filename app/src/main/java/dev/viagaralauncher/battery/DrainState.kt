@@ -112,8 +112,8 @@ fun formatDuration(ms: Long): String {
 
 fun formatDrainRate(rate: Double): String {
     return when {
-        rate < 0.1 -> "< 0.1 mA"
-        rate < 10 -> String.format(Locale.getDefault(), "%.1f mA", rate)
-        else -> String.format(Locale.getDefault(), "%.0f mA", rate)
+        rate < 0.1 -> "< 0.1 mA/h"
+        rate < 10 -> String.format(Locale.getDefault(), "%.1f mA/h", rate)
+        else -> String.format(Locale.getDefault(), "%.0f mA/h", rate)
     }
 }

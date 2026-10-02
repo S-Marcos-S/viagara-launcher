@@ -705,9 +705,11 @@ fun HomeScreen(
 
                 // Space favorites to begin from the middle of the screen downwards
                 val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-                val hasMultipleWidgets = effectiveWidgetIds.size > 1
-                val widgetOccupied = if (hasWidget) widgetHeightDp.dp + 14.dp + (if (hasMultipleWidgets) 16.dp else 0.dp) else 0.dp
-                val favoritesTopSpacer = (screenHeightDp * 0.50f - CLOCK_TOP_PADDING_DP - 90.dp - widgetOccupied).coerceAtLeast(16.dp)
+                val favoritesTopSpacer = if (hasWidget) {
+                    (padOf(PaddingSlot.WIDGET_BOTTOM) + padOf(PaddingSlot.FAVORITES_TOP)).dp.coerceAtLeast(0.dp)
+                } else {
+                    (screenHeightDp * 0.50f - CLOCK_TOP_PADDING_DP - 90.dp).coerceAtLeast(16.dp)
+                }
 
                 Spacer(
                     modifier = Modifier
