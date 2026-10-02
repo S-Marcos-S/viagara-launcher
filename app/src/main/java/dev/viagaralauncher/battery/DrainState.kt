@@ -9,9 +9,10 @@ import java.util.Locale
 data class DrainState(
     val timestamp: Long = System.currentTimeMillis(),
 
-    // Current battery level
+    // Current battery level & metrics
     val batteryLevel: Int? = null,
     val batteryLevelMah: Double? = null,
+    val batteryTemperatureC: Float? = null,
 
     // Device state
     val isScreenOn: Boolean = false,

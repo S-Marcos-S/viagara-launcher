@@ -404,5 +404,53 @@ class AppRootInspectorTest {
         assertEquals(5000L, rx)
         assertEquals(1200L, tx)
     }
+
+    @Test
+    fun `parseBatteryStats allocates background wakelock and background cpu drain to backgroundMah`() {
+        val sampleDump = """
+            Uid 10185: 10.0 ( cpu=4.0 wake=2.0 mobile_radio=2.0 wifi=2.0 )
+            Foreground activities: 1m 0s
+            Total cpu time: u=3m0s sys=1m0s
+            Wake lock *alarm*: 1m 0s
+            Wakeups: 15
+        """.trimIndent()
+
+        val data = AppRootInspector.parseBatteryStats(sampleDump, 10185)
+
+        assertEquals(10.0, data.totalMah, 0.01)
+        assertEquals(4.0, data.cpuMah, 0.01)
+        assertEquals(2.0, data.wakelockMah, 0.01)
+        assertEquals(60L, data.foregroundTimeSec)
+        assertTrue("Background time should include background CPU and wakelocks", data.backgroundTimeSec >= 180L)
+        assertTrue("Foreground drain should be strictly less than background drain for background-heavy activity", data.foregroundMah < data.backgroundMah)
+        assertEquals(10.0, data.foregroundMah + data.backgroundMah, 0.01)
+    }
+
+    @Test
+    fun `parseBatteryStats attributes all drain to background when app has no foreground activity`() {
+        val sampleDump = """
+            Uid 10185: 5.0 ( cpu=2.0 wake=1.0 mobile_radio=1.0 wifi=1.0 )
+            Total cpu time: u=1m0s sys=30s
+            Wake lock *job*: 30s
+        """.trimIndent()
+
+        val data = AppRootInspector.parseBatteryStats(sampleDump, 10185)
+
+        assertEquals(5.0, data.totalMah, 0.01)
+        assertEquals(0L, data.foregroundTimeSec)
+        assertEquals(0.0, data.foregroundMah, 0.001)
+        assertEquals(5.0, data.backgroundMah, 0.001)
+    }
+
+    @Test
+    fun `parseBatteryStats ensures totalMah is at least sum of hardware components`() {
+        val sampleDump = """
+            Uid 10185: 1.0 ( cpu=3.0 wake=1.5 mobile_radio=1.0 wifi=0.5 )
+        """.trimIndent()
+
+        val data = AppRootInspector.parseBatteryStats(sampleDump, 10185)
+
+        assertTrue("totalMah (${data.totalMah}) must be >= sum of components (6.0)", data.totalMah >= 6.0)
+    }
 }
 

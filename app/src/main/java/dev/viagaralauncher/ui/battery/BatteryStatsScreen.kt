@@ -653,7 +653,6 @@ private fun OverviewTab(
         }
         item { SummaryCard(snapshot) }
         item { DischargeBreakdownCard(snapshot) }
-        item { ScreenTimeCard(snapshot) }
         item { SignalQualityCard(snapshot) }
         item { DozeStatsCard(snapshot?.doze, deviceIdle) }
         item { BluetoothCard(snapshot?.bluetooth) }
@@ -727,61 +726,6 @@ private fun DischargeBox(labelRes: Int, percent: Float, color: Color) {
     }
 }
 
-@Composable
-private fun ScreenTimeCard(snapshot: BatteryStatsParser.FullSnapshot?) {
-    StatsCard(titleRes = R.string.screen_time_analysis, icon = Icons.Outlined.Smartphone) {
-        if (snapshot == null) {
-            Text(stringResource(R.string.no_data_available), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            val totalMs = snapshot.batteryRealtimeMs.toFloat().coerceAtLeast(1f)
-            val screenOnPercent = (snapshot.screenOnTimeMs / totalMs * 100)
-            val screenOffPercent = 100f - screenOnPercent
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.screen_on), style = MaterialTheme.typography.labelMedium)
-                    LinearProgressIndicator(
-                        progress = { screenOnPercent / 100f },
-                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        stringResource(
-                            R.string.percent_of_battery_time,
-                            String.format(Locale.getDefault(), "%.1f", screenOnPercent)
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            val drainPerHourScreenOn = if (snapshot.screenOnTimeMs > 0) {
-                snapshot.screenOnDischargePercent / (snapshot.screenOnTimeMs / 3600000.0)
-            } else 0.0
-            val drainPerHourScreenOff = if (snapshot.batteryRealtimeMs - snapshot.screenOnTimeMs > 0) {
-                snapshot.screenOffDischargePercent / ((snapshot.batteryRealtimeMs - snapshot.screenOnTimeMs) / 3600000.0)
-            } else 0.0
-
-            StatRow(R.string.drain_hour_screen_on, String.format(Locale.getDefault(), "%.2f%%/h", drainPerHourScreenOn))
-            StatRow(R.string.drain_hour_screen_off, String.format(Locale.getDefault(), "%.2f%%/h", drainPerHourScreenOff))
-
-            val screenOffMs = (snapshot.batteryRealtimeMs - snapshot.screenOnTimeMs).coerceAtLeast(0L)
-            if (snapshot.batteryUptimeMs > 0 && screenOffMs > 0) {
-                val deepSleepMs = (snapshot.batteryRealtimeMs - snapshot.batteryUptimeMs).coerceAtLeast(0L).coerceAtMost(screenOffMs)
-                val deepSleepPercent = (deepSleepMs.toFloat() / screenOffMs * 100f).coerceIn(0f, 100f)
-                val awakeMs = (screenOffMs - deepSleepMs).coerceAtLeast(0L)
-                StatRow(R.string.deep_sleep, "${formatDuration(deepSleepMs)} (${String.format(Locale.getDefault(), "%.0f%%", deepSleepPercent)})")
-                StatRow(R.string.awake, formatDuration(awakeMs))
-            }
-        }
-    }
-}
 
 @Composable
 private fun SignalQualityCard(snapshot: BatteryStatsParser.FullSnapshot?) {

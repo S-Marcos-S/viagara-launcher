@@ -665,7 +665,22 @@ object AppRootInspector {
                 }
             }
 
-            // 4. CPU time extraction: "Total cpu time: u=1m5s sys=20s" or "CPU: 1m 5s usr + 20s sys"
+            // 4. Checkin process line: 9,<uid>,l,pr,<process>,<userMs>,<sysMs>,<fgMs>,<starts>
+            if (trimmed.contains(",pr,")) {
+                val parts = trimmed.split(",")
+                val prUid = parts.getOrNull(1)?.toIntOrNull()
+                if (prUid == null || prUid == uid) {
+                    val userMs = parts.getOrNull(5)?.toLongOrNull() ?: 0L
+                    val sysMs = parts.getOrNull(6)?.toLongOrNull() ?: 0L
+                    val fgMs = parts.getOrNull(7)?.toLongOrNull() ?: 0L
+                    val cSec = (userMs + sysMs) / 1000L
+                    val fSec = fgMs / 1000L
+                    if (cSec > totalCpuSec) totalCpuSec = cSec
+                    if (fSec > fgTimeSec) fgTimeSec = fSec
+                }
+            }
+
+            // 5. CPU time extraction: "Total cpu time: u=1m5s sys=20s" or "CPU: 1m 5s usr + 20s sys"
             if (trimmed.startsWith("Total cpu time:") || trimmed.startsWith("CPU:") || trimmed.contains("cpu time:")) {
                 val userMatch = Regex("""(?:u=|usr\s*[:=]?\s*|User:\s*)([0-9hmsd ]+)""").find(trimmed)
                 val sysMatch = Regex("""(?:sys\s*[:=]?\s*|System:\s*)([0-9hmsd ]+)""").find(trimmed)
@@ -675,21 +690,21 @@ object AppRootInspector {
                 if (cSec > totalCpuSec) totalCpuSec = cSec
             }
 
-            // 5. Foreground activity time
+            // 6. Foreground activity time
             if (trimmed.startsWith("Foreground activities:") || trimmed.startsWith("Foreground:") || trimmed.startsWith("Foreground for:") || trimmed.startsWith("Top:")) {
                 val timeStr = trimmed.substringAfter(":").substringBefore("(").trim()
                 val sec = parseDurationSec(timeStr)
                 if (sec > fgTimeSec) fgTimeSec = sec
             }
 
-            // 6. Background time
+            // 7. Background time
             if (trimmed.startsWith("Background:") || trimmed.startsWith("Background for:") || trimmed.startsWith("Background cpu time:")) {
                 val timeStr = trimmed.substringAfter(":").trim()
                 val sec = parseDurationSec(timeStr)
                 if (sec > bgTimeSec) bgTimeSec = sec
             }
 
-            // 7. Wakelocks
+            // 8. Wakelocks
             if (trimmed.startsWith("Wake lock ") || trimmed.startsWith("Partial wakelocks:") || trimmed.startsWith("Wakelocks:") || trimmed.contains("wakelock")) {
                 val timeMatch = Regex("([0-9]+h\\s*)?([0-9]+m\\s*)?([0-9]+s\\s*)?([0-9]+ms)?").find(trimmed.substringAfter(":"))
                 if (timeMatch != null && timeMatch.value.isNotBlank()) {
@@ -698,7 +713,7 @@ object AppRootInspector {
                 }
             }
 
-            // 8. Wakeups / Alarms
+            // 9. Wakeups / Alarms
             if (trimmed.startsWith("Wakeups:") || trimmed.startsWith("Alarms:")) {
                 val count = Regex("\\d+").find(trimmed.substringAfter(":"))?.value?.toIntOrNull() ?: 0
                 if (count > wakeups) wakeups = count
@@ -709,6 +724,11 @@ object AppRootInspector {
         val estimatedCpuMah = (totalCpuSec / 3600.0) * 350.0 // ~350 mA avg active CPU draw
         val estimatedWlMah = (wlTimeSec / 3600.0) * 60.0    // ~60 mA low-power wakelock draw
 
+        val effectiveBgTimeSec = maxOf(
+            bgTimeSec,
+            (totalCpuSec - fgTimeSec).coerceAtLeast(0L) + wlTimeSec
+        )
+
         val sumComponents = cpuMah + wakelockMah + radioMah + wifiMah
         if (totalMah <= 0.0) {
             if (sumComponents > 0.0) {
@@ -718,23 +738,58 @@ object AppRootInspector {
                 if (cpuMah <= 0.0) cpuMah = estimatedCpuMah
                 if (wakelockMah <= 0.0) wakelockMah = estimatedWlMah
             }
-        } else if (cpuMah <= 0.0 && totalCpuSec > 0L) {
-            val remain = (totalMah - wakelockMah - radioMah - wifiMah).coerceAtLeast(0.0)
-            cpuMah = if (remain > 0) remain else estimatedCpuMah.coerceAtMost(totalMah)
+        } else {
+            if (sumComponents > totalMah) {
+                totalMah = sumComponents
+            }
+            if (cpuMah <= 0.0 && totalCpuSec > 0L) {
+                val remain = (totalMah - wakelockMah - radioMah - wifiMah).coerceAtLeast(0.0)
+                cpuMah = if (remain > 0) remain else estimatedCpuMah.coerceAtMost(totalMah)
+            }
         }
 
-        // Foreground vs Background proportional division
-        val totalActiveTime = (fgTimeSec + bgTimeSec).coerceAtLeast(1L)
-        val fgRatio = fgTimeSec.toDouble() / totalActiveTime.toDouble()
-
-        val fgMah = when {
-            fgTimeSec > 0 && bgTimeSec > 0 -> totalMah * fgRatio
-            fgTimeSec > 0 -> totalMah
-            bgTimeSec > 0 -> 0.0
-            else -> totalMah * 0.5
+        // Attribution of components between foreground (screen active) and background (silent processes/notifications)
+        val fgCpuRatio = if (fgTimeSec > 0L && totalCpuSec > 0L) {
+            (fgTimeSec.toDouble() / maxOf(fgTimeSec, totalCpuSec).toDouble()).coerceIn(0.0, 1.0)
+        } else if (fgTimeSec > 0L) {
+            1.0
+        } else {
+            0.0
         }
 
-        val bgMah = (totalMah - fgMah).coerceAtLeast(0.0)
+        val fgCpuMah = cpuMah * fgCpuRatio
+        val bgCpuMah = cpuMah * (1.0 - fgCpuRatio)
+
+        val remainMah = (totalMah - cpuMah - wakelockMah).coerceAtLeast(0.0)
+        val remainBg = if (fgTimeSec <= 0L) {
+            remainMah
+        } else if (effectiveBgTimeSec <= 0L) {
+            0.0
+        } else {
+            val totalActive = (fgTimeSec + effectiveBgTimeSec).toDouble()
+            remainMah * (effectiveBgTimeSec.toDouble() / totalActive).coerceIn(0.0, 1.0)
+        }
+        val remainFg = (remainMah - remainBg).coerceAtLeast(0.0)
+
+        // Wakelocks happen while running in background, attributing strictly to background drain
+        var fgMah = (fgCpuMah + remainFg).coerceAtLeast(0.0)
+        var bgMah = (wakelockMah + bgCpuMah + remainBg).coerceAtLeast(0.0)
+
+        // Ensure fgMah + bgMah == totalMah
+        val computedTotal = fgMah + bgMah
+        if (computedTotal > 0.0 && totalMah > 0.0) {
+            val scale = totalMah / computedTotal
+            fgMah *= scale
+            bgMah = (totalMah - fgMah).coerceAtLeast(0.0)
+        } else if (totalMah > 0.0) {
+            if (fgTimeSec > 0L && effectiveBgTimeSec == 0L) {
+                fgMah = totalMah
+                bgMah = 0.0
+            } else {
+                bgMah = totalMah
+                fgMah = 0.0
+            }
+        }
 
         val percentDrain = if (deviceBatteryCapacityMah > 0) {
             (totalMah / deviceBatteryCapacityMah) * 100.0
@@ -759,7 +814,7 @@ object AppRootInspector {
             percentTotalDrain = percentDrain,
             wakelockTimeSec = wlTimeSec,
             foregroundTimeSec = fgTimeSec,
-            backgroundTimeSec = bgTimeSec,
+            backgroundTimeSec = effectiveBgTimeSec,
             wakeupAlarmsCount = wakeups,
             powerImpact = impact,
         )

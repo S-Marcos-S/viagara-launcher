@@ -1,3 +1,22 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.50
+
+- **Remoção do Card Redundante de Tempo de Tela (`BatteryStatsScreen`):**
+  - **Interface Mais Limpa e Enxuta:** Removido o card "Análise do tempo de tela" da aba Visão Geral, uma vez que suas informações de dreno de tela acesa e apagada (%/h) e sono profundo já são fornecidas em tempo real e com muito maior precisão pelo `RealtimeDrainCard` e pelo `DischargeBreakdownCard`, eliminando duplicações e valores estáticos.
+
+- **Consistência Rigorosa do Consumo Total por UID vs. CPU (`BatteryStatsParser`):**
+  - **Eliminação de Inconsistências:** Corrigido o cálculo do dreno total por UID (`powerMah`) para assegurar que ele nunca seja inferior ao consumo de processamento da CPU (`cpuPowerMah`) ou à soma dos componentes de hardware (CPU, wakelocks, redes móveis, Wi-Fi, sensores e tela).
+  - **Fusão Confiável de Dados de Checkin:** A captura de consumo de energia agora preserva os maiores valores consolidados entre as diferentes categorias de despejo do Android (`l`, `u`), evitando que linhas parciais sobrescrevam o total com valores ínfimos.
+
+- **Correção da Divisão entre Primeiro Plano e Segundo Plano (`AppRootInspector`):**
+  - **Fim da Inflação Indevida em Primeiro Plano:** Corrigida a lógica de divisão de dreno de energia onde notificações e processamento silencioso em background aumentavam falsamente o medidor de "Primeiro Plano (Tela Ligada)".
+  - **Atribuição Correta de Notificações e Wakelocks:** O dreno proveniente de wakelocks e o tempo de CPU executado fora do período de atividade visível passam a ser debitados estritamente na barra de "Segundo Plano (Processos Silenciosos)".
+  - **Tratamento de Apps Sem Interface em Primeiro Plano:** Aplicativos ou serviços que nunca abriram tela visível agora possuem 100% de seu dreno alocado em segundo plano, sem divisão artificial arbitrária de 50%.
+
+- **Exibição de Temperatura da Bateria na Notificação em Tempo Real (`DrainNotificationManager`):**
+  - **Substituição do Texto "Ligado":** Removido o rótulo redundante "Ligado" ao lado da porcentagem da bateria e substituído pela leitura da temperatura da bateria em tempo real (ex: `85% • 40°`), com suporte a leitura via `ACTION_BATTERY_CHANGED` e fallback direto via nós térmicos do sysfs.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.49
 
 - **Correção e Vínculo Completo dos Dados de Consumo por Aplicativo e Processo (`BatteryStatsParser`):**

@@ -445,7 +445,8 @@ class AdvancedDrainTracker private constructor(
         _snapshots.value = emptyList()
         _drainState.value = DrainState(
             sessionStartTime = sessionStartTime,
-            batteryCapacityMah = estimatedCapacityMah
+            batteryCapacityMah = estimatedCapacityMah,
+            batteryTemperatureC = getBatteryTemperatureC()
         )
 
         scope.launch {
@@ -616,6 +617,7 @@ class AdvancedDrainTracker private constructor(
             timestamp = now,
             batteryLevel = getBatteryLevel(),
             batteryLevelMah = getCurrentBatteryMah(),
+            batteryTemperatureC = getBatteryTemperatureC(),
             batteryCapacityMah = estimatedCapacityMah,
             isScreenOn = powerManager.isInteractive,
             isCharging = isCharging(),
@@ -656,6 +658,25 @@ class AdvancedDrainTracker private constructor(
         val raw = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
         val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
         return if (raw >= 0 && scale > 0) (raw * 100 / scale) else null
+    }
+
+    fun getBatteryTemperatureC(): Float? {
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val raw = intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1) ?: -1
+        if (raw > 0) return raw / 10.0f
+
+        // Fallback: sysfs
+        try {
+            val f = java.io.File("/sys/class/power_supply/battery/temp")
+            if (f.exists() && f.canRead()) {
+                val tempVal = f.readText().trim().toIntOrNull()
+                if (tempVal != null && tempVal > 0) {
+                    return if (tempVal > 1000) tempVal / 1000.0f else tempVal / 10.0f
+                }
+            }
+        } catch (_: Throwable) {}
+
+        return null
     }
 
     fun getCurrentBatteryMah(): Double? {

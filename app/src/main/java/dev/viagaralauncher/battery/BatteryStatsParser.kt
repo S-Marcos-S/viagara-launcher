@@ -477,26 +477,45 @@ object BatteryStatsParser {
             val rawPower = existing?.powerMah ?: 0.0
             val estimatedCpuMah = (totalCpuTime / 3600000.0) * 350.0
             val estimatedWlMah = (totalWlTime / 3600000.0) * 60.0
-            val finalPower = if (rawPower > 0.0) rawPower else (estimatedCpuMah + estimatedWlMah)
-
-            if (finalPower <= 0.0 && totalCpuTime == 0L && totalWlTime == 0L && (mobRx + mobTx + wifiRx + wifiTx) == 0L) {
-                return@mapNotNull null
-            }
 
             val cpuPowerMah = if (existing != null && existing.cpuPowerMah > 0.0) {
                 existing.cpuPowerMah
-            } else if (finalPower > 0.0 && totalCpuTime > 0) {
-                val wlPortion = if (totalWlTime > 0) (finalPower * 0.15).coerceAtMost(estimatedWlMah) else 0.0
-                (finalPower - wlPortion).coerceAtLeast(0.0)
+            } else if (rawPower > 0.0 && totalCpuTime > 0L) {
+                val wlPortion = if (totalWlTime > 0L) (rawPower * 0.15).coerceAtMost(estimatedWlMah) else 0.0
+                val derivedCpu = (rawPower - wlPortion).coerceAtLeast(0.0)
+                if (derivedCpu > 0.0) derivedCpu else estimatedCpuMah
             } else {
                 estimatedCpuMah
             }
 
             val wakeLockPowerMah = if (existing != null && existing.wakeLockPowerMah > 0.0) {
                 existing.wakeLockPowerMah
-            } else if (totalWlTime > 0) {
-                (finalPower - cpuPowerMah).coerceAtLeast(0.0).let { if (it > 0) it else estimatedWlMah }
+            } else if (totalWlTime > 0L) {
+                if (rawPower > 0.0 && rawPower > cpuPowerMah) {
+                    (rawPower - cpuPowerMah).coerceAtMost(estimatedWlMah).coerceAtLeast(0.0)
+                } else {
+                    estimatedWlMah
+                }
             } else 0.0
+
+            val otherComponentsPower = (existing?.mobilePowerMah ?: 0.0) +
+                (existing?.wifiPowerMah ?: 0.0) +
+                (existing?.gpsPowerMah ?: 0.0) +
+                (existing?.sensorPowerMah ?: 0.0) +
+                (existing?.cameraPowerMah ?: 0.0) +
+                (existing?.bluetoothPowerMah ?: 0.0) +
+                (existing?.screenPowerMah ?: 0.0)
+
+            val componentsSum = cpuPowerMah + wakeLockPowerMah + otherComponentsPower
+            val finalPower = maxOf(
+                rawPower,
+                componentsSum,
+                if (totalCpuTime > 0L || totalWlTime > 0L) estimatedCpuMah + estimatedWlMah else 0.0
+            )
+
+            if (finalPower <= 0.0 && totalCpuTime == 0L && totalWlTime == 0L && (mobRx + mobTx + wifiRx + wifiTx) == 0L) {
+                return@mapNotNull null
+            }
 
             AppPowerStats(
                 uid = uid,
@@ -597,10 +616,10 @@ object BatteryStatsParser {
             appStats[uid] = existing.copy(
                 packageName = label,
                 packages = pkgs,
-                powerMah = existing.powerMah + mah,
-                proportionalSmearMah = if (smear > 0.0) smear else existing.proportionalSmearMah,
-                screenPowerMah = if (screen > 0.0) screen else existing.screenPowerMah,
-                cpuPowerMah = if (cpu > 0.0) cpu else existing.cpuPowerMah
+                powerMah = maxOf(existing.powerMah, mah),
+                proportionalSmearMah = if (smear > 0.0) maxOf(smear, existing.proportionalSmearMah) else existing.proportionalSmearMah,
+                screenPowerMah = if (screen > 0.0) maxOf(screen, existing.screenPowerMah) else existing.screenPowerMah,
+                cpuPowerMah = if (cpu > 0.0) maxOf(cpu, existing.cpuPowerMah) else existing.cpuPowerMah
             )
         }
     }

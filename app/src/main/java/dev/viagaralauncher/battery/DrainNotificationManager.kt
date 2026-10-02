@@ -155,17 +155,44 @@ class DrainNotificationManager private constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val currentTemp = state.batteryTemperatureC ?: drainTracker.getBatteryTemperatureC()
+        val tempText = currentTemp?.let { "${Math.round(it)}°" }
+
         val currentStateText = when {
-            state.isCharging -> context.getString(R.string.drain_state_charging)
-            state.isDeepSleep -> context.getString(R.string.drain_state_deep_sleep)
-            state.isDozing -> context.getString(R.string.drain_state_dozing)
-            state.isScreenOn -> context.getString(R.string.drain_state_screen_on)
-            else -> context.getString(R.string.drain_state_screen_off)
+            state.isCharging -> {
+                val chargingText = context.getString(R.string.drain_state_charging)
+                if (tempText != null) "$tempText • $chargingText" else chargingText
+            }
+            state.isDeepSleep -> {
+                val sleepText = context.getString(R.string.drain_state_deep_sleep)
+                if (tempText != null) "$tempText • $sleepText" else sleepText
+            }
+            state.isDozing -> {
+                val dozeText = context.getString(R.string.drain_state_dozing)
+                if (tempText != null) "$tempText • $dozeText" else dozeText
+            }
+            state.isScreenOn -> {
+                tempText ?: ""
+            }
+            else -> {
+                val offText = context.getString(R.string.drain_state_screen_off)
+                if (tempText != null) "$tempText • $offText" else offText
+            }
         }.removeEmojis()
 
-        val title = (state.batteryLevel
-            ?.let { context.getString(R.string.battery_level, it, currentStateText) }
-            ?: context.getString(R.string.battery_level_unknown, currentStateText)).removeEmojis()
+        val title = if (state.batteryLevel != null) {
+            if (currentStateText.isNotBlank()) {
+                "${state.batteryLevel}% • $currentStateText"
+            } else {
+                "${state.batteryLevel}%"
+            }
+        } else {
+            if (currentStateText.isNotBlank()) {
+                context.getString(R.string.battery_level_unknown, currentStateText)
+            } else {
+                context.getString(R.string.battery_level_unknown, "")
+            }
+        }.removeEmojis()
 
         val contentText = context.getString(
             R.string.drain_on_off_sleep,
