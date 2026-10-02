@@ -17,6 +17,10 @@
     - Chave ativadora/desativadora com persistência automática nas preferências do aplicativo.
   - **Suporte Integrado a Root & ADB:** Concessão e leitura automática de permissões `DUMP` e `BATTERY_STATS` para aparelhos com Superusuário (Magisk, KernelSU, APatch), com comandos rápidos e claros para dispositivos sem root via ADB.
   - **Consolidação de Recursos e Localização:** Integração e saneamento rigoroso de mais de 380 strings e plurais em português (pt, pt-BR) e inglês para suporte completo aos novos componentes sem duplicações de recursos.
+  - **Design Frosted Glass Translúcido com Blur e Monet Dinâmico:**
+    - Ativação do efeito de desfoque de fundo do sistema (`FLAG_BLUR_BEHIND` com raio 45) sobre o papel de parede nas telas de Estatísticas de Bateria e Gerenciador de Tarefas.
+    - Todos os cards agora utilizam superfícies translúcidas com tonalidade dinâmica derivada diretamente das cores do papel de parede do usuário (`dynamicSurfaceColor` e `dynamicBorderColor`), eliminando fundos cinzas/pretos genéricos e integrando o tema ao Material You.
+    - Otimização do card de monitoramento em tempo real: layout responsivo com divisão equilibrada por pesos (`weight(1f)`), tipografia calibrada, espaçamentos compactos e chips de métricas para prevenir estritamente qualquer corte de informações em displays de qualquer resolução ou escala de fonte.
 
 ---
 

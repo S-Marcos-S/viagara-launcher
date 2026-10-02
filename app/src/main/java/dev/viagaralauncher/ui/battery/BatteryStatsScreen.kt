@@ -24,7 +24,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.content.ClipData
@@ -32,9 +34,16 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import android.app.Activity
+import android.os.Build
+import android.view.WindowManager
+import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.R
 import dev.viagaralauncher.battery.BatteryStatsParser
 import dev.viagaralauncher.battery.RootBatteryStatsCollector
@@ -92,14 +101,47 @@ fun BatteryStatsScreen(
     }
     val pagerState = rememberPagerState(pageCount = { tabs.size })
 
+    val context = LocalContext.current
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val window = (context as? Activity)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && window != null) {
+            val hadBlurFlag = (window.attributes.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND) != 0
+            val prevRadius = window.attributes.blurBehindRadius
+            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = window.attributes
+            params.blurBehindRadius = 45
+            window.attributes = params
+
+            onDispose {
+                val p = window.attributes
+                p.blurBehindRadius = prevRadius
+                window.attributes = p
+                if (!hadBlurFlag) {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                }
+            }
+        } else {
+            onDispose {}
+        }
+    }
+
     LaunchedEffect(Unit) {
         vm.refresh()
     }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = dynamicSurfaceColor(alpha = 0.40f, tintFraction = 0.16f),
         topBar = {
             LargeTopAppBar(
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = dynamicSurfaceColor(alpha = 0.70f, tintFraction = 0.18f),
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+                ),
                 title = {
                     Column {
                         Text(stringResource(R.string.detailed_stats))
@@ -170,19 +212,43 @@ fun BatteryStatsScreen(
                     onRecheck = { vm.refresh(forceRefresh = true) }
                 )
             } else {
-                // Tab row
+                // Tab row with frosted glass and wallpaper Monet highlights
                 SecondaryScrollableTabRow(
                     selectedTabIndex = pagerState.currentPage,
                     edgePadding = 16.dp,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    divider = {}
+                    containerColor = Color.Transparent,
+                    divider = {},
+                    indicator = { tabPositions ->
+                        if (pagerState.currentPage < tabPositions.size) {
+                            TabRowDefaults.SecondaryIndicator(
+                                Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 ) {
                     tabs.forEachIndexed { index, tab ->
+                        val isSelected = pagerState.currentPage == index
                         Tab(
-                            selected = pagerState.currentPage == index,
+                            selected = isSelected,
                             onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                            text = { Text(stringResource(tab.titleRes)) },
-                            icon = { Icon(tab.icon, null, Modifier.size(18.dp)) }
+                            text = {
+                                Text(
+                                    stringResource(tab.titleRes),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            icon = {
+                                Icon(
+                                    tab.icon,
+                                    null,
+                                    Modifier.size(18.dp),
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         )
                     }
                 }
@@ -218,13 +284,14 @@ fun BatteryStatsScreen(
 
             AnimatedVisibility(visible = error != null) {
                 val message = remember(error) { error }
-                Card(
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp),
@@ -272,15 +339,15 @@ private fun PrivilegeRequiredCard(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            FrostedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(20.dp),
+                    modifier = Modifier.padding(6.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Security, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.advanced_stats_required), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.advanced_stats_required), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     }
                     Text(
                         stringResource(R.string.advanced_stats_desc),
@@ -301,14 +368,14 @@ private fun PrivilegeRequiredCard(
             AdbGrantCard(context)
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)), modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(stringResource(R.string.troubleshooting), style = MaterialTheme.typography.labelLarge)
-                    Text(stringResource(R.string.troubleshoot_1), style = MaterialTheme.typography.bodySmall)
-                    Text(stringResource(R.string.troubleshoot_2), style = MaterialTheme.typography.bodySmall)
-                    Text(stringResource(R.string.troubleshoot_3), style = MaterialTheme.typography.bodySmall)
-                    Text(stringResource(R.string.troubleshoot_4), style = MaterialTheme.typography.bodySmall)
-                    Text(stringResource(R.string.troubleshoot_5), style = MaterialTheme.typography.bodySmall)
+            FrostedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.troubleshooting), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.troubleshoot_1), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.troubleshoot_2), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.troubleshoot_3), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.troubleshoot_4), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.troubleshoot_5), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -352,9 +419,9 @@ private fun AdbGrantCard(context: Context) {
         "adb shell pm grant $pkg android.permission.INTERACT_ACROSS_USERS",
         "adb shell settings put global hidden_api_policy 1  # optional"
     )
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    FrostedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.adb), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.adb), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
             Text(stringResource(R.string.adb_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             commands.forEach { cmd ->
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -364,7 +431,7 @@ private fun AdbGrantCard(context: Context) {
                         cm.setPrimaryClip(ClipData.newPlainText("adb", cmd))
                     }) { Icon(Icons.Outlined.ContentCopy, stringResource(R.string.copy), modifier = Modifier.size(18.dp)) }
                 }
-                HorizontalDivider()
+                HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {
@@ -386,16 +453,12 @@ private fun RealtimeDrainCard(
     onToggleNotification: (Boolean) -> Unit,
     onResetSession: () -> Unit
 ) {
-    ElevatedCard(
+    FrostedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
-        )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(2.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -404,50 +467,60 @@ private fun RealtimeDrainCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
                         Icons.Outlined.Speed,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                     Text(
                         text = stringResource(R.string.live_drain_card_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    IconButton(onClick = onResetSession) {
+                    IconButton(
+                        onClick = onResetSession,
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Icon(
                             Icons.Outlined.RestartAlt,
                             contentDescription = stringResource(R.string.reset_session),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     Switch(
                         checked = isNotificationEnabled,
-                        onCheckedChange = onToggleNotification
+                        onCheckedChange = onToggleNotification,
+                        modifier = Modifier.scale(0.80f)
                     )
                 }
             }
 
             Text(
                 text = stringResource(R.string.drain_notification_toggle_desc),
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 2.dp),
+                color = dynamicBorderColor(alpha = 0.20f)
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 DrainMetricItem(
                     label = stringResource(R.string.screen_on),
@@ -462,7 +535,7 @@ private fun RealtimeDrainCard(
                     color = Color(0xFF3B82F6)
                 )
                 DrainMetricItem(
-                    label = stringResource(R.string.drain_state_deep_sleep),
+                    label = stringResource(R.string.deep_sleep),
                     rate = formatDrainRate(drainState.deepSleepDrainRate),
                     time = String.format(Locale.getDefault(), "%.0f%%", drainState.deepSleepPercentage),
                     color = Color(0xFF10B981)
@@ -471,22 +544,22 @@ private fun RealtimeDrainCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 DrainMetricItem(
-                    label = stringResource(R.string.activity_section),
+                    label = stringResource(R.string.active),
                     rate = formatDrainRate(drainState.activeDrainRate),
                     time = formatDuration(drainState.activeTimeMs),
                     color = Color(0xFFEF4444)
                 )
                 DrainMetricItem(
-                    label = stringResource(R.string.drain_state_dozing),
+                    label = stringResource(R.string.idle),
                     rate = formatDrainRate(drainState.idleDrainRate),
                     time = formatDuration(drainState.idleTimeMs),
                     color = Color(0xFF8B5CF6)
                 )
                 DrainMetricItem(
-                    label = stringResource(R.string.session_section),
+                    label = stringResource(R.string.total),
                     rate = String.format(Locale.getDefault(), "%.1f mAh", drainState.totalDrainMah),
                     time = formatDuration(drainState.totalTimeMs),
                     color = MaterialTheme.colorScheme.primary
@@ -497,35 +570,46 @@ private fun RealtimeDrainCard(
 }
 
 @Composable
-private fun DrainMetricItem(
+private fun RowScope.DrainMetricItem(
     label: String,
     rate: String,
     time: String,
     color: Color
 ) {
     Column(
-        modifier = Modifier.width(100.dp),
-        horizontalAlignment = Alignment.Start
+        modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.35f))
+            .padding(horizontal = 6.dp, vertical = 5.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall,
+            fontSize = 10.sp,
+            lineHeight = 12.sp,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             text = rate,
-            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 12.5.sp,
+            lineHeight = 15.sp,
             fontWeight = FontWeight.Bold,
             color = color,
-            maxLines = 1
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
         Text(
             text = time,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-            maxLines = 1
+            fontSize = 9.5.sp,
+            lineHeight = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -942,7 +1026,7 @@ private fun isUserApp(app: BatteryStatsParser.AppPowerStats): Boolean {
 private fun AppStatsCard(rank: Int, app: BatteryStatsParser.AppPowerStats) {
     var expanded by remember { mutableStateOf(false) }
 
-    ElevatedCard(
+    FrostedCard(
         onClick = { expanded = !expanded },
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -953,7 +1037,7 @@ private fun AppStatsCard(rank: Int, app: BatteryStatsParser.AppPowerStats) {
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
                     modifier = Modifier.size(36.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -1021,7 +1105,7 @@ private fun AppStatsCard(rank: Int, app: BatteryStatsParser.AppPowerStats) {
                     modifier = Modifier.padding(top = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    HorizontalDivider()
+                    HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
                     Spacer(Modifier.height(8.dp))
 
                     if (app.packages.size > 1) {
@@ -1137,7 +1221,7 @@ private fun WakelocksTab(
 
 @Composable
 private fun WakelockCard(wl: BatteryStatsParser.WakelockStats) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    FrostedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1147,6 +1231,7 @@ private fun WakelockCard(wl: BatteryStatsParser.WakelockStats) {
                     Text(
                         wl.tag,
                         style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1172,12 +1257,12 @@ private fun WakelockCard(wl: BatteryStatsParser.WakelockStats) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(stringResource(R.string.count), style = MaterialTheme.typography.labelSmall)
-                    Text("${wl.count}", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.count), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${wl.count}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(stringResource(R.string.total_time), style = MaterialTheme.typography.labelSmall)
-                    Text(formatDuration(wl.totalTimeMs), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.total_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatDuration(wl.totalTimeMs), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -1186,7 +1271,7 @@ private fun WakelockCard(wl: BatteryStatsParser.WakelockStats) {
 
 @Composable
 private fun KernelWakelockCard(wl: BatteryStatsParser.KernelWakelockStats) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    FrostedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 wl.name,
@@ -1273,13 +1358,14 @@ private enum class NetworkSortOption(val titleRes: Int) {
 
 @Composable
 private fun NetworkCard(net: BatteryStatsParser.NetworkStats) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    FrostedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             val netLabel = rememberAppLabel(net.packageName)
             if (netLabel != null) {
                 Text(
                     netLabel,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1294,6 +1380,7 @@ private fun NetworkCard(net: BatteryStatsParser.NetworkStats) {
                 Text(
                     net.packageName,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1309,14 +1396,16 @@ private fun NetworkCard(net: BatteryStatsParser.NetworkStats) {
                     Text(stringResource(R.string.mobile), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     Text(
                         stringResource(R.string.rx_tx, formatBytes(net.mobileRxBytes), formatBytes(net.mobileTxBytes)),
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(stringResource(R.string.wifi), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                     Text(
                         stringResource(R.string.rx_tx, formatBytes(net.wifiRxBytes), formatBytes(net.wifiTxBytes)),
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -1404,9 +1493,9 @@ private fun AlarmsJobsTab(
 
 @Composable
 private fun AlarmCard(alarm: BatteryStatsParser.AlarmStats) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    FrostedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(alarm.tag, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(alarm.tag, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(rememberAppLabelLine(alarm.packageName), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1420,9 +1509,9 @@ private fun AlarmCard(alarm: BatteryStatsParser.AlarmStats) {
 
 @Composable
 private fun JobCard(job: BatteryStatsParser.JobStats) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    FrostedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(job.jobName, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(job.jobName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(rememberAppLabelLine(job.packageName), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1435,9 +1524,9 @@ private fun JobCard(job: BatteryStatsParser.JobStats) {
 
 @Composable
 private fun SyncCard(sync: BatteryStatsParser.SyncStats) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    FrostedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(sync.authority, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(sync.authority, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(rememberAppLabelLine(sync.packageName), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1636,11 +1725,11 @@ private fun RootTab(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            ElevatedCard(
-                modifier = Modifier.padding(32.dp)
+            FrostedCard(
+                modifier = Modifier.padding(24.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -1652,7 +1741,8 @@ private fun RootTab(
                     )
                     Text(
                         stringResource(R.string.root_access_required),
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         stringResource(R.string.root_access_desc),
@@ -1660,8 +1750,11 @@ private fun RootTab(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    OutlinedCard(
-                        modifier = Modifier.fillMaxWidth()
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)),
+                        color = dynamicSurfaceColor(alpha = 0.50f, tintFraction = 0.20f),
+                        border = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.25f)),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(stringResource(R.string.root_only), style = MaterialTheme.typography.labelMedium)
@@ -2061,32 +2154,57 @@ private fun KernelWakelocksCard(wakelocks: List<RootBatteryStatsCollector.Kernel
 }
 
 @Composable
+private fun FrostedCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    shape: RoundedCornerShape = RoundedCornerShape(18.dp),
+    border: BorderStroke? = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.28f, tintFraction = 0.35f)),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        onClick = onClick ?: {},
+        enabled = onClick != null,
+        shape = shape,
+        color = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
+        border = border,
+        tonalElevation = 2.dp,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
 private fun StatsCard(
     titleRes: Int,
     icon: ImageVector,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
-            ) {
-                Icon(
-                    icon,
-                    null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    stringResource(titleRes),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            content()
+    FrostedCard {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 12.dp)
+        ) {
+            Icon(
+                icon,
+                null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                stringResource(titleRes),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
+        content()
     }
 }
 

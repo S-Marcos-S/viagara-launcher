@@ -97,9 +97,14 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import android.app.Activity
+import android.os.Build
+import android.view.WindowManager
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -217,8 +222,32 @@ fun TaskManagerScreen(
         }
     }
 
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val window = (context as? Activity)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && window != null) {
+            val hadBlurFlag = (window.attributes.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND) != 0
+            val prevRadius = window.attributes.blurBehindRadius
+            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = window.attributes
+            params.blurBehindRadius = 45
+            window.attributes = params
+
+            onDispose {
+                val p = window.attributes
+                p.blurBehindRadius = prevRadius
+                window.attributes = p
+                if (!hadBlurFlag) {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                }
+            }
+        } else {
+            onDispose {}
+        }
+    }
+
     Scaffold(
-        containerColor = dynamicSurfaceColor(),
+        containerColor = dynamicSurfaceColor(alpha = 0.40f, tintFraction = 0.16f),
         topBar = {
             CleanTaskManagerTopBar(
                 selectedTab = tabs.getOrElse(pagerState.currentPage) { TaskManagerTab.PROCESSES },
@@ -327,7 +356,7 @@ private fun CleanTaskManagerTopBar(
     val colorScheme = MaterialTheme.colorScheme
 
     Surface(
-        color = dynamicSurfaceColor(),
+        color = dynamicSurfaceColor(alpha = 0.65f, tintFraction = 0.18f),
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding(),
@@ -690,9 +719,9 @@ private fun ProcessRowCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, colorScheme.outline.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+            .border(1.dp, dynamicBorderColor(alpha = 0.25f, tintFraction = 0.30f), RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
-        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+        color = dynamicSurfaceColor(alpha = 0.70f, tintFraction = 0.18f),
         tonalElevation = 1.dp,
     ) {
         Row(
@@ -1197,8 +1226,8 @@ private fun CpuWaveformCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(20.dp)),
-        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+            .border(1.dp, dynamicBorderColor(alpha = 0.28f, tintFraction = 0.35f), RoundedCornerShape(20.dp)),
+        color = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
         tonalElevation = 2.dp,
     ) {
         Column(
@@ -1503,8 +1532,8 @@ private fun PerformanceResourceCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(20.dp)),
-        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+            .border(1.dp, dynamicBorderColor(alpha = 0.28f, tintFraction = 0.35f), RoundedCornerShape(20.dp)),
+        color = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
         tonalElevation = 2.dp,
     ) {
         Column(
