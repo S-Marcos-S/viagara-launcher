@@ -72,16 +72,10 @@ class ShellRunner(private val context: Context) {
                 RootBatteryStatsCollector.runAsRoot("pm grant $pkg android.permission.DUMP")
                 RootBatteryStatsCollector.runAsRoot("pm grant $pkg android.permission.BATTERY_STATS")
                 RootBatteryStatsCollector.runAsRoot("pm grant $pkg android.permission.PACKAGE_USAGE_STATS")
+                if (android.os.Build.VERSION.SDK_INT >= 33) {
+                    RootBatteryStatsCollector.runAsRoot("pm grant $pkg android.permission.POST_NOTIFICATIONS")
+                }
             } catch (_: Exception) {}
-        }
-
-        // Try direct ADB/dump if permissions are granted
-        if (hasDumpPermission(context) || hasBatteryStatsPermission(context)) {
-            val directOut = runDirect(cmd)
-            if (usable(directOut)) {
-                Log.d(TAG, "Ran via ADB/Direct: $cmd (${directOut!!.length} chars)")
-                return@withContext Outcome.Success(directOut, Mode.ADB)
-            }
         }
 
         // If root is available, execute via su
@@ -92,6 +86,15 @@ class ShellRunner(private val context: Context) {
                 return@withContext Outcome.Success(rootOut, Mode.ROOT)
             }
             lastFailure = Outcome.Failure(Mode.ROOT, "Root command returned empty or unusable output")
+        }
+
+        // Try direct ADB/dump if permissions are granted
+        if (hasDumpPermission(context) || hasBatteryStatsPermission(context)) {
+            val directOut = runDirect(cmd)
+            if (usable(directOut)) {
+                Log.d(TAG, "Ran via ADB/Direct: $cmd (${directOut!!.length} chars)")
+                return@withContext Outcome.Success(directOut, Mode.ADB)
+            }
         }
 
         // Fallback: try direct run even if permission check was strict
@@ -122,7 +125,7 @@ class ShellRunner(private val context: Context) {
     }
 
     private fun isErrorOutput(out: String): Boolean =
-        out.startsWith("ERROR") || out.contains("Permission Denial:") || out.contains("SecurityException")
+        out.startsWith("ERROR") || out.contains("Permission Denial:") || out.contains("SecurityException") || out.contains("Can't find service")
 
     suspend fun detectMode(forceRefresh: Boolean = false): Mode {
         if (!forceRefresh) {

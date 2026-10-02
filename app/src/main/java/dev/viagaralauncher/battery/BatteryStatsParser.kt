@@ -1,4 +1,4 @@
-﻿package dev.viagaralauncher.battery
+package dev.viagaralauncher.battery
 
 import kotlin.math.roundToLong
 
@@ -278,81 +278,81 @@ object BatteryStatsParser {
                     }
 
                     // Power use item: 9,<uid>,l,pwi,<type>,<mAh>,...
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "pwi" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "pwi" -> {
                         parsePowerUseItem(parts, uidToPackages, appStats)
                     }
 
                     // Wakelock: 9,<uid>,l,wl,<name>,<type>,<count>,<time>...
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "wl" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "wl" -> {
                         parseWakelock(parts, uidToPackages, wakelocks)
                     }
 
                     // Kernel wakelock: 9,0,l,kwl,<name>,<count>,<time>...
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "kwl" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "kwl" -> {
                         parseKernelWakelock(parts, kernelWakelocks)
                     }
 
                     // Alarm: 9,<uid>,l,wua,<tag>,<count>,<time>,<wakeups>
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "wua" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "wua" -> {
                         parseAlarm(parts, uidToPackages, alarms)
                     }
 
                     // Job: 9,<uid>,l,jb,<job>,<count>,<time>
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "jb" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "jb" -> {
                         parseJob(parts, uidToPackages, jobs)
                     }
 
                     // Sync: 9,<uid>,l,sy,<authority>,<count>,<time>
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "sy" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "sy" -> {
                         parseSync(parts, uidToPackages, syncs)
                     }
 
                     // Network: 9,<uid>,l,nt,<rxB>,<txB>,...
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "nt" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "nt" -> {
                         parseNetwork(parts, uidToPackages, network)
                     }
 
                     // Sensor: 9,<uid>,l,sr,<handle>,<count>,<time>
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "sr" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "sr" -> {
                         parseSensor(parts, uidToPackages, sensors)
                     }
 
                     // Signal strength: 9,0,l,sgt,<time0>,<time1>,<time2>,<time3>,<time4>
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "sgt" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "sgt" -> {
                         parseSignalStrength(parts, signalStrength)
                     }
 
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "wsgt" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "wsgt" -> {
                         parseWifiSignal(parts, wifiSignal)
                     }
 
                     // Bluetooth controller: 9,0,l,ble,<idle>,<rx>,<tx>,<power>
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "ble" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "ble" -> {
                         bluetooth = parseBluetooth(parts)
                     }
 
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "dc" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "dc" -> {
                         parts.getOrNull(6)?.toFloatOrNull()?.let { screenOnDischarge = it }
                         parts.getOrNull(7)?.toFloatOrNull()?.let { screenOffDischarge = it }
                     }
 
                     // Battery core: 9,0,l,bt,startCount,battRealtime,battUptime,...
-                    parts[2] == "l" && parts[3] == "bt" -> {
+                    parts[2] in listOf("l", "u", "c", "a") && parts[3] == "bt" -> {
                         batteryRealtimeMs = parts.getOrNull(5)?.toLongOrNull() ?: 0L
                     }
 
-                    parts[2] == "l" && parts[3] == "m" -> {
+                    parts[2] in listOf("l", "u", "c", "a") && parts[3] == "m" -> {
                         screenOnTimeMs = parts.getOrNull(4)?.toLongOrNull() ?: 0L
                         doze = parseDoze(parts) ?: doze
                     }
 
                     // Power summary: 9,0,l,pws,capacity,computed,minDrained,maxDrained
-                    parts[2] == "l" && parts[3] == "pws" -> {
+                    parts[2] in listOf("l", "u", "c", "a") && parts[3] == "pws" -> {
                         estCapacity = parts.getOrNull(4)?.toDoubleOrNull()?.roundToLong()?.toInt() ?: 0
                     }
 
                     // Process stats: 9,<uid>,l,pr,<process>,<user>,<sys>,<fg>,<starts>
-                    parts.getOrNull(2) == "l" && parts.getOrNull(3) == "pr" -> {
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "pr" -> {
                         parseProcess(parts, uidToPackages, processStats)
                     }
                 }
@@ -736,7 +736,6 @@ object BatteryStatsParser {
         val lightIdlingTime = parts.getOrNull(21)?.toLongOrNull() ?: 0L
         val lightIdlingCount = parts.getOrNull(22)?.toIntOrNull() ?: 0
 
-        if (deepTime == 0L && lightTime == 0L && deepCount == 0 && lightCount == 0) return null
 
         return DozeStats(
             idleModeTimeMs = deepTime + lightTime,
@@ -849,7 +848,9 @@ object BatteryStatsParser {
             val trimmed = line.trim()
             when {
                 trimmed.startsWith("mState=") -> currentState = trimmed.removePrefix("mState=")
+                trimmed.startsWith("State: ") -> currentState = trimmed.removePrefix("State: ")
                 trimmed.startsWith("mLightState=") -> lightState = trimmed.removePrefix("mLightState=")
+                trimmed.startsWith("Light state: ") -> lightState = trimmed.removePrefix("Light state: ")
                 trimmed.startsWith("mDeepEnabled=") -> deepEnabled = trimmed.contains("true")
                 trimmed.startsWith("mLightEnabled=") -> lightEnabled = trimmed.contains("true")
                 trimmed.startsWith("mScreenOnTime=") -> screenOnTime = trimmed.removePrefix("mScreenOnTime=").toLongOrNull() ?: 0L
@@ -920,9 +921,11 @@ object BatteryStatsParser {
                 trimmed.startsWith("Display Power: state=") -> {
                     screenOn = trimmed.substringAfter("=").startsWith("ON")
                 }
-                // Fallback for dumps that do not include the Display Power line.
                 trimmed.startsWith("mWakefulness=") -> {
                     screenOn = trimmed.substringAfter("=").equals("Awake", ignoreCase = true)
+                }
+                trimmed.startsWith("Wakefulness: ") -> {
+                    screenOn = trimmed.substringAfter("Wakefulness: ").equals("Awake", ignoreCase = true)
                 }
                 trimmed.startsWith("mBatteryLevel=") -> {
                     batteryLevel = trimmed.substringAfter("=").toIntOrNull() ?: 0
@@ -942,6 +945,12 @@ object BatteryStatsParser {
                 }
                 trimmed.startsWith("mDeviceIdleMode=") -> {
                     deviceIdleMode = trimmed.substringAfter("=")
+                }
+                trimmed.startsWith("Device idle mode: ") -> {
+                    deviceIdleMode = trimmed.substringAfter("Device idle mode: ")
+                }
+                trimmed.startsWith("mLightDeviceIdleMode=") -> {
+                    if (deviceIdleMode == "UNKNOWN") deviceIdleMode = trimmed.substringAfter("=")
                 }
                 // Headings carry a size suffix: "Wake Locks: size=3".
                 trimmed.startsWith("Wake Locks:") -> {

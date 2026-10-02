@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Viagara Launcher</string>
-    <string name="accessibility_description">Permite que o gesto de deslizar para baixo abra o painel de notificaÃ§Ãµes e que o toque duplo desligue a tela. O Viagara Launcher nÃ£o lÃª nem interage com o conteÃºdo da tela.</string>
+    <string name="accessibility_description">Permite que o gesto de deslizar para baixo abra o painel de notificações e que o toque duplo desligue a tela. O Viagara Launcher não lê nem interage com o conteúdo da tela.</string>
     <string name="accessibility_service_label">Gestos do Viagara Launcher</string>
-    <string name="notification_service_label">MÃºsicas em ReproduÃ§Ã£o do Viagara Launcher</string>
+    <string name="notification_service_label">Músicas em Reprodução do Viagara Launcher</string>
 
-    <!-- AÃ§Ãµes compartilhadas -->
+    <!-- Ações compartilhadas -->
     <string name="action_back">Voltar</string>
     <string name="action_save">Salvar</string>
     <string name="action_cancel">Cancelar</string>
@@ -13,78 +13,78 @@
     <string name="action_download">Baixar</string>
     <string name="action_reset">Redefinir</string>
     <string name="action_create">Criar</string>
-    <string name="action_done">ConcluÃ­do</string>
+    <string name="action_done">Concluído</string>
     <string name="action_remove">Remover</string>
-    <string name="action_app_info">InformaÃ§Ãµes do app</string>
+    <string name="action_app_info">Informações do app</string>
     <string name="action_edit_layout">Editar layout</string>
     <string name="action_align_elements">Alinhar elementos</string>
     <string name="toast_aligned_elements">Todos os elementos foram alinhados com base nos aplicativos</string>
     <string name="action_resize">Redimensionar</string>
-    <string name="action_edit_icon_and_name">Editar Ã­cone e nome</string>
-    <string name="action_move_to_folder">Mover para pastaâ€¦</string>
-    <string name="action_change_icon">Alterar Ã­coneâ€¦</string>
-    <string name="action_open_settings">ConfiguraÃ§Ãµes do Viagara Launcher</string>
-    <string name="action_not_now">Agora nÃ£o</string>
-    <string name="action_set_default">Definir como padrÃ£o</string>
-    <string name="default_launcher_dialog_title">Definir como inicializador padrÃ£o</string>
-    <string name="default_launcher_dialog_message">Defina o Viagara Launcher como seu aplicativo de tela inicial padrÃ£o para desfrutar de uma experiÃªncia limpa, ultra rÃ¡pida e sem distraÃ§Ãµes sempre que pressionar o botÃ£o Home ou desbloquear o aparelho.</string>
-    <string name="default_launcher_feature_home">Acesso instantÃ¢neo ao pressionar o botÃ£o Home</string>
-    <string name="default_launcher_feature_apps">NavegaÃ§Ã£o A-Z fluida e pesquisa universal</string>
-    <string name="default_launcher_feature_minimal">Interface limpa, focada e personalizÃ¡vel</string>
-    <string name="settings_default_launcher">Inicializador padrÃ£o</string>
-    <string name="settings_default_launcher_is_default">Viagara Launcher Ã© o app padrÃ£o</string>
-    <string name="settings_default_launcher_set">Toque para definir como padrÃ£o</string>
+    <string name="action_edit_icon_and_name">Editar ícone e nome</string>
+    <string name="action_move_to_folder">Mover para pasta…</string>
+    <string name="action_change_icon">Alterar ícone…</string>
+    <string name="action_open_settings">Configurações do Viagara Launcher</string>
+    <string name="action_not_now">Agora não</string>
+    <string name="action_set_default">Definir como padrão</string>
+    <string name="default_launcher_dialog_title">Definir como inicializador padrão</string>
+    <string name="default_launcher_dialog_message">Defina o Viagara Launcher como seu aplicativo de tela inicial padrão para desfrutar de uma experiência limpa, ultra rápida e sem distrações sempre que pressionar o botão Home ou desbloquear o aparelho.</string>
+    <string name="default_launcher_feature_home">Acesso instantâneo ao pressionar o botão Home</string>
+    <string name="default_launcher_feature_apps">Navegação A-Z fluida e pesquisa universal</string>
+    <string name="default_launcher_feature_minimal">Interface limpa, focada e personalizável</string>
+    <string name="settings_default_launcher">Inicializador padrão</string>
+    <string name="settings_default_launcher_is_default">Viagara Launcher é o app padrão</string>
+    <string name="settings_default_launcher_set">Toque para definir como padrão</string>
 
     <!-- Tela inicial -->
-    <string name="options_title">OpÃ§Ãµes</string>
+    <string name="options_title">Opções</string>
     <string name="home_option_wallpaper">Papel de parede</string>
     <string name="home_reorder_hint">Segure e arraste para reordenar</string>
     <string name="home_no_favorites_title">Nenhum favorito ainda</string>
     <string name="home_no_favorites_body">Toque na borda da tela para abrir a lista de apps ou escolha seus favoritos na lista abaixo.</string>
     <string name="home_choose_favorites">Escolher favoritos</string>
-    <string name="home_folder_choose_apps">Escolher appsâ€¦</string>
+    <string name="home_folder_choose_apps">Escolher apps…</string>
     <string name="home_folder_delete">Excluir pasta</string>
-    <string name="home_folder_empty">Vazia â€” pressione e segure a pasta para escolher apps</string>
+    <string name="home_folder_empty">Vazia — pressione e segure a pasta para escolher apps</string>
     <string name="home_folder_name_label">Nome da pasta</string>
-    <string name="home_folder_use_previews">Usar prÃ©vias dos apps</string>
-    <string name="home_display_name_label">Nome de exibiÃ§Ã£o</string>
+    <string name="home_folder_use_previews">Usar prévias dos apps</string>
+    <string name="home_display_name_label">Nome de exibição</string>
 
-    <!-- AtualizaÃ§Ãµes -->
-    <string name="update_available_title">Nova versÃ£o disponÃ­vel</string>
-    <string name="update_action_changelog">MudanÃ§as</string>
+    <!-- Atualizações -->
+    <string name="update_available_title">Nova versão disponível</string>
+    <string name="update_action_changelog">Mudanças</string>
     <string name="update_action_download">Atualizar</string>
     <string name="update_action_install">Instalar</string>
-    <string name="update_dialog_title">O que hÃ¡ de novo</string>
+    <string name="update_dialog_title">O que há de novo</string>
     <string name="update_build_prefix">Build %1$s</string>
     <string name="update_compiled_at">Compilada em %1$s</string>
-    <string name="update_downloading_notification_desc">Baixando atualizaÃ§Ã£o%1$sâ€¦</string>
-    <string name="update_downloading_progress">Baixando %1$d%%â€¦</string>
-    <string name="update_toast_downloading">Baixando atualizaÃ§Ã£oâ€¦ Acompanhe pela barra de notificaÃ§Ãµes</string>
-    <string name="update_toast_download_completed">Download concluÃ­do! APK salvo na pasta Downloads</string>
+    <string name="update_downloading_notification_desc">Baixando atualização%1$s…</string>
+    <string name="update_downloading_progress">Baixando %1$d%%…</string>
+    <string name="update_toast_downloading">Baixando atualização… Acompanhe pela barra de notificações</string>
+    <string name="update_toast_download_completed">Download concluído! APK salvo na pasta Downloads</string>
     <string name="update_toast_error">Erro ao iniciar download: %1$s</string>
-    <string name="update_notification_channel_name">AtualizaÃ§Ãµes do aplicativo</string>
-    <string name="update_notification_channel_desc">Avisos sobre novas versÃµes disponÃ­veis do Viagara Launcher</string>
-    <string name="update_notification_title">Viagara Launcher %1$s disponÃ­vel</string>
-    <string name="update_notification_text">Toque para ver o que hÃ¡ de novo e atualizar</string>
+    <string name="update_notification_channel_name">Atualizações do aplicativo</string>
+    <string name="update_notification_channel_desc">Avisos sobre novas versões disponíveis do Viagara Launcher</string>
+    <string name="update_notification_title">Viagara Launcher %1$s disponível</string>
+    <string name="update_notification_text">Toque para ver o que há de novo e atualizar</string>
     <string name="update_root_install_option">Instalar via Root (Sem Play Protect)</string>
-    <string name="update_root_install_desc">InstalaÃ§Ã£o silenciosa direta sem passar pelo Google Play Protect</string>
+    <string name="update_root_install_desc">Instalação silenciosa direta sem passar pelo Google Play Protect</string>
     <string name="update_action_install_root">Instalar via Root</string>
-    <string name="update_status_installing_root">Instalando via Rootâ€¦</string>
-    <string name="update_toast_root_success">AtualizaÃ§Ã£o instalada com sucesso via Root!</string>
-    <string name="update_toast_root_failed">Falha na instalaÃ§Ã£o Root: %1$s. Abrindo instalador padrÃ£oâ€¦</string>
+    <string name="update_status_installing_root">Instalando via Root…</string>
+    <string name="update_toast_root_success">Atualização instalada com sucesso via Root!</string>
+    <string name="update_toast_root_failed">Falha na instalação Root: %1$s. Abrindo instalador padrão…</string>
 
-    <!-- AlÃ§as de arrasto no modo de ediÃ§Ã£o -->
-    <string name="handle_side_padding">â†” EspaÃ§amento lateral Â· %1$ddp</string>
-    <string name="handle_alphabet_side_padding">â†” EspaÃ§amento lateral do alfabeto Â· %1$ddp</string>
-    <string name="handle_vertical">â†• %1$s Â· %2$ddp</string>
+    <!-- Alças de arrasto no modo de edição -->
+    <string name="handle_side_padding">↔ Espaçamento lateral · %1$ddp</string>
+    <string name="handle_alphabet_side_padding">↔ Espaçamento lateral do alfabeto · %1$ddp</string>
+    <string name="handle_vertical">↕ %1$s · %2$ddp</string>
     <string name="handle_widget_top">Topo do widget</string>
     <string name="handle_widget_bottom">Base do widget</string>
     <string name="handle_widget_height">Altura do widget</string>
     <string name="handle_favorites_top">Topo dos favoritos</string>
     <string name="handle_favorites_bottom">Base dos favoritos</string>
-    <string name="handle_now_playing_top">Topo do player de mÃºsica</string>
-    <string name="handle_now_playing_bottom">Base do player de mÃºsica</string>
-    <string name="handle_now_playing_height">Altura do player de mÃºsica</string>
+    <string name="handle_now_playing_top">Topo do player de música</string>
+    <string name="handle_now_playing_bottom">Base do player de música</string>
+    <string name="handle_now_playing_height">Altura do player de música</string>
 
     <!-- Lista de aplicativos -->
     <string name="applist_add_favorite">Adicionar aos favoritos</string>
@@ -92,81 +92,81 @@
     <string name="applist_hide">Ocultar da lista</string>
 
     <!-- Mensagens (Toasts) -->
-    <string name="toast_enable_accessibility_shade">Ative o Viagara Launcher em ConfiguraÃ§Ãµes â†’ Acessibilidade para abrir as notificaÃ§Ãµes</string>
-    <string name="toast_enable_accessibility_lock">Ative o Viagara Launcher em ConfiguraÃ§Ãµes â†’ Acessibilidade para desligar a tela</string>
+    <string name="toast_enable_accessibility_shade">Ative o Viagara Launcher em Configurações → Acessibilidade para abrir as notificações</string>
+    <string name="toast_enable_accessibility_lock">Ative o Viagara Launcher em Configurações → Acessibilidade para desligar a tela</string>
 
-    <!-- ConfiguraÃ§Ãµes -->
-    <string name="settings_title">ConfiguraÃ§Ãµes do Viagara Launcher</string>
-    <string name="settings_section_appearance">AparÃªncia</string>
+    <!-- Configurações -->
+    <string name="settings_title">Configurações do Viagara Launcher</string>
+    <string name="settings_section_appearance">Aparência</string>
     <string name="settings_section_behavior">Comportamento</string>
-    <string name="settings_section_now_playing">Em ReproduÃ§Ã£o</string>
+    <string name="settings_section_now_playing">Em Reprodução</string>
     <string name="settings_section_apps">Aplicativos</string>
     <string name="settings_section_about">Sobre</string>
-    <string name="settings_preview">PrÃ©via</string>
+    <string name="settings_preview">Prévia</string>
     <string name="settings_preview_sample">App de exemplo</string>
-    <string name="settings_icon_pack">Pacote de Ã­cones</string>
-    <string name="settings_icon_pack_default">PadrÃ£o</string>
-    <string name="settings_icon_pack_none">Nenhum pacote de Ã­cones encontrado neste dispositivo.</string>
-    <string name="settings_themed_icons">Ãcones temÃ¡ticos</string>
-    <string name="settings_themed_icons_detail">Aplica cores dinÃ¢micas do Monet do papel de parede a todos os aplicativos</string>
-    <string name="settings_themed_icons_style">Estilo dos Ã­cones</string>
+    <string name="settings_icon_pack">Pacote de ícones</string>
+    <string name="settings_icon_pack_default">Padrão</string>
+    <string name="settings_icon_pack_none">Nenhum pacote de ícones encontrado neste dispositivo.</string>
+    <string name="settings_themed_icons">Ícones temáticos</string>
+    <string name="settings_themed_icons_detail">Aplica cores dinâmicas do Monet do papel de parede a todos os aplicativos</string>
+    <string name="settings_themed_icons_style">Estilo dos ícones</string>
     <string name="settings_themed_icons_style_material_you">Material You</string>
     <string name="settings_themed_icons_style_minimalist">Minimalista</string>
-    <string name="settings_icon_size">Tamanho dos Ã­cones</string>
+    <string name="settings_icon_size">Tamanho dos ícones</string>
     <string name="settings_text_size">Tamanho do texto</string>
-    <string name="settings_favorite_spacing">EspaÃ§amento entre favoritos</string>
+    <string name="settings_favorite_spacing">Espaçamento entre favoritos</string>
     <string name="settings_font">Fonte</string>
     <string name="settings_text_colour">Cor do texto</string>
-    <string name="settings_text_colour_detail">LÃª automaticamente o papel de parede e escolhe a cor mais legÃ­vel</string>
+    <string name="settings_text_colour_detail">Lê automaticamente o papel de parede e escolhe a cor mais legível</string>
     <string name="settings_right_handed">Layout para destros</string>
-    <string name="settings_right_handed_detail">Alinha os Ã­cones e nomes junto Ã  borda direita</string>
+    <string name="settings_right_handed_detail">Alinha os ícones e nomes junto à borda direita</string>
     <string name="settings_show_names">Mostrar nomes sob os favoritos</string>
-    <string name="settings_clock_style">Estilo do relÃ³gio</string>
-    <string name="settings_clock_style_detail">Personalize o visual do relÃ³gio na tela inicial</string>
-    <string name="clock_style_classic">ClÃ¡ssico</string>
+    <string name="settings_clock_style">Estilo do relógio</string>
+    <string name="settings_clock_style_detail">Personalize o visual do relógio na tela inicial</string>
+    <string name="clock_style_classic">Clássico</string>
     <string name="clock_style_stacked">Empilhado</string>
     <string name="clock_style_minimal">Minimalista</string>
-    <string name="clock_style_analog">AnalÃ³gico</string>
-    <string name="clock_style_digital_card">CartÃ£o Digital</string>
+    <string name="clock_style_analog">Analógico</string>
+    <string name="clock_style_digital_card">Cartão Digital</string>
     <string name="clock_style_day_focus">Dia em Destaque</string>
     <string name="clock_style_tech_hud">HUD Futurista</string>
     <string name="clock_style_tech_hud_pro">HUD Futurista Pro</string>
     <string name="clock_style_system_monitor">Monitor do Sistema</string>
-    <string name="clock_style_minimal_specs">Minimalista com MÃ©tricas</string>
+    <string name="clock_style_minimal_specs">Minimalista com Métricas</string>
     <string name="clock_style_retro_terminal">Terminal Geek</string>
-    <string name="clock_style_daily_reflection">ReflexÃ£o DiÃ¡ria</string>
-    <string name="clock_style_daily_reflection_stats">ReflexÃ£o DiÃ¡ria + MÃ©tricas</string>
-    <string name="quote_of_the_day_tag">ReflexÃ£o do dia</string>
-    <string name="quote_copied">Frase copiada para a Ã¡rea de transferÃªncia</string>
+    <string name="clock_style_daily_reflection">Reflexão Diária</string>
+    <string name="clock_style_daily_reflection_stats">Reflexão Diária + Métricas</string>
+    <string name="quote_of_the_day_tag">Reflexão do dia</string>
+    <string name="quote_copied">Frase copiada para a área de transferência</string>
     <string name="settings_hide_status_bar">Ocultar barra de status</string>
     <string name="settings_dim_home">Escurecer papel de parede na tela inicial</string>
     <string name="settings_dim_applist">Escurecer papel de parede na lista de apps</string>
-    <string name="settings_haptics">Resposta tÃ¡til</string>
-    <string name="settings_haptics_detail">Segue a configuraÃ§Ã£o de vibraÃ§Ã£o ao toque do sistema</string>
+    <string name="settings_haptics">Resposta tátil</string>
+    <string name="settings_haptics_detail">Segue a configuração de vibração ao toque do sistema</string>
     <string name="settings_edge_side">Borda que abre a lista de apps</string>
     <string name="settings_double_tap_lock">Toque duplo para desligar a tela</string>
-    <string name="settings_double_tap_lock_detail">Toque duas vezes em um espaÃ§o vazio na tela inicial</string>
-    <string name="settings_double_tap_lock_not_ready">ServiÃ§o de acessibilidade necessÃ¡rio para desligar a tela; toque em Ativar para conceder permissÃ£o</string>
-    <string name="settings_always_show_az">Sempre exibir Ã­ndice A-Z</string>
-    <string name="settings_shade_gesture">Deslizar para baixo para notificaÃ§Ãµes</string>
-    <string name="settings_shade_ready">Pronto â€” puxe para baixo na tela inicial</string>
-    <string name="settings_shade_not_ready">O Android nÃ£o possui API pÃºblica para abrir o painel; ative o Viagara Launcher em Acessibilidade para permitir</string>
+    <string name="settings_double_tap_lock_detail">Toque duas vezes em um espaço vazio na tela inicial</string>
+    <string name="settings_double_tap_lock_not_ready">Serviço de acessibilidade necessário para desligar a tela; toque em Ativar para conceder permissão</string>
+    <string name="settings_always_show_az">Sempre exibir índice A-Z</string>
+    <string name="settings_shade_gesture">Deslizar para baixo para notificações</string>
+    <string name="settings_shade_ready">Pronto — puxe para baixo na tela inicial</string>
+    <string name="settings_shade_not_ready">O Android não possui API pública para abrir o painel; ative o Viagara Launcher em Acessibilidade para permitir</string>
     <string name="settings_enable">Ativar</string>
-    <string name="settings_now_playing_show">Exibir widget Em ReproduÃ§Ã£o</string>
-    <string name="settings_notification_access_granted">Acesso a notificaÃ§Ãµes concedido</string>
-    <string name="settings_notification_access_missing">Acesso a notificaÃ§Ãµes nÃ£o concedido</string>
-    <string name="settings_notification_access_detail">NecessÃ¡rio para exibir a faixa que estÃ¡ tocando no momento</string>
-    <string name="settings_open_settings">Abrir configuraÃ§Ãµes</string>
+    <string name="settings_now_playing_show">Exibir widget Em Reprodução</string>
+    <string name="settings_notification_access_granted">Acesso a notificações concedido</string>
+    <string name="settings_notification_access_missing">Acesso a notificações não concedido</string>
+    <string name="settings_notification_access_detail">Necessário para exibir a faixa que está tocando no momento</string>
+    <string name="settings_open_settings">Abrir configurações</string>
     <string name="settings_favorites">Favoritos</string>
     <string name="settings_favorites_detail">Escolha quais aplicativos ficam na tela inicial</string>
     <string name="settings_hidden_apps">Aplicativos ocultos</string>
     <string name="settings_hidden_none">Nenhum oculto</string>
     <string name="settings_hidden_count">%1$d oculto(s)</string>
-    <string name="settings_show_notifications">Exibir notificaÃ§Ãµes nos apps</string>
-    <string name="settings_show_notifications_detail">Exibe notificaÃ§Ãµes recentes abaixo dos nomes dos apps</string>
+    <string name="settings_show_notifications">Exibir notificações nos apps</string>
+    <string name="settings_show_notifications_detail">Exibe notificações recentes abaixo dos nomes dos apps</string>
     <string name="notification_open">Abrir</string>
     <string name="notification_dismiss">Dispensar</string>
-    <string name="settings_version">VersÃ£o %1$s</string>
+    <string name="settings_version">Versão %1$s</string>
     <string name="settings_less">Menos</string>
     <string name="settings_more">Mais</string>
 
@@ -174,10 +174,10 @@
     <string name="font_system">Sistema</string>
     <string name="font_sans_serif">Sem serifa</string>
     <string name="font_serif">Com serifa</string>
-    <string name="font_monospace">MonoespaÃ§ada</string>
+    <string name="font_monospace">Monoespaçada</string>
 
     <!-- Escolhas de cor do texto -->
-    <string name="text_colour_auto">AutomÃ¡tico</string>
+    <string name="text_colour_auto">Automático</string>
     <string name="text_colour_light">Claro</string>
     <string name="text_colour_dark">Escuro</string>
 
@@ -192,118 +192,118 @@
     <string name="settings_folder_window_popup">Janela flutuante para pastas</string>
     <string name="settings_folder_window_popup_detail">Abre os apps da pasta em uma janela flutuante em vez de expandir na lista de favoritos</string>
     <string name="folder_title_fallback">Pasta</string>
-    <string name="folder_gone">Esta pasta nÃ£o existe mais.</string>
+    <string name="folder_gone">Esta pasta não existe mais.</string>
     <string name="folder_member_count">%1$d nesta pasta</string>
-    <string name="folder_picker_title">Mover %1$s paraâ€¦</string>
+    <string name="folder_picker_title">Mover %1$s para…</string>
     <string name="folder_picker_app_count">%1$d apps</string>
     <string name="folder_picker_new">Nova pasta</string>
-    <string name="folder_picker_new_detail">O app serÃ¡ movido para uma nova pasta na sua tela inicial.</string>
+    <string name="folder_picker_new_detail">O app será movido para uma nova pasta na sua tela inicial.</string>
 
-    <!-- Seletor de Ã­cones -->
-    <string name="icon_picker_title">Ãcone para %1$s</string>
-    <string name="icon_picker_gallery">Galeriaâ€¦</string>
-    <string name="icon_picker_reset">Restaurar padrÃ£o</string>
-    <string name="icon_picker_no_packs">Nenhum pacote de Ã­cones instalado. Instale um pacote da Play Store ou escolha uma imagem da galeria.</string>
-    <string name="icon_picker_search">Pesquisar Ã­cones</string>
+    <!-- Seletor de ícones -->
+    <string name="icon_picker_title">Ícone para %1$s</string>
+    <string name="icon_picker_gallery">Galeria…</string>
+    <string name="icon_picker_reset">Restaurar padrão</string>
+    <string name="icon_picker_no_packs">Nenhum pacote de ícones instalado. Instale um pacote da Play Store ou escolha uma imagem da galeria.</string>
+    <string name="icon_picker_search">Pesquisar ícones</string>
     <string name="icon_picker_clear_search">Limpar pesquisa</string>
-    <string name="icon_picker_not_browsable">Este pacote nÃ£o disponibiliza uma lista navegÃ¡vel de Ã­cones.</string>
-    <string name="icon_picker_no_matches">Nenhum Ã­cone corresponde a â€œ%1$sâ€.</string>
+    <string name="icon_picker_not_browsable">Este pacote não disponibiliza uma lista navegável de ícones.</string>
+    <string name="icon_picker_no_matches">Nenhum ícone corresponde a “%1$s”.</string>
 
     <!-- Widgets -->
     <string name="widget_add">Adicionar widget</string>
     <string name="widget_add_custom">Adicionar widget personalizado</string>
-    <string name="widget_change_settings">ConfiguraÃ§Ãµes do widget</string>
+    <string name="widget_change_settings">Configurações do widget</string>
     <string name="widget_none_found">Nenhum widget encontrado neste dispositivo.</string>
-    <string name="widget_search_hint">Buscar widgets ou aplicativosâ€¦</string>
+    <string name="widget_search_hint">Buscar widgets ou aplicativos…</string>
     <string name="widget_count">%1$d widgets</string>
     <string name="widget_count_single">1 widget</string>
-    <string name="widget_no_matches">Nenhum widget encontrado para â€œ%1$sâ€.</string>
-    <string name="widget_unavailable">Widget indisponÃ­vel</string>
+    <string name="widget_no_matches">Nenhum widget encontrado para “%1$s”.</string>
+    <string name="widget_unavailable">Widget indisponível</string>
     <string name="widget_tap_to_remove">Toque ou segure para remover</string>
 
-    <!-- Em ReproduÃ§Ã£o (Now Playing) -->
-    <string name="now_playing_enable_access">Permitir acesso ao Em ReproduÃ§Ã£o</string>
-    <string name="now_playing_prompt_title">Visualizar mÃºsica?</string>
+    <!-- Em Reprodução (Now Playing) -->
+    <string name="now_playing_enable_access">Permitir acesso ao Em Reprodução</string>
+    <string name="now_playing_prompt_title">Visualizar música?</string>
     <string name="now_playing_prompt_grant">Permitir</string>
-    <string name="now_playing_prompt_deny">NÃ£o</string>
-    <string name="now_playing_open_failed">NÃ£o foi possÃ­vel abrir o app em reproduÃ§Ã£o</string>
-    <string name="now_playing_unknown_title">TÃ­tulo desconhecido</string>
+    <string name="now_playing_prompt_deny">Não</string>
+    <string name="now_playing_open_failed">Não foi possível abrir o app em reprodução</string>
+    <string name="now_playing_unknown_title">Título desconhecido</string>
     <string name="now_playing_previous">Anterior</string>
     <string name="now_playing_play_pause">Reproduzir/Pausar</string>
-    <string name="now_playing_next">PrÃ³xima</string>
+    <string name="now_playing_next">Próxima</string>
 
-    <!-- BotÃ£o DinÃ¢mico -->
-    <string name="settings_dynamic_button">BotÃ£o dinÃ¢mico</string>
-    <string name="settings_dynamic_button_detail">BotÃ£o de atalho com gestos na parte inferior da tela inicial</string>
-    <string name="settings_dynamic_button_title">BotÃ£o dinÃ¢mico</string>
-    <string name="settings_dynamic_button_enable">Exibir botÃ£o dinÃ¢mico</string>
-    <string name="settings_dynamic_button_enable_detail">Mostra um botÃ£o dinÃ¢mico ao lado do alfabeto na tela inicial</string>
-    <string name="settings_dynamic_button_preview">PrÃ©via interativa</string>
-    <string name="settings_dynamic_button_preview_hint">Toque ou puxe para cima/baixo para sentir a animaÃ§Ã£o de borracha</string>
-    <string name="settings_dynamic_button_tap_action">AÃ§Ã£o ao tocar</string>
-    <string name="settings_dynamic_button_swipe_up_action">AÃ§Ã£o ao puxar para cima</string>
-    <string name="settings_dynamic_button_swipe_down_action">AÃ§Ã£o ao puxar para baixo</string>
+    <!-- Botão Dinâmico -->
+    <string name="settings_dynamic_button">Botão dinâmico</string>
+    <string name="settings_dynamic_button_detail">Botão de atalho com gestos na parte inferior da tela inicial</string>
+    <string name="settings_dynamic_button_title">Botão dinâmico</string>
+    <string name="settings_dynamic_button_enable">Exibir botão dinâmico</string>
+    <string name="settings_dynamic_button_enable_detail">Mostra um botão dinâmico ao lado do alfabeto na tela inicial</string>
+    <string name="settings_dynamic_button_preview">Prévia interativa</string>
+    <string name="settings_dynamic_button_preview_hint">Toque ou puxe para cima/baixo para sentir a animação de borracha</string>
+    <string name="settings_dynamic_button_tap_action">Ação ao tocar</string>
+    <string name="settings_dynamic_button_swipe_up_action">Ação ao puxar para cima</string>
+    <string name="settings_dynamic_button_swipe_down_action">Ação ao puxar para baixo</string>
     <string name="settings_dynamic_button_none">Nenhum</string>
-    <string name="settings_dynamic_button_select_app">Selecionar appâ€¦</string>
+    <string name="settings_dynamic_button_select_app">Selecionar app…</string>
     <string name="settings_dynamic_button_pick_title">Escolher app para %1$s</string>
-    <string name="settings_dynamic_button_search_hint">Buscar apps instaladosâ€¦</string>
-    <string name="settings_dynamic_button_clear">Limpar aÃ§Ã£o</string>
+    <string name="settings_dynamic_button_search_hint">Buscar apps instalados…</string>
+    <string name="settings_dynamic_button_clear">Limpar ação</string>
     <string name="dynamic_button_swipe_up_hint">Puxar para cima</string>
     <string name="dynamic_button_swipe_down_hint">Puxar para baixo</string>
 
-    <!-- Status do Root nas ConfiguraÃ§Ãµes -->
+    <!-- Status do Root nas Configurações -->
     <string name="settings_root_access">Acesso Root</string>
-    <string name="settings_root_available">BinÃ¡rio de superusuÃ¡rio detectado (Magisk / KernelSU / APatch)</string>
-    <string name="settings_root_unavailable">Dispositivo sem permissÃ£o root</string>
+    <string name="settings_root_available">Binário de superusuário detectado (Magisk / KernelSU / APatch)</string>
+    <string name="settings_root_unavailable">Dispositivo sem permissão root</string>
     <string name="settings_root_badge_detected">ROOT ATIVO</string>
     <string name="settings_root_badge_none">SEM ROOT</string>
 
-    <!-- Backup e RestauraÃ§Ã£o -->
-    <string name="settings_section_backup">Backup e restauraÃ§Ã£o</string>
-    <string name="settings_backup_title">Backup e restauraÃ§Ã£o</string>
-    <string name="settings_backup_subtitle">FaÃ§a backup de preferÃªncias, layout e papel de parede</string>
+    <!-- Backup e Restauração -->
+    <string name="settings_section_backup">Backup e restauração</string>
+    <string name="settings_backup_title">Backup e restauração</string>
+    <string name="settings_backup_subtitle">Faça backup de preferências, layout e papel de parede</string>
     <string name="backup_create_card_title">Criar Backup</string>
-    <string name="backup_create_card_desc">Salva todos os seus aplicativos favoritos, pastas, configuraÃ§Ãµes personalizadas e papel de parede.</string>
+    <string name="backup_create_card_desc">Salva todos os seus aplicativos favoritos, pastas, configurações personalizadas e papel de parede.</string>
     <string name="backup_create_now">Criar backup agora</string>
-    <string name="backup_creating">Criando backupâ€¦</string>
+    <string name="backup_creating">Criando backup…</string>
     <string name="backup_created_success">Backup criado com sucesso</string>
     <string name="backup_create_failed">Falha ao criar backup</string>
-    <string name="backup_restore_from_file">Restaurar de arquivoâ€¦</string>
-    <string name="backup_restoring">Restaurando backupâ€¦</string>
+    <string name="backup_restore_from_file">Restaurar de arquivo…</string>
+    <string name="backup_restoring">Restaurando backup…</string>
     <string name="backup_restore_success">Backup restaurado com sucesso!</string>
     <string name="backup_restore_failed">Falha ao restaurar backup</string>
-    <string name="backup_auto_title">Backup automÃ¡tico</string>
-    <string name="backup_auto_subtitle">Cria backups periÃ³dicos das suas configuraÃ§Ãµes em segundo plano</string>
-    <string name="backup_frequency">FrequÃªncia do backup</string>
-    <string name="backup_freq_daily">DiÃ¡rio</string>
+    <string name="backup_auto_title">Backup automático</string>
+    <string name="backup_auto_subtitle">Cria backups periódicos das suas configurações em segundo plano</string>
+    <string name="backup_frequency">Frequência do backup</string>
+    <string name="backup_freq_daily">Diário</string>
     <string name="backup_freq_weekly">Semanal</string>
     <string name="backup_freq_monthly">Mensal</string>
     <string name="backup_max_keep">Backups mantidos</string>
-    <string name="backup_max_keep_desc">NÃºmero mÃ¡ximo de arquivos de backup a manter (os mais antigos sÃ£o removidos)</string>
-    <string name="backup_last_auto">Ãšltimo backup automÃ¡tico: %1$s</string>
-    <string name="backup_last_auto_none">Nenhum backup automÃ¡tico realizado ainda</string>
+    <string name="backup_max_keep_desc">Número máximo de arquivos de backup a manter (os mais antigos são removidos)</string>
+    <string name="backup_last_auto">Último backup automático: %1$s</string>
+    <string name="backup_last_auto_none">Nenhum backup automático realizado ainda</string>
     <string name="backup_include_wallpaper">Incluir papel de parede</string>
-    <string name="backup_include_wallpaper_desc">Armazena o papel de parede atual no arquivo de backup para restauraÃ§Ã£o automÃ¡tica</string>
+    <string name="backup_include_wallpaper_desc">Armazena o papel de parede atual no arquivo de backup para restauração automática</string>
     <string name="backup_saved_backups">Backups Salvos (%1$d)</string>
     <string name="backup_no_backups">Nenhum backup local encontrado</string>
     <string name="backup_no_backups_desc">Crie um novo backup acima ou restaure de um arquivo externo.</string>
     <string name="backup_tag_manual">Manual</string>
-    <string name="backup_tag_auto">AutomÃ¡tico</string>
+    <string name="backup_tag_auto">Automático</string>
     <string name="backup_has_wallpaper">Papel de parede incluso</string>
     <string name="backup_action_restore">Restaurar</string>
     <string name="backup_action_share">Compartilhar</string>
     <string name="backup_action_delete">Excluir</string>
     <string name="backup_confirm_restore_title">Restaurar este backup?</string>
-    <string name="backup_confirm_restore_msg">Seus favoritos, layout e configuraÃ§Ãµes atuais serÃ£o substituÃ­dos pelo conteÃºdo deste backup.</string>
+    <string name="backup_confirm_restore_msg">Seus favoritos, layout e configurações atuais serão substituídos pelo conteúdo deste backup.</string>
     <string name="backup_confirm_delete_title">Excluir backup?</string>
     <string name="backup_confirm_delete_msg">Tem certeza de que deseja excluir permanentemente este arquivo de backup?</string>
-    <string name="backup_deleted_success">Backup excluÃ­do</string>
+    <string name="backup_deleted_success">Backup excluído</string>
     <string name="backup_dest_folder_title">Pasta de destino</string>
-    <string name="backup_dest_folder_desc">Escolha onde os backups serÃ£o guardados no aparelho para ficarem preservados mesmo ao desinstalar o app.</string>
+    <string name="backup_dest_folder_desc">Escolha onde os backups serão guardados no aparelho para ficarem preservados mesmo ao desinstalar o app.</string>
     <string name="backup_dest_folder_select">Selecionar pasta de backup</string>
     <string name="backup_dest_folder_change">Alterar pasta</string>
     <string name="backup_dest_folder_active">Pasta ativa: %1$s</string>
-    <string name="backup_dest_folder_required">Pasta de destino necessÃ¡ria para criar backups</string>
+    <string name="backup_dest_folder_required">Pasta de destino necessária para criar backups</string>
     <string name="backup_dest_folder_need_selection">Selecione uma pasta de destino acima primeiro</string>
     <string name="backup_dest_folder_saved_toast">Pasta de backup selecionada com sucesso</string>
 
@@ -318,7 +318,7 @@
     <string name="root_inspector_period_today">Hoje</string>
     <string name="root_inspector_period_7days">7 Dias</string>
     <string name="root_inspector_period_total">Total</string>
-    <string name="root_inspector_realtime_speed">TransferÃªncia em Tempo Real</string>
+    <string name="root_inspector_realtime_speed">Transferência em Tempo Real</string>
     <string name="root_inspector_total_data">Total de Dados</string>
     <string name="root_inspector_live_active">AO VIVO</string>
     <string name="root_inspector_live_idle">INATIVO</string>
@@ -326,11 +326,11 @@
     <string name="root_inspector_ram">RAM (PSS)</string>
     <string name="root_inspector_download">Download</string>
     <string name="root_inspector_upload">Upload</string>
-    <string name="root_inspector_tab_memory">MemÃ³ria</string>
+    <string name="root_inspector_tab_memory">Memória</string>
     <string name="root_inspector_tab_processes">Processos</string>
     <string name="root_inspector_tab_network">Rede</string>
-    <string name="root_inspector_tab_permissions">PermissÃµes</string>
-    <string name="root_inspector_action_force_stop">ForÃ§ar Parada</string>
+    <string name="root_inspector_tab_permissions">Permissões</string>
+    <string name="root_inspector_action_force_stop">Forçar Parada</string>
     <string name="root_inspector_action_clear_cache">Limpar Cache</string>
     <string name="root_inspector_action_launch">Abrir App</string>
     <string name="root_inspector_action_kill_pid">Encerrar</string>
@@ -338,39 +338,39 @@
     <string name="root_inspector_toast_stopped">Aplicativo encerrado via root!</string>
     <string name="root_inspector_toast_kill_success">Processo PID %1$d encerrado!</string>
     <string name="root_inspector_toast_kill_error">Falha ao encerrar processo.</string>
-    <string name="root_inspector_no_connections">Nenhuma conexÃ£o de rede ativa no momento</string>
-    <string name="root_inspector_no_services">Nenhum serviÃ§o em execuÃ§Ã£o</string>
-    <string name="root_inspector_loading">Inspecionando aplicativo via SuperusuÃ¡rioâ€¦</string>
+    <string name="root_inspector_no_connections">Nenhuma conexão de rede ativa no momento</string>
+    <string name="root_inspector_no_services">Nenhum serviço em execução</string>
+    <string name="root_inspector_loading">Inspecionando aplicativo via Superusuário…</string>
 
-    <!-- DesinstalaÃ§Ã£o de Aplicativos -->
+    <!-- Desinstalação de Aplicativos -->
     <string name="action_uninstall">Desinstalar</string>
     <string name="dialog_uninstall_system_app_title">Desinstalar app do sistema?</string>
     <string name="dialog_uninstall_system_app_warning">Aplicativo do Sistema</string>
-    <string name="dialog_uninstall_system_app_message">â€œ%1$sâ€ Ã© um aplicativo do sistema. DesinstalÃ¡-lo pode causar instabilidade no sistema ou mau funcionamento do dispositivo.\n\nTem certeza de que deseja desinstalar este aplicativo via root?</string>
+    <string name="dialog_uninstall_system_app_message">“%1$s” é um aplicativo do sistema. Desinstalá-lo pode causar instabilidade no sistema ou mau funcionamento do dispositivo.\n\nTem certeza de que deseja desinstalar este aplicativo via root?</string>
     <string name="dialog_uninstall_app_title">Desinstalar aplicativo?</string>
-    <string name="dialog_uninstall_app_message">Tem certeza de que deseja desinstalar â€œ%1$sâ€ via root?</string>
-    <string name="uninstall_toast_progress">Desinstalando %1$sâ€¦</string>
-    <string name="uninstall_toast_success">â€œ%1$sâ€ desinstalado com sucesso</string>
+    <string name="dialog_uninstall_app_message">Tem certeza de que deseja desinstalar “%1$s” via root?</string>
+    <string name="uninstall_toast_progress">Desinstalando %1$s…</string>
+    <string name="uninstall_toast_success">“%1$s” desinstalado com sucesso</string>
     <string name="uninstall_toast_failed">Falha ao desinstalar %1$s: %2$s</string>
 
     <!-- Captura de Logs de Aplicativos -->
     <string name="action_capture_logs">Capturar logs (Root)</string>
-    <string name="action_stop_save_logs">Salvar logs (Gravandoâ€¦)</string>
+    <string name="action_stop_save_logs">Salvar logs (Gravando…)</string>
     <string name="log_notif_channel_name">Captura de Logs (Logcat)</string>
-    <string name="log_notif_channel_desc">NotificaÃ§Ãµes para gravaÃ§Ãµes ativas de logs e arquivos salvos</string>
+    <string name="log_notif_channel_desc">Notificações para gravações ativas de logs e arquivos salvos</string>
     <string name="log_notif_recording_title">Gravando logs: %1$s</string>
-    <string name="log_notif_recording_text">Capturando logs em tempo real via rootâ€¦</string>
+    <string name="log_notif_recording_text">Capturando logs em tempo real via root…</string>
     <string name="log_notif_action_save">Salvar log</string>
     <string name="log_notif_action_discard">Apagar</string>
     <string name="log_notif_saved_title">Log salvo com sucesso</string>
-    <string name="log_notif_crash_title">%1$s fechou com erro â€” Log salvo</string>
+    <string name="log_notif_crash_title">%1$s fechou com erro — Log salvo</string>
     <string name="log_notif_saved_text">Salvo em Downloads/%1$s</string>
     <string name="log_notif_action_share">Compartilhar</string>
     <string name="log_notif_action_view">Ver arquivo</string>
     <string name="log_notif_action_delete">Apagar</string>
-    <string name="log_toast_started">GravaÃ§Ã£o de logs iniciada para %1$s</string>
+    <string name="log_toast_started">Gravação de logs iniciada para %1$s</string>
     <string name="log_toast_saved">Log salvo em Downloads/%1$s</string>
-    <string name="log_toast_discarded">GravaÃ§Ã£o de log descartada</string>
+    <string name="log_toast_discarded">Gravação de log descartada</string>
     <string name="log_toast_deleted">Arquivo de log apagado</string>
     <string name="log_toast_crash_detected">Erro detectado em %1$s! Log salvo na pasta Downloads</string>
     <string name="log_global_system_title">Sistema Global</string>
@@ -378,7 +378,7 @@
     <string name="log_notif_crashes_channel_desc">Alertas em tempo real de falhas e congelamentos de aplicativos</string>
     <string name="log_action_view_crash">Ver Stacktrace</string>
     <string name="log_action_copy_trace">Copiar Stacktrace</string>
-    <string name="log_toast_copied_trace">Stacktrace copiado para a Ã¡rea de transferÃªncia</string>
+    <string name="log_toast_copied_trace">Stacktrace copiado para a área de transferência</string>
     <string name="action_inspect_logs">Central de Logs &amp; Crashes (LogFox)</string>
 
     <!-- Task Manager -->
@@ -388,24 +388,24 @@
     <string name="task_manager_group_foreground">Aplicativos em Primeiro Plano</string>
     <string name="task_manager_group_background">Processos em Segundo Plano</string>
     <string name="task_manager_group_system">Processos do Sistema</string>
-    <string name="task_manager_search_hint">Buscar apps, processos ou PIDâ€¦</string>
+    <string name="task_manager_search_hint">Buscar apps, processos ou PID…</string>
     <string name="task_manager_live_badge">AO VIVO</string>
     <string name="task_manager_end_task">Finalizar tarefa</string>
-    <string name="task_manager_cpu_cores">NÃºcleos</string>
+    <string name="task_manager_cpu_cores">Núcleos</string>
     <string name="task_manager_cpu_speed">Velocidade</string>
     <string name="task_manager_cpu_threads">Processos / Threads</string>
     <string name="task_manager_cpu_uptime">Tempo de atividade</string>
     <string name="task_manager_ram_used">Em uso</string>
-    <string name="task_manager_ram_available">DisponÃ­vel</string>
+    <string name="task_manager_ram_available">Disponível</string>
     <string name="task_manager_ram_zram">zRAM / Swap</string>
     <string name="task_manager_net_download">Download</string>
     <string name="task_manager_net_upload">Upload</string>
     <string name="task_manager_storage_title">Armazenamento</string>
     <string name="task_manager_battery_title">Bateria &amp; Energia</string>
-    <string name="task_manager_power_impact">Impacto EnergÃ©tico</string>
-    <string name="task_manager_battery_voltage">TensÃ£o</string>
+    <string name="task_manager_power_impact">Impacto Energético</string>
+    <string name="task_manager_battery_voltage">Tensão</string>
     <string name="task_manager_battery_temp">Temperatura</string>
-    <string name="task_manager_battery_health">SaÃºde</string>
+    <string name="task_manager_battery_health">Saúde</string>
     <!-- Battery Stats & Drain Monitor strings -->
     <string name="battery_monitor_title">Uso da Bateria</string>
     <string name="drain_notification_toggle">Notificação de Drenagem em Tempo Real</string>
@@ -844,6 +844,3 @@
         <item quantity="other">%1$d configurações importadas</item>
     </plurals>
 </resources>
-
-
-

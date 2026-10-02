@@ -86,10 +86,24 @@ class DrainNotificationManager private constructor(
             drainTracker.start()
         }
 
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                scope.launch {
+                    if (RootBatteryStatsCollector.isRootAvailable()) {
+                        RootBatteryStatsCollector.runAsRoot("pm grant ${context.packageName} android.permission.POST_NOTIFICATIONS")
+                    }
+                }
+            }
+        }
+        
+        updateNow()
+
         updateJob = scope.launch {
             drainTracker.drainState.collectLatest { state ->
                 if (isShowing) {
-                    notificationManager.notify(NOTIFICATION_ID, buildNotification(state))
+                    try {
+                        notificationManager.notify(NOTIFICATION_ID, buildNotification(state))
+                    } catch (e: SecurityException) {}
                 }
             }
         }
@@ -105,7 +119,9 @@ class DrainNotificationManager private constructor(
     fun updateNow() {
         if (isShowing) {
             val state = drainTracker.drainState.value
-            notificationManager.notify(NOTIFICATION_ID, buildNotification(state))
+            try {
+                notificationManager.notify(NOTIFICATION_ID, buildNotification(state))
+            } catch (e: SecurityException) {}
         }
     }
 

@@ -81,6 +81,7 @@ fun BatteryStatsScreen(
     val hasAdvanced by vm.hasAdvanced.collectAsStateWithLifecycle()
     val advMode by vm.advMode.collectAsStateWithLifecycle()
     val kernelBattery by vm.kernelBattery.collectAsStateWithLifecycle()
+    val kernelWakelocksFlow by vm.kernelWakelocks.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -218,13 +219,11 @@ fun BatteryStatsScreen(
                     edgePadding = 16.dp,
                     containerColor = Color.Transparent,
                     divider = {},
-                    indicator = { tabPositions ->
-                        if (pagerState.currentPage < tabPositions.size) {
-                            TabRowDefaults.SecondaryIndicator(
-                                Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                    indicator = {
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(pagerState.currentPage),
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 ) {
                     tabs.forEachIndexed { index, tab ->
@@ -272,7 +271,22 @@ fun BatteryStatsScreen(
                                 onResetDrainSession = { vm.resetDrainSession() }
                             )
                             1 -> AppsTab(snapshot?.apps ?: emptyList())
-                            2 -> WakelocksTab(snapshot?.wakelocks ?: emptyList(), snapshot?.kernelWakelocks ?: emptyList())
+                            2 -> {
+                                val kwl = if (snapshot?.kernelWakelocks.isNullOrEmpty()) {
+                                    kernelWakelocksFlow.map { 
+                                        BatteryStatsParser.KernelWakelockStats(
+                                            name = it.name,
+                                            count = it.count,
+                                            totalTimeMs = it.totalTime / 1_000_000L,
+                                            activeCount = it.activeCount,
+                                            maxTimeMs = it.maxTime / 1_000_000L
+                                        )
+                                    }
+                                } else {
+                                    snapshot?.kernelWakelocks ?: emptyList()
+                                }
+                                WakelocksTab(snapshot?.wakelocks ?: emptyList(), kwl)
+                            }
                             3 -> NetworkTab(snapshot?.network ?: emptyList())
                             4 -> AlarmsJobsTab(snapshot?.alarms ?: emptyList(), snapshot?.jobs ?: emptyList(), snapshot?.syncs ?: emptyList())
                             5 -> SystemTab(snapshot, deviceIdle, powerManager)
@@ -640,7 +654,7 @@ private fun OverviewTab(
         item { DischargeBreakdownCard(snapshot) }
         item { ScreenTimeCard(snapshot) }
         item { SignalQualityCard(snapshot) }
-        item { DozeStatsCard(snapshot?.doze) }
+        item { DozeStatsCard(snapshot?.doze, deviceIdle) }
         item { BluetoothCard(snapshot?.bluetooth) }
         item { CurrentStateCard(deviceIdle, powerManager) }
     }
@@ -843,19 +857,25 @@ private fun SignalQualityCard(snapshot: BatteryStatsParser.FullSnapshot?) {
 }
 
 @Composable
-private fun DozeStatsCard(doze: BatteryStatsParser.DozeStats?) {
+private fun DozeStatsCard(doze: BatteryStatsParser.DozeStats?, deviceIdle: BatteryStatsParser.DeviceIdleInfo?) {
     StatsCard(titleRes = R.string.doze_statistics, icon = Icons.Outlined.PowerSettingsNew) {
-        if (doze == null) {
+        if (doze == null && deviceIdle == null) {
             Text(stringResource(R.string.no_doze_data), color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            StatRow(R.string.deep_doze_time, formatDuration(doze.deepIdleTimeMs))
-            StatRow(R.string.deep_doze_count, "${doze.deepIdleCount}")
-            StatRow(R.string.light_doze_time, formatDuration(doze.lightIdleTimeMs))
-            StatRow(R.string.light_doze_count, "${doze.lightIdleCount}")
-            StatRow(R.string.deep_idling_time, formatDuration(doze.deepIdlingTimeMs))
-            StatRow(R.string.deep_idling_count, "${doze.deepIdlingCount}")
-            StatRow(R.string.light_idling_time, formatDuration(doze.lightIdlingTimeMs))
-            StatRow(R.string.light_idling_count, "${doze.lightIdlingCount}")
+            if (deviceIdle != null) {
+                StatRow(R.string.doze_state, deviceIdle.currentState)
+                StatRow(R.string.light_state, deviceIdle.lightState)
+            }
+            if (doze != null) {
+                StatRow(R.string.deep_doze_time, formatDuration(doze.deepIdleTimeMs))
+                StatRow(R.string.deep_doze_count, "${doze.deepIdleCount}")
+                StatRow(R.string.light_doze_time, formatDuration(doze.lightIdleTimeMs))
+                StatRow(R.string.light_doze_count, "${doze.lightIdleCount}")
+                StatRow(R.string.deep_idling_time, formatDuration(doze.deepIdlingTimeMs))
+                StatRow(R.string.deep_idling_count, "${doze.deepIdlingCount}")
+                StatRow(R.string.light_idling_time, formatDuration(doze.lightIdlingTimeMs))
+                StatRow(R.string.light_idling_count, "${doze.lightIdlingCount}")
+            }
         }
     }
 }
@@ -884,8 +904,6 @@ private fun CurrentStateCard(
 ) {
     StatsCard(titleRes = R.string.current_state, icon = Icons.Outlined.Info) {
         if (deviceIdle != null) {
-            StatRow(R.string.doze_state, deviceIdle.currentState)
-            StatRow(R.string.light_state, deviceIdle.lightState)
             StatRow(R.string.deep_doze_enabled, stringResource(if (deviceIdle.deepEnabled) R.string.yes else R.string.no))
             StatRow(R.string.light_doze_enabled, stringResource(if (deviceIdle.lightEnabled) R.string.yes else R.string.no))
         }

@@ -1,3 +1,24 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.46
+
+- **Restauração Completa de Acentos e Codificação das Strings (Eliminação de Mojibake):**
+  - **Saneamento Global em UTF-8:** Reparados e normalizados todos os textos e termos com acentos gráficos (`ç`, `ã`, `õ`, `é`, `ê`, `á`, `í`, `ú`) e símbolos tipográficos (`…`, `↔`, `↕`, `→`, `·`) em `values/strings.xml`, `values-pt/strings.xml` e `values-pt-rBR/strings.xml`, eliminando completamente caracteres estranhos e dupla codificação Windows-1252/UTF-8 em toda a interface do launcher.
+
+- **Correção da Telemetria de Bateria e Métricas Não Carregadas (`BatteryStatsParser` & `ShellRunner`):**
+  - **Suporte Abrangente a Seções de Checkin (`u`, `c`, `a` e `l`):** O parser de estatísticas do sistema agora processa linhas com status de desconectado da tomada (`u` - *unplugged*), atual (`c`) e acumulado, garantindo o carregamento completo de qualidade de sinal móvel (`sgt`), sinal Wi-Fi (`wsgt`), Doze (`m`), wakelocks de aplicativos (`wl`), alarmes (`wua`), jobs (`jb`) e sincronizações (`sy`).
+  - **Prioridade de Execução Root sem Bloqueios SELinux:** O `ShellRunner` agora executa comandos de despejo do sistema (`dumpsys`) diretamente via Superusuário (`su`) quando o aparelho é rooteado, evitando falhas silenciosas de SELinux de apps comuns que retornavam mensagens de erro sem dados reais.
+  - **Tolerância a Formatações do Android 11 a 15:** Reconhecimento flexível de estados de Doze e PowerManager (`mState=`, `State:`, `Light state:`, etc.).
+  - **Integração de Wakelocks do Kernel:** A aba de Wakelocks agora mescla os registros lidos diretamente do kernel (`/sys/kernel/wakelock_stats` ou `/proc/wakelocks`) na ausência de registros exportados pelo checkin.
+  - **Exibição Contínua dos Estados do Doze:** O card de Doze agora apresenta em tempo real o status atual de Deep Doze e Light Doze mesmo quando o tempo acumulado for zero.
+
+- **Correção da Notificação de Drenagem em Tempo Real (`DrainNotificationManager`):**
+  - **Ativação e Atualização Imediatas:** A notificação passa a ser postada instantaneamente ao ligar o botão de alternância com as métricas atuais (`updateNow()`).
+  - **Autoconcessão no Android 13+ (API 33+):** Tratamento automatizado para permissão de `POST_NOTIFICATIONS` via root para evitar descarte silencioso de notificações pelo sistema, com proteção de chamadas contra `SecurityException`.
+
+- **Correção da Compilação no Compose Material 3 (`BatteryStatsScreen`):**
+  - **Adequação ao `TabIndicatorScope`:** Ajustada a implementação do indicador animado em `SecondaryScrollableTabRow` para o formato canônico do Compose Material 3 1.2+/1.3+ com `Modifier.tabIndicatorOffset(pagerState.currentPage)`.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.45
 
 - **Visualizador Avançado de Uso da Bateria & Monitor de Drenagem em Tempo Real (Inspirado no BatStats):**
