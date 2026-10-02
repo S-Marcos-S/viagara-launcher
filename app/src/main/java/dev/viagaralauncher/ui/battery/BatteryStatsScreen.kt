@@ -60,6 +60,7 @@ import java.util.*
 import dev.viagaralauncher.battery.DrainState
 import dev.viagaralauncher.battery.formatDuration
 import dev.viagaralauncher.battery.formatDrainRate
+import dev.viagaralauncher.battery.formatDrainPercentage
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -538,20 +539,20 @@ private fun RealtimeDrainCard(
             ) {
                 DrainMetricItem(
                     label = stringResource(R.string.screen_on),
-                    rate = formatDrainRate(drainState.screenOnDrainRate),
+                    rate = formatDrainPercentage(drainState.screenOnDrainRatePercent),
                     time = formatDuration(drainState.screenOnTimeMs),
                     color = Color(0xFFEAB308)
                 )
                 DrainMetricItem(
                     label = stringResource(R.string.screen_off),
-                    rate = formatDrainRate(drainState.screenOffDrainRate),
+                    rate = formatDrainPercentage(drainState.screenOffDrainRatePercent),
                     time = formatDuration(drainState.screenOffTimeMs),
                     color = Color(0xFF3B82F6)
                 )
                 DrainMetricItem(
                     label = stringResource(R.string.deep_sleep),
-                    rate = formatDrainRate(drainState.deepSleepDrainRate),
-                    time = String.format(Locale.getDefault(), "%.0f%%", drainState.deepSleepPercentage),
+                    rate = formatDrainPercentage(drainState.deepSleepDrainRatePercent),
+                    time = "${formatDuration(drainState.deepSleepTimeMs)} (${String.format(Locale.getDefault(), "%.0f%%", drainState.deepSleepPercentage)})",
                     color = Color(0xFF10B981)
                 )
             }
@@ -562,13 +563,13 @@ private fun RealtimeDrainCard(
             ) {
                 DrainMetricItem(
                     label = stringResource(R.string.active),
-                    rate = formatDrainRate(drainState.activeDrainRate),
+                    rate = formatDrainPercentage(drainState.activeDrainRatePercent),
                     time = formatDuration(drainState.activeTimeMs),
                     color = Color(0xFFEF4444)
                 )
                 DrainMetricItem(
                     label = stringResource(R.string.idle),
-                    rate = formatDrainRate(drainState.idleDrainRate),
+                    rate = formatDrainPercentage(drainState.idleDrainRatePercent),
                     time = formatDuration(drainState.idleTimeMs),
                     color = Color(0xFF8B5CF6)
                 )
@@ -767,8 +768,17 @@ private fun ScreenTimeCard(snapshot: BatteryStatsParser.FullSnapshot?) {
                 snapshot.screenOffDischargePercent / ((snapshot.batteryRealtimeMs - snapshot.screenOnTimeMs) / 3600000.0)
             } else 0.0
 
-            StatRow(R.string.drain_hour_screen_on, String.format(Locale.getDefault(), "%.2f%%", drainPerHourScreenOn))
-            StatRow(R.string.drain_hour_screen_off, String.format(Locale.getDefault(), "%.2f%%", drainPerHourScreenOff))
+            StatRow(R.string.drain_hour_screen_on, String.format(Locale.getDefault(), "%.2f%%/h", drainPerHourScreenOn))
+            StatRow(R.string.drain_hour_screen_off, String.format(Locale.getDefault(), "%.2f%%/h", drainPerHourScreenOff))
+
+            val screenOffMs = (snapshot.batteryRealtimeMs - snapshot.screenOnTimeMs).coerceAtLeast(0L)
+            if (snapshot.batteryUptimeMs > 0 && screenOffMs > 0) {
+                val deepSleepMs = (snapshot.batteryRealtimeMs - snapshot.batteryUptimeMs).coerceAtLeast(0L).coerceAtMost(screenOffMs)
+                val deepSleepPercent = (deepSleepMs.toFloat() / screenOffMs * 100f).coerceIn(0f, 100f)
+                val awakeMs = (screenOffMs - deepSleepMs).coerceAtLeast(0L)
+                StatRow(R.string.deep_sleep, "${formatDuration(deepSleepMs)} (${String.format(Locale.getDefault(), "%.0f%%", deepSleepPercent)})")
+                StatRow(R.string.awake, formatDuration(awakeMs))
+            }
         }
     }
 }

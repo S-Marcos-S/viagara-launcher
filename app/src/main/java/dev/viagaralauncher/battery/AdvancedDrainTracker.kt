@@ -62,6 +62,9 @@ class AdvancedDrainTracker private constructor(
     private var lastSnapshot: DrainSnapshot? = null
     private var lastScreenState: Boolean = powerManager.isInteractive
     private var lastScreenChangeTime: Long = System.currentTimeMillis()
+    private var lastScreenChangeRealtime: Long = SystemClock.elapsedRealtime()
+    private var sessionStartRealtime: Long = SystemClock.elapsedRealtime()
+    private var sessionStartUptime: Long = SystemClock.uptimeMillis()
     private var receiverRegistered = false
     private var estimatedCapacityMah: Double = getInitialCapacity()
 
@@ -90,9 +93,12 @@ class AdvancedDrainTracker private constructor(
         return 4000.0
     }
 
-    private var lastDumpsysTime: Long = 0L
-    private var cachedAwakeTime: Long = 0L
-    private var cachedDeepSleepTime: Long = 0L
+    fun updateCapacity(capacityMah: Double) {
+        if (capacityMah > 0 && capacityMah != estimatedCapacityMah) {
+            estimatedCapacityMah = capacityMah
+            updateDrainState()
+        }
+    }
 
     // Cumulative tracking (ms)
     private var cumulativeScreenOnTime: Long = 0L
@@ -117,6 +123,15 @@ class AdvancedDrainTracker private constructor(
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON -> onScreenStateChanged(true)
                 Intent.ACTION_SCREEN_OFF -> onScreenStateChanged(false)
+                Intent.ACTION_POWER_CONNECTED,
+                Intent.ACTION_POWER_DISCONNECTED -> {
+                    scope.launch {
+                        takeSnapshot()?.let { snapshot ->
+                            lastSnapshot = snapshot
+                            updateDrainState()
+                        }
+                    }
+                }
             }
         }
     }
@@ -139,7 +154,7 @@ class AdvancedDrainTracker private constructor(
             while (isActive && running.get()) {
                 try {
                     takeSnapshot()?.let { currentSnapshot ->
-                        processSnapshot(currentSnapshot)
+                        processSnapshot(currentSnapshot, wasScreenOn = lastScreenState)
                         lastSnapshot = currentSnapshot
                         _snapshots.update { (it + currentSnapshot).takeLast(500) }
                     }
@@ -163,7 +178,13 @@ class AdvancedDrainTracker private constructor(
     }
 
     fun resetSession() {
-        sessionStartTime = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        val nowRealtime = SystemClock.elapsedRealtime()
+        val nowUptime = SystemClock.uptimeMillis()
+
+        sessionStartTime = now
+        sessionStartRealtime = nowRealtime
+        sessionStartUptime = nowUptime
 
         cumulativeScreenOnTime = 0L
         cumulativeScreenOffTime = 0L
@@ -180,12 +201,19 @@ class AdvancedDrainTracker private constructor(
         cumulativeIdleDrain = 0.0
 
         lastScreenState = powerManager.isInteractive
-        lastScreenChangeTime = System.currentTimeMillis()
+        lastScreenChangeTime = now
+        lastScreenChangeRealtime = nowRealtime
+
         _snapshots.value = emptyList()
         _drainState.value = DrainState(
             sessionStartTime = sessionStartTime,
             batteryCapacityMah = estimatedCapacityMah
         )
+
+        scope.launch {
+            lastSnapshot = takeSnapshot()
+            updateDrainState()
+        }
 
         Log.i(TAG, "Battery drain tracking session reset")
     }
@@ -196,6 +224,8 @@ class AdvancedDrainTracker private constructor(
             val screenFilter = IntentFilter().apply {
                 addAction(Intent.ACTION_SCREEN_ON)
                 addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_POWER_CONNECTED)
+                addAction(Intent.ACTION_POWER_DISCONNECTED)
             }
             ContextCompat.registerReceiver(
                 context,
@@ -220,21 +250,26 @@ class AdvancedDrainTracker private constructor(
     }
 
     private fun onScreenStateChanged(screenOn: Boolean) {
-        val now = System.currentTimeMillis()
-        val duration = (now - lastScreenChangeTime).coerceAtLeast(0L)
+        if (screenOn == lastScreenState) return
 
-        if (lastScreenState) {
+        val nowRealtime = SystemClock.elapsedRealtime()
+        val now = System.currentTimeMillis()
+        val duration = (nowRealtime - lastScreenChangeRealtime).coerceAtLeast(0L)
+
+        val previousScreenState = lastScreenState
+        if (previousScreenState) {
             cumulativeScreenOnTime += duration
         } else {
             cumulativeScreenOffTime += duration
         }
 
         lastScreenState = screenOn
+        lastScreenChangeRealtime = nowRealtime
         lastScreenChangeTime = now
 
         scope.launch {
             takeSnapshot()?.let { snapshot ->
-                processSnapshot(snapshot)
+                processSnapshot(snapshot, wasScreenOn = previousScreenState)
                 lastSnapshot = snapshot
                 updateDrainState()
             }
@@ -250,19 +285,22 @@ class AdvancedDrainTracker private constructor(
             val isCharging = isCharging()
             val isDozing = powerManager.isDeviceIdleMode
 
-            val (cpuAwakeTime, deepSleepTime) = getDeepSleepInfo()
-            val isDeepSleep = !isScreenOn && !isDozing && isInDeepSleep()
+            val nowRealtime = SystemClock.elapsedRealtime()
+            val nowUptime = SystemClock.uptimeMillis()
+            val deepSleepTime = (nowRealtime - nowUptime).coerceAtLeast(0L)
 
             DrainSnapshot(
                 timestamp = System.currentTimeMillis(),
+                elapsedRealtime = nowRealtime,
+                uptimeMillis = nowUptime,
                 batteryLevel = level,
                 batteryMah = mah,
                 currentMa = currentMa,
                 isScreenOn = isScreenOn,
                 isCharging = isCharging,
-                isDeepSleep = isDeepSleep,
+                isDeepSleep = !isScreenOn && !isDozing,
                 isDozing = isDozing,
-                cpuAwakeTimeMs = cpuAwakeTime,
+                cpuAwakeTimeMs = nowUptime,
                 deepSleepTimeMs = deepSleepTime
             )
         } catch (e: Exception) {
@@ -271,7 +309,7 @@ class AdvancedDrainTracker private constructor(
         }
     }
 
-    private fun processSnapshot(current: DrainSnapshot) {
+    private fun processSnapshot(current: DrainSnapshot, wasScreenOn: Boolean) {
         val previous = lastSnapshot ?: return
         if (current.isCharging || previous.isCharging) return
 
@@ -282,40 +320,57 @@ class AdvancedDrainTracker private constructor(
         val currentMah = current.batteryMah ?: return
         val drainMah = max(0.0, previousMah - currentMah)
 
-        when {
-            current.isScreenOn -> {
-                cumulativeScreenOnDrain += drainMah
-                if (abs(current.currentMa) > 200) {
-                    cumulativeActiveDrain += drainMah
-                    cumulativeActiveTime += timeDelta
-                } else {
-                    cumulativeIdleDrain += drainMah
-                    cumulativeIdleTime += timeDelta
-                }
+        if (wasScreenOn) {
+            cumulativeScreenOnDrain += drainMah
+            if (abs(current.currentMa) > 200) {
+                cumulativeActiveDrain += drainMah
+                cumulativeActiveTime += timeDelta
+            } else {
+                cumulativeIdleDrain += drainMah
+                cumulativeIdleTime += timeDelta
             }
-            current.isDeepSleep -> {
-                cumulativeDeepSleepDrain += drainMah
-                cumulativeDeepSleepTime += timeDelta
-                cumulativeScreenOffDrain += drainMah
-            }
-            else -> {
-                cumulativeAwakeDrain += drainMah
-                cumulativeAwakeTime += timeDelta
-                cumulativeScreenOffDrain += drainMah
-            }
+        } else {
+            cumulativeScreenOffDrain += drainMah
+            val prevDeepSleep = previous.elapsedRealtime - previous.uptimeMillis
+            val currDeepSleep = current.elapsedRealtime - current.uptimeMillis
+            val deltaDeepSleep = (currDeepSleep - prevDeepSleep).coerceAtLeast(0L)
+            val intervalTime = (current.elapsedRealtime - previous.elapsedRealtime).coerceAtLeast(1L)
+            val sleepRatio = (deltaDeepSleep.toDouble() / intervalTime).coerceIn(0.0, 1.0)
+
+            cumulativeDeepSleepDrain += drainMah * sleepRatio
+            cumulativeAwakeDrain += drainMah * (1.0 - sleepRatio)
         }
     }
 
     fun updateDrainState() {
         val now = System.currentTimeMillis()
+        val nowRealtime = SystemClock.elapsedRealtime()
+        val nowUptime = SystemClock.uptimeMillis()
 
-        val pending = (now - lastScreenChangeTime).coerceAtLeast(0L)
+        val pending = (nowRealtime - lastScreenChangeRealtime).coerceAtLeast(0L)
         val screenOnTimeTotal = cumulativeScreenOnTime + if (lastScreenState) pending else 0L
         val screenOffTimeTotal = cumulativeScreenOffTime + if (!lastScreenState) pending else 0L
+
+        val sessionElapsed = (nowRealtime - sessionStartRealtime).coerceAtLeast(0L)
+        val sessionUptime = (nowUptime - sessionStartUptime).coerceAtLeast(0L)
+        val totalSessionDeepSleep = (sessionElapsed - sessionUptime).coerceAtLeast(0L)
+
+        val deepSleepTimeMs = totalSessionDeepSleep.coerceAtMost(screenOffTimeTotal)
+        val awakeTimeMs = (screenOffTimeTotal - deepSleepTimeMs).coerceAtLeast(0L)
+
+        val activeTimeMs = cumulativeActiveTime.coerceAtMost(screenOnTimeTotal)
+        val idleTimeMs = (screenOnTimeTotal - activeTimeMs).coerceAtLeast(0L)
 
         fun calculateRate(drainMah: Double, timeMs: Long): Double {
             return if (timeMs > 0) drainMah / (timeMs / 3600000.0) else 0.0
         }
+
+        val screenOnDrainRate = calculateRate(cumulativeScreenOnDrain, screenOnTimeTotal)
+        val screenOffDrainRate = calculateRate(cumulativeScreenOffDrain, screenOffTimeTotal)
+        val activeDrainRate = calculateRate(cumulativeActiveDrain, activeTimeMs)
+        val idleDrainRate = calculateRate(cumulativeIdleDrain, idleTimeMs)
+        val deepSleepDrainRate = calculateRate(cumulativeDeepSleepDrain, deepSleepTimeMs)
+        val awakeDrainRate = calculateRate(cumulativeAwakeDrain, awakeTimeMs)
 
         _drainState.value = DrainState(
             timestamp = now,
@@ -324,7 +379,7 @@ class AdvancedDrainTracker private constructor(
             batteryCapacityMah = estimatedCapacityMah,
             isScreenOn = powerManager.isInteractive,
             isCharging = isCharging(),
-            isDeepSleep = isInDeepSleep(),
+            isDeepSleep = !powerManager.isInteractive && (nowRealtime - nowUptime > 0),
             isDozing = powerManager.isDeviceIdleMode,
 
             screenOnDrainMah = cumulativeScreenOnDrain,
@@ -336,17 +391,17 @@ class AdvancedDrainTracker private constructor(
 
             screenOnTimeMs = screenOnTimeTotal,
             screenOffTimeMs = screenOffTimeTotal,
-            activeTimeMs = cumulativeActiveTime,
-            idleTimeMs = cumulativeIdleTime,
-            deepSleepTimeMs = cumulativeDeepSleepTime,
-            awakeTimeMs = cumulativeAwakeTime,
+            activeTimeMs = activeTimeMs,
+            idleTimeMs = idleTimeMs,
+            deepSleepTimeMs = deepSleepTimeMs,
+            awakeTimeMs = awakeTimeMs,
 
-            screenOnDrainRate = calculateRate(cumulativeScreenOnDrain, screenOnTimeTotal),
-            screenOffDrainRate = calculateRate(cumulativeScreenOffDrain, screenOffTimeTotal),
-            activeDrainRate = calculateRate(cumulativeActiveDrain, cumulativeActiveTime),
-            idleDrainRate = calculateRate(cumulativeIdleDrain, cumulativeIdleTime),
-            deepSleepDrainRate = calculateRate(cumulativeDeepSleepDrain, cumulativeDeepSleepTime),
-            awakeDrainRate = calculateRate(cumulativeAwakeDrain, cumulativeAwakeTime),
+            screenOnDrainRate = screenOnDrainRate,
+            screenOffDrainRate = screenOffDrainRate,
+            activeDrainRate = activeDrainRate,
+            idleDrainRate = idleDrainRate,
+            deepSleepDrainRate = deepSleepDrainRate,
+            awakeDrainRate = awakeDrainRate,
 
             sessionStartTime = sessionStartTime,
             lastUpdateTime = now
@@ -384,45 +439,5 @@ class AdvancedDrainTracker private constructor(
         val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val plugged = intent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
         return plugged != 0
-    }
-
-    private fun isInDeepSleep(): Boolean {
-        if (powerManager.isInteractive) return false
-        val uptime = SystemClock.uptimeMillis()
-        val elapsedRealtime = SystemClock.elapsedRealtime()
-        val sleepTime = elapsedRealtime - uptime
-        return sleepTime > DEEP_SLEEP_THRESHOLD_MS
-    }
-
-    private suspend fun getDeepSleepInfo(): Pair<Long, Long> {
-        val now = System.currentTimeMillis()
-        if (now - lastDumpsysTime < 300_000L && cachedAwakeTime > 0) {
-            return Pair(cachedAwakeTime, cachedDeepSleepTime)
-        }
-
-        try {
-            val result = shellRunner.run("dumpsys batterystats --checkin")
-            if (result != null) {
-                val snapshot = BatteryStatsParser.parseCheckin(result.output)
-                val awakeTime = snapshot.batteryRealtimeMs - (snapshot.doze?.deepIdleTimeMs ?: 0L)
-                val sleepTime = snapshot.doze?.deepIdleTimeMs ?: 0L
-                cachedAwakeTime = awakeTime
-                cachedDeepSleepTime = sleepTime
-                if (snapshot.estimatedCapacityMah > 0) {
-                    estimatedCapacityMah = snapshot.estimatedCapacityMah.toDouble()
-                }
-                lastDumpsysTime = System.currentTimeMillis()
-                return Pair(awakeTime, sleepTime)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting deep sleep info", e)
-        }
-
-        val uptime = SystemClock.uptimeMillis()
-        val elapsedRealtime = SystemClock.elapsedRealtime()
-        cachedAwakeTime = uptime
-        cachedDeepSleepTime = elapsedRealtime - uptime
-        lastDumpsysTime = System.currentTimeMillis()
-        return Pair(uptime, elapsedRealtime - uptime)
     }
 }

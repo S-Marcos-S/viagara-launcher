@@ -26,6 +26,8 @@ class DrainNotificationManager private constructor(
     companion object {
         const val CHANNEL_ID = "drain_stats_channel"
         const val NOTIFICATION_ID = 2001
+        const val ACTION_OPEN_BATTERY_STATS = "dev.viagaralauncher.action.OPEN_BATTERY_STATS"
+        const val EXTRA_OPEN_BATTERY_STATS = "open_battery_stats"
         private const val PREF_KEY_ENABLED = "pref_battery_drain_notification_enabled"
 
         @Volatile
@@ -135,10 +137,11 @@ class DrainNotificationManager private constructor(
     private fun buildNotification(state: DrainState): Notification {
         val contentIntent = PendingIntent.getActivity(
             context,
-            0,
+            NOTIFICATION_ID,
             Intent(context, MainActivity::class.java).apply {
-                putExtra("open_battery_stats", true)
-                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                action = ACTION_OPEN_BATTERY_STATS
+                putExtra(EXTRA_OPEN_BATTERY_STATS, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -171,14 +174,46 @@ class DrainNotificationManager private constructor(
             formatDrainPercentage(state.deepSleepDrainRatePercent)
         ).removeEmojis()
 
-        val screenOnStr = context.getString(R.string.drain_screen_on_line, formatDrainPercentage(state.screenOnDrainRatePercent), formatDuration(state.screenOnTimeMs)).removeEmojis()
-        val screenOffStr = context.getString(R.string.drain_screen_off_line, formatDrainPercentage(state.screenOffDrainRatePercent), formatDuration(state.screenOffTimeMs)).removeEmojis()
-        val deepSleepStr = context.getString(R.string.drain_deep_sleep_line, formatDrainRate(state.deepSleepDrainRate), formatDuration(state.deepSleepTimeMs), String.format(Locale.getDefault(), "%.0f%%", state.deepSleepPercentage)).removeEmojis()
-        val awakeStr = context.getString(R.string.drain_awake_line, formatDrainRate(state.awakeDrainRate), formatDuration(state.awakeTimeMs)).removeEmojis()
-        val activeStr = context.getString(R.string.drain_active_line, formatDrainRate(state.activeDrainRate), formatDuration(state.activeTimeMs)).removeEmojis()
-        val idleStr = context.getString(R.string.drain_idle_line, formatDrainRate(state.idleDrainRate), formatDuration(state.idleTimeMs)).removeEmojis()
-        val totalStr = context.getString(R.string.drain_total_line, String.format(Locale.getDefault(), "%.1f mAh", state.totalDrainMah), formatDuration(state.totalTimeMs)).removeEmojis()
-        val avgStr = context.getString(R.string.drain_average_line, formatDrainRate(state.averageDrainRate)).removeEmojis()
+        val screenOnStr = context.getString(
+            R.string.drain_screen_on_line,
+            formatDrainPercentage(state.screenOnDrainRatePercent),
+            formatDuration(state.screenOnTimeMs)
+        ).removeEmojis()
+        val screenOffStr = context.getString(
+            R.string.drain_screen_off_line,
+            formatDrainPercentage(state.screenOffDrainRatePercent),
+            formatDuration(state.screenOffTimeMs)
+        ).removeEmojis()
+        val deepSleepStr = context.getString(
+            R.string.drain_deep_sleep_line,
+            formatDrainPercentage(state.deepSleepDrainRatePercent),
+            formatDuration(state.deepSleepTimeMs),
+            String.format(Locale.getDefault(), "%.0f%%", state.deepSleepPercentage)
+        ).removeEmojis()
+        val awakeStr = context.getString(
+            R.string.drain_awake_line,
+            formatDrainPercentage(state.awakeDrainRatePercent),
+            formatDuration(state.awakeTimeMs)
+        ).removeEmojis()
+        val activeStr = context.getString(
+            R.string.drain_active_line,
+            formatDrainPercentage(state.activeDrainRatePercent),
+            formatDuration(state.activeTimeMs)
+        ).removeEmojis()
+        val idleStr = context.getString(
+            R.string.drain_idle_line,
+            formatDrainPercentage(state.idleDrainRatePercent),
+            formatDuration(state.idleTimeMs)
+        ).removeEmojis()
+        val totalStr = context.getString(
+            R.string.drain_total_line,
+            String.format(Locale.getDefault(), "%.1f mAh", state.totalDrainMah),
+            formatDuration(state.totalTimeMs)
+        ).removeEmojis()
+        val avgStr = context.getString(
+            R.string.drain_average_line,
+            formatDrainPercentage(state.averageDrainRatePercent)
+        ).removeEmojis()
 
         val bigText = buildString {
             appendLine("$screenOnStr • $screenOffStr")

@@ -1,3 +1,22 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.47
+
+- **Navegação Direta da Notificação de Bateria para a Tela de Consumo (`DrainNotificationManager` & `MainActivity`):**
+  - **Abertura Imediata:** O toque na notificação persistente de drenagem agora direciona diretamente para a tela de estatísticas avançadas de bateria (`BatteryStatsScreen`).
+  - **Correção de Conflito de Navegação:** Corrigido o tratamento de `onNewIntent` em `MainActivity`, que incrementava indevidamente o gatilho de retorno para a tela inicial (`homeIntentTick`) em intenções explícitas de notificação, garantindo que a tela de consumo abra sem ser fechada ou redefinida para a Home.
+  - **Identificador de Intenção Dedicado:** Adicionada ação explícita `ACTION_OPEN_BATTERY_STATS` com `launchSingleTop` no `ViagaraNavHost` para evitar duplicação de instâncias.
+
+- **Consistência Total das Taxas de Drenagem por Hora (`AdvancedDrainTracker` & `BatteryStatsScreen`):**
+  - **Correção Crítica no Rastreamento de Drenagem de Tela Desligada:** Corrigida falha no cálculo de transição de estado onde a ativação da tela atribuía todo o consumo acumulado durante horas de tela desligada ao consumo de tela ligada (`screenOnDrain`), deixando o consumo de tela desligada zerado e inflando absurdamente a taxa de tela ligada.
+  - **Unificação de Formatação em %/h:** O card de monitoramento em tempo real (`RealtimeDrainCard`) na tela de bateria agora exibe as taxas horárias em porcentagem (`%/h`), em perfeita concordância com a notificação persistente e com o card de tempo de tela (`ScreenTimeCard`).
+  - **Normalização de Linhas na Notificação:** Todas as métricas da notificação expandida (Sono profundo, Acordado, Ativo, Inativo e Média) passam a utilizar a mesma formatação padronizada em `% / h` (`formatDrainPercentage`).
+
+- **Sincronização e Precisão do Tempo em Sono Profundo (`Deep Sleep`):**
+  - **Cálculo Exato Baseado em Relógios Monotônicos do Kernel:** O rastreamento de sono profundo agora utiliza os relógios de hardware do kernel (`elapsedRealtime` e `uptimeMillis`), medindo com precisão absoluta o tempo em que a CPU esteve suspensa durante a sessão, sem depender de amostragem durante o sono e sem confundir o Deep Sleep do kernel com o modo Doze do Android.
+  - **Exibição Clara de Duração e Porcentagem:** O card em tempo real na tela de bateria agora exibe a duração real em sono profundo acompanhada de sua porcentagem relativa (`ex: 4h 12m (88%)`), idêntico à notificação.
+  - **Integração de Uptime de Bateria no Checkin:** O `BatteryStatsParser` agora processa `batteryUptimeMs`, permitindo que o card de análise de tela (`ScreenTimeCard`) também apresente os tempos e porcentagens exatos de Sono Profundo e Acordado registrados pelo sistema desde a última desconexão do carregador.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.46
 
 - **Formatação em Porcentagem por Hora e Identificadores On/Off na Notificação (`DrainNotificationManager`):**

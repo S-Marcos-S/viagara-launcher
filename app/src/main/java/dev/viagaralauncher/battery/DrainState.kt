@@ -99,6 +99,8 @@ data class DrainState(
  */
 data class DrainSnapshot(
     val timestamp: Long,
+    val elapsedRealtime: Long = android.os.SystemClock.elapsedRealtime(),
+    val uptimeMillis: Long = android.os.SystemClock.uptimeMillis(),
     val batteryLevel: Int?,
     val batteryMah: Double?,
     val currentMa: Int,

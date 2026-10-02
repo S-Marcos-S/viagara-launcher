@@ -91,8 +91,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // Pressing HOME re-delivers the intent to us; treat it as "go back to the home screen".
-        homeIntentTick++
+        val isExplicitAction = intent.action == dev.viagaralauncher.update.UpdateManager.ACTION_OPEN_UPDATE_CHANGELOG ||
+            intent.getBooleanExtra(dev.viagaralauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false) ||
+            intent.action == dev.viagaralauncher.battery.DrainNotificationManager.ACTION_OPEN_BATTERY_STATS ||
+            intent.getBooleanExtra(dev.viagaralauncher.battery.DrainNotificationManager.EXTRA_OPEN_BATTERY_STATS, false) ||
+            intent.hasExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_OPEN_CRASH_ID) ||
+            intent.hasExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_CRASH_PACKAGE)
+
+        if (!isExplicitAction) {
+            // Pressing HOME re-delivers the intent to us; treat it as "go back to the home screen".
+            homeIntentTick++
+        }
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
         handleLogViewerIntent(intent)
@@ -115,7 +124,10 @@ class MainActivity : ComponentActivity() {
 
     private fun handleBatteryStatsIntent(intent: Intent?) {
         if (intent == null) return
-        if (intent.getBooleanExtra("open_battery_stats", false)) {
+        if (intent.action == dev.viagaralauncher.battery.DrainNotificationManager.ACTION_OPEN_BATTERY_STATS ||
+            intent.getBooleanExtra(dev.viagaralauncher.battery.DrainNotificationManager.EXTRA_OPEN_BATTERY_STATS, false) ||
+            intent.getBooleanExtra("open_battery_stats", false)
+        ) {
             dev.viagaralauncher.battery.BatteryStatsEvents.open()
         }
     }

@@ -102,7 +102,11 @@ fun ViagaraNavHost(
     LaunchedEffect(openBatteryRequested) {
         if (openBatteryRequested) {
             dev.viagaralauncher.battery.BatteryStatsEvents.consume()
-            navController.navigate("battery_stats")
+            if (navController.currentDestination?.route != "battery_stats") {
+                navController.navigate("battery_stats") {
+                    launchSingleTop = true
+                }
+            }
         }
     }
 
