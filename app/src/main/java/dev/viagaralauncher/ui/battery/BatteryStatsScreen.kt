@@ -2483,3 +2483,87 @@ private fun formatBytes(bytes: Long): String {
     return String.format(Locale.getDefault(), "%.2f GB", gb)
 }
 
+
+@Composable
+fun BatterySettingsTab(vm: BatteryStatsViewModel) {
+    val autoResetEnabled by vm.autoResetEnabled.collectAsStateWithLifecycle()
+    val autoResetPercent by vm.autoResetPercent.collectAsStateWithLifecycle()
+    val notifShowRates by vm.notifShowRates.collectAsStateWithLifecycle()
+    val notifShowDeepSleep by vm.notifShowDeepSleep.collectAsStateWithLifecycle()
+    val notifShowActiveIdle by vm.notifShowActiveIdle.collectAsStateWithLifecycle()
+    val notifShowTotalAvg by vm.notifShowTotalAvg.collectAsStateWithLifecycle()
+    val notifShowTemperature by vm.notifShowTemperature.collectAsStateWithLifecycle()
+
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            FrostedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.settings),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Auto Reset Monitoramento", fontWeight = FontWeight.Bold)
+                            Text("Resetar estatísticas ao carregar até porcentagem específica", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = autoResetEnabled,
+                            onCheckedChange = { vm.setAutoResetEnabled(it) },
+                            modifier = Modifier.scale(0.80f)
+                        )
+                    }
+
+                    if (autoResetEnabled) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                            Text("Porcentagem Alvo: $autoResetPercent%", style = MaterialTheme.typography.bodySmall)
+                            Slider(
+                                value = autoResetPercent.toFloat(),
+                                onValueChange = { vm.setAutoResetPercent(it.toInt()) },
+                                valueRange = 50f..100f,
+                                steps = 49
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
+
+                    Text("Personalizar Notificação Ao Vivo", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Taxas On/Off", style = MaterialTheme.typography.bodyMedium)
+                        Switch(checked = notifShowRates, onCheckedChange = { vm.setNotifShowRates(it) }, modifier = Modifier.scale(0.80f))
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Sono Profundo", style = MaterialTheme.typography.bodyMedium)
+                        Switch(checked = notifShowDeepSleep, onCheckedChange = { vm.setNotifShowDeepSleep(it) }, modifier = Modifier.scale(0.80f))
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Ativo/Ocioso", style = MaterialTheme.typography.bodyMedium)
+                        Switch(checked = notifShowActiveIdle, onCheckedChange = { vm.setNotifShowActiveIdle(it) }, modifier = Modifier.scale(0.80f))
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Total e Média", style = MaterialTheme.typography.bodyMedium)
+                        Switch(checked = notifShowTotalAvg, onCheckedChange = { vm.setNotifShowTotalAvg(it) }, modifier = Modifier.scale(0.80f))
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Temperatura", style = MaterialTheme.typography.bodyMedium)
+                        Switch(checked = notifShowTemperature, onCheckedChange = { vm.setNotifShowTemperature(it) }, modifier = Modifier.scale(0.80f))
+                    }
+                }
+            }
+        }
+    }
+}
