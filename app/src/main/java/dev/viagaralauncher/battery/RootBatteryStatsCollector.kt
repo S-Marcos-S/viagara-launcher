@@ -299,8 +299,58 @@ object RootBatteryStatsCollector {
         result.sortedBy { it.name }
     }
 
+    val isRootCached: Boolean? get() = cachedRoot
+
     suspend fun runAsRoot(command: String): String? = withContext(Dispatchers.IO) {
         exec(command, CMD_TIMEOUT_MS)
+    }
+
+    /**
+     * Executes a command as root and returns true if it completed within [timeoutMs] and exited with code 0.
+     */
+    suspend fun runAsRootSuccessful(command: String, timeoutMs: Long = 3_000L): Boolean = withContext(Dispatchers.IO) {
+        var process: Process? = null
+        var watchdog: Thread? = null
+        val timedOut = AtomicBoolean(false)
+        try {
+            val p = ProcessBuilder("su", "-c", command)
+                .redirectErrorStream(true)
+                .start()
+            process = p
+            runCatching { p.outputStream.close() }
+
+            watchdog = Thread {
+                try {
+                    if (!p.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
+                        timedOut.set(true)
+                        Log.w(TAG, "su timed out after $timeoutMs ms: $command")
+                        p.destroyForcibly()
+                    }
+                } catch (_: InterruptedException) {}
+            }.apply {
+                isDaemon = true
+                start()
+            }
+
+            p.inputStream.bufferedReader().use { it.readText() }
+            val exitCode = p.waitFor()
+            !timedOut.get() && exitCode == 0
+        } catch (e: Exception) {
+            Log.d(TAG, "su failed for '$command': ${e.message}")
+            false
+        } finally {
+            watchdog?.interrupt()
+            runCatching { process?.destroy() }
+        }
+    }
+
+    /**
+     * Turns off / locks the screen using root command `input keyevent 26` (KEYCODE_POWER),
+     * which activates the system's smooth display sleep transition without abrupt termination.
+     */
+    suspend fun lockScreen(): Boolean = withContext(Dispatchers.IO) {
+        if (!isRootAvailable()) return@withContext false
+        runAsRootSuccessful("input keyevent 26")
     }
 
     private fun exec(command: String, timeoutMs: Long): String? {
@@ -338,3 +388,4 @@ object RootBatteryStatsCollector {
         }
     }
 }
+
