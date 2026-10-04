@@ -1,4 +1,4 @@
-### 🚀 Novidades e Melhorias da Versão
+### 🚀 Novidades da Versão v0.59.52
 
 - **Desligamento e Bloqueio de Tela via Root no Toque Duplo:**
   - O gesto de duplo toque na tela inicial agora desliga o display usando comando root (`input keyevent 26`) caso o aparelho possua acesso Superusuário (Root).
