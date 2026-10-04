@@ -161,6 +161,7 @@ class DrainNotificationManager private constructor(
         val showActiveIdle = prefs.getBoolean("notif_show_active_idle", true)
         val showTotalAvg = prefs.getBoolean("notif_show_total_avg", true)
         val showTemp = prefs.getBoolean("notif_show_temperature", true)
+        val showNetwork = prefs.getBoolean("notif_show_network", true)
 
         val currentTemp = state.batteryTemperatureC ?: drainTracker.getBatteryTemperatureC()
         val tempText = if (showTemp && currentTemp != null) "${Math.round(currentTemp)}°" else null
@@ -248,6 +249,11 @@ class DrainNotificationManager private constructor(
             R.string.drain_average_line,
             formatDrainPercentage(state.averageDrainRatePercent)
         ).removeEmojis()
+        val netStr = context.getString(
+            R.string.drain_network_line,
+            android.text.format.Formatter.formatFileSize(context, state.networkRxBytes),
+            android.text.format.Formatter.formatFileSize(context, state.networkTxBytes)
+        ).removeEmojis()
 
         val bigText = buildString {
             if (showRates) {
@@ -260,7 +266,10 @@ class DrainNotificationManager private constructor(
                 appendLine("$activeStr • $idleStr")
             }
             if (showTotalAvg) {
-                append("$totalStr • $avgStr")
+                appendLine("$totalStr • $avgStr")
+            }
+            if (showNetwork) {
+                append("$netStr")
             }
         }.trimEnd()
 

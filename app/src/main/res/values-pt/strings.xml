@@ -740,6 +740,7 @@
     <string name="wakelock_time">Tempo de wakelock</string>
     <string name="foreground">Primeiro plano</string>
     <string name="foreground_service">Serviço em primeiro plano</string>
+    <string name="background_service">Serviço em segundo plano</string>
     <string name="top">Primeiro plano</string>
     <string name="gps">GPS</string>
     <string name="sensors">Sensores</string>
@@ -788,6 +789,7 @@
     <string name="drain_idle_line">Inativo: %1$s (%2$s)</string>
     <string name="drain_total_line">Total: %1$s em %2$s</string>
     <string name="drain_average_line">Média: %1$s</string>
+    <string name="drain_network_line">Rede: ↓ %1$s / ↑ %2$s</string>
     <string name="tab_overview">Visão geral</string>
     <string name="tab_apps">Apps</string>
     <string name="tab_wakelocks">Wakelocks</string>

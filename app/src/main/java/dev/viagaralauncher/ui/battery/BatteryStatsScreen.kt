@@ -1352,8 +1352,7 @@ private fun AppStatsCard(rank: Int, app: BatteryStatsParser.AppPowerStats) {
                     StatRow(R.string.cpu_time, formatDuration(app.cpuTimeMs))
                     StatRow(R.string.wakelock_time, formatDuration(app.wakeLockTimeMs))
                     StatRow(R.string.foreground, formatDuration(app.foregroundTimeMs))
-                    StatRow(R.string.foreground_service, formatDuration(app.foregroundServiceTimeMs))
-                    StatRow(R.string.top, formatDuration(app.topTimeMs))
+                    StatRow(R.string.background_service, formatDuration(app.backgroundTimeMs))
                     StatRow(R.string.gps, formatDuration(app.gpsTimeMs))
                     StatRow(R.string.sensors, formatDuration(app.sensorTimeMs))
 
@@ -2493,6 +2492,7 @@ fun BatterySettingsTab(vm: BatteryStatsViewModel) {
     val notifShowActiveIdle by vm.notifShowActiveIdle.collectAsStateWithLifecycle()
     val notifShowTotalAvg by vm.notifShowTotalAvg.collectAsStateWithLifecycle()
     val notifShowTemperature by vm.notifShowTemperature.collectAsStateWithLifecycle()
+    val notifShowNetwork by vm.notifShowNetwork.collectAsStateWithLifecycle()
 
     LazyColumn(
         contentPadding = PaddingValues(16.dp),

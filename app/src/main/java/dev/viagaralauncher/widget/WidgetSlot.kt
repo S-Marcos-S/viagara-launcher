@@ -302,13 +302,25 @@ private fun MultiWidgetContainer(
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
+    val actualPageCount = validWidgetIds.size
+    val totalPages = if (actualPageCount > 1) Int.MAX_VALUE else actualPageCount
+    
+    val realInitialPage = remember(validWidgetIds) {
+        if (actualPageCount > 1) {
+            val middle = Int.MAX_VALUE / 2
+            middle - (middle % actualPageCount) + initialPage.coerceIn(0, actualPageCount - 1)
+        } else {
+            0
+        }
+    }
+
     val pagerState = rememberPagerState(
-        initialPage = initialPage.coerceIn(0, (validWidgetIds.size - 1).coerceAtLeast(0)),
-        pageCount = { validWidgetIds.size },
+        initialPage = realInitialPage,
+        pageCount = { totalPages },
     )
 
     LaunchedEffect(pagerState.currentPage) {
-        onPageChanged(pagerState.currentPage)
+        onPageChanged(pagerState.currentPage % actualPageCount)
     }
 
     var isSwiping by remember { mutableStateOf(false) }
@@ -334,7 +346,6 @@ private fun MultiWidgetContainer(
                 .height(effectiveHeightDp.dp)
                 .pointerInput(validWidgetIds.size, pagerState) {
                     val touchSlop = viewConfig.touchSlop
-                    val pageCount = validWidgetIds.size
                     awaitEachGesture {
                         val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
                         val startPage = pagerState.currentPage
@@ -357,7 +368,7 @@ private fun MultiWidgetContainer(
                                     val currentOffset = (pagerState.currentPage - startPage) + pagerState.currentPageOffsetFraction
 
                                     val targetPage = when {
-                                        velocityX < -600f -> (startPage + 1).coerceAtMost(pageCount - 1)
+                                        velocityX < -600f -> (startPage + 1).coerceAtMost(totalPages - 1)
                                         velocityX > 600f -> (startPage - 1).coerceAtLeast(0)
                                         else -> {
                                             val sign = if (currentOffset >= 0f) 1 else -1
@@ -365,7 +376,7 @@ private fun MultiWidgetContainer(
                                             val wholePages = absOffset.toInt()
                                             val frac = absOffset - wholePages
                                             val extra = if (frac >= 0.25f) 1 else 0
-                                            (startPage + sign * (wholePages + extra)).coerceIn(0, pageCount - 1)
+                                            (startPage + sign * (wholePages + extra)).coerceIn(0, totalPages - 1)
                                         }
                                     }
                                     scope.launch {
@@ -401,9 +412,9 @@ private fun MultiWidgetContainer(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
                 pageSpacing = 12.dp,
-                key = { index -> validWidgetIds.getOrNull(index) ?: index },
             ) { pageIndex ->
-                val currentId = validWidgetIds.getOrNull(pageIndex) ?: return@HorizontalPager
+                val actualIndex = pageIndex % actualPageCount
+                val currentId = validWidgetIds.getOrNull(actualIndex) ?: return@HorizontalPager
                 val providerInfo: AppWidgetProviderInfo? = remember(currentId) {
                     appWidgetManager.getAppWidgetInfo(currentId)
                 }
@@ -460,16 +471,31 @@ private fun MultiWidgetContainer(
             )
         }
 
-        Spacer(Modifier.height(6.dp))
-        WidgetDotsIndicator(
-            pageCount = validWidgetIds.size,
-            pagerState = pagerState,
-            contentColor = contentColor,
-            visible = showDots || editMode,
-            onSelectPage = { page ->
-                scope.launch { pagerState.animateScrollToPage(page) }
-            },
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(0.dp),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            WidgetDotsIndicator(
+                modifier = Modifier.padding(top = 6.dp),
+                pageCount = actualPageCount,
+                pagerState = pagerState,
+                contentColor = contentColor,
+                visible = showDots || editMode,
+                onSelectPage = { page ->
+                    val currentPage = pagerState.currentPage
+                    val currentMod = currentPage % actualPageCount
+                    val diff = page - currentMod
+                    val shortestDiff = when {
+                        diff > actualPageCount / 2 -> diff - actualPageCount
+                        diff < -actualPageCount / 2 -> diff + actualPageCount
+                        else -> diff
+                    }
+                    scope.launch { pagerState.animateScrollToPage(currentPage + shortestDiff) }
+                },
+            )
+        }
     }
 }
 
@@ -849,7 +875,7 @@ private fun WidgetDotsIndicator(
         label = "widgetDotsAlpha",
     )
 
-    if (alpha > 0.01f && pageCount > 1) {
+    if (pageCount > 1) {
         Surface(
             modifier = modifier
                 .graphicsLayer { this.alpha = alpha },
@@ -861,12 +887,13 @@ private fun WidgetDotsIndicator(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val currentProgress = pagerState.currentPage + pagerState.currentPageOffsetFraction
+                val currentProgress = (pagerState.currentPage + pagerState.currentPageOffsetFraction).mod(pageCount.toFloat())
                 val activeColor = contentColor.copy(alpha = 0.95f)
                 val inactiveColor = contentColor.copy(alpha = 0.35f)
 
                 for (i in 0 until pageCount) {
-                    val distance = abs(currentProgress - i).coerceIn(0f, 1f)
+                    val diff = abs(currentProgress - i)
+                    val distance = minOf(diff, pageCount - diff).coerceIn(0f, 1f)
                     val activeFraction = 1f - distance
 
                     val dotWidth = androidx.compose.ui.unit.lerp(6.dp, 16.dp, activeFraction)

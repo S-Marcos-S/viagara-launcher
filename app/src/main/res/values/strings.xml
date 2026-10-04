@@ -743,6 +743,7 @@
     <string name="wakelock_time">Wakelock time</string>
     <string name="foreground">Foreground</string>
     <string name="foreground_service">Foreground service</string>
+    <string name="background_service">Background service</string>
     <string name="top">Top</string>
     <string name="gps">GPS</string>
     <string name="sensors">Sensors</string>
@@ -791,6 +792,7 @@
     <string name="drain_idle_line">Idle: %1$s (%2$s)</string>
     <string name="drain_total_line">Total: %1$s in %2$s</string>
     <string name="drain_average_line">Average: %1$s</string>
+    <string name="drain_network_line">Network: ↓ %1$s / ↑ %2$s</string>
     <string name="tab_overview">Overview</string>
     <string name="tab_apps">Apps</string>
     <string name="tab_wakelocks">Wakelocks</string>

@@ -39,6 +39,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BugReport
@@ -111,10 +113,10 @@ import kotlin.math.roundToInt
 
 private enum class InspectorTab {
     MEMORY,
-    PROCESSES,
     NETWORK,
     BATTERY,
     PERMISSIONS,
+    ACTIONS
 }
 
 private enum class DataPeriod {
@@ -549,17 +551,17 @@ fun AppRootInspectorDialog(
                                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                             ) {
                                 TabButton(
-                                    title = stringResource(R.string.root_inspector_tab_memory),
+                                    title = "Memória e Processos",
                                     icon = Icons.Filled.Memory,
                                     selected = selectedTab == InspectorTab.MEMORY,
                                     onClick = { selectedTab = InspectorTab.MEMORY },
                                     modifier = Modifier.weight(1f),
                                 )
                                 TabButton(
-                                    title = stringResource(R.string.root_inspector_tab_processes),
+                                    title = "Ações",
                                     icon = Icons.Filled.Settings,
-                                    selected = selectedTab == InspectorTab.PROCESSES,
-                                    onClick = { selectedTab = InspectorTab.PROCESSES },
+                                    selected = selectedTab == InspectorTab.ACTIONS,
+                                    onClick = { selectedTab = InspectorTab.ACTIONS },
                                     modifier = Modifier.weight(1f),
                                 )
                                 TabButton(
@@ -605,8 +607,9 @@ fun AppRootInspectorDialog(
                                     when (selectedTab) {
                                         InspectorTab.MEMORY -> {
                                             MemoryTabContent(data)
-                                        }
-                                        InspectorTab.PROCESSES -> {
+                                            Spacer(Modifier.height(16.dp))
+                                            Text("Processos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colorScheme.onSurface)
+                                            Spacer(Modifier.height(8.dp))
                                             ProcessesTabContent(
                                                 data = data,
                                                 onKillPid = { pid ->
@@ -620,6 +623,15 @@ fun AppRootInspectorDialog(
                                                         }
                                                     }
                                                 },
+                                            )
+                                        }
+                                        InspectorTab.ACTIONS -> {
+                                            ActionsTabContent(
+                                                app = app,
+                                                context = context,
+                                                scope = scope,
+                                                onRefreshData = { refreshData(showIndicator = true) },
+                                                onDismissRequest = onDismissRequest
                                             )
                                         }
                                         InspectorTab.NETWORK -> {
@@ -637,66 +649,6 @@ fun AppRootInspectorDialog(
                         }
                     }
 
-                    Spacer(Modifier.height(8.dp))
-
-                    // Root Action Footer
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // Force Stop Button
-                        ActionButton(
-                            modifier = Modifier.weight(1f),
-                            label = stringResource(R.string.root_inspector_action_force_stop),
-                            icon = Icons.Filled.StopCircle,
-                            backgroundColor = colorScheme.error.copy(alpha = 0.16f),
-                            textColor = colorScheme.error,
-                            borderColor = colorScheme.error.copy(alpha = 0.35f),
-                            onClick = {
-                                scope.launch {
-                                    val stopped = AppRootInspector.forceStopApp(app.packageName)
-                                    if (stopped) {
-                                        Toast.makeText(context, context.getString(R.string.root_inspector_toast_stopped), Toast.LENGTH_SHORT).show()
-                                        refreshData(showIndicator = true)
-                                    }
-                                }
-                            },
-                        )
-
-                        // Clear Cache Button
-                        ActionButton(
-                            modifier = Modifier.weight(1f),
-                            label = stringResource(R.string.root_inspector_action_clear_cache),
-                            icon = Icons.Filled.CleaningServices,
-                            backgroundColor = colorScheme.onSurface.copy(alpha = 0.08f),
-                            textColor = colorScheme.onSurface.copy(alpha = 0.9f),
-                            borderColor = colorScheme.outline.copy(alpha = 0.2f),
-                            onClick = {
-                                scope.launch {
-                                    val cleared = AppRootInspector.clearAppCache(app.packageName)
-                                    if (cleared) {
-                                        Toast.makeText(context, context.getString(R.string.root_inspector_toast_cache_cleared), Toast.LENGTH_SHORT).show()
-                                        refreshData(showIndicator = true)
-                                    }
-                                }
-                            },
-                        )
-
-                        // Launch App Button
-                        ActionButton(
-                            modifier = Modifier.weight(1f),
-                            label = stringResource(R.string.root_inspector_action_launch),
-                            icon = Icons.Filled.PlayArrow,
-                            backgroundColor = colorScheme.primary.copy(alpha = 0.16f),
-                            textColor = colorScheme.primary,
-                            borderColor = colorScheme.primary.copy(alpha = 0.35f),
-                            onClick = {
-                                AppRootInspector.launchApp(context, app.packageName)
-                                onDismissRequest()
-                            },
-                        )
-                    }
                 }
             }
         }
@@ -1967,5 +1919,102 @@ private fun ActionButton(
                 softWrap = false,
             )
         }
+    }
+}
+
+
+@Composable
+private fun ActionsTabContent(app: AppInfo, context: android.content.Context, scope: kotlinx.coroutines.CoroutineScope, onRefreshData: () -> Unit, onDismissRequest: () -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
+    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Ações do Aplicativo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = colorScheme.onSurface)
+        Spacer(Modifier.height(4.dp))
+        ActionButton(
+            modifier = Modifier.fillMaxWidth(),
+            label = stringResource(R.string.root_inspector_action_launch),
+            icon = Icons.Filled.PlayArrow,
+            backgroundColor = colorScheme.primary.copy(alpha = 0.16f),
+            textColor = colorScheme.primary,
+            borderColor = colorScheme.primary.copy(alpha = 0.35f),
+            onClick = { AppRootInspector.launchApp(context, app.packageName); onDismissRequest() }
+        )
+        ActionButton(
+            modifier = Modifier.fillMaxWidth(),
+            label = stringResource(R.string.root_inspector_action_force_stop),
+            icon = Icons.Filled.StopCircle,
+            backgroundColor = colorScheme.error.copy(alpha = 0.16f),
+            textColor = colorScheme.error,
+            borderColor = colorScheme.error.copy(alpha = 0.35f),
+            onClick = {
+                scope.launch {
+                    if (AppRootInspector.forceStopApp(app.packageName)) {
+                        Toast.makeText(context, context.getString(R.string.root_inspector_toast_stopped), Toast.LENGTH_SHORT).show()
+                        onRefreshData()
+                    }
+                }
+            }
+        )
+        ActionButton(
+            modifier = Modifier.fillMaxWidth(),
+            label = stringResource(R.string.root_inspector_action_clear_cache),
+            icon = Icons.Filled.CleaningServices,
+            backgroundColor = colorScheme.onSurface.copy(alpha = 0.08f),
+            textColor = colorScheme.onSurface.copy(alpha = 0.9f),
+            borderColor = colorScheme.outline.copy(alpha = 0.2f),
+            onClick = {
+                scope.launch {
+                    if (AppRootInspector.clearAppCache(app.packageName)) {
+                        Toast.makeText(context, context.getString(R.string.root_inspector_toast_cache_cleared), Toast.LENGTH_SHORT).show()
+                        onRefreshData()
+                    }
+                }
+            }
+        )
+        ActionButton(
+            modifier = Modifier.fillMaxWidth(),
+            label = "Abrir informações do app",
+            icon = Icons.Filled.Settings,
+            backgroundColor = colorScheme.onSurface.copy(alpha = 0.08f),
+            textColor = colorScheme.onSurface.copy(alpha = 0.9f),
+            borderColor = colorScheme.outline.copy(alpha = 0.2f),
+            onClick = {
+                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${app.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                onDismissRequest()
+            }
+        )
+        ActionButton(
+            modifier = Modifier.fillMaxWidth(),
+            label = "Desinstalar app",
+            icon = Icons.Filled.Delete,
+            backgroundColor = colorScheme.error.copy(alpha = 0.16f),
+            textColor = colorScheme.error,
+            borderColor = colorScheme.error.copy(alpha = 0.35f),
+            onClick = {
+                scope.launch {
+                    if (AppRootInspector.uninstallApp(app.packageName)) {
+                        Toast.makeText(context, "App desinstalado com sucesso", Toast.LENGTH_SHORT).show()
+                        onDismissRequest()
+                    } else {
+                        Toast.makeText(context, "Falha ao desinstalar app", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        )
+        ActionButton(
+            modifier = Modifier.fillMaxWidth(),
+            label = "Impedir uso em segundo plano",
+            icon = Icons.Filled.Block,
+            backgroundColor = colorScheme.onSurface.copy(alpha = 0.08f),
+            textColor = colorScheme.onSurface.copy(alpha = 0.9f),
+            borderColor = colorScheme.outline.copy(alpha = 0.2f),
+            onClick = {
+                scope.launch {
+                    if (AppRootInspector.restrictBackgroundUsage(app.packageName)) {
+                        Toast.makeText(context, "Uso em segundo plano impedido", Toast.LENGTH_SHORT).show()
+                        onRefreshData()
+                    }
+                }
+            }
+        )
     }
 }

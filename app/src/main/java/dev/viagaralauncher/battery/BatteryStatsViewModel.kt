@@ -151,6 +151,9 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     private val _notifShowTemperature = MutableStateFlow(prefs.getBoolean("notif_show_temperature", true))
     val notifShowTemperature: StateFlow<Boolean> = _notifShowTemperature.asStateFlow()
 
+    private val _notifShowNetwork = MutableStateFlow(prefs.getBoolean("notif_show_network", true))
+    val notifShowNetwork: StateFlow<Boolean> = _notifShowNetwork.asStateFlow()
+
     fun setAutoResetEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("auto_reset_enabled", enabled).apply()
         _autoResetEnabled.value = enabled
@@ -188,6 +191,12 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     fun setNotifShowTemperature(show: Boolean) {
         prefs.edit().putBoolean("notif_show_temperature", show).apply()
         _notifShowTemperature.value = show
+        DrainNotificationManager.getInstance(context).updateNow()
+    }
+
+    fun setNotifShowNetwork(show: Boolean) {
+        prefs.edit().putBoolean("notif_show_network", show).apply()
+        _notifShowNetwork.value = show
         DrainNotificationManager.getInstance(context).updateNow()
     }
 }

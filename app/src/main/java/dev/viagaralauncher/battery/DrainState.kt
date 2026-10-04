@@ -49,7 +49,11 @@ data class DrainState(
 
     // Session tracking
     val sessionStartTime: Long = System.currentTimeMillis(),
-    val lastUpdateTime: Long = System.currentTimeMillis()
+    val lastUpdateTime: Long = System.currentTimeMillis(),
+
+    // Network stats for the session
+    val networkRxBytes: Long = 0L,
+    val networkTxBytes: Long = 0L
 ) {
 
     val totalDrainMah: Double
@@ -110,7 +114,9 @@ data class DrainSnapshot(
     val isDeepSleep: Boolean,
     val isDozing: Boolean,
     val cpuAwakeTimeMs: Long,
-    val deepSleepTimeMs: Long
+    val deepSleepTimeMs: Long,
+    val networkRxBytes: Long = android.net.TrafficStats.getTotalRxBytes(),
+    val networkTxBytes: Long = android.net.TrafficStats.getTotalTxBytes()
 )
 
 enum class DeviceState {

@@ -153,6 +153,9 @@ class AdvancedDrainTracker private constructor(
     private var cumulativeActiveDrain: Double = 0.0
     private var cumulativeIdleDrain: Double = 0.0
 
+    private var cumulativeNetworkRxBytes: Long = 0L
+    private var cumulativeNetworkTxBytes: Long = 0L
+
     private var sessionStartTime: Long = System.currentTimeMillis()
 
     private val screenReceiver = object : BroadcastReceiver() {
@@ -281,6 +284,8 @@ class AdvancedDrainTracker private constructor(
                 putDouble(KEY_CUMULATIVE_AWAKE_DRAIN, cumulativeAwakeDrain)
                 putDouble(KEY_CUMULATIVE_ACTIVE_DRAIN, cumulativeActiveDrain)
                 putDouble(KEY_CUMULATIVE_IDLE_DRAIN, cumulativeIdleDrain)
+                putLong("cumulative_network_rx_bytes", cumulativeNetworkRxBytes)
+                putLong("cumulative_network_tx_bytes", cumulativeNetworkTxBytes)
 
                 lastSnapshot?.batteryMah?.let { putDouble(KEY_LAST_BATTERY_MAH, it) }
                 lastSnapshot?.batteryLevel?.let { putInt(KEY_LAST_BATTERY_LEVEL, it) }
@@ -327,6 +332,8 @@ class AdvancedDrainTracker private constructor(
             cumulativeAwakeDrain = prefs.getDouble(KEY_CUMULATIVE_AWAKE_DRAIN, 0.0)
             cumulativeActiveDrain = prefs.getDouble(KEY_CUMULATIVE_ACTIVE_DRAIN, 0.0)
             cumulativeIdleDrain = prefs.getDouble(KEY_CUMULATIVE_IDLE_DRAIN, 0.0)
+            cumulativeNetworkRxBytes = prefs.getLong("cumulative_network_rx_bytes", 0L)
+            cumulativeNetworkTxBytes = prefs.getLong("cumulative_network_tx_bytes", 0L)
 
             val isInteractive = powerManager.isInteractive
             val gapMs = (nowRealtime - savedLastSaveRealtime).coerceAtLeast(0L)
@@ -452,6 +459,9 @@ class AdvancedDrainTracker private constructor(
         cumulativeActiveDrain = 0.0
         cumulativeIdleDrain = 0.0
 
+        cumulativeNetworkRxBytes = 0L
+        cumulativeNetworkTxBytes = 0L
+
         lastScreenState = powerManager.isInteractive
         lastScreenChangeTime = now
         lastScreenChangeRealtime = nowRealtime
@@ -575,6 +585,11 @@ class AdvancedDrainTracker private constructor(
         val currentMah = current.batteryMah ?: return
         val drainMah = max(0.0, previousMah - currentMah)
 
+        val rxDelta = (current.networkRxBytes - previous.networkRxBytes).coerceAtLeast(0L)
+        val txDelta = (current.networkTxBytes - previous.networkTxBytes).coerceAtLeast(0L)
+        cumulativeNetworkRxBytes += rxDelta
+        cumulativeNetworkTxBytes += txDelta
+
         if (wasScreenOn) {
             cumulativeScreenOnDrain += drainMah
             if (abs(current.currentMa) > 200) {
@@ -660,7 +675,10 @@ class AdvancedDrainTracker private constructor(
             awakeDrainRate = awakeDrainRate,
 
             sessionStartTime = sessionStartTime,
-            lastUpdateTime = now
+            lastUpdateTime = now,
+
+            networkRxBytes = cumulativeNetworkRxBytes,
+            networkTxBytes = cumulativeNetworkTxBytes
         )
     }
 

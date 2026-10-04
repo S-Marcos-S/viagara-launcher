@@ -546,6 +546,14 @@ object AppRootInspector {
     }
 
     /**
+     * Uninstalls the app via root.
+     */
+    suspend fun uninstallApp(packageName: String): Boolean = withContext(Dispatchers.IO) {
+        val result = runSuCommand("pm uninstall $packageName")
+        result.isSuccess
+    }
+
+    /**
      * Clears internal and external caches for the app via root.
      */
     suspend fun clearAppCache(packageName: String): Boolean = withContext(Dispatchers.IO) {
@@ -567,6 +575,14 @@ object AppRootInspector {
                 true
             } else false
         }.getOrDefault(false)
+    }
+
+    /**
+     * Prevents the app from running in the background via root.
+     */
+    suspend fun restrictBackgroundUsage(packageName: String): Boolean = withContext(Dispatchers.IO) {
+        val result = runSuCommand("cmd appops set $packageName RUN_IN_BACKGROUND ignore; cmd appops set $packageName RUN_ANY_IN_BACKGROUND ignore")
+        result.isSuccess
     }
 
     /**

@@ -1,21 +1,19 @@
-### 🚀 Novidades da Versão v0.59.52
+### 🚀 Novidades da Versão v0.59.53
 
-- **Desligamento e Bloqueio de Tela via Root no Toque Duplo:**
-  - O gesto de duplo toque na tela inicial agora desliga o display usando comando root (`input keyevent 26`) caso o aparelho possua acesso Superusuário (Root).
-  - Preserva integralmente a animação circular de desligamento da tela (`ScreenOffEffect`), apagando o visor com a transição nativa e suave do sistema sem cortes abruptos.
-  - Fallback transparente: se o dispositivo não possuir root ou a execução via shell falhar, o launcher recorre automaticamente ao serviço de acessibilidade existente (`ViagaraAccessibilityService`).
-  - O menu de configurações agora reconhece a disponibilidade de root dinamicamente (compatível com Magisk, KernelSU e APatch) e não exige ativação prévia do serviço de acessibilidade para o duplo toque quando o root estiver ativo no aparelho.
+- **Central de Ações do Aplicativo no Inspetor Root:**
+  - Fusão das seções "Memória" e "Processos" em uma visão unificada e integrada.
+  - Nova aba "Ações" reunindo todas as operações disponíveis para o app:
+    - Abrir aplicativo
+    - Forçar parada via root
+    - Limpar caches interno e externo
+    - Abrir detalhes do aplicativo nas configurações do sistema
+    - Desinstalar aplicativo via root
+    - Impedir uso em segundo plano (`appops RUN_IN_BACKGROUND ignore`)
 
-- **Configurações e Monitoramento de Bateria:**
-  - Nova aba de Configurações na tela de Bateria ao lado da aba Root.
-  - Opção para redefinir o monitoramento de bateria automaticamente ao carregar até uma porcentagem configurável (ex: 80%, 90% ou 100%).
-  - Personalização completa das métricas e seções exibidas na notificação em tempo real de consumo de bateria.
+- **Rolagem e Indicador de Widgets na Tela Inicial:**
+  - Rolagem cíclica infinita entre os widgets (do primeiro direto para o último e vice-versa).
+  - O indicador de páginas (dots) agora não consome espaço no layout nem desloca os aplicativos favoritos para baixo ao surgir na tela.
 
-- **Otimização de Performance e Rolagem do Alfabeto (120 FPS):**
-  - Remoção do atraso artificial de 30ms no arrasto pelo alfabeto na gaveta de aplicativos, permitindo resposta instantânea e fluida sincronizada com telas de alta taxa de atualização (90Hz / 120Hz).
-  - Eliminação de milhares de alocações de objetos `Rect` e contenções de concorrência por segundo no `AppLaunchTransitionManager` durante a rolagem rápida de aplicativos, atualizando coordenadas in-place e aliviando completamente o Garbage Collector do Android.
-
-- **Estabilidade e Pipeline de CI/Build:**
-  - Habilitado retorno seguro de stubs Android em testes unitários e tratamento resiliente de telemetria de hardware e processos root.
-
-
+- **Telemetria de Rede e Correções na Bateria:**
+  - Nova opção de telemetria ao vivo de consumo de rede (Download e Upload) na notificação de bateria, configurável na aba de Configurações.
+  - Correção na lista de consumo por aplicativo: remoção da duplicidade de rótulo em primeiro plano e restauração da exibição correta do tempo de serviço em segundo plano.
