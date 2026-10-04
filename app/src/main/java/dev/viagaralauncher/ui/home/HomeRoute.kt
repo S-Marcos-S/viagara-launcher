@@ -658,16 +658,16 @@ fun HomeRoute(
             ScreenOffEffect(
                 targetOffset = target,
                 onAnimationEnd = {
-                    val locked = SystemUi.lockScreen()
-                    if (!locked) {
-                        lockTargetOffset = null
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.toast_enable_accessibility_lock),
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                    } else {
-                        scope.launch {
+                    scope.launch {
+                        val locked = SystemUi.lockScreen()
+                        if (!locked) {
+                            lockTargetOffset = null
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.toast_enable_accessibility_lock),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        } else {
                             delay(2000L)
                             if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
                                 lockTargetOffset = null

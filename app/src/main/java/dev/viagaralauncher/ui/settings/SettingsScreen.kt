@@ -246,21 +246,24 @@ fun SettingsScreen(
                     RowDivider()
                     EdgeSideRow(edgeSide, onSetEdgeSide)
                     RowDivider()
+                    val canLockScreen = remember(shadeGestureReady) {
+                        shadeGestureReady || RootInstaller.isRootAvailable()
+                    }
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_double_tap_lock),
                         detail = stringResource(
-                            if (doubleTapToLock && !shadeGestureReady) R.string.settings_double_tap_lock_not_ready
+                            if (doubleTapToLock && !canLockScreen) R.string.settings_double_tap_lock_not_ready
                             else R.string.settings_double_tap_lock_detail
                         ),
                         checked = doubleTapToLock,
                         onCheckedChange = { enable ->
                             onSetDoubleTapToLock(enable)
-                            if (enable && !shadeGestureReady) {
+                            if (enable && !canLockScreen) {
                                 onOpenAccessibilitySettings()
                             }
                         },
                     )
-                    if (doubleTapToLock && !shadeGestureReady) {
+                    if (doubleTapToLock && !canLockScreen) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

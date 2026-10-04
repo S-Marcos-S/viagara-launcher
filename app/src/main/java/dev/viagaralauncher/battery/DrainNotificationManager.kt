@@ -155,8 +155,15 @@ class DrainNotificationManager private constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
+        val showRates = prefs.getBoolean("notif_show_rates", true)
+        val showDeepSleep = prefs.getBoolean("notif_show_deep_sleep", true)
+        val showActiveIdle = prefs.getBoolean("notif_show_active_idle", true)
+        val showTotalAvg = prefs.getBoolean("notif_show_total_avg", true)
+        val showTemp = prefs.getBoolean("notif_show_temperature", true)
+
         val currentTemp = state.batteryTemperatureC ?: drainTracker.getBatteryTemperatureC()
-        val tempText = currentTemp?.let { "${Math.round(it)}°" }
+        val tempText = if (showTemp && currentTemp != null) "${Math.round(currentTemp)}°" else null
 
         val currentStateText = when {
             state.isCharging -> {
@@ -243,11 +250,19 @@ class DrainNotificationManager private constructor(
         ).removeEmojis()
 
         val bigText = buildString {
-            appendLine("$screenOnStr • $screenOffStr")
-            appendLine("$deepSleepStr • $awakeStr")
-            appendLine("$activeStr • $idleStr")
-            append("$totalStr • $avgStr")
-        }
+            if (showRates) {
+                appendLine("$screenOnStr • $screenOffStr")
+            }
+            if (showDeepSleep) {
+                appendLine("$deepSleepStr • $awakeStr")
+            }
+            if (showActiveIdle) {
+                appendLine("$activeStr • $idleStr")
+            }
+            if (showTotalAvg) {
+                append("$totalStr • $avgStr")
+            }
+        }.trimEnd()
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_charging)

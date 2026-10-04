@@ -104,7 +104,8 @@ fun BatteryStatsScreen(
             StatsTab(R.string.tab_network, Icons.Outlined.Wifi),
             StatsTab(R.string.tab_alarms, Icons.Outlined.Schedule),
             StatsTab(R.string.tab_system, Icons.Outlined.SettingsApplications),
-            StatsTab(R.string.tab_root, Icons.Outlined.AdminPanelSettings)
+            StatsTab(R.string.tab_root, Icons.Outlined.AdminPanelSettings),
+            StatsTab(R.string.settings, Icons.Outlined.Settings)
         )
     }
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -326,6 +327,7 @@ fun BatteryStatsScreen(
                             4 -> AlarmsJobsTab(snapshot?.alarms ?: emptyList(), snapshot?.jobs ?: emptyList(), snapshot?.syncs ?: emptyList())
                             5 -> SystemTab(snapshot, deviceIdle, powerManager)
                             6 -> RootTab(hasRoot, kernelBattery, onRefresh = { vm.refreshRootStats() })
+                            7 -> BatterySettingsTab(vm)
                         }
                     }
                 }

@@ -160,11 +160,25 @@ class AdvancedDrainTracker private constructor(
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON -> onScreenStateChanged(true)
                 Intent.ACTION_SCREEN_OFF -> onScreenStateChanged(false)
-                Intent.ACTION_POWER_CONNECTED,
+                Intent.ACTION_POWER_CONNECTED -> {
+                    scope.launch {
+                        takeSnapshot()?.let { snapshot ->
+                            lastSnapshot = snapshot
+                            updateDrainState()
+                        }
+                    }
+                }
                 Intent.ACTION_POWER_DISCONNECTED -> {
                     scope.launch {
                         takeSnapshot()?.let { snapshot ->
                             lastSnapshot = snapshot
+                            val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
+                            if (prefs.getBoolean("auto_reset_enabled", false)) {
+                                val target = prefs.getInt("auto_reset_percent", 100)
+                                if (snapshot.batteryLevel != null && snapshot.batteryLevel >= target) {
+                                    resetSession()
+                                }
+                            }
                             updateDrainState()
                         }
                     }

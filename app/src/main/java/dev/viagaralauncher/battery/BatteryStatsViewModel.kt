@@ -126,4 +126,67 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
         drainTracker.resetSession()
         DrainNotificationManager.getInstance(context).updateNow()
     }
+
+    private val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
+
+    private val _autoResetEnabled = MutableStateFlow(prefs.getBoolean("auto_reset_enabled", false))
+    val autoResetEnabled: StateFlow<Boolean> = _autoResetEnabled.asStateFlow()
+
+    private val _autoResetPercent = MutableStateFlow(prefs.getInt("auto_reset_percent", 100))
+    val autoResetPercent: StateFlow<Int> = _autoResetPercent.asStateFlow()
+
+    private val _notifShowRates = MutableStateFlow(prefs.getBoolean("notif_show_rates", true))
+    val notifShowRates: StateFlow<Boolean> = _notifShowRates.asStateFlow()
+
+    private val _notifShowDeepSleep = MutableStateFlow(prefs.getBoolean("notif_show_deep_sleep", true))
+    val notifShowDeepSleep: StateFlow<Boolean> = _notifShowDeepSleep.asStateFlow()
+
+    private val _notifShowActiveIdle = MutableStateFlow(prefs.getBoolean("notif_show_active_idle", true))
+    val notifShowActiveIdle: StateFlow<Boolean> = _notifShowActiveIdle.asStateFlow()
+
+    private val _notifShowTotalAvg = MutableStateFlow(prefs.getBoolean("notif_show_total_avg", true))
+    val notifShowTotalAvg: StateFlow<Boolean> = _notifShowTotalAvg.asStateFlow()
+
+    private val _notifShowTemperature = MutableStateFlow(prefs.getBoolean("notif_show_temperature", true))
+    val notifShowTemperature: StateFlow<Boolean> = _notifShowTemperature.asStateFlow()
+
+    fun setAutoResetEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("auto_reset_enabled", enabled).apply()
+        _autoResetEnabled.value = enabled
+    }
+
+    fun setAutoResetPercent(percent: Int) {
+        prefs.edit().putInt("auto_reset_percent", percent).apply()
+        _autoResetPercent.value = percent
+    }
+
+    fun setNotifShowRates(show: Boolean) {
+        prefs.edit().putBoolean("notif_show_rates", show).apply()
+        _notifShowRates.value = show
+        DrainNotificationManager.getInstance(context).updateNow()
+    }
+
+    fun setNotifShowDeepSleep(show: Boolean) {
+        prefs.edit().putBoolean("notif_show_deep_sleep", show).apply()
+        _notifShowDeepSleep.value = show
+        DrainNotificationManager.getInstance(context).updateNow()
+    }
+
+    fun setNotifShowActiveIdle(show: Boolean) {
+        prefs.edit().putBoolean("notif_show_active_idle", show).apply()
+        _notifShowActiveIdle.value = show
+        DrainNotificationManager.getInstance(context).updateNow()
+    }
+
+    fun setNotifShowTotalAvg(show: Boolean) {
+        prefs.edit().putBoolean("notif_show_total_avg", show).apply()
+        _notifShowTotalAvg.value = show
+        DrainNotificationManager.getInstance(context).updateNow()
+    }
+
+    fun setNotifShowTemperature(show: Boolean) {
+        prefs.edit().putBoolean("notif_show_temperature", show).apply()
+        _notifShowTemperature.value = show
+        DrainNotificationManager.getInstance(context).updateNow()
+    }
 }
