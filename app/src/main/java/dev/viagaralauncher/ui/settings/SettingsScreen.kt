@@ -33,9 +33,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import dev.viagaralauncher.battery.RootBatteryStatsCollector
 import dev.viagaralauncher.update.RootInstaller
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,6 +125,14 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val surface = MaterialTheme.colorScheme.surface
+    var isRootAvailable by remember {
+        mutableStateOf(RootBatteryStatsCollector.isRootCached == true || RootInstaller.isRootAvailable())
+    }
+    LaunchedEffect(Unit) {
+        if (!isRootAvailable) {
+            isRootAvailable = RootBatteryStatsCollector.isRootAvailable()
+        }
+    }
 
     Scaffold(
         containerColor = surface,
@@ -246,8 +259,8 @@ fun SettingsScreen(
                     RowDivider()
                     EdgeSideRow(edgeSide, onSetEdgeSide)
                     RowDivider()
-                    val canLockScreen = remember(shadeGestureReady) {
-                        shadeGestureReady || RootInstaller.isRootAvailable()
+                    val canLockScreen = remember(shadeGestureReady, isRootAvailable) {
+                        shadeGestureReady || isRootAvailable
                     }
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_double_tap_lock),
@@ -464,7 +477,6 @@ fun SettingsScreen(
             }
 
             item {
-                val isRootAvailable = remember { RootInstaller.isRootAvailable() }
                 Section(stringResource(R.string.settings_section_about)) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)

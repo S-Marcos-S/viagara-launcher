@@ -3,7 +3,6 @@ package dev.viagaralauncher.service
 
 import android.content.Context
 import dev.viagaralauncher.battery.RootBatteryStatsCollector
-import dev.viagaralauncher.update.RootInstaller
 
 object SystemUi {
     /**
@@ -41,9 +40,8 @@ object SystemUi {
      * @return true if the screen was turned off / locked successfully.
      */
     suspend fun lockScreen(): Boolean {
-        if (RootInstaller.isRootAvailable() && RootBatteryStatsCollector.isRootAvailable()) {
-            val rootSuccess = RootBatteryStatsCollector.lockScreen()
-            if (rootSuccess) return true
+        if (RootBatteryStatsCollector.lockScreen()) {
+            return true
         }
         return ViagaraAccessibilityService.lockScreen()
     }
