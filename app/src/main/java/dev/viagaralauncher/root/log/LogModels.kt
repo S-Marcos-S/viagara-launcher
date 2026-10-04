@@ -109,7 +109,7 @@ object DeviceInfoProvider {
         appendLine("==================================================")
         appendLine("SDK_INT             : ${runCatching { Build.VERSION.SDK_INT }.getOrDefault(0)}")
         appendLine("ANDROID_RELEASE     : ${runCatching { Build.VERSION.RELEASE }.getOrNull() ?: "N/A"}")
-        appendLine("SECURITY_PATCH      : ${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) (runCatching { Build.VERSION.SECURITY_PATCH }.getOrNull() ?: "N/A") else "N/A"}")
+        appendLine("SECURITY_PATCH      : ${runCatching { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Build.VERSION.SECURITY_PATCH else "N/A" }.getOrNull() ?: "N/A"}")
         appendLine("MANUFACTURER        : ${runCatching { Build.MANUFACTURER }.getOrNull() ?: "N/A"}")
         appendLine("BRAND               : ${runCatching { Build.BRAND }.getOrNull() ?: "N/A"}")
         appendLine("MODEL               : ${runCatching { Build.MODEL }.getOrNull() ?: "N/A"}")

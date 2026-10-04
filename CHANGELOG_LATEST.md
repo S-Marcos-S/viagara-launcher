@@ -15,3 +15,7 @@
   - Remoção do atraso artificial de 30ms no arrasto pelo alfabeto na gaveta de aplicativos, permitindo resposta instantânea e fluida sincronizada com telas de alta taxa de atualização (90Hz / 120Hz).
   - Eliminação de milhares de alocações de objetos `Rect` e contenções de concorrência por segundo no `AppLaunchTransitionManager` durante a rolagem rápida de aplicativos, atualizando coordenadas in-place e aliviando completamente o Garbage Collector do Android.
 
+- **Estabilidade e Pipeline de CI/Build:**
+  - Habilitado retorno seguro de stubs Android em testes unitários e tratamento resiliente de telemetria de hardware e processos root.
+
+

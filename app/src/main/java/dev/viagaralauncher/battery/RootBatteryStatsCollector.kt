@@ -326,7 +326,7 @@ object RootBatteryStatsCollector {
                         Log.w(TAG, "su timed out after $timeoutMs ms: $command")
                         p.destroyForcibly()
                     }
-                } catch (_: InterruptedException) {}
+                } catch (ignored: InterruptedException) {}
             }.apply {
                 isDaemon = true
                 start()
@@ -371,7 +371,7 @@ object RootBatteryStatsCollector {
                         Log.w(TAG, "su timed out after $timeoutMs ms: $command")
                         p.destroyForcibly()
                     }
-                } catch (_: InterruptedException) {}
+                } catch (ignored: InterruptedException) {}
             }.apply {
                 isDaemon = true
                 start()
