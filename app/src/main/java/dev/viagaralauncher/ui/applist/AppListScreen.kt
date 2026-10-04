@@ -375,13 +375,8 @@ fun AppListScreen(
             val end = model.letterIndex.firstOrNull { it.second > targetIndex }?.second ?: model.rows.size
             highlightRange = targetIndex until end
             userDragged = false
-
-            // Throttling during active scrubbing prevents flooding the UI thread with
-            // 20+ instantaneous full LazyColumn layout passes per second.
-            // When the finger pauses or lifts (isScrubbing = false), this throttle does not wait.
-            if (isScrubbing) {
-                delay(30L)
-            }
+            // Seamless 120 FPS scrubbing without artificial frame throttling.
+            // snapshotFlow naturally conflates updates when the finger moves faster than the display frame rate.
         }
     }
 
@@ -1201,19 +1196,22 @@ private fun AppRow(
         label = "appRowPressScale",
     )
     val density = LocalDensity.current
-    var iconBounds by remember { mutableStateOf<Rect?>(null) }
+    val iconBounds = remember { Rect() }
+    var isBoundsRegistered by remember { mutableStateOf(false) }
 
     val iconModifier = Modifier.onGloballyPositioned { coords ->
         if (coords.isAttached) {
             val b = coords.boundsInWindow()
-            val r = Rect(
+            iconBounds.set(
                 b.left.toInt(),
                 b.top.toInt(),
                 b.right.toInt(),
                 b.bottom.toInt(),
             )
-            iconBounds = r
-            dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(app.packageName, r)
+            if (!isBoundsRegistered) {
+                dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(app.packageName, iconBounds)
+                isBoundsRegistered = true
+            }
         }
     }
 

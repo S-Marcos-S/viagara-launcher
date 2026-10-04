@@ -7,6 +7,11 @@
   - O menu de configurações agora reconhece a disponibilidade de root e não exige ativação prévia do serviço de acessibilidade para o duplo toque quando o root estiver ativo no aparelho.
 
 - **Configurações e Monitoramento de Bateria:**
-  - Nova aba de Configurações na tela de Bateria.
-  - Opção para redefinir o monitoramento de bateria automaticamente ao carregar até uma porcentagem configurável.
-  - Personalização das métricas exibidas na notificação em tempo real.
+  - Nova aba de Configurações na tela de Bateria ao lado da aba Root.
+  - Opção para redefinir o monitoramento de bateria automaticamente ao carregar até uma porcentagem configurável (ex: 80%, 90% ou 100%).
+  - Personalização completa das métricas e seções exibidas na notificação em tempo real de consumo de bateria.
+
+- **Otimização de Performance e Rolagem do Alfabeto (120 FPS):**
+  - Remoção do atraso artificial de 30ms no arrasto pelo alfabeto na gaveta de aplicativos, permitindo resposta instantânea e fluida sincronizada com telas de alta taxa de atualização (90Hz / 120Hz).
+  - Eliminação de milhares de alocações de objetos `Rect` e contenções de concorrência por segundo no `AppLaunchTransitionManager` durante a rolagem rápida de aplicativos, atualizando coordenadas in-place e aliviando completamente o Garbage Collector do Android.
+
