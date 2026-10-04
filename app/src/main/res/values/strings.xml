@@ -841,6 +841,11 @@
     <string name="time_in_state">Time in State</string>
     <string name="thermal_zones">Thermal Zones</string>
     <string name="no_thermal_data">Could not read thermal zones</string>
+    <string name="live_battery_charts_title">Live Consumption Charts</string>
+    <string name="power_label">Power</string>
+    <string name="task_manager_battery_charging">Charging</string>
+    <string name="task_manager_battery_discharging">Discharging</string>
+    <string name="task_manager_battery_power_supply">Battery Power</string>
     <plurals name="more_count">
         <item quantity="one">+ %1$d more</item>
         <item quantity="other">+ %1$d more</item>

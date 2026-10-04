@@ -793,6 +793,11 @@
     <string name="deep_idling_count">Contagem de ociosidade profunda</string>
     <string name="light_idling_time">Tempo de ociosidade leve</string>
     <string name="light_idling_count">Contagem de ociosidade leve</string>
+    <string name="live_battery_charts_title">Gráficos de Consumo ao Vivo</string>
+    <string name="power_label">Potência</string>
+    <string name="task_manager_battery_charging">Carregando</string>
+    <string name="task_manager_battery_discharging">Em Descarga</string>
+    <string name="task_manager_battery_power_supply">Alimentação via Bateria</string>
     <plurals name="more_count">
         <item quantity="one">+ %1$d outro</item>
         <item quantity="many">+ %1$d milhões a mais</item>

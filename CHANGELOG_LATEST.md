@@ -1,3 +1,13 @@
+### 🚀 Novidades e Melhorias da Versão 0.59.51
+
+- **Card de Gráficos de Consumo ao Vivo no Cabeçalho da Bateria (`BatteryStatsScreen`):**
+  - **Novo Card Dedicado para Gráficos:** Implementado card em estilo *Frosted Glass* translúcido no cabeçalho da aba Visão Geral ("Gráficos de Consumo ao Vivo") com indicador pulsante "AO VIVO", centralizando todos os gráficos de telemetria da bateria em tempo real.
+  - **Gráfico Interativo de Bateria & Energia:** Integrado o gráfico expressivo em tempo real com curvas suaves de Bézier, gradiente vertical e grade sutil (idêntico ao monitor de desempenho do Gerenciador de Tarefas), exibindo a evolução contínua da taxa de descarga/recarga instantânea em mA.
+  - **Telemetria Completa de Alimentação:** Exibição da porcentagem da bateria, estado ("Carregando" / "Em Descarga"), corrente instantânea (mA), potência física em Watts (W), tensão (V), temperatura (°C) e estado de saúde da bateria.
+  - **Coleta Leve em Tempo Real:** Ciclo contínuo de amostragem em segundo plano (`Dispatchers.IO`) a cada 1,5s sem impacto na fluidez da interface e interrupção limpa ao sair da tela.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.59.50
 
 - **Remoção do Card Redundante de Tempo de Tela (`BatteryStatsScreen`):**

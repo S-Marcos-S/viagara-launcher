@@ -1628,7 +1628,7 @@ private fun PerformanceResourceCard(
  * enhanced with smooth Bézier curves, a delicate vertical fade gradient, and subtle dashed grid lines.
  */
 @Composable
-private fun RealtimeTelemetryGraph(
+internal fun RealtimeTelemetryGraph(
     history: List<Float>,
     color: Color,
     modifier: Modifier = Modifier,

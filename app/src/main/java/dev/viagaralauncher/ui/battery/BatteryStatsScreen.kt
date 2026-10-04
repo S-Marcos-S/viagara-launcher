@@ -61,6 +61,12 @@ import dev.viagaralauncher.battery.DrainState
 import dev.viagaralauncher.battery.formatDuration
 import dev.viagaralauncher.battery.formatDrainRate
 import dev.viagaralauncher.battery.formatDrainPercentage
+import dev.viagaralauncher.root.SystemTaskInspector
+import dev.viagaralauncher.ui.root.RealtimeTelemetryGraph
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -128,8 +134,34 @@ fun BatteryStatsScreen(
         }
     }
 
+    var liveBatteryInfo by remember { mutableStateOf<SystemTaskInspector.BatteryInfoSample?>(null) }
+    val batteryDischargeHistory = remember { mutableStateListOf<Float>() }
+
     LaunchedEffect(Unit) {
         vm.refresh()
+    }
+
+    LaunchedEffect(Unit) {
+        val initial = withContext(Dispatchers.IO) {
+            SystemTaskInspector.sampleBatteryInfo(context)
+        }
+        liveBatteryInfo = initial
+        val initMa = kotlin.math.abs(initial.currentNowMa ?: 0L).toFloat()
+        if (batteryDischargeHistory.isEmpty()) {
+            batteryDischargeHistory.add(initMa)
+        }
+        while (isActive) {
+            delay(1500L)
+            val sample = withContext(Dispatchers.IO) {
+                SystemTaskInspector.sampleBatteryInfo(context)
+            }
+            liveBatteryInfo = sample
+            val battMa = kotlin.math.abs(sample.currentNowMa ?: 0L).toFloat()
+            if (batteryDischargeHistory.size >= 30) {
+                batteryDischargeHistory.removeAt(0)
+            }
+            batteryDischargeHistory.add(battMa)
+        }
     }
 
     Scaffold(
@@ -269,7 +301,9 @@ fun BatteryStatsScreen(
                                 drainState = drainState,
                                 isDrainNotificationEnabled = isDrainNotificationEnabled,
                                 onToggleDrainNotification = { vm.toggleDrainNotification(it) },
-                                onResetDrainSession = { vm.resetDrainSession() }
+                                onResetDrainSession = { vm.resetDrainSession() },
+                                batteryLiveInfo = liveBatteryInfo,
+                                batteryDischargeHistory = batteryDischargeHistory,
                             )
                             1 -> AppsTab(snapshot?.apps ?: emptyList())
                             2 -> {
@@ -637,7 +671,9 @@ private fun OverviewTab(
     drainState: DrainState,
     isDrainNotificationEnabled: Boolean,
     onToggleDrainNotification: (Boolean) -> Unit,
-    onResetDrainSession: () -> Unit
+    onResetDrainSession: () -> Unit,
+    batteryLiveInfo: SystemTaskInspector.BatteryInfoSample?,
+    batteryDischargeHistory: List<Float>,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -651,12 +687,215 @@ private fun OverviewTab(
                 onResetSession = onResetDrainSession
             )
         }
+        item {
+            LiveBatteryChartsCard(
+                batteryInfo = batteryLiveInfo,
+                history = batteryDischargeHistory,
+            )
+        }
         item { SummaryCard(snapshot) }
         item { DischargeBreakdownCard(snapshot) }
         item { SignalQualityCard(snapshot) }
         item { DozeStatsCard(snapshot?.doze, deviceIdle) }
         item { BluetoothCard(snapshot?.bluetooth) }
         item { CurrentStateCard(deviceIdle, powerManager) }
+    }
+}
+
+@Composable
+private fun LiveBatteryChartsCard(
+    batteryInfo: SystemTaskInspector.BatteryInfoSample?,
+    history: List<Float>,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val battPct = batteryInfo?.percent ?: 0
+    val isCharging = batteryInfo?.isCharging ?: false
+    val currentMa = batteryInfo?.currentNowMa
+    val powerWatts = batteryInfo?.powerWatts
+    val voltageMv = batteryInfo?.voltageMv
+    val tempC = batteryInfo?.tempCelsius ?: 0f
+    val health = batteryInfo?.health ?: "Boa"
+
+    val battAccent = when {
+        isCharging -> Color(0xFF10B981) // Green
+        battPct <= 20 -> Color(0xFFEF4444) // Red
+        battPct <= 40 -> Color(0xFFF59E0B) // Amber
+        else -> Color(0xFF10B981) // Green
+    }
+
+    val headline = "$battPct% · ${if (isCharging) stringResource(R.string.task_manager_battery_charging) else stringResource(R.string.task_manager_battery_discharging)}"
+    val subHeadline = if (currentMa != null && currentMa != 0L) {
+        val sign = if (currentMa > 0 && isCharging) "+" else if (!isCharging && currentMa > 0) "-" else ""
+        val wattStr = if (powerWatts != null) " (${String.format(Locale.US, "%.2f", powerWatts)} W)" else ""
+        "$sign${currentMa} mA$wattStr"
+    } else {
+        stringResource(R.string.task_manager_battery_power_supply)
+    }
+
+    FrostedCard(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(2.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Card Title Header Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ShowChart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.live_battery_charts_title),
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onSurface
+                    )
+                }
+
+                // Live Pulse Badge
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFF10B981).copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.35f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF10B981))
+                        )
+                        Text(
+                            text = stringResource(R.string.task_manager_live_badge),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF10B981)
+                        )
+                    }
+                }
+            }
+
+            // Section: "Bateria & Energia" Live Telemetry Graph
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(battAccent.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = if (isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.BatteryStd,
+                        contentDescription = null,
+                        tint = battAccent,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.task_manager_battery_title),
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = subHeadline,
+                        fontSize = 11.sp,
+                        color = colorScheme.onSurface.copy(alpha = 0.60f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = headline,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = battAccent,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    maxLines = 1,
+                )
+            }
+
+            // Interactive Expressive Telemetry Chart
+            RealtimeTelemetryGraph(
+                history = history,
+                color = battAccent,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(95.dp),
+            )
+
+            HorizontalDivider(
+                color = colorScheme.outline.copy(alpha = 0.10f),
+                thickness = 1.dp,
+            )
+
+            // Specs Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                ChartSpecItem(
+                    label = stringResource(R.string.task_manager_battery_voltage),
+                    value = if (voltageMv != null && voltageMv > 0L) "${String.format(Locale.US, "%.2f", voltageMv / 1000.0)} V" else "—",
+                )
+                ChartSpecItem(
+                    label = stringResource(R.string.task_manager_battery_temp),
+                    value = if (tempC > 0f) "${String.format(Locale.US, "%.1f", tempC)} °C" else "—",
+                )
+                ChartSpecItem(
+                    label = stringResource(R.string.task_manager_battery_health),
+                    value = health,
+                )
+                ChartSpecItem(
+                    label = stringResource(R.string.power_label),
+                    value = if (powerWatts != null) "${String.format(Locale.US, "%.2f", powerWatts)} W" else "—",
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChartSpecItem(
+    label: String,
+    value: String,
+) {
+    Column {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+        )
+        Spacer(Modifier.height(1.dp))
+        Text(
+            text = value,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+        )
     }
 }
 
