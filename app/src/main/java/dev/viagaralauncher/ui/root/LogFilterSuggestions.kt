@@ -54,11 +54,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.AppRepository
 import dev.viagaralauncher.root.log.LogLine
@@ -251,25 +253,25 @@ fun AppProcessSuggestionRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(6.dp))
             .clickable { onClick() }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // App / Process Icon
         if (item.appInfo != null) {
             AppIcon(
                 app = item.appInfo,
-                sizeDp = 28,
+                sizeDp = 22,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .border(0.5.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(6.dp)),
+                    .clip(RoundedCornerShape(5.dp))
+                    .border(0.5.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(5.dp)),
             )
         } else {
             Box(
                 modifier = Modifier
-                    .size(28.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .size(22.dp)
+                    .clip(RoundedCornerShape(5.dp))
                     .background(colorScheme.primary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center,
             ) {
@@ -277,12 +279,12 @@ fun AppProcessSuggestionRow(
                     imageVector = if (item.isSystem) Icons.Filled.Memory else Icons.Filled.Terminal,
                     contentDescription = null,
                     tint = colorScheme.primary,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(13.dp),
                 )
             }
         }
 
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(8.dp))
 
         // Label and Package / Process Name
         Column(modifier = Modifier.weight(1f)) {
@@ -290,7 +292,7 @@ fun AppProcessSuggestionRow(
                 Text(
                     text = item.label,
                     color = colorScheme.onSurface,
-                    fontSize = 12.5.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -298,17 +300,17 @@ fun AppProcessSuggestionRow(
                 )
 
                 if (item.isRunning) {
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(4.dp))
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(3.dp))
                             .background(Color(0xFF10B981).copy(alpha = 0.18f))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                            .padding(horizontal = 3.dp, vertical = 1.dp),
                     ) {
                         Text(
                             text = if (item.pid != null) "PID ${item.pid}" else "ATIVO",
                             color = Color(0xFF10B981),
-                            fontSize = 8.sp,
+                            fontSize = 7.5.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -318,14 +320,14 @@ fun AppProcessSuggestionRow(
                     Spacer(Modifier.width(4.dp))
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(3.dp))
                             .background(colorScheme.onSurface.copy(alpha = 0.08f))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                            .padding(horizontal = 3.dp, vertical = 1.dp),
                     ) {
                         Text(
                             text = "SISTEMA",
                             color = colorScheme.onSurface.copy(alpha = 0.6f),
-                            fontSize = 7.5.sp,
+                            fontSize = 7.sp,
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
@@ -336,7 +338,7 @@ fun AppProcessSuggestionRow(
             Text(
                 text = subtitle,
                 color = colorScheme.onSurface.copy(alpha = 0.55f),
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -366,19 +368,22 @@ fun SelectAppProcessDialog(
         LogFilterSuggestionProvider.filterSuggestions(allItems, searchQuery, limit = 50)
     }
 
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
+                .fillMaxWidth(0.96f)
                 .heightIn(max = 560.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.dp, dynamicBorderColor(), RoundedCornerShape(24.dp)),
+                .clip(RoundedCornerShape(20.dp))
+                .border(1.dp, dynamicBorderColor(), RoundedCornerShape(20.dp)),
             color = dynamicSurfaceColor(),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(14.dp),
             ) {
                 // Header
                 Row(
@@ -386,34 +391,27 @@ fun SelectAppProcessDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Filtrar por App ou Processo",
-                            color = colorScheme.onSurface,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = "Isole logs de um aplicativo específico",
-                            color = colorScheme.onSurface.copy(alpha = 0.6f),
-                            fontSize = 10.5.sp,
-                        )
-                    }
+                    Text(
+                        text = "Selecionar App",
+                        color = colorScheme.onSurface,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
 
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(28.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = "Fechar",
                             tint = colorScheme.onSurface.copy(alpha = 0.7f),
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                         )
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // Search Bar
                 OutlinedTextField(
@@ -421,17 +419,18 @@ fun SelectAppProcessDialog(
                     onValueChange = { searchQuery = it },
                     placeholder = {
                         Text(
-                            text = "Ex: Shopee, WhatsApp, termux, surfaceflinger...",
-                            fontSize = 11.5.sp,
+                            text = "Buscar app ou processo...",
+                            fontSize = 11.sp,
                             color = colorScheme.onSurface.copy(alpha = 0.45f),
                         )
                     },
+                    textStyle = TextStyle(fontSize = 11.5.sp),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Filled.Search,
                             contentDescription = null,
                             tint = colorScheme.onSurface.copy(alpha = 0.5f),
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                         )
                     },
                     trailingIcon = {
@@ -442,7 +441,7 @@ fun SelectAppProcessDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Close,
-                                    contentDescription = "Limpar busca",
+                                    contentDescription = "Limpar",
                                     tint = colorScheme.onSurface.copy(alpha = 0.6f),
                                     modifier = Modifier.size(14.dp),
                                 )
@@ -468,20 +467,20 @@ fun SelectAppProcessDialog(
                     border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.2f)),
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Terminal,
                             contentDescription = null,
                             tint = colorScheme.primary,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(14.dp),
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "Ver todos os logs do sistema (Limpar filtro de app)",
+                            text = "Exibir todos os logs (sem filtro)",
                             color = colorScheme.primary,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.SemiBold,
                         )
                     }

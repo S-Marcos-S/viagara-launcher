@@ -2509,19 +2509,22 @@ internal fun CreateFilterDialog(
         LogFilterSuggestionProvider.extractTopTags(rawLogs, tag, limit = 6)
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.96f)
                 .heightIn(max = 620.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .border(1.dp, dynamicBorderColor(), RoundedCornerShape(22.dp)),
+                .clip(RoundedCornerShape(20.dp))
+                .border(1.dp, dynamicBorderColor(), RoundedCornerShape(20.dp)),
             color = dynamicSurfaceColor(),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .padding(14.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
                 // Header
@@ -2530,34 +2533,27 @@ internal fun CreateFilterDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Criar Filtro Personalizado",
-                            color = colorScheme.onSurface,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = "Sugestões automáticas por app, processo e tag",
-                            color = colorScheme.onSurface.copy(alpha = 0.6f),
-                            fontSize = 11.sp,
-                        )
-                    }
+                    Text(
+                        text = "Criar Filtro",
+                        color = colorScheme.onSurface,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
 
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(28.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = "Fechar",
                             tint = colorScheme.onSurface.copy(alpha = 0.7f),
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                         )
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // Tipo: Incluir vs Excluir
                 Row(
@@ -2571,13 +2567,13 @@ internal fun CreateFilterDialog(
                             .background(if (including) Color(0xFF10B981).copy(alpha = 0.2f) else colorScheme.onSurface.copy(alpha = 0.05f))
                             .border(1.dp, if (including) Color(0xFF10B981) else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                             .clickable { including = true }
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "Incluir (Whitelist)",
+                            text = "Incluir",
                             color = if (including) Color(0xFF10B981) else colorScheme.onSurface.copy(alpha = 0.7f),
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -2589,30 +2585,21 @@ internal fun CreateFilterDialog(
                             .background(if (!including) Color(0xFFEF4444).copy(alpha = 0.2f) else colorScheme.onSurface.copy(alpha = 0.05f))
                             .border(1.dp, if (!including) Color(0xFFEF4444) else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                             .clickable { including = false }
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "Excluir (Blacklist)",
+                            text = "Excluir",
                             color = if (!including) Color(0xFFEF4444) else colorScheme.onSurface.copy(alpha = 0.7f),
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
 
-                // Aplicativo ou Processo (Campo com sugestões dinâmicas)
-                Text(
-                    text = "APLICATIVO OU PROCESSO",
-                    color = colorScheme.primary,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp,
-                )
-                Spacer(Modifier.height(4.dp))
-
+                // Aplicativo ou Processo
                 OutlinedTextField(
                     value = pkg,
                     onValueChange = {
@@ -2620,13 +2607,14 @@ internal fun CreateFilterDialog(
                         showAppSuggestions = true
                         selectedItem = allSuggestions.firstOrNull { item -> item.packageName == it || item.key == it }
                     },
-                    label = { Text("Nome do App ou Pacote (ex: Shopee, WhatsApp...)") },
+                    label = { Text("App ou pacote", fontSize = 11.sp) },
+                    textStyle = TextStyle(fontSize = 11.5.sp),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Filled.Search,
                             contentDescription = null,
                             tint = colorScheme.onSurface.copy(alpha = 0.5f),
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                         )
                     },
                     trailingIcon = {
@@ -2658,34 +2646,34 @@ internal fun CreateFilterDialog(
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = colorScheme.primary.copy(alpha = 0.1f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.3f)),
+                        border = BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.3f)),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             if (selectedItem?.appInfo != null) {
-                                AppIcon(app = selectedItem!!.appInfo!!, sizeDp = 22)
+                                AppIcon(app = selectedItem!!.appInfo!!, sizeDp = 20)
                             } else {
                                 Icon(
                                     imageVector = Icons.Filled.Terminal,
                                     contentDescription = null,
                                     tint = colorScheme.primary,
-                                    modifier = Modifier.size(18.dp),
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
                             Spacer(Modifier.width(8.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = selectedItem!!.label,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = colorScheme.onSurface,
                                 )
                                 Text(
                                     text = selectedItem!!.packageName ?: selectedItem!!.processName ?: "",
-                                    fontSize = 9.sp,
+                                    fontSize = 8.5.sp,
                                     fontFamily = FontFamily.Monospace,
                                     color = colorScheme.onSurface.copy(alpha = 0.6f),
                                 )
@@ -2694,7 +2682,7 @@ internal fun CreateFilterDialog(
                                 imageVector = Icons.Filled.Check,
                                 contentDescription = "Selecionado",
                                 tint = Color(0xFF10B981),
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(14.dp),
                             )
                         }
                     }
@@ -2707,9 +2695,9 @@ internal fun CreateFilterDialog(
                     exit = fadeOut() + shrinkVertically(),
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.15f)),
+                        border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.15f)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 4.dp),
@@ -2717,17 +2705,10 @@ internal fun CreateFilterDialog(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 180.dp)
+                                .heightIn(max = 160.dp)
                                 .verticalScroll(rememberScrollState())
-                                .padding(4.dp),
+                                .padding(2.dp),
                         ) {
-                            Text(
-                                text = "SUGESTÕES DE APPS E PROCESSOS",
-                                fontSize = 8.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colorScheme.onSurface.copy(alpha = 0.5f),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
                             matchingSuggestions.forEach { suggestion ->
                                 AppProcessSuggestionRow(
                                     item = suggestion,
@@ -2754,7 +2735,8 @@ internal fun CreateFilterDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome do Filtro (ex: Shopee Logs)") },
+                    label = { Text("Nome", fontSize = 11.sp) },
+                    textStyle = TextStyle(fontSize = 11.5.sp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -2765,7 +2747,8 @@ internal fun CreateFilterDialog(
                 OutlinedTextField(
                     value = tag,
                     onValueChange = { tag = it },
-                    label = { Text("Tag do Logcat (Opcional)") },
+                    label = { Text("Tag", fontSize = 11.sp) },
+                    textStyle = TextStyle(fontSize = 11.5.sp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -2773,12 +2756,6 @@ internal fun CreateFilterDialog(
                 // Tag Suggestions Chips
                 if (topTags.isNotEmpty()) {
                     Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "Tags frequentes no log:",
-                        fontSize = 8.5.sp,
-                        color = colorScheme.onSurface.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(start = 2.dp, bottom = 2.dp),
-                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -2787,9 +2764,9 @@ internal fun CreateFilterDialog(
                     ) {
                         topTags.forEach { t ->
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(4.dp),
                                 color = if (tag == t) colorScheme.primary.copy(alpha = 0.2f) else colorScheme.onSurface.copy(alpha = 0.06f),
-                                border = androidx.compose.foundation.BorderStroke(0.5.dp, if (tag == t) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f)),
+                                border = BorderStroke(0.5.dp, if (tag == t) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f)),
                                 modifier = Modifier.clickable {
                                     tag = t
                                     if (name.isBlank()) name = "Tag: $t"
@@ -2797,39 +2774,41 @@ internal fun CreateFilterDialog(
                             ) {
                                 Text(
                                     text = t,
-                                    fontSize = 9.5.sp,
+                                    fontSize = 8.5.sp,
                                     fontFamily = FontFamily.Monospace,
                                     color = if (tag == t) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.75f),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                                 )
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
 
                 // PID Field
                 OutlinedTextField(
                     value = pid,
                     onValueChange = { pid = it },
-                    label = { Text("PID / ID do Processo (Opcional)") },
+                    label = { Text("PID", fontSize = 11.sp) },
+                    textStyle = TextStyle(fontSize = 11.5.sp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
 
                 // Palavra-chave no texto
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
-                    label = { Text("Palavra-chave no texto (Opcional)") },
+                    label = { Text("Mensagem", fontSize = 11.sp) },
+                    textStyle = TextStyle(fontSize = 11.5.sp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(12.dp))
 
                 // Actions
                 Row(
@@ -2838,9 +2817,9 @@ internal fun CreateFilterDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancelar")
+                        Text("Cancelar", fontSize = 11.5.sp)
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                     TextButton(
                         onClick = {
                             if (name.isNotBlank()) {
@@ -2858,7 +2837,7 @@ internal fun CreateFilterDialog(
                         },
                         enabled = name.isNotBlank(),
                     ) {
-                        Text("Salvar Filtro")
+                        Text("Salvar", fontSize = 11.5.sp)
                     }
                 }
             }

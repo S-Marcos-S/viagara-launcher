@@ -1,7 +1,6 @@
-### 🚀 Novidades da Versão v0.59.55
+### 🚀 Novidades da Versão v0.59.56
 
-- **Central de Logs - Sugestões Inteligentes de Filtro:**
-  - Autocomplete em tempo real ao digitar nomes de apps, pacotes ou processos nos filtros.
-  - Exibição de ícones oficiais de apps, nomes amigáveis e badges de processos ativos.
-  - Sugestões dinâmicas de tags ativas do Logcat e suporte a preenchimento de PID.
-  - Seletor rápido de app na barra de busca e no cabeçalho para isolar logs instantaneamente.
+- **Central de Logs - Janela de Filtros Otimizada:**
+  - Layout ampliado na largura com melhor aproveitamento da tela.
+  - Tipografia compacta e direta em todos os campos.
+  - Remoção de textos explicativos redundantes.
