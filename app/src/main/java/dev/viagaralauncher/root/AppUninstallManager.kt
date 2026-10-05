@@ -81,12 +81,8 @@ object AppUninstallManager {
             val shellScript = """
                 am force-stop "$packageName" 2>/dev/null
                 OUT_PM1=${'$'}(pm uninstall "$packageName" 2>&1)
-                if echo "${'$'}OUT_PM1" | grep -iq "Success"; then
-                    echo "Success"
-                    exit 0
-                fi
                 OUT_PM2=${'$'}(pm uninstall --user 0 "$packageName" 2>&1)
-                if echo "${'$'}OUT_PM2" | grep -iq "Success"; then
+                if echo "${'$'}OUT_PM1" | grep -iq "Success" || echo "${'$'}OUT_PM2" | grep -iq "Success"; then
                     echo "Success"
                     exit 0
                 fi
@@ -102,6 +98,41 @@ object AppUninstallManager {
             val exitCode = process.waitFor()
 
             if (exitCode == 0 || output.contains("Success", ignoreCase = true)) {
+                Unit
+            } else {
+                val errorDetails = output.lines()
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .joinToString(" ")
+                    .ifBlank { "Exit code $exitCode" }
+                throw RuntimeException(errorDetails)
+            }
+        }
+    }
+
+    /**
+     * Restores a system application that was uninstalled for the current user.
+     */
+    suspend fun restoreSystemAppViaRoot(packageName: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val shellScript = """
+                OUT_PM=${'$'}(cmd package install-existing "$packageName" 2>&1)
+                if echo "${'$'}OUT_PM" | grep -iq "installed"; then
+                    echo "Success"
+                    exit 0
+                fi
+                echo "${'$'}OUT_PM"
+                exit 1
+            """.trimIndent()
+
+            val process = ProcessBuilder("su", "-c", shellScript)
+                .redirectErrorStream(true)
+                .start()
+
+            val output = process.inputStream.bufferedReader().use { it.readText() }
+            val exitCode = process.waitFor()
+
+            if (exitCode == 0 || output.contains("installed", ignoreCase = true)) {
                 Unit
             } else {
                 val errorDetails = output.lines()

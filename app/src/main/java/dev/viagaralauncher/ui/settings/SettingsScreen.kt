@@ -456,6 +456,35 @@ fun SettingsScreen(
                         )
                     }
                     RowDivider()
+                    var showRestoreDialog by remember { mutableStateOf(false) }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showRestoreDialog = true }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Restaurar Apps do Sistema", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "Recuperar aplicativos de sistema desinstalados",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            )
+                        }
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            contentDescription = null,
+                            modifier = Modifier.padding(4.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                        )
+                    }
+                    if (showRestoreDialog) {
+                        dev.viagaralauncher.ui.settings.SystemAppRestoreDialog(
+                            onDismiss = { showRestoreDialog = false }
+                        )
+                    }
+                    RowDivider()
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_folder_window_popup),
                         detail = stringResource(R.string.settings_folder_window_popup_detail),
@@ -478,6 +507,7 @@ fun SettingsScreen(
 
             item {
                 Section(stringResource(R.string.settings_section_about)) {
+                    var showCurrentChangelog by remember { mutableStateOf(false) }
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         Text(
@@ -485,7 +515,93 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "O que há de novo",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { showCurrentChangelog = true }.padding(vertical = 4.dp)
+                        )
                     }
+
+                    if (showCurrentChangelog) {
+                        var changelogText by remember { mutableStateOf("") }
+                        val context = LocalContext.current
+                        LaunchedEffect(Unit) {
+                            changelogText = runCatching {
+                                context.assets.open("CHANGELOG_LATEST.md").bufferedReader().use { it.readText() }
+                            }.getOrDefault("Changelog indisponível.")
+                        }
+
+                        androidx.compose.ui.window.Dialog(
+                            onDismissRequest = { showCurrentChangelog = false },
+                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f))
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = { showCurrentChangelog = false },
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.9f)
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = {},
+                                        ),
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = dev.viagaralauncher.ui.theme.dynamicSurfaceColor(),
+                                    border = BorderStroke(1.dp, dev.viagaralauncher.ui.theme.dynamicBorderColor()),
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(22.dp),
+                                    ) {
+                                        Text(
+                                            text = "O que há de novo na v${BuildConfig.VERSION_NAME}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Spacer(Modifier.height(16.dp))
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .heightIn(max = 260.dp)
+                                                .clip(RoundedCornerShape(14.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f))
+                                                .padding(14.dp)
+                                                .verticalScroll(rememberScrollState()),
+                                        ) {
+                                            dev.viagaralauncher.ui.common.ChangelogMarkdownViewer(
+                                                markdown = changelogText,
+                                                modifier = Modifier.fillMaxWidth(),
+                                            )
+                                        }
+                                        Spacer(Modifier.height(20.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.End,
+                                        ) {
+                                            TextButton(onClick = { showCurrentChangelog = false }) {
+                                                Text(stringResource(R.string.action_close))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     RowDivider()
                     Row(
                         modifier = Modifier

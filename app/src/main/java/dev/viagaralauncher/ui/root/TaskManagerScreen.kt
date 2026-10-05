@@ -358,11 +358,14 @@ fun TaskManagerScreen(
 
             // Detail Inspector Dialog for chosen App
             inspectingApp?.let { app ->
-                AppRootInspectorDialog(
-                    app = app,
-                    displayName = app.label,
-                    onDismissRequest = { inspectingApp = null },
-                )
+                LaunchedEffect(app) {
+                    dev.viagaralauncher.ui.root.FloatingAppInspectorOverlayManager.show(
+                        context = context,
+                        app = app,
+                        displayName = app.label,
+                    )
+                    inspectingApp = null
+                }
             }
 
             if (showAnomalySettingsDialog) {

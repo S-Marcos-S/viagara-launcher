@@ -1257,11 +1257,14 @@ fun HomeScreen(
     }
 
     rootInspectorFor?.let { target ->
-        dev.viagaralauncher.ui.root.AppRootInspectorDialog(
-            app = target,
-            displayName = displayName(target),
-            onDismissRequest = { rootInspectorFor = null },
-        )
+        LaunchedEffect(target) {
+            dev.viagaralauncher.ui.root.FloatingAppInspectorOverlayManager.show(
+                context = context,
+                app = target,
+                displayName = displayName(target),
+            )
+            rootInspectorFor = null
+        }
     }
 
     if (logViewerFor != null || logViewerInitialPkg != null || logViewerInitialTab != null) {

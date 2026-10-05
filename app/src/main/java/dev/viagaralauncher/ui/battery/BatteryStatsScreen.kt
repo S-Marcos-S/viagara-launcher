@@ -2599,15 +2599,6 @@ fun BatterySettingsTab(vm: BatteryStatsViewModel) {
         item {
             FrostedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.settings),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    
-                    HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -2659,6 +2650,10 @@ fun BatterySettingsTab(vm: BatteryStatsViewModel) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Temperatura", style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = notifShowTemperature, onCheckedChange = { vm.setNotifShowTemperature(it) }, modifier = Modifier.scale(0.80f))
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Uso de Rede", style = MaterialTheme.typography.bodyMedium)
+                        Switch(checked = notifShowNetwork, onCheckedChange = { vm.setNotifShowNetwork(it) }, modifier = Modifier.scale(0.80f))
                     }
                 }
             }

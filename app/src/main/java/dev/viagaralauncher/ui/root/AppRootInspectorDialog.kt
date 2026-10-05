@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.viagaralauncher.ui.root
 
+import android.content.Intent
+import android.graphics.PixelFormat
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
+import android.view.Gravity
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -32,21 +37,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DataUsage
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.PlayArrow
@@ -79,10 +81,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -95,6 +99,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import dev.viagaralauncher.R
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.root.AppBatteryInspectionData
@@ -102,7 +109,9 @@ import dev.viagaralauncher.root.AppInspectionData
 import dev.viagaralauncher.root.AppProcessStatus
 import dev.viagaralauncher.root.AppRootInspector
 import dev.viagaralauncher.root.PowerImpactLevel
+import dev.viagaralauncher.root.overlay.OverlayLifecycleOwner
 import dev.viagaralauncher.ui.common.AppIcon
+import dev.viagaralauncher.ui.theme.ViagaraTheme
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
 import kotlinx.coroutines.delay
@@ -110,6 +119,150 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.roundToInt
+
+object FloatingAppInspectorOverlayManager {
+    private var windowManager: WindowManager? = null
+    private var overlayView: ComposeView? = null
+    private var lifecycleOwner: OverlayLifecycleOwner? = null
+    private var layoutParams: WindowManager.LayoutParams? = null
+
+    var isShowing: Boolean = false
+        private set
+
+    val isMinimizedState = mutableStateOf(false)
+    var bubbleX = 24
+    var bubbleY = 120
+
+    fun show(
+        context: android.content.Context,
+        app: dev.viagaralauncher.data.AppInfo,
+        displayName: String,
+    ) {
+        val appContext = context.applicationContext
+
+        if (overlayView != null) {
+            updateLayout(appContext, isMinimizedState.value)
+            return
+        }
+
+        if (!dev.viagaralauncher.ui.root.FloatingLogOverlayManager.canDrawOverlays(context)) {
+            dev.viagaralauncher.ui.root.FloatingLogOverlayManager.requestOverlayPermission(context) {
+                show(context, app, displayName)
+            }
+            return
+        }
+
+        val wm = appContext.getSystemService(android.content.Context.WINDOW_SERVICE) as? WindowManager ?: return
+        windowManager = wm
+
+        val owner = OverlayLifecycleOwner()
+        lifecycleOwner = owner
+
+        val density = appContext.resources.displayMetrics.density
+        bubbleX = (20 * density).roundToInt()
+        bubbleY = (110 * density).roundToInt()
+        isMinimizedState.value = false
+
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE
+            },
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        )
+        layoutParams = params
+
+        val view = ComposeView(appContext).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+            setViewTreeLifecycleOwner(owner)
+            setViewTreeViewModelStoreOwner(owner)
+            setViewTreeSavedStateRegistryOwner(owner)
+            setContent {
+                ViagaraTheme {
+                    AppRootInspectorDialog(app = app, displayName = displayName, onDismissRequest = { dismiss() })
+                }
+            }
+        }
+        overlayView = view
+        isShowing = true
+
+        try {
+            wm.addView(view, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            isShowing = false
+            overlayView = null
+        }
+    }
+
+    fun updateLayout(context: android.content.Context, isMinimized: Boolean) {
+        val wm = windowManager ?: return
+        val view = overlayView ?: return
+        val params = layoutParams ?: return
+
+        isMinimizedState.value = isMinimized
+
+        if (isMinimized) {
+            params.width = WindowManager.LayoutParams.WRAP_CONTENT
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            params.gravity = Gravity.TOP or Gravity.START
+            params.x = bubbleX
+            params.y = bubbleY
+        } else {
+            params.width = WindowManager.LayoutParams.MATCH_PARENT
+            params.height = WindowManager.LayoutParams.MATCH_PARENT
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            params.gravity = Gravity.CENTER
+            params.x = 0
+            params.y = 0
+        }
+
+        try {
+            wm.updateViewLayout(view, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun moveBubble(dx: Float, dy: Float, maxX: Int, maxY: Int) {
+        val wm = windowManager ?: return
+        val view = overlayView ?: return
+        val params = layoutParams ?: return
+
+        bubbleX = (bubbleX + dx.roundToInt()).coerceIn(0, maxX)
+        bubbleY = (bubbleY + dy.roundToInt()).coerceIn(0, maxY)
+        params.x = bubbleX
+        params.y = bubbleY
+
+        try {
+            wm.updateViewLayout(view, params)
+        } catch (ignored: Exception) {}
+    }
+
+    fun dismiss() {
+        val wm = windowManager
+        val view = overlayView
+        if (wm != null && view != null) {
+            try {
+                wm.removeView(view)
+            } catch (ignored: Exception) {}
+        }
+        lifecycleOwner?.destroy()
+        lifecycleOwner = null
+        overlayView = null
+        windowManager = null
+        layoutParams = null
+        isShowing = false
+    }
+}
 
 private enum class InspectorTab {
     MEMORY,
@@ -152,7 +305,7 @@ fun AppRootInspectorDialog(
     var isAutoRefreshEnabled by remember { mutableStateOf(true) }
 
     // Floating window state & bounds
-    var isMinimized by remember { mutableStateOf(false) }
+    val isMinimized = FloatingAppInspectorOverlayManager.isMinimizedState.value
     var windowOffsetX by remember { mutableFloatStateOf(0f) }
     var windowOffsetY by remember { mutableFloatStateOf(0f) }
 
@@ -160,14 +313,8 @@ fun AppRootInspectorDialog(
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
-    val maxBubbleX = (screenWidthPx - with(density) { 72.dp.toPx() }).coerceAtLeast(0f)
-    val maxBubbleY = (screenHeightPx - with(density) { 80.dp.toPx() }).coerceAtLeast(0f)
-
-    val defaultBubbleX = with(density) { 20.dp.toPx() }
-    val defaultBubbleY = with(density) { 110.dp.toPx() }
-
-    var bubbleOffsetX by remember { mutableFloatStateOf(defaultBubbleX) }
-    var bubbleOffsetY by remember { mutableFloatStateOf(defaultBubbleY) }
+    val maxBubbleX = (screenWidthPx - with(density) { 72.dp.toPx() }).roundToInt().coerceAtLeast(0)
+    val maxBubbleY = (screenHeightPx - with(density) { 80.dp.toPx() }).roundToInt().coerceAtLeast(0)
 
     fun refreshData(showIndicator: Boolean = false) {
         scope.launch {
@@ -208,13 +355,8 @@ fun AppRootInspectorDialog(
     }
 
     if (!isMinimized) {
-        Dialog(
-            onDismissRequest = onDismissRequest,
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true,
-                usePlatformDefaultWidth = false,
-            ),
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
             Box(
                 modifier = Modifier
@@ -426,7 +568,7 @@ fun AppRootInspectorDialog(
                             }
 
                             IconButton(
-                                onClick = { isMinimized = true },
+                                onClick = { FloatingAppInspectorOverlayManager.updateLayout(context, isMinimized = true) },
                                 modifier = Modifier.size(28.dp),
                             ) {
                                 Icon(
@@ -655,26 +797,18 @@ fun AppRootInspectorDialog(
     }
     } else {
         // MINIMIZED FLOATING BUBBLE via non-modal Popup (does NOT block launcher or alphabet scrolling!)
-        Popup(
-            alignment = Alignment.TopStart,
-            offset = IntOffset(bubbleOffsetX.roundToInt(), bubbleOffsetY.roundToInt()),
-            properties = PopupProperties(
-                focusable = false,
-                dismissOnBackPress = false,
-                dismissOnClickOutside = false,
-                clippingEnabled = false,
-            ),
+        Box(
+            modifier = Modifier.padding(8.dp) // The offset is now handled by WindowManager position
         ) {
             Box(
                 modifier = Modifier
-                    .padding(8.dp)
                     .pointerInput(Unit) {
                         var hasMoved = false
                         detectDragGestures(
                             onDragStart = { hasMoved = false },
                             onDragEnd = {
                                 if (!hasMoved) {
-                                    isMinimized = false
+                                    FloatingAppInspectorOverlayManager.updateLayout(context, isMinimized = false)
                                 }
                             },
                             onDragCancel = { hasMoved = false },
@@ -683,8 +817,7 @@ fun AppRootInspectorDialog(
                                 if (kotlin.math.abs(dragAmount.x) > 1.5f || kotlin.math.abs(dragAmount.y) > 1.5f) {
                                     hasMoved = true
                                 }
-                                bubbleOffsetX = (bubbleOffsetX + dragAmount.x).coerceIn(0f, maxBubbleX)
-                                bubbleOffsetY = (bubbleOffsetY + dragAmount.y).coerceIn(0f, maxBubbleY)
+                                FloatingAppInspectorOverlayManager.moveBubble(dragAmount.x, dragAmount.y, maxBubbleX, maxBubbleY)
                             }
                         )
                     },
@@ -694,7 +827,7 @@ fun AppRootInspectorDialog(
                         .size(56.dp)
                         .clip(CircleShape)
                         .clickable {
-                            isMinimized = false
+                            FloatingAppInspectorOverlayManager.updateLayout(context, isMinimized = false)
                         },
                     color = dynamicSurfaceColor().copy(alpha = 0.95f),
                     tonalElevation = 10.dp,

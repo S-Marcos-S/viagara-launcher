@@ -30,8 +30,8 @@ android {
     defaultConfig {
         applicationId = "dev.viagaralauncher"
         minSdk = 26
-        versionCode = 132
-        versionName = "0.59.58"
+        versionCode = 133
+        versionName = "0.59.59"
 
         buildConfigField("String", "GIT_SHA", "\"$gitCommitSha\"")
         buildConfigField("Long", "BUILD_TIME_MILLIS", "${buildTimeMillis}L")
@@ -98,6 +98,13 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 }
+
+val generateChangelogAsset by tasks.registering(Copy::class) {
+    from(rootProject.file("CHANGELOG_LATEST.md"))
+    into(layout.buildDirectory.dir("generated/assets/changelog"))
+}
+
+android.sourceSets.getByName("main").assets.srcDir(generateChangelogAsset)
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")

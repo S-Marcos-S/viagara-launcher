@@ -32,6 +32,8 @@ data class ActiveSessionInfo(
     val targetAppName: String? = null,
     val targetPackages: Set<String> = emptySet(),
     val targetAppNames: List<String> = emptyList(),
+    val minLevel: LogLevel? = null,
+    val failureOnly: Boolean = false,
     val startTime: Long = 0L,
     val linesRecorded: Long = 0L,
     val bytesWritten: Long = 0L,
@@ -68,7 +70,7 @@ class LogRecordingsManager(private val context: Context) {
     }
 
     @Synchronized
-    fun startSession(targetPackages: Collection<String>, targetAppNames: Collection<String> = emptyList()) {
+    fun startSession(targetPackages: Collection<String>, targetAppNames: Collection<String> = emptyList(), minLevel: LogLevel? = null, failureOnly: Boolean = false) {
         stopCurrentSessionInternal(discard = true)
 
         val tempFile = File(context.cacheDir, "recording_temp_${System.currentTimeMillis()}.tmp")
@@ -94,6 +96,8 @@ class LogRecordingsManager(private val context: Context) {
             targetAppName = displayAppName,
             targetPackages = pkgsSet,
             targetAppNames = namesList,
+            minLevel = minLevel,
+            failureOnly = failureOnly,
             startTime = System.currentTimeMillis(),
             linesRecorded = 0L,
             bytesWritten = 0L,
@@ -104,6 +108,8 @@ class LogRecordingsManager(private val context: Context) {
             appendLine("=================================================================")
             appendLine("VIAGARA LAUNCHER - SESSÃO DE GRAVAÇÃO DE LOGS (LOGFOX ENGINE)")
             appendLine("Alvo(s)    : $displayAppName ($displayPkg)")
+            if (minLevel != null) appendLine("Filtro Lvl : ${minLevel.name}+")
+            if (failureOnly) appendLine("Apenas Falhas: Sim")
             appendLine("Iniciado em: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}")
             appendLine("=================================================================\n")
         }
@@ -128,6 +134,9 @@ class LogRecordingsManager(private val context: Context) {
     fun processLine(line: LogLine) {
         val current = _session.value
         if (current.state != RecordingState.RECORDING) return
+
+        if (current.minLevel != null && line.level.ordinal < current.minLevel.ordinal) return
+        if (current.failureOnly && line.level != LogLevel.ERROR && line.level != LogLevel.FATAL) return
 
         val pkgs = current.targetPackages.ifEmpty {
             if (current.targetPackage != null) setOf(current.targetPackage) else emptySet()

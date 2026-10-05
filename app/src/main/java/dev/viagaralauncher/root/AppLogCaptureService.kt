@@ -152,7 +152,10 @@ class AppLogCaptureService : Service() {
             return _capturingPackages.value.isNotEmpty() || _capturingPackage.value != null
         }
 
-        fun startCapture(context: Context, packageNames: Collection<String>, appNames: Collection<String> = emptyList()) {
+        const val EXTRA_MIN_LEVEL = "extra_min_level"
+        const val EXTRA_FAILURE_ONLY = "extra_failure_only"
+
+        fun startCapture(context: Context, packageNames: Collection<String>, appNames: Collection<String> = emptyList(), minLevel: LogLevel? = null, failureOnly: Boolean = false) {
             val pkgs = packageNames.filter { it.isNotBlank() }
             val names = appNames.filter { it.isNotBlank() }
             val intent = Intent(context, AppLogCaptureService::class.java).apply {
@@ -161,6 +164,8 @@ class AppLogCaptureService : Service() {
                 putStringArrayListExtra(EXTRA_APP_NAMES, ArrayList(names))
                 if (pkgs.isNotEmpty()) putExtra(EXTRA_PACKAGE_NAME, pkgs.first())
                 if (names.isNotEmpty()) putExtra(EXTRA_APP_NAME, names.first())
+                if (minLevel != null) putExtra(EXTRA_MIN_LEVEL, minLevel.name)
+                putExtra(EXTRA_FAILURE_ONLY, failureOnly)
             }
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -173,10 +178,10 @@ class AppLogCaptureService : Service() {
             }
         }
 
-        fun startCapture(context: Context, packageName: String?, appName: String?) {
+        fun startCapture(context: Context, packageName: String?, appName: String?, minLevel: LogLevel? = null, failureOnly: Boolean = false) {
             val pkgs = if (packageName != null) listOf(packageName) else emptyList()
             val names = if (appName != null) listOf(appName) else emptyList()
-            startCapture(context, pkgs, names)
+            startCapture(context, pkgs, names, minLevel, failureOnly)
         }
 
         fun startMonitoring(context: Context) {
@@ -338,6 +343,10 @@ class AppLogCaptureService : Service() {
                 val nameList = intent.getStringArrayListExtra(EXTRA_APP_NAMES) ?: arrayListOf()
                 val singlePkg = intent.getStringExtra(EXTRA_PACKAGE_NAME)
                 val singleName = intent.getStringExtra(EXTRA_APP_NAME)
+                
+                val failureOnly = intent.getBooleanExtra(EXTRA_FAILURE_ONLY, false)
+                val minLevelStr = intent.getStringExtra(EXTRA_MIN_LEVEL)
+                val minLevel = minLevelStr?.let { runCatching { LogLevel.valueOf(it) }.getOrNull() }
 
                 val allPkgs = (pkgList + listOfNotNull(singlePkg)).filter { it.isNotBlank() }.toSet()
                 val allNames = (nameList + listOfNotNull(singleName)).filter { it.isNotBlank() }.distinct()
@@ -360,7 +369,7 @@ class AppLogCaptureService : Service() {
                 isFinalized.set(false)
                 seenPids.clear()
 
-                recordingsManager.startSession(allPkgs, allNames)
+                recordingsManager.startSession(allPkgs, allNames, minLevel, failureOnly)
                 startOngoingNotificationLoop()
                 startStreamingProcess()
             }

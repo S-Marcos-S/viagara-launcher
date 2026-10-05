@@ -609,7 +609,7 @@ fun HomeRoute(
             }
         }
 
-        if (settings.dynamicButtonEnabled && !appListVisible && !homeEditMode && !showHomeOptions) {
+        if (settings.dynamicButtonEnabled && !appListVisible && !homeEditMode && !showHomeOptions && lockTargetOffset == null) {
             val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             val dynamicButtonBottom = maxOf(80.dp, navBarBottom + 68.dp)
             val isLeft = scrub.side == EdgeSide.LEFT
@@ -653,6 +653,24 @@ fun HomeRoute(
             onAddWidget = { showHomeOptions = false; widgetActions.onAddWidget() },
             onOpenClockStyle = { showHomeOptions = false; onNavigate("settings/clock") },
         )
+
+        val hideStatusBar by app.prefs.hideStatusBar.collectAsState(initial = false)
+        val insetsController = remember(view) {
+            val window = (context as? android.app.Activity)?.window
+            if (window != null) androidx.core.view.WindowCompat.getInsetsController(window, view) else null
+        }
+
+        LaunchedEffect(lockTargetOffset) {
+            if (lockTargetOffset != null) {
+                insetsController?.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            } else {
+                insetsController?.show(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+                val window = (context as? android.app.Activity)?.window
+                if (window != null) {
+                    dev.viagaralauncher.service.StatusBarFader.setVisible(window, !hideStatusBar)
+                }
+            }
+        }
 
         lockTargetOffset?.let { target ->
             ScreenOffEffect(

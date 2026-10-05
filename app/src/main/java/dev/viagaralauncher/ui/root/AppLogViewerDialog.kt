@@ -259,6 +259,7 @@ fun AppLogViewerDialog(
 
     var lineDetailDialogFor by remember { mutableStateOf<LogLine?>(null) }
     var createFilterDialogOpen by remember { mutableStateOf(false) }
+    var showStartRecordingDialog by remember { mutableStateOf(false) }
 
     // Start background monitoring/service on launch and stop when dismissed (if not recording)
     DisposableEffect(Unit) {
@@ -689,11 +690,7 @@ fun AppLogViewerDialog(
                                     isRecording = recordingSession.state != RecordingState.IDLE,
                                     onToggleRecording = {
                                         if (recordingSession.state == RecordingState.IDLE) {
-                                            AppLogCaptureService.startCapture(
-                                                context,
-                                                currentTargetPackages,
-                                                currentTargetApps.map { it.label },
-                                            )
+                                            showStartRecordingDialog = true
                                         } else {
                                             AppLogCaptureService.saveLog(context)
                                         }
@@ -925,6 +922,78 @@ fun AppLogViewerDialog(
             },
         )
     }
+
+    // Start Recording Dialog
+    if (showStartRecordingDialog) {
+        var failureOnly by remember { mutableStateOf(false) }
+        var selectedRecordLevel by remember { mutableStateOf<LogLevel?>(null) }
+
+        Dialog(onDismissRequest = { showStartRecordingDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = dynamicSurfaceColor(),
+                tonalElevation = 8.dp,
+                modifier = Modifier.widthIn(max = 320.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Configurações de Gravação",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(checked = failureOnly, onCheckedChange = { failureOnly = it }, modifier = Modifier.scale(0.8f))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Apenas logs de falha (Crashes/ANRs)", style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    Text("Nível mínimo de Log:", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                    
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(null, LogLevel.VERBOSE, LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.FATAL).forEach { level ->
+                            val label = level?.name ?: "TODOS"
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (selectedRecordLevel == level) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.clickable { selectedRecordLevel = level }
+                            ) {
+                                Text(
+                                    text = label,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (selectedRecordLevel == level) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { showStartRecordingDialog = false }) {
+                            Text("Cancelar")
+                        }
+                        TextButton(onClick = {
+                            AppLogCaptureService.startCapture(
+                                context,
+                                currentTargetPackages,
+                                currentTargetApps.map { it.label },
+                                selectedRecordLevel,
+                                failureOnly
+                            )
+                            showStartRecordingDialog = false
+                        }) {
+                            Text("Gravar")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -961,7 +1030,7 @@ internal fun LiveLogsTab(
     val listState = rememberLazyListState()
 
     // Auto-scroll to bottom effect
-    LaunchedEffect(logs.size, autoScrollToBottom) {
+    LaunchedEffect(logs.lastOrNull()?.id, autoScrollToBottom) {
         if (autoScrollToBottom && logs.isNotEmpty()) {
             listState.animateScrollToItem(logs.size - 1)
         }
@@ -1311,7 +1380,7 @@ internal fun LiveLogsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             LevelFilterChip(
-                label = "TODOS (${logs.size})",
+                label = "TODOS",
                 selected = selectedLevel == null,
                 color = colorScheme.primary,
                 onClick = { onSelectLevel(null) },
