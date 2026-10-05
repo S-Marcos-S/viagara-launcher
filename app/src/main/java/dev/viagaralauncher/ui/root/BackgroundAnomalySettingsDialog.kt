@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -116,19 +115,12 @@ fun BackgroundAnomalySettingsDialog(
                             )
                         }
                         Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.anomaly_dialog_title),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colorScheme.onSurface,
-                            )
-                            Text(
-                                text = stringResource(R.string.anomaly_dialog_subtitle),
-                                fontSize = 12.sp,
-                                color = colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.anomaly_dialog_title),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorScheme.onSurface,
+                        )
                     }
 
                     IconButton(
@@ -166,7 +158,7 @@ fun BackgroundAnomalySettingsDialog(
                                 color = colorScheme.onSurface,
                             )
                             Text(
-                                text = if (config.isEnabled) "Ativo • Monitoramento adaptativo ligado" else "Desativado",
+                                text = stringResource(if (config.isEnabled) R.string.anomaly_status_active else R.string.anomaly_status_disabled),
                                 fontSize = 12.sp,
                                 color = if (config.isEnabled) colorScheme.primary else colorScheme.onSurfaceVariant,
                             )
@@ -188,41 +180,9 @@ fun BackgroundAnomalySettingsDialog(
 
                 AnimatedVisibility(visible = config.isEnabled) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        // Info Note on Battery Optimization
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = colorScheme.primaryContainer.copy(alpha = 0.35f),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.Top,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Shield,
-                                    contentDescription = null,
-                                    tint = colorScheme.primary,
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .padding(top = 1.dp),
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    text = "Impacto zero no Deep Sleep: enquanto a tela estiver apagada, o processador repousa 100% sem alarmes repetitivos. Anomalias são checadas via fotografias diferenciais de kernel ao religar a tela.",
-                                    fontSize = 11.5.sp,
-                                    color = colorScheme.onSurface,
-                                    lineHeight = 16.sp,
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(14.dp))
-
                         // Resource options checkboxes
                         Text(
-                            text = "Categorias de Monitoramento",
+                            text = stringResource(R.string.anomaly_categories_label),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = colorScheme.primary,

@@ -871,17 +871,19 @@
     <string name="anomaly_sensitivity_balanced">Equilibrada (Recomendado)</string>
     <string name="anomaly_sensitivity_low">Baixa (Apenas abusos extremos)</string>
     <string name="anomaly_dialog_title">Monitor de Segundo Plano</string>
-    <string name="anomaly_dialog_subtitle">Detecção ultraleve com impacto zero na bateria</string>
     <string name="anomaly_enable_watcher">Ativar notificações em segundo plano</string>
+    <string name="anomaly_status_active">Ativo</string>
+    <string name="anomaly_status_disabled">Desativado</string>
+    <string name="anomaly_categories_label">Categorias de Monitoramento</string>
     <string name="anomaly_opt_network">Alertas de tráfego de rede (Internet)</string>
     <string name="anomaly_opt_cpu">Alertas de uso contínuo de processador</string>
     <string name="anomaly_opt_ram">Alertas de memória RAM sob pressão</string>
     <string name="anomaly_sensitivity_label">Sensibilidade de detecção</string>
     <string name="anomaly_recent_alerts">Alertas Recentes</string>
     <string name="anomaly_no_recent_alerts">Nenhuma anomalia detectada recentemente.</string>
-    <string name="anomaly_deep_sleep_badge">Tela Apagada (Deep Sleep)</string>
+    <string name="anomaly_deep_sleep_badge">Tela Apagada</string>
     <string name="anomaly_screen_on_badge">Tela Ligada</string>
     <string name="battery_anomaly_card_title">Alertas de Consumo em Segundo Plano</string>
-    <string name="battery_anomaly_card_desc">Notifica quando aplicativos em segundo plano abusarem de internet, processador ou memória, com impacto zero no sono profundo.</string>
+    <string name="battery_anomaly_card_desc">Alertas quando aplicativos em segundo plano consumirem internet, processador ou memória em excesso.</string>
     <string name="battery_anomaly_configure">Configurar</string>
 </resources>

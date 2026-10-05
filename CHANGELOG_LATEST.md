@@ -11,6 +11,7 @@
   - **Ações Imediatas com 1 Toque:** Ações na própria notificação para `[Forçar parada]` (via root imediato ou tela de configurações do sistema), `[Inspecionar]` (abre direto o Gerenciador de Tarefas no app em questão) e `[Silenciar (1h)]`.
 
 - **Painel de Configuração e Histórico no Gerenciador de Tarefas (`BackgroundAnomalySettingsDialog` & `TaskManagerScreen`):**
+  - **Interface Limpa e Direta:** Diálogo compacto e focado diretamente nos controles práticos (chave geral, seleção de sensibilidade e categorias de monitoramento), sem textos redundantes ou banners explicativos excessivos.
   - **Acesso Rápido na Barra Superior:** Adicionado botão com ícone de notificações no topo do Gerenciador de Tarefas para alternar o monitoramento, configurar sensibilidade (Alta, Equilibrada, Baixa), escolher quais recursos vigiar e consultar a lista de anomalias recentes.
 
 - **Integração na Tela de Estatísticas de Bateria (`BatteryStatsScreen` & `BatteryStatsViewModel`):**

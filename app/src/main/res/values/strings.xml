@@ -909,17 +909,19 @@
     <string name="anomaly_sensitivity_balanced">Balanced (Recommended)</string>
     <string name="anomaly_sensitivity_low">Low (Only extreme usage)</string>
     <string name="anomaly_dialog_title">Background Watcher</string>
-    <string name="anomaly_dialog_subtitle">Ultralight detection with zero battery impact</string>
     <string name="anomaly_enable_watcher">Enable background alerts</string>
+    <string name="anomaly_status_active">Active</string>
+    <string name="anomaly_status_disabled">Disabled</string>
+    <string name="anomaly_categories_label">Monitoring Categories</string>
     <string name="anomaly_opt_network">Network data alerts</string>
     <string name="anomaly_opt_cpu">Continuous CPU alerts</string>
     <string name="anomaly_opt_ram">RAM memory pressure alerts</string>
     <string name="anomaly_sensitivity_label">Detection sensitivity</string>
     <string name="anomaly_recent_alerts">Recent Alerts</string>
     <string name="anomaly_no_recent_alerts">No background anomalies detected recently.</string>
-    <string name="anomaly_deep_sleep_badge">Screen Off (Deep Sleep)</string>
+    <string name="anomaly_deep_sleep_badge">Screen Off</string>
     <string name="anomaly_screen_on_badge">Screen On</string>
     <string name="battery_anomaly_card_title">Background Consumption Alerts</string>
-    <string name="battery_anomaly_card_desc">Notifies when background apps abuse internet data, CPU or RAM, with zero impact on deep sleep.</string>
+    <string name="battery_anomaly_card_desc">Alerts when background apps consume excessive network data, CPU, or RAM.</string>
     <string name="battery_anomaly_configure">Configure</string>
 </resources>
