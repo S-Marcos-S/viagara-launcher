@@ -826,6 +826,7 @@ private fun FloatingLogOverlayRoot(context: Context) {
     if (createFilterDialogOpen) {
         CreateFilterDialog(
             targetAppPackage = currentTargetPackage,
+            rawLogs = rawLogs,
             onDismiss = { createFilterDialogOpen = false },
             onSave = { filter ->
                 filterStorage.addFilter(filter)

@@ -10,8 +10,10 @@ import android.os.Build
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,11 +48,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FolderZip
@@ -167,13 +171,15 @@ fun AppLogViewerDialog(
         )
     }
 
-    val sourceApp = initialApp
-    val sourcePackageName = initialPackageName
-    val hasSourceApp = sourceApp != null || sourcePackageName != null
-    var isFilteringByApp by remember { mutableStateOf(hasSourceApp) }
+    var activeTargetApp by remember(initialApp) { mutableStateOf(initialApp) }
+    var activeTargetPackage by remember(initialPackageName) { mutableStateOf(initialPackageName) }
+    val hasSourceApp = activeTargetApp != null || activeTargetPackage != null
+    var isFilteringByApp by remember(hasSourceApp) { mutableStateOf(hasSourceApp) }
 
-    val currentTargetApp = if (isFilteringByApp) sourceApp else null
-    val currentTargetPackage = if (isFilteringByApp) (sourceApp?.packageName ?: sourcePackageName) else null
+    val currentTargetApp = if (isFilteringByApp) activeTargetApp else null
+    val currentTargetPackage = if (isFilteringByApp) (activeTargetApp?.packageName ?: activeTargetPackage) else null
+
+    var selectAppDialogOpen by remember { mutableStateOf(false) }
 
     var searchQuery by remember { mutableStateOf("") }
     var caseSensitive by remember { mutableStateOf(false) }
@@ -326,23 +332,25 @@ fun AppLogViewerDialog(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             if (hasSourceApp) {
-                                val appLabel = sourceApp?.label ?: sourcePackageName ?: "App"
-                                val pkgName = sourceApp?.packageName ?: sourcePackageName ?: ""
+                                val appLabel = activeTargetApp?.label ?: activeTargetPackage ?: "App"
+                                val pkgName = activeTargetApp?.packageName ?: activeTargetPackage ?: ""
 
-                                if (sourceApp != null) {
+                                if (activeTargetApp != null) {
                                     AppIcon(
-                                        app = sourceApp,
+                                        app = activeTargetApp!!,
                                         sizeDp = 38,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(10.dp))
-                                            .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                                            .border(1.dp, colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                                            .clickable { selectAppDialogOpen = true },
                                     )
                                 } else {
                                     Box(
                                         modifier = Modifier
                                             .size(38.dp)
                                             .clip(RoundedCornerShape(10.dp))
-                                            .background(colorScheme.primary.copy(alpha = 0.15f)),
+                                            .background(colorScheme.primary.copy(alpha = 0.15f))
+                                            .clickable { selectAppDialogOpen = true },
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Icon(
@@ -394,6 +402,18 @@ fun AppLogViewerDialog(
                                                 )
                                             }
                                         }
+                                        Spacer(Modifier.width(4.dp))
+                                        IconButton(
+                                            onClick = { selectAppDialogOpen = true },
+                                            modifier = Modifier.size(24.dp),
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Edit,
+                                                contentDescription = "Trocar aplicativo",
+                                                tint = colorScheme.onSurface.copy(alpha = 0.5f),
+                                                modifier = Modifier.size(13.dp),
+                                            )
+                                        }
                                     }
                                     Text(
                                         text = if (isFilteringByApp) pkgName else "Logs de todo o sistema (toque para voltar ao $appLabel)",
@@ -409,7 +429,8 @@ fun AppLogViewerDialog(
                                     modifier = Modifier
                                         .size(38.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(colorScheme.primary.copy(alpha = 0.15f)),
+                                        .background(colorScheme.primary.copy(alpha = 0.15f))
+                                        .clickable { selectAppDialogOpen = true },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
@@ -421,14 +442,45 @@ fun AppLogViewerDialog(
                                 }
                                 Spacer(Modifier.width(10.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Central de Logs & Diagnóstico",
-                                        color = colorScheme.onSurface,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "Central de Logs & Diagnóstico",
+                                            color = colorScheme.onSurface,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false),
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Surface(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .clickable { selectAppDialogOpen = true },
+                                            color = colorScheme.primary.copy(alpha = 0.14f),
+                                            border = BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.4f)),
+                                            shape = RoundedCornerShape(6.dp),
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Filled.FilterList,
+                                                    contentDescription = null,
+                                                    tint = colorScheme.primary,
+                                                    modifier = Modifier.size(11.dp),
+                                                )
+                                                Text(
+                                                    text = "Filtrar App",
+                                                    color = colorScheme.primary,
+                                                    fontSize = 9.5.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                )
+                                            }
+                                        }
+                                    }
                                     Text(
                                         text = "Logcat • Crashes • ANRs • LogFox Engine",
                                         color = colorScheme.onSurface.copy(alpha = 0.6f),
@@ -600,6 +652,14 @@ fun AppLogViewerDialog(
                                         }
                                     },
                                     onSelectLogLine = { lineDetailDialogFor = it },
+                                    currentTargetPackage = currentTargetPackage,
+                                    currentTargetApp = currentTargetApp,
+                                    onOpenSelectAppDialog = { selectAppDialogOpen = true },
+                                    onClearAppFilter = {
+                                        activeTargetApp = null
+                                        activeTargetPackage = null
+                                        isFilteringByApp = false
+                                    },
                                 )
                             }
                             LogViewerTab.RECORDINGS -> {
@@ -778,10 +838,29 @@ fun AppLogViewerDialog(
         )
     }
 
+    if (selectAppDialogOpen) {
+        SelectAppProcessDialog(
+            rawLogs = rawLogs,
+            onDismiss = { selectAppDialogOpen = false },
+            onSelect = { item ->
+                if (item != null) {
+                    activeTargetApp = item.appInfo
+                    activeTargetPackage = item.packageName ?: item.processName
+                    isFilteringByApp = true
+                } else {
+                    activeTargetApp = null
+                    activeTargetPackage = null
+                    isFilteringByApp = false
+                }
+            },
+        )
+    }
+
     // Create Filter Dialog
     if (createFilterDialogOpen) {
         CreateFilterDialog(
             targetAppPackage = currentTargetPackage,
+            rawLogs = rawLogs,
             onDismiss = { createFilterDialogOpen = false },
             onSave = { filter ->
                 filterStorage.addFilter(filter)
@@ -812,6 +891,10 @@ internal fun LiveLogsTab(
     isRecording: Boolean,
     onToggleRecording: () -> Unit,
     onSelectLogLine: (LogLine) -> Unit,
+    currentTargetPackage: String? = null,
+    currentTargetApp: AppInfo? = null,
+    onOpenSelectAppDialog: (() -> Unit)? = null,
+    onClearAppFilter: (() -> Unit)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val listState = rememberLazyListState()
@@ -832,6 +915,38 @@ internal fun LiveLogsTab(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            // Quick App Filter Selector Button
+            if (onOpenSelectAppDialog != null) {
+                Box(
+                    modifier = Modifier
+                        .height(34.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (currentTargetPackage != null) colorScheme.primary.copy(alpha = 0.18f) else colorScheme.onSurface.copy(alpha = 0.06f))
+                        .border(1.dp, if (currentTargetPackage != null) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                        .clickable { onOpenSelectAppDialog() }
+                        .padding(horizontal = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.FilterList,
+                            contentDescription = "Filtrar por aplicativo ou processo",
+                            tint = if (currentTargetPackage != null) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.7f),
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = if (currentTargetPackage != null) (currentTargetApp?.label ?: "App") else "App",
+                            color = if (currentTargetPackage != null) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.7f),
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
             // Search Input Field
             Box(
                 modifier = Modifier
@@ -983,6 +1098,58 @@ internal fun LiveLogsTab(
                     tint = colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.size(16.dp),
                 )
+            }
+        }
+
+        // Active App Filter Banner Chip
+        if (currentTargetPackage != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = colorScheme.primary.copy(alpha = 0.12f),
+                    border = BorderStroke(0.5.dp, colorScheme.primary.copy(alpha = 0.35f)),
+                    modifier = Modifier.clickable { onOpenSelectAppDialog?.invoke() },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        if (currentTargetApp != null) {
+                            AppIcon(app = currentTargetApp, sizeDp = 14)
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.Terminal,
+                                contentDescription = null,
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(12.dp),
+                            )
+                        }
+                        Text(
+                            text = "Filtrando: ${currentTargetApp?.label ?: currentTargetPackage}",
+                            color = colorScheme.primary,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                        )
+                        if (onClearAppFilter != null) {
+                            Spacer(Modifier.width(2.dp))
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Limpar filtro",
+                                tint = colorScheme.primary,
+                                modifier = Modifier
+                                    .size(13.dp)
+                                    .clickable { onClearAppFilter() },
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -2303,9 +2470,11 @@ private fun DetailRow(label: String, value: String) {
 @Composable
 internal fun CreateFilterDialog(
     targetAppPackage: String?,
+    rawLogs: List<LogLine> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (UserLogFilter) -> Unit,
 ) {
+    val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
 
     var name by remember { mutableStateOf("") }
@@ -2315,38 +2484,79 @@ internal fun CreateFilterDialog(
     var content by remember { mutableStateOf("") }
     var pid by remember { mutableStateOf("") }
 
+    var allSuggestions by remember { mutableStateOf<List<LogFilterAppProcessItem>>(emptyList()) }
+    var isSuggestionsLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        allSuggestions = LogFilterSuggestionProvider.loadSuggestions(context, rawLogs)
+        isSuggestionsLoading = false
+    }
+
+    var selectedItem by remember { mutableStateOf<LogFilterAppProcessItem?>(null) }
+    LaunchedEffect(allSuggestions) {
+        if (selectedItem == null && pkg.isNotBlank()) {
+            selectedItem = allSuggestions.firstOrNull { it.packageName == pkg || it.key == pkg }
+        }
+    }
+
+    var showAppSuggestions by remember { mutableStateOf(false) }
+    val matchingSuggestions = remember(pkg, allSuggestions) {
+        LogFilterSuggestionProvider.filterSuggestions(allSuggestions, pkg, limit = 12)
+    }
+
+    val topTags = remember(tag, rawLogs) {
+        LogFilterSuggestionProvider.extractTopTags(rawLogs, tag, limit = 6)
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .border(1.dp, dynamicBorderColor(), RoundedCornerShape(20.dp)),
+                .fillMaxWidth(0.96f)
+                .heightIn(max = 620.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .border(1.dp, dynamicBorderColor(), RoundedCornerShape(22.dp)),
             color = dynamicSurfaceColor(),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(18.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
-                Text(
-                    text = "Criar Filtro Personalizado",
-                    color = colorScheme.onSurface,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-
-                Spacer(Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nome do Filtro") },
-                    singleLine = true,
+                // Header
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Criar Filtro Personalizado",
+                            color = colorScheme.onSurface,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = "Sugestões automáticas por app, processo e tag",
+                            color = colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontSize = 11.sp,
+                        )
+                    }
 
-                Spacer(Modifier.height(8.dp))
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Fechar",
+                            tint = colorScheme.onSurface.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
 
                 // Tipo: Incluir vs Excluir
                 Row(
@@ -2366,7 +2576,7 @@ internal fun CreateFilterDialog(
                         Text(
                             text = "Incluir (Whitelist)",
                             color = if (including) Color(0xFF10B981) else colorScheme.onSurface.copy(alpha = 0.7f),
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -2384,34 +2594,232 @@ internal fun CreateFilterDialog(
                         Text(
                             text = "Excluir (Blacklist)",
                             color = if (!including) Color(0xFFEF4444) else colorScheme.onSurface.copy(alpha = 0.7f),
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
-                OutlinedTextField(
-                    value = tag,
-                    onValueChange = { tag = it },
-                    label = { Text("Tag (Opcional)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                // Aplicativo ou Processo (Campo com sugestões dinâmicas)
+                Text(
+                    text = "APLICATIVO OU PROCESSO",
+                    color = colorScheme.primary,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
                 )
-
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(4.dp))
 
                 OutlinedTextField(
                     value = pkg,
-                    onValueChange = { pkg = it },
-                    label = { Text("Pacote / App (Opcional)") },
+                    onValueChange = {
+                        pkg = it
+                        showAppSuggestions = true
+                        selectedItem = allSuggestions.firstOrNull { item -> item.packageName == it || item.key == it }
+                    },
+                    label = { Text("Nome do App ou Pacote (ex: Shopee, WhatsApp...)") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = null,
+                            tint = colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    },
+                    trailingIcon = {
+                        if (pkg.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    pkg = ""
+                                    selectedItem = null
+                                    showAppSuggestions = false
+                                },
+                                modifier = Modifier.size(24.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Limpar",
+                                    tint = colorScheme.onSurface.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(14.dp),
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                // Selected App Card preview
+                if (selectedItem != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = colorScheme.primary.copy(alpha = 0.1f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (selectedItem?.appInfo != null) {
+                                AppIcon(app = selectedItem!!.appInfo!!, sizeDp = 22)
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Terminal,
+                                    contentDescription = null,
+                                    tint = colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = selectedItem!!.label,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = selectedItem!!.packageName ?: selectedItem!!.processName ?: "",
+                                    fontSize = 9.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = colorScheme.onSurface.copy(alpha = 0.6f),
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = "Selecionado",
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    }
+                }
+
+                // Autocomplete Suggestions List
+                AnimatedVisibility(
+                    visible = showAppSuggestions && matchingSuggestions.isNotEmpty(),
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.15f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 180.dp)
+                                .verticalScroll(rememberScrollState())
+                                .padding(4.dp),
+                        ) {
+                            Text(
+                                text = "SUGESTÕES DE APPS E PROCESSOS",
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colorScheme.onSurface.copy(alpha = 0.5f),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                            matchingSuggestions.forEach { suggestion ->
+                                AppProcessSuggestionRow(
+                                    item = suggestion,
+                                    onClick = {
+                                        pkg = suggestion.packageName ?: suggestion.processName ?: suggestion.key
+                                        selectedItem = suggestion
+                                        if (name.isBlank() || name == "App") {
+                                            name = suggestion.label
+                                        }
+                                        if (suggestion.pid != null && pid.isBlank()) {
+                                            pid = suggestion.pid
+                                        }
+                                        showAppSuggestions = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Nome do Filtro
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nome do Filtro (ex: Shopee Logs)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                // Tag do Logcat
+                OutlinedTextField(
+                    value = tag,
+                    onValueChange = { tag = it },
+                    label = { Text("Tag do Logcat (Opcional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                // Tag Suggestions Chips
+                if (topTags.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Tags frequentes no log:",
+                        fontSize = 8.5.sp,
+                        color = colorScheme.onSurface.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(start = 2.dp, bottom = 2.dp),
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        topTags.forEach { t ->
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (tag == t) colorScheme.primary.copy(alpha = 0.2f) else colorScheme.onSurface.copy(alpha = 0.06f),
+                                border = androidx.compose.foundation.BorderStroke(0.5.dp, if (tag == t) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f)),
+                                modifier = Modifier.clickable {
+                                    tag = t
+                                    if (name.isBlank()) name = "Tag: $t"
+                                },
+                            ) {
+                                Text(
+                                    text = t,
+                                    fontSize = 9.5.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = if (tag == t) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.75f),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(6.dp))
+
+                // PID Field
+                OutlinedTextField(
+                    value = pid,
+                    onValueChange = { pid = it },
+                    label = { Text("PID / ID do Processo (Opcional)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(Modifier.height(6.dp))
 
+                // Palavra-chave no texto
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
@@ -2422,9 +2830,11 @@ internal fun CreateFilterDialog(
 
                 Spacer(Modifier.height(14.dp))
 
+                // Actions
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancelar")

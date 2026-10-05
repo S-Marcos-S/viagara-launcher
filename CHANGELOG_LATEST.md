@@ -1,7 +1,7 @@
-### 🚀 Novidades da Versão v0.59.54
+### 🚀 Novidades da Versão v0.59.55
 
-- **Alertas de Consumo em Segundo Plano:**
-  - Detecção com NetworkStatsManager para contabilizar dados reais de qualquer app em segundo plano.
-  - Notificações de alta prioridade com ações rápidas de 1 toque: `[Forçar parada]`, `[Inspecionar]` e `[Silenciar (1h)]`.
-  - Painel de configuração no Gerenciador de Tarefas para alternar monitoramento, sensibilidade e consultar histórico.
-  - Card dedicado e atalho rápido adicionados na tela de Estatísticas de Bateria.
+- **Central de Logs - Sugestões Inteligentes de Filtro:**
+  - Autocomplete em tempo real ao digitar nomes de apps, pacotes ou processos nos filtros.
+  - Exibição de ícones oficiais de apps, nomes amigáveis e badges de processos ativos.
+  - Sugestões dinâmicas de tags ativas do Logcat e suporte a preenchimento de PID.
+  - Seletor rápido de app na barra de busca e no cabeçalho para isolar logs instantaneamente.
