@@ -64,6 +64,8 @@ class AppLogCaptureService : Service() {
 
         const val EXTRA_PACKAGE_NAME = "extra_package_name"
         const val EXTRA_APP_NAME = "extra_app_name"
+        const val EXTRA_PACKAGE_NAMES = "extra_package_names"
+        const val EXTRA_APP_NAMES = "extra_app_names"
 
         const val CHANNEL_ID = "viagara_app_log_capture_channel"
         const val NOTIFICATION_ID_RECORDING = 88410
@@ -74,6 +76,12 @@ class AppLogCaptureService : Service() {
 
         private val _capturingAppName = MutableStateFlow<String?>(null)
         val capturingAppName: StateFlow<String?> = _capturingAppName.asStateFlow()
+
+        private val _capturingPackages = MutableStateFlow<Set<String>>(emptySet())
+        val capturingPackages: StateFlow<Set<String>> = _capturingPackages.asStateFlow()
+
+        private val _capturingAppNames = MutableStateFlow<List<String>>(emptyList())
+        val capturingAppNames: StateFlow<List<String>> = _capturingAppNames.asStateFlow()
 
         private val _isServiceRunning = MutableStateFlow(false)
         val isServiceRunning: StateFlow<Boolean> = _isServiceRunning.asStateFlow()
@@ -137,18 +145,22 @@ class AppLogCaptureService : Service() {
         }
 
         fun isCapturingApp(packageName: String): Boolean {
-            return _capturingPackage.value == packageName
+            return _capturingPackages.value.contains(packageName) || _capturingPackage.value == packageName
         }
 
         fun isAnyCapturing(): Boolean {
-            return _capturingPackage.value != null
+            return _capturingPackages.value.isNotEmpty() || _capturingPackage.value != null
         }
 
-        fun startCapture(context: Context, packageName: String?, appName: String?) {
+        fun startCapture(context: Context, packageNames: Collection<String>, appNames: Collection<String> = emptyList()) {
+            val pkgs = packageNames.filter { it.isNotBlank() }
+            val names = appNames.filter { it.isNotBlank() }
             val intent = Intent(context, AppLogCaptureService::class.java).apply {
                 action = ACTION_START_CAPTURE
-                if (packageName != null) putExtra(EXTRA_PACKAGE_NAME, packageName)
-                if (appName != null) putExtra(EXTRA_APP_NAME, appName)
+                putStringArrayListExtra(EXTRA_PACKAGE_NAMES, ArrayList(pkgs))
+                putStringArrayListExtra(EXTRA_APP_NAMES, ArrayList(names))
+                if (pkgs.isNotEmpty()) putExtra(EXTRA_PACKAGE_NAME, pkgs.first())
+                if (names.isNotEmpty()) putExtra(EXTRA_APP_NAME, names.first())
             }
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -159,6 +171,12 @@ class AppLogCaptureService : Service() {
             } catch (e: Throwable) {
                 android.util.Log.e("AppLogCaptureService", "startCapture failed", e)
             }
+        }
+
+        fun startCapture(context: Context, packageName: String?, appName: String?) {
+            val pkgs = if (packageName != null) listOf(packageName) else emptyList()
+            val names = if (appName != null) listOf(appName) else emptyList()
+            startCapture(context, pkgs, names)
         }
 
         fun startMonitoring(context: Context) {
@@ -281,7 +299,10 @@ class AppLogCaptureService : Service() {
 
     private var targetPackage: String? = null
     private var targetAppName: String? = null
+    private var targetPackages: Set<String> = emptySet()
+    private var targetAppNames: List<String> = emptyList()
     private var targetUid: Int = -1
+    private var targetUids: Set<Int> = emptySet()
 
     private var logcatProcess: Process? = null
     private var captureJob: Job? = null
@@ -313,18 +334,33 @@ class AppLogCaptureService : Service() {
 
         when (action) {
             ACTION_START_CAPTURE -> {
-                val pkg = intent.getStringExtra(EXTRA_PACKAGE_NAME)
-                val name = intent.getStringExtra(EXTRA_APP_NAME) ?: pkg ?: getString(R.string.log_global_system_title)
+                val pkgList = intent.getStringArrayListExtra(EXTRA_PACKAGE_NAMES) ?: arrayListOf()
+                val nameList = intent.getStringArrayListExtra(EXTRA_APP_NAMES) ?: arrayListOf()
+                val singlePkg = intent.getStringExtra(EXTRA_PACKAGE_NAME)
+                val singleName = intent.getStringExtra(EXTRA_APP_NAME)
 
-                targetPackage = pkg
-                targetAppName = name
-                _capturingPackage.value = pkg
-                _capturingAppName.value = name
+                val allPkgs = (pkgList + listOfNotNull(singlePkg)).filter { it.isNotBlank() }.toSet()
+                val allNames = (nameList + listOfNotNull(singleName)).filter { it.isNotBlank() }.distinct()
+
+                targetPackages = allPkgs
+                targetAppNames = allNames
+                targetPackage = allPkgs.firstOrNull()
+                targetAppName = when {
+                    allNames.size == 1 -> allNames.first()
+                    allNames.size > 1 -> allNames.joinToString(", ")
+                    targetPackage != null -> targetPackage
+                    else -> getString(R.string.log_global_system_title)
+                }
+
+                _capturingPackages.value = allPkgs
+                _capturingAppNames.value = allNames
+                _capturingPackage.value = targetPackage
+                _capturingAppName.value = targetAppName
                 crashDetected.set(false)
                 isFinalized.set(false)
                 seenPids.clear()
 
-                recordingsManager.startSession(pkg, name)
+                recordingsManager.startSession(allPkgs, allNames)
                 startOngoingNotificationLoop()
                 startStreamingProcess()
             }
@@ -371,18 +407,20 @@ class AppLogCaptureService : Service() {
     private fun startStreamingProcess() {
         if (captureJob?.isActive == true) return
 
-        if (targetPackage != null) {
-            targetUid = try {
+        val allPkgs = if (targetPackages.isNotEmpty()) targetPackages else listOfNotNull(targetPackage).toSet()
+        targetUids = allPkgs.mapNotNull { pkg ->
+            try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    packageManager.getPackageUid(targetPackage!!, PackageManager.PackageInfoFlags.of(0))
+                    packageManager.getPackageUid(pkg, PackageManager.PackageInfoFlags.of(0))
                 } else {
                     @Suppress("DEPRECATION")
-                    packageManager.getPackageUid(targetPackage!!, 0)
+                    packageManager.getPackageUid(pkg, 0)
                 }
             } catch (_: Throwable) {
-                -1
+                null
             }
-        }
+        }.toSet()
+        targetUid = targetUids.firstOrNull() ?: -1
 
         captureJob = serviceScope.launch {
             try {
@@ -393,7 +431,7 @@ class AppLogCaptureService : Service() {
                 logcatProcess = process
 
                 val reader = process.inputStream.bufferedReader()
-                val pkgNameLower = targetPackage?.lowercase(Locale.ROOT)
+                val pkgNamesLower = allPkgs.map { it.lowercase(Locale.ROOT) }
                 val ringBuffer = ArrayList<LogLine>(MAX_RING_BUFFER_SIZE)
 
                 while (isActive) {
@@ -424,9 +462,10 @@ class AppLogCaptureService : Service() {
                         _liveLogs.value = snapshot
                     }
 
-                    // 4. Check for app crash if capturing a single app
-                    if (pkgNameLower != null && !crashDetected.get()) {
-                        if (isCrashLine(rawLine, pkgNameLower)) {
+                    // 4. Check for app crash if capturing monitored app(s)
+                    if (pkgNamesLower.isNotEmpty() && !crashDetected.get()) {
+                        val crashed = pkgNamesLower.any { isCrashLine(rawLine, it) }
+                        if (crashed) {
                             if (crashDetected.compareAndSet(false, true)) {
                                 serviceScope.launch {
                                     delay(1000L)

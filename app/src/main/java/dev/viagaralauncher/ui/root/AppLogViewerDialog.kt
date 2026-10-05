@@ -172,13 +172,47 @@ fun AppLogViewerDialog(
         )
     }
 
-    var activeTargetApp by remember(initialApp) { mutableStateOf(initialApp) }
-    var activeTargetPackage by remember(initialPackageName) { mutableStateOf(initialPackageName) }
-    val hasSourceApp = activeTargetApp != null || activeTargetPackage != null
+    var activeTargetApps by remember(initialApp) {
+        mutableStateOf(if (initialApp != null) listOf(initialApp) else emptyList<AppInfo>())
+    }
+    var activeTargetPackages by remember(initialPackageName, initialApp) {
+        val initialPkgs = buildSet {
+            if (!initialPackageName.isNullOrBlank()) add(initialPackageName)
+            if (initialApp != null) add(initialApp.packageName)
+        }
+        mutableStateOf(initialPkgs)
+    }
+    var activeTargetProcesses by remember(initialApp, initialPackageName) {
+        val initialList = mutableListOf<LogFilterAppProcessItem>()
+        if (initialApp != null) {
+            initialList.add(
+                LogFilterAppProcessItem(
+                    key = initialApp.packageName,
+                    label = initialApp.label,
+                    packageName = initialApp.packageName,
+                    appInfo = initialApp,
+                )
+            )
+        } else if (!initialPackageName.isNullOrBlank()) {
+            initialList.add(
+                LogFilterAppProcessItem(
+                    key = initialPackageName,
+                    label = initialPackageName.substringAfterLast('.'),
+                    packageName = initialPackageName,
+                )
+            )
+        }
+        mutableStateOf<List<LogFilterAppProcessItem>>(initialList)
+    }
+
+    val hasSourceApp = activeTargetApps.isNotEmpty() || activeTargetPackages.isNotEmpty()
     var isFilteringByApp by remember(hasSourceApp) { mutableStateOf(hasSourceApp) }
 
-    val currentTargetApp = if (isFilteringByApp) activeTargetApp else null
-    val currentTargetPackage = if (isFilteringByApp) (activeTargetApp?.packageName ?: activeTargetPackage) else null
+    val currentTargetPackages = if (isFilteringByApp) activeTargetPackages else emptySet()
+    val currentTargetApps = if (isFilteringByApp) activeTargetApps else emptyList()
+
+    val currentTargetApp = currentTargetApps.firstOrNull()
+    val currentTargetPackage = currentTargetPackages.firstOrNull()
 
     var selectAppDialogOpen by remember { mutableStateOf(false) }
 
@@ -231,14 +265,14 @@ fun AppLogViewerDialog(
     }
 
     // Filtered logs
-    val filteredLogs = remember(rawLogs, userFilters, searchQuery, caseSensitive, selectedLevel, currentTargetPackage) {
+    val filteredLogs = remember(rawLogs, userFilters, searchQuery, caseSensitive, selectedLevel, currentTargetPackages) {
         LogFilterEngine.filterAndSearch(
             lines = rawLogs,
             filters = userFilters,
             query = searchQuery,
             caseSensitive = caseSensitive,
             selectedLevel = selectedLevel,
-            targetPackage = currentTargetPackage,
+            targetPackages = currentTargetPackages,
         )
     }
 
@@ -333,12 +367,20 @@ fun AppLogViewerDialog(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             if (hasSourceApp) {
-                                val appLabel = activeTargetApp?.label ?: activeTargetPackage ?: "App"
-                                val pkgName = activeTargetApp?.packageName ?: activeTargetPackage ?: ""
+                                val appLabel = when {
+                                    activeTargetApps.size == 1 -> activeTargetApps.first().label
+                                    activeTargetApps.size > 1 -> "${activeTargetApps.size} Apps"
+                                    activeTargetPackages.size == 1 -> activeTargetPackages.first().substringAfterLast('.')
+                                    else -> "${activeTargetPackages.size} Processos"
+                                }
+                                val pkgName = when {
+                                    activeTargetApps.isNotEmpty() -> activeTargetApps.joinToString(", ") { it.label }
+                                    else -> activeTargetPackages.joinToString(", ")
+                                }
 
-                                if (activeTargetApp != null) {
+                                if (activeTargetApps.size == 1) {
                                     AppIcon(
-                                        app = activeTargetApp!!,
+                                        app = activeTargetApps.first(),
                                         sizeDp = 38,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(10.dp))
@@ -355,7 +397,7 @@ fun AppLogViewerDialog(
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Filled.BugReport,
+                                            imageVector = if (activeTargetApps.size > 1) Icons.Filled.FilterList else Icons.Filled.BugReport,
                                             contentDescription = null,
                                             tint = colorScheme.primary,
                                             modifier = Modifier.size(20.dp),
@@ -395,7 +437,7 @@ fun AppLogViewerDialog(
                                                     modifier = Modifier.size(11.dp),
                                                 )
                                                 Text(
-                                                    text = if (isFilteringByApp) "Ver todos" else "Filtrar $appLabel",
+                                                    text = if (isFilteringByApp) "Ver todos" else "Filtrar ($appLabel)",
                                                     color = colorScheme.primary,
                                                     fontSize = 9.5.sp,
                                                     fontWeight = FontWeight.Bold,
@@ -410,7 +452,7 @@ fun AppLogViewerDialog(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.Edit,
-                                                contentDescription = "Trocar aplicativo",
+                                                contentDescription = "Selecionar aplicativos",
                                                 tint = colorScheme.onSurface.copy(alpha = 0.5f),
                                                 modifier = Modifier.size(13.dp),
                                             )
@@ -420,7 +462,7 @@ fun AppLogViewerDialog(
                                         text = if (isFilteringByApp) pkgName else "Logs de todo o sistema (toque para voltar ao $appLabel)",
                                         color = colorScheme.onSurface.copy(alpha = 0.6f),
                                         fontSize = 10.sp,
-                                        fontFamily = if (isFilteringByApp) FontFamily.Monospace else FontFamily.Default,
+                                        fontFamily = if (isFilteringByApp && activeTargetApps.size <= 1) FontFamily.Monospace else FontFamily.Default,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -645,8 +687,8 @@ fun AppLogViewerDialog(
                                         if (recordingSession.state == RecordingState.IDLE) {
                                             AppLogCaptureService.startCapture(
                                                 context,
-                                                currentTargetPackage,
-                                                currentTargetApp?.label ?: currentTargetPackage,
+                                                currentTargetPackages,
+                                                currentTargetApps.map { it.label },
                                             )
                                         } else {
                                             AppLogCaptureService.saveLog(context)
@@ -655,10 +697,22 @@ fun AppLogViewerDialog(
                                     onSelectLogLine = { lineDetailDialogFor = it },
                                     currentTargetPackage = currentTargetPackage,
                                     currentTargetApp = currentTargetApp,
+                                    currentTargetPackages = currentTargetPackages,
+                                    currentTargetApps = currentTargetApps,
+                                    activeTargetProcesses = activeTargetProcesses,
                                     onOpenSelectAppDialog = { selectAppDialogOpen = true },
+                                    onRemoveTargetApp = { item ->
+                                        activeTargetProcesses = activeTargetProcesses.filter { it.key != item.key }
+                                        activeTargetPackages = activeTargetProcesses.mapNotNull { it.packageName ?: it.processName }.toSet()
+                                        activeTargetApps = activeTargetProcesses.mapNotNull { it.appInfo }
+                                        if (activeTargetProcesses.isEmpty()) {
+                                            isFilteringByApp = false
+                                        }
+                                    },
                                     onClearAppFilter = {
-                                        activeTargetApp = null
-                                        activeTargetPackage = null
+                                        activeTargetProcesses = emptyList()
+                                        activeTargetApps = emptyList()
+                                        activeTargetPackages = emptySet()
                                         isFilteringByApp = false
                                     },
                                 )
@@ -669,8 +723,10 @@ fun AppLogViewerDialog(
                                     savedRecordings = savedRecordings,
                                     targetApp = currentTargetApp,
                                     targetPackageName = currentTargetPackage,
-                                    onStartRecording = { pkg, name ->
-                                        AppLogCaptureService.startCapture(context, pkg, name)
+                                    targetApps = currentTargetApps,
+                                    targetPackages = currentTargetPackages,
+                                    onStartRecording = { pkgs, names ->
+                                        AppLogCaptureService.startCapture(context, pkgs, names)
                                     },
                                     onPauseRecording = { AppLogCaptureService.togglePauseResume(context) },
                                     onStopSaveRecording = { AppLogCaptureService.saveLog(context) },
@@ -757,9 +813,9 @@ fun AppLogViewerDialog(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxSize(),
                     ) {
-                        if (activeTargetApp != null) {
+                        if (activeTargetApps.size == 1) {
                             AppIcon(
-                                app = activeTargetApp!!,
+                                app = activeTargetApps.first(),
                                 sizeDp = 34,
                                 modifier = Modifier.clip(RoundedCornerShape(8.dp)),
                             )
@@ -842,17 +898,13 @@ fun AppLogViewerDialog(
     if (selectAppDialogOpen) {
         SelectAppProcessDialog(
             rawLogs = rawLogs,
+            initialSelectedKeys = activeTargetProcesses.map { it.key }.toSet(),
             onDismiss = { selectAppDialogOpen = false },
-            onSelect = { item ->
-                if (item != null) {
-                    activeTargetApp = item.appInfo
-                    activeTargetPackage = item.packageName ?: item.processName
-                    isFilteringByApp = true
-                } else {
-                    activeTargetApp = null
-                    activeTargetPackage = null
-                    isFilteringByApp = false
-                }
+            onConfirmSelection = { selectedItems ->
+                activeTargetProcesses = selectedItems
+                activeTargetApps = selectedItems.mapNotNull { it.appInfo }
+                activeTargetPackages = selectedItems.mapNotNull { it.packageName ?: it.processName }.toSet()
+                isFilteringByApp = selectedItems.isNotEmpty()
             },
         )
     }
@@ -894,7 +946,11 @@ internal fun LiveLogsTab(
     onSelectLogLine: (LogLine) -> Unit,
     currentTargetPackage: String? = null,
     currentTargetApp: AppInfo? = null,
+    currentTargetPackages: Set<String> = emptySet(),
+    currentTargetApps: List<AppInfo> = emptyList(),
+    activeTargetProcesses: List<LogFilterAppProcessItem> = emptyList(),
     onOpenSelectAppDialog: (() -> Unit)? = null,
+    onRemoveTargetApp: ((LogFilterAppProcessItem) -> Unit)? = null,
     onClearAppFilter: (() -> Unit)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -918,12 +974,19 @@ internal fun LiveLogsTab(
         ) {
             // Quick App Filter Selector Button
             if (onOpenSelectAppDialog != null) {
+                val effectivePackages = if (currentTargetPackages.isNotEmpty()) currentTargetPackages else (currentTargetPackage?.let { setOf(it) } ?: emptySet())
+                val isFiltered = effectivePackages.isNotEmpty()
+                val buttonText = when {
+                    effectivePackages.isEmpty() -> "App"
+                    effectivePackages.size == 1 -> currentTargetApps.firstOrNull()?.label ?: currentTargetApp?.label ?: effectivePackages.first().substringAfterLast('.')
+                    else -> "${effectivePackages.size} Apps"
+                }
                 Box(
                     modifier = Modifier
                         .height(34.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (currentTargetPackage != null) colorScheme.primary.copy(alpha = 0.18f) else colorScheme.onSurface.copy(alpha = 0.06f))
-                        .border(1.dp, if (currentTargetPackage != null) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                        .background(if (isFiltered) colorScheme.primary.copy(alpha = 0.18f) else colorScheme.onSurface.copy(alpha = 0.06f))
+                        .border(1.dp, if (isFiltered) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                         .clickable { onOpenSelectAppDialog() }
                         .padding(horizontal = 8.dp),
                     contentAlignment = Alignment.Center,
@@ -935,12 +998,12 @@ internal fun LiveLogsTab(
                         Icon(
                             imageVector = Icons.Filled.FilterList,
                             contentDescription = "Filtrar por aplicativo ou processo",
-                            tint = if (currentTargetPackage != null) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.7f),
+                            tint = if (isFiltered) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.7f),
                             modifier = Modifier.size(14.dp),
                         )
                         Text(
-                            text = if (currentTargetPackage != null) (currentTargetApp?.label ?: "App") else "App",
-                            color = if (currentTargetPackage != null) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.7f),
+                            text = buttonText,
+                            color = if (isFiltered) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.7f),
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -1102,52 +1165,121 @@ internal fun LiveLogsTab(
             }
         }
 
-        // Active App Filter Banner Chip
-        if (currentTargetPackage != null) {
+        // Active App Filter Banner Chip(s)
+        val hasActiveFilters = activeTargetProcesses.isNotEmpty() || currentTargetPackage != null
+        if (hasActiveFilters) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .horizontalScroll(rememberScrollState()),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = colorScheme.primary.copy(alpha = 0.12f),
-                    border = BorderStroke(0.5.dp, colorScheme.primary.copy(alpha = 0.35f)),
-                    modifier = Modifier.clickable { onOpenSelectAppDialog?.invoke() },
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        if (currentTargetApp != null) {
-                            AppIcon(app = currentTargetApp, sizeDp = 14)
-                        } else {
-                            Icon(
-                                imageVector = Icons.Filled.Terminal,
-                                contentDescription = null,
-                                tint = colorScheme.primary,
-                                modifier = Modifier.size(12.dp),
-                            )
+                if (activeTargetProcesses.isNotEmpty()) {
+                    activeTargetProcesses.forEach { item ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = colorScheme.primary.copy(alpha = 0.12f),
+                            border = BorderStroke(0.5.dp, colorScheme.primary.copy(alpha = 0.35f)),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                if (item.appInfo != null) {
+                                    AppIcon(app = item.appInfo, sizeDp = 14)
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Filled.Terminal,
+                                        contentDescription = null,
+                                        tint = colorScheme.primary,
+                                        modifier = Modifier.size(12.dp),
+                                    )
+                                }
+                                Text(
+                                    text = item.label,
+                                    color = colorScheme.primary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                )
+                                if (onRemoveTargetApp != null) {
+                                    Spacer(Modifier.width(2.dp))
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Remover filtro",
+                                        tint = colorScheme.primary,
+                                        modifier = Modifier
+                                            .size(13.dp)
+                                            .clickable { onRemoveTargetApp(item) },
+                                    )
+                                }
+                            }
                         }
-                        Text(
-                            text = "Filtrando: ${currentTargetApp?.label ?: currentTargetPackage}",
-                            color = colorScheme.primary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                        )
-                        if (onClearAppFilter != null) {
-                            Spacer(Modifier.width(2.dp))
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = "Limpar filtro",
-                                tint = colorScheme.primary,
-                                modifier = Modifier
-                                    .size(13.dp)
-                                    .clickable { onClearAppFilter() },
+                    }
+
+                    if (activeTargetProcesses.size > 1 && onClearAppFilter != null) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = colorScheme.error.copy(alpha = 0.12f),
+                            border = BorderStroke(0.5.dp, colorScheme.error.copy(alpha = 0.35f)),
+                            modifier = Modifier.clickable { onClearAppFilter() },
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Limpar todos",
+                                    color = colorScheme.error,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                    }
+                } else if (currentTargetPackage != null) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = colorScheme.primary.copy(alpha = 0.12f),
+                        border = BorderStroke(0.5.dp, colorScheme.primary.copy(alpha = 0.35f)),
+                        modifier = Modifier.clickable { onOpenSelectAppDialog?.invoke() },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            if (currentTargetApp != null) {
+                                AppIcon(app = currentTargetApp, sizeDp = 14)
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Terminal,
+                                    contentDescription = null,
+                                    tint = colorScheme.primary,
+                                    modifier = Modifier.size(12.dp),
+                                )
+                            }
+                            Text(
+                                text = "Filtrando: ${currentTargetApp?.label ?: currentTargetPackage}",
+                                color = colorScheme.primary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
                             )
+                            if (onClearAppFilter != null) {
+                                Spacer(Modifier.width(2.dp))
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Limpar filtro",
+                                    tint = colorScheme.primary,
+                                    modifier = Modifier
+                                        .size(13.dp)
+                                        .clickable { onClearAppFilter() },
+                                )
+                            }
                         }
                     }
                 }
@@ -1380,9 +1512,11 @@ private fun LogLineItem(
 internal fun RecordingsTab(
     session: dev.viagaralauncher.root.log.ActiveSessionInfo,
     savedRecordings: List<SavedLogRecording>,
-    targetApp: AppInfo?,
+    targetApp: AppInfo? = null,
     targetPackageName: String? = null,
-    onStartRecording: (pkg: String?, name: String?) -> Unit,
+    targetApps: List<AppInfo> = emptyList(),
+    targetPackages: Set<String> = emptySet(),
+    onStartRecording: (pkgs: Set<String>, names: List<String>) -> Unit,
     onPauseRecording: () -> Unit,
     onStopSaveRecording: () -> Unit,
     onDiscardRecording: () -> Unit,
@@ -1448,9 +1582,15 @@ internal fun RecordingsTab(
 
                 Spacer(Modifier.height(8.dp))
 
+                val targetDescription = when {
+                    session.targetAppNames.isNotEmpty() -> session.targetAppNames.joinToString(", ")
+                    session.targetAppName != null -> session.targetAppName
+                    else -> "Todos os apps do sistema"
+                }
+
                 Text(
                     text = if (isSessionActive) {
-                        "Alvo: ${session.targetAppName ?: "Todos os apps do sistema"}\nSalva automaticamente os logs e empacota com informações de hardware do aparelho."
+                        "Alvo: $targetDescription\nSalva automaticamente os logs e empacota com informações de hardware do aparelho."
                     } else {
                         "Grave sessões de logs e exporte diretamente para arquivos .TXT ou arquivos .ZIP contendo telemetria completa de hardware e do sistema Android (LogFox style)."
                     },
@@ -1467,6 +1607,14 @@ internal fun RecordingsTab(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (!isSessionActive) {
+                        val effectivePackages = if (targetPackages.isNotEmpty()) targetPackages else (targetPackageName?.let { setOf(it) } ?: targetApp?.packageName?.let { setOf(it) } ?: emptySet())
+                        val effectiveNames = if (targetApps.isNotEmpty()) targetApps.map { it.label } else (targetApp?.label?.let { listOf(it) } ?: targetPackageName?.let { listOf(it) } ?: emptyList())
+                        val recordingButtonText = when {
+                            effectivePackages.isEmpty() -> "Iniciar Gravação Global"
+                            effectivePackages.size == 1 -> "Gravar ${effectiveNames.firstOrNull() ?: effectivePackages.first()}"
+                            else -> "Gravar ${effectivePackages.size} Apps Selecionados"
+                        }
+
                         // Start recording button
                         Box(
                             modifier = Modifier
@@ -1475,7 +1623,7 @@ internal fun RecordingsTab(
                                 .background(Color(0xFFEF4444).copy(alpha = 0.16f))
                                 .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                                 .clickable {
-                                    onStartRecording(targetApp?.packageName ?: targetPackageName, targetApp?.label ?: targetPackageName)
+                                    onStartRecording(effectivePackages, effectiveNames)
                                 }
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
@@ -1492,7 +1640,7 @@ internal fun RecordingsTab(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = if (targetApp != null) "Gravar ${targetApp.label}" else if (targetPackageName != null) "Gravar $targetPackageName" else "Iniciar Gravação Global",
+                                    text = recordingButtonText,
                                     color = Color(0xFFEF4444),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,

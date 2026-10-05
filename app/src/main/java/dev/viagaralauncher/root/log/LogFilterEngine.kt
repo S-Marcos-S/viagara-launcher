@@ -12,6 +12,7 @@ object LogFilterEngine {
         caseSensitive: Boolean = false,
         selectedLevel: LogLevel? = null,
         targetPackage: String? = null,
+        targetPackages: Set<String> = emptySet(),
         seenPids: Set<String> = emptySet(),
     ): List<LogLine> {
         val enabledFilters = filters.filter { it.enabled }
@@ -19,15 +20,29 @@ object LogFilterEngine {
         val excludingFilters = enabledFilters.filter { !it.including }
 
         val cleanQuery = query?.trim()?.ifBlank { null }
-        val cleanPkg = targetPackage?.trim()?.lowercase(Locale.ROOT)?.ifBlank { null }
+        val allTargetPackages = buildSet {
+            if (!targetPackage.isNullOrBlank()) {
+                add(targetPackage.trim().lowercase(Locale.ROOT))
+            }
+            targetPackages.forEach { pkg ->
+                if (pkg.isNotBlank()) {
+                    add(pkg.trim().lowercase(Locale.ROOT))
+                }
+            }
+        }
 
         return lines.filter { line ->
-            // 1. Target Package / App Filter
-            if (cleanPkg != null) {
-                val matchesApp = line.packageName?.lowercase(Locale.ROOT) == cleanPkg ||
-                        line.content.lowercase(Locale.ROOT).contains(cleanPkg) ||
-                        line.tag.lowercase(Locale.ROOT).contains(cleanPkg) ||
-                        seenPids.contains(line.pid)
+            // 1. Target Package(s) / App Filter
+            if (allTargetPackages.isNotEmpty()) {
+                val linePkgLower = line.packageName?.lowercase(Locale.ROOT)
+                val lineContentLower = line.content.lowercase(Locale.ROOT)
+                val lineTagLower = line.tag.lowercase(Locale.ROOT)
+
+                val matchesApp = allTargetPackages.any { pkg ->
+                    linePkgLower == pkg ||
+                            lineContentLower.contains(pkg) ||
+                            lineTagLower.contains(pkg)
+                } || (line.pid != null && seenPids.contains(line.pid))
 
                 if (!matchesApp) return@filter false
             }
@@ -71,10 +86,13 @@ object LogFilterEngine {
         if (filter.allowedLevels.isNotEmpty() && !filter.allowedLevels.contains(line.level)) {
             return false
         }
-        if (!filter.packageName.isNullOrBlank() &&
-            line.packageName?.contains(filter.packageName, ignoreCase = true) != true
-        ) {
-            return false
+        if (!filter.packageName.isNullOrBlank()) {
+            val pkgs = filter.packageName.split(',', ';').map { it.trim().lowercase(Locale.ROOT) }.filter { it.isNotBlank() }
+            if (pkgs.isNotEmpty()) {
+                val linePkg = line.packageName?.lowercase(Locale.ROOT) ?: ""
+                val matchesAnyPkg = pkgs.any { pkg -> linePkg.contains(pkg) }
+                if (!matchesAnyPkg) return false
+            }
         }
         if (!filter.tag.isNullOrBlank() &&
             !line.tag.contains(filter.tag, ignoreCase = true)

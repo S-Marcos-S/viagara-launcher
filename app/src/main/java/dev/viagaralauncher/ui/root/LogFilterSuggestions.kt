@@ -14,6 +14,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -247,6 +250,7 @@ fun AppProcessSuggestionRow(
     item: LogFilterAppProcessItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -254,6 +258,12 @@ fun AppProcessSuggestionRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
+            .background(if (isSelected) colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent)
+            .border(
+                if (isSelected) 1.dp else 0.dp,
+                if (isSelected) colorScheme.primary.copy(alpha = 0.4f) else Color.Transparent,
+                RoundedCornerShape(6.dp),
+            )
             .clickable { onClick() }
             .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -344,14 +354,34 @@ fun AppProcessSuggestionRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+
+        if (isSelected) {
+            Spacer(Modifier.width(6.dp))
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .clip(CircleShape)
+                    .background(colorScheme.primary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = "Selecionado",
+                    tint = colorScheme.onPrimary,
+                    modifier = Modifier.size(12.dp),
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun SelectAppProcessDialog(
     rawLogs: List<LogLine> = emptyList(),
+    initialSelectedKeys: Set<String> = emptySet(),
     onDismiss: () -> Unit,
-    onSelect: (LogFilterAppProcessItem?) -> Unit,
+    onConfirmSelection: (List<LogFilterAppProcessItem>) -> Unit = {},
+    onSelect: ((LogFilterAppProcessItem?) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
@@ -359,9 +389,18 @@ fun SelectAppProcessDialog(
     var allItems by remember { mutableStateOf<List<LogFilterAppProcessItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
+    val selectedMap = remember { mutableStateMapOf<String, LogFilterAppProcessItem>() }
+
     LaunchedEffect(Unit) {
         allItems = LogFilterSuggestionProvider.loadSuggestions(context, rawLogs)
         isLoading = false
+    }
+
+    LaunchedEffect(allItems, initialSelectedKeys) {
+        if (allItems.isNotEmpty() && initialSelectedKeys.isNotEmpty() && selectedMap.isEmpty()) {
+            allItems.filter { it.key in initialSelectedKeys || it.packageName in initialSelectedKeys || it.processName in initialSelectedKeys }
+                .forEach { selectedMap[it.key] = it }
+        }
     }
 
     val filteredItems = remember(searchQuery, allItems) {
@@ -375,7 +414,7 @@ fun SelectAppProcessDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.96f)
-                .heightIn(max = 560.dp)
+                .heightIn(max = 580.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .border(1.dp, dynamicBorderColor(), RoundedCornerShape(20.dp)),
             color = dynamicSurfaceColor(),
@@ -391,12 +430,30 @@ fun SelectAppProcessDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(
-                        text = "Selecionar App",
-                        color = colorScheme.onSurface,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Selecionar Apps",
+                            color = colorScheme.onSurface,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        if (selectedMap.isNotEmpty()) {
+                            Spacer(Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(colorScheme.primary.copy(alpha = 0.2f))
+                                    .padding(horizontal = 5.dp, vertical = 1.dp),
+                            ) {
+                                Text(
+                                    text = "${selectedMap.size}",
+                                    color = colorScheme.primary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                    }
 
                     IconButton(
                         onClick = onDismiss,
@@ -452,7 +509,59 @@ fun SelectAppProcessDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                Spacer(Modifier.height(8.dp))
+                // Selected Apps Chips
+                if (selectedMap.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        selectedMap.values.forEach { selectedItem ->
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = colorScheme.primary.copy(alpha = 0.14f),
+                                border = androidx.compose.foundation.BorderStroke(0.5.dp, colorScheme.primary.copy(alpha = 0.35f)),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    if (selectedItem.appInfo != null) {
+                                        AppIcon(app = selectedItem.appInfo, sizeDp = 13)
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Filled.Terminal,
+                                            contentDescription = null,
+                                            tint = colorScheme.primary,
+                                            modifier = Modifier.size(11.dp),
+                                        )
+                                    }
+                                    Text(
+                                        text = selectedItem.label,
+                                        color = colorScheme.primary,
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Remover",
+                                        tint = colorScheme.primary,
+                                        modifier = Modifier
+                                            .size(11.dp)
+                                            .clickable { selectedMap.remove(selectedItem.key) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(6.dp))
 
                 // Clear Filter Button (Show all logs)
                 Surface(
@@ -460,7 +569,9 @@ fun SelectAppProcessDialog(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
                         .clickable {
-                            onSelect(null)
+                            selectedMap.clear()
+                            onSelect?.invoke(null)
+                            onConfirmSelection(emptyList())
                             onDismiss()
                         },
                     color = colorScheme.primary.copy(alpha = 0.08f),
@@ -519,16 +630,63 @@ fun SelectAppProcessDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = false)
-                            .heightIn(max = 340.dp),
+                            .heightIn(max = 280.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         items(filteredItems, key = { it.key }) { item ->
+                            val isSelected = selectedMap.containsKey(item.key)
                             AppProcessSuggestionRow(
                                 item = item,
+                                isSelected = isSelected,
                                 onClick = {
-                                    onSelect(item)
-                                    onDismiss()
+                                    if (isSelected) {
+                                        selectedMap.remove(item.key)
+                                    } else {
+                                        selectedMap[item.key] = item
+                                    }
                                 },
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Bottom confirmation actions
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (selectedMap.isNotEmpty()) {
+                        androidx.compose.material3.TextButton(
+                            onClick = { selectedMap.clear() },
+                        ) {
+                            Text("Limpar", fontSize = 11.sp, color = colorScheme.error)
+                        }
+                    } else {
+                        Spacer(Modifier.width(1.dp))
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.TextButton(onClick = onDismiss) {
+                            Text("Cancelar", fontSize = 11.5.sp)
+                        }
+                        androidx.compose.material3.TextButton(
+                            onClick = {
+                                val list = selectedMap.values.toList()
+                                onSelect?.invoke(list.firstOrNull())
+                                onConfirmSelection(list)
+                                onDismiss()
+                            },
+                        ) {
+                            Text(
+                                text = if (selectedMap.isNotEmpty()) "Aplicar (${selectedMap.size})" else "Concluir",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
                             )
                         }
                     }

@@ -30,6 +30,8 @@ data class ActiveSessionInfo(
     val state: RecordingState = RecordingState.IDLE,
     val targetPackage: String? = null,
     val targetAppName: String? = null,
+    val targetPackages: Set<String> = emptySet(),
+    val targetAppNames: List<String> = emptyList(),
     val startTime: Long = 0L,
     val linesRecorded: Long = 0L,
     val bytesWritten: Long = 0L,
@@ -60,16 +62,38 @@ class LogRecordingsManager(private val context: Context) {
 
     @Synchronized
     fun startSession(targetPackage: String?, targetAppName: String?) {
+        val pkgs = if (!targetPackage.isNullOrBlank()) setOf(targetPackage) else emptySet()
+        val names = if (!targetAppName.isNullOrBlank()) listOf(targetAppName) else emptyList()
+        startSession(pkgs, names)
+    }
+
+    @Synchronized
+    fun startSession(targetPackages: Collection<String>, targetAppNames: Collection<String> = emptyList()) {
         stopCurrentSessionInternal(discard = true)
 
         val tempFile = File(context.cacheDir, "recording_temp_${System.currentTimeMillis()}.tmp")
         currentTempFile = tempFile
         currentWriter = BufferedWriter(FileWriter(tempFile, true))
 
+        val pkgsSet = targetPackages.filter { it.isNotBlank() }.toSet()
+        val namesList = targetAppNames.filter { it.isNotBlank() }.distinct()
+
+        val displayAppName = when {
+            namesList.isNotEmpty() -> namesList.joinToString(", ")
+            pkgsSet.isNotEmpty() -> pkgsSet.joinToString(", ")
+            else -> "Todos os Apps do Sistema"
+        }
+        val displayPkg = when {
+            pkgsSet.isNotEmpty() -> pkgsSet.joinToString(", ")
+            else -> "Global"
+        }
+
         _session.value = ActiveSessionInfo(
             state = RecordingState.RECORDING,
-            targetPackage = targetPackage,
-            targetAppName = targetAppName,
+            targetPackage = pkgsSet.firstOrNull(),
+            targetAppName = displayAppName,
+            targetPackages = pkgsSet,
+            targetAppNames = namesList,
             startTime = System.currentTimeMillis(),
             linesRecorded = 0L,
             bytesWritten = 0L,
@@ -79,7 +103,7 @@ class LogRecordingsManager(private val context: Context) {
         val header = buildString {
             appendLine("=================================================================")
             appendLine("VIAGARA LAUNCHER - SESSÃO DE GRAVAÇÃO DE LOGS (LOGFOX ENGINE)")
-            appendLine("Alvo       : ${targetAppName ?: "Todos os Apps do Sistema"} (${targetPackage ?: "Global"})")
+            appendLine("Alvo(s)    : $displayAppName ($displayPkg)")
             appendLine("Iniciado em: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}")
             appendLine("=================================================================\n")
         }
@@ -105,11 +129,16 @@ class LogRecordingsManager(private val context: Context) {
         val current = _session.value
         if (current.state != RecordingState.RECORDING) return
 
-        val pkg = current.targetPackage
-        if (pkg != null) {
-            val matches = line.packageName == pkg ||
-                    line.content.contains(pkg, ignoreCase = true) ||
-                    line.tag.contains(pkg, ignoreCase = true)
+        val pkgs = current.targetPackages.ifEmpty {
+            if (current.targetPackage != null) setOf(current.targetPackage) else emptySet()
+        }
+
+        if (pkgs.isNotEmpty()) {
+            val matches = (line.packageName != null && pkgs.contains(line.packageName)) ||
+                    pkgs.any { pkg ->
+                        line.content.contains(pkg, ignoreCase = true) ||
+                        line.tag.contains(pkg, ignoreCase = true)
+                    }
             if (!matches) return
         }
 
@@ -141,7 +170,12 @@ class LogRecordingsManager(private val context: Context) {
         }
 
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val cleanName = (sessionInfo.targetPackage ?: "global").replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        val cleanName = when {
+            sessionInfo.targetPackages.size > 1 -> "multi_${sessionInfo.targetPackages.size}apps"
+            sessionInfo.targetPackages.size == 1 -> sessionInfo.targetPackages.first().substringAfterLast('.').replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            !sessionInfo.targetPackage.isNullOrBlank() -> sessionInfo.targetPackage.substringAfterLast('.').replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            else -> "global"
+        }
         val dir = recordingsDir
 
         val savedFile = if (asZipWithDeviceInfo) {
