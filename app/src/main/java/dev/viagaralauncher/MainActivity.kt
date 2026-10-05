@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
         handleUpdateIntent(intent)
         handleLogViewerIntent(intent)
         handleBatteryStatsIntent(intent)
+        handleAnomalyInspectIntent(intent)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
@@ -95,6 +96,7 @@ class MainActivity : ComponentActivity() {
             intent.getBooleanExtra(dev.viagaralauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false) ||
             intent.action == dev.viagaralauncher.battery.DrainNotificationManager.ACTION_OPEN_BATTERY_STATS ||
             intent.getBooleanExtra(dev.viagaralauncher.battery.DrainNotificationManager.EXTRA_OPEN_BATTERY_STATS, false) ||
+            intent.action == dev.viagaralauncher.root.anomaly.BackgroundAnomalyNotificationManager.ACTION_INSPECT_APP ||
             intent.hasExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_OPEN_CRASH_ID) ||
             intent.hasExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_CRASH_PACKAGE)
 
@@ -106,11 +108,20 @@ class MainActivity : ComponentActivity() {
         handleUpdateIntent(intent)
         handleLogViewerIntent(intent)
         handleBatteryStatsIntent(intent)
+        handleAnomalyInspectIntent(intent)
     }
 
     override fun onResume() {
         super.onResume()
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.onLauncherResume()
+    }
+
+    private fun handleAnomalyInspectIntent(intent: Intent?) {
+        if (intent == null) return
+        if (intent.action == dev.viagaralauncher.root.anomaly.BackgroundAnomalyNotificationManager.ACTION_INSPECT_APP) {
+            val pkg = intent.getStringExtra(dev.viagaralauncher.root.anomaly.BackgroundAnomalyNotificationManager.EXTRA_PACKAGE_NAME)
+            dev.viagaralauncher.root.TaskManagerEvents.open(pkg)
+        }
     }
 
     private fun handleUpdateIntent(intent: Intent?) {

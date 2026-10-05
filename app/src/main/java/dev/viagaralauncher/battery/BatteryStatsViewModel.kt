@@ -33,6 +33,9 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     )
     val isDrainNotificationEnabled: StateFlow<Boolean> = _isDrainNotificationEnabled.asStateFlow()
 
+    private val anomalyWatcher = dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(context)
+    val anomalyConfig: StateFlow<dev.viagaralauncher.root.anomaly.AnomalyWatcherConfig> = anomalyWatcher.config
+
     private val _hasRoot = MutableStateFlow(false)
     val hasRoot: StateFlow<Boolean> = _hasRoot.asStateFlow()
 
@@ -121,6 +124,10 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     fun toggleDrainNotification(enabled: Boolean) {
         DrainNotificationManager.setNotificationEnabled(context, enabled)
         _isDrainNotificationEnabled.value = enabled
+    }
+
+    fun toggleAnomalyNotification(enabled: Boolean) {
+        anomalyWatcher.updateConfig(anomalyWatcher.config.value.copy(isEnabled = enabled))
     }
 
     fun resetDrainSession() {

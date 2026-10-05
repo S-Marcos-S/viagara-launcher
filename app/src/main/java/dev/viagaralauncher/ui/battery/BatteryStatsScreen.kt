@@ -83,6 +83,8 @@ fun BatteryStatsScreen(
     val error by vm.error.collectAsStateWithLifecycle()
     val drainState by vm.drainState.collectAsStateWithLifecycle()
     val isDrainNotificationEnabled by vm.isDrainNotificationEnabled.collectAsStateWithLifecycle()
+    val anomalyConfig by vm.anomalyConfig.collectAsStateWithLifecycle()
+    var showAnomalySettingsDialog by remember { mutableStateOf(false) }
     val hasRoot by vm.hasRoot.collectAsStateWithLifecycle()
     val hasAdb by vm.hasAdb.collectAsStateWithLifecycle()
     val hasAdvanced by vm.hasAdvanced.collectAsStateWithLifecycle()
@@ -229,6 +231,13 @@ fun BatteryStatsScreen(
                     }) {
                         Icon(Icons.Outlined.RestartAlt, stringResource(R.string.reset_stats))
                     }
+                    IconButton(onClick = { showAnomalySettingsDialog = true }) {
+                        Icon(
+                            imageVector = if (anomalyConfig.isEnabled) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
+                            contentDescription = stringResource(R.string.anomaly_dialog_title),
+                            tint = if (anomalyConfig.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 },
                 scrollBehavior = scrollBehavior
             )
@@ -305,6 +314,9 @@ fun BatteryStatsScreen(
                                 onResetDrainSession = { vm.resetDrainSession() },
                                 batteryLiveInfo = liveBatteryInfo,
                                 batteryDischargeHistory = batteryDischargeHistory,
+                                anomalyConfig = anomalyConfig,
+                                onToggleAnomalyNotification = { vm.toggleAnomalyNotification(it) },
+                                onOpenAnomalySettings = { showAnomalySettingsDialog = true },
                             )
                             1 -> AppsTab(snapshot?.apps ?: emptyList())
                             2 -> {
@@ -371,6 +383,12 @@ fun BatteryStatsScreen(
                 }
             }
         }
+    }
+
+    if (showAnomalySettingsDialog) {
+        dev.viagaralauncher.ui.root.BackgroundAnomalySettingsDialog(
+            onDismissRequest = { showAnomalySettingsDialog = false },
+        )
     }
 }
 
@@ -676,6 +694,9 @@ private fun OverviewTab(
     onResetDrainSession: () -> Unit,
     batteryLiveInfo: SystemTaskInspector.BatteryInfoSample?,
     batteryDischargeHistory: List<Float>,
+    anomalyConfig: dev.viagaralauncher.root.anomaly.AnomalyWatcherConfig,
+    onToggleAnomalyNotification: (Boolean) -> Unit,
+    onOpenAnomalySettings: () -> Unit,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -693,6 +714,13 @@ private fun OverviewTab(
             LiveBatteryChartsCard(
                 batteryInfo = batteryLiveInfo,
                 history = batteryDischargeHistory,
+            )
+        }
+        item {
+            BackgroundAnomalyCard(
+                config = anomalyConfig,
+                onToggle = onToggleAnomalyNotification,
+                onOpenSettings = onOpenAnomalySettings,
             )
         }
         item { SummaryCard(snapshot) }
@@ -898,6 +926,76 @@ private fun ChartSpecItem(
             color = MaterialTheme.colorScheme.onSurface,
             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
         )
+    }
+}
+
+@Composable
+private fun BackgroundAnomalyCard(
+    config: dev.viagaralauncher.root.anomaly.AnomalyWatcherConfig,
+    onToggle: (Boolean) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    FrostedCard(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(2.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = if (config.isEnabled) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
+                        contentDescription = null,
+                        tint = if (config.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.battery_anomaly_card_title),
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    IconButton(
+                        onClick = onOpenSettings,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Tune,
+                            contentDescription = stringResource(R.string.battery_anomaly_configure),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Switch(
+                        checked = config.isEnabled,
+                        onCheckedChange = onToggle,
+                        modifier = Modifier.scale(0.80f)
+                    )
+                }
+            }
+
+            Text(
+                text = stringResource(R.string.battery_anomaly_card_desc),
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

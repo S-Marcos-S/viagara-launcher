@@ -52,6 +52,15 @@ class ViagaraApp : Application() {
         if (dev.viagaralauncher.battery.DrainNotificationManager.isNotificationEnabled(this)) {
             dev.viagaralauncher.battery.DrainNotificationManager.getInstance(this).startNotification()
         }
+        val anomalyWatcher = dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(this)
+        if (anomalyWatcher.config.value.isEnabled) {
+            anomalyWatcher.start()
+        }
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(this).onSystemTrimMemory(level)
     }
 
     companion object {

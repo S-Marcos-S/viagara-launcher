@@ -58,6 +58,8 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -178,6 +180,22 @@ fun TaskManagerScreen(
 
     // Detail dialog trigger for selecting an app
     var inspectingApp by remember { mutableStateOf<AppInfo?>(null) }
+    var showAnomalySettingsDialog by remember { mutableStateOf(false) }
+
+    val anomalyWatcher = remember { dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(context) }
+    val anomalyConfig by anomalyWatcher.config.collectAsState()
+
+    val targetPackageToInspect by dev.viagaralauncher.root.TaskManagerEvents.targetPackage.collectAsState()
+    LaunchedEffect(targetPackageToInspect, allApps) {
+        val targetPkg = targetPackageToInspect
+        if (!targetPkg.isNullOrBlank()) {
+            val foundApp = allApps.firstOrNull { it.packageName == targetPkg }
+            if (foundApp != null) {
+                inspectingApp = foundApp
+                dev.viagaralauncher.root.TaskManagerEvents.consume()
+            }
+        }
+    }
 
     fun refreshAll(showSpinner: Boolean = false) {
         scope.launch {
@@ -257,6 +275,8 @@ fun TaskManagerScreen(
                     }
                 },
                 onNavigateBack = onNavigateBack,
+                onOpenAnomalySettings = { showAnomalySettingsDialog = true },
+                isWatcherActive = anomalyConfig.isEnabled,
             )
         },
     ) { paddingValues ->
@@ -343,6 +363,18 @@ fun TaskManagerScreen(
                     onDismissRequest = { inspectingApp = null },
                 )
             }
+
+            if (showAnomalySettingsDialog) {
+                BackgroundAnomalySettingsDialog(
+                    onDismissRequest = { showAnomalySettingsDialog = false },
+                    onInspectPackage = { pkg ->
+                        val foundApp = allApps.firstOrNull { it.packageName == pkg }
+                        if (foundApp != null) {
+                            inspectingApp = foundApp
+                        }
+                    },
+                )
+            }
         }
     }
 }
@@ -352,6 +384,8 @@ private fun CleanTaskManagerTopBar(
     selectedTab: TaskManagerTab,
     onTabSelect: (TaskManagerTab) -> Unit,
     onNavigateBack: () -> Unit,
+    onOpenAnomalySettings: () -> Unit,
+    isWatcherActive: Boolean,
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -364,7 +398,7 @@ private fun CleanTaskManagerTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 6.dp, end = 14.dp, top = 4.dp, bottom = 6.dp),
+                .padding(start = 6.dp, end = 10.dp, top = 4.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
@@ -378,7 +412,7 @@ private fun CleanTaskManagerTopBar(
                 )
             }
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
 
             // Cabeçalho com os nomes Processos e Desempenho
             Row(
@@ -403,6 +437,19 @@ private fun CleanTaskManagerTopBar(
                     selected = selectedTab == TaskManagerTab.PERFORMANCE,
                     onClick = { onTabSelect(TaskManagerTab.PERFORMANCE) },
                     modifier = Modifier.weight(1f),
+                )
+            }
+
+            Spacer(Modifier.width(6.dp))
+
+            IconButton(
+                onClick = onOpenAnomalySettings,
+                modifier = Modifier.size(38.dp),
+            ) {
+                Icon(
+                    imageVector = if (isWatcherActive) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
+                    contentDescription = stringResource(R.string.anomaly_dialog_title),
+                    tint = if (isWatcherActive) colorScheme.primary else colorScheme.onSurfaceVariant,
                 )
             }
         }

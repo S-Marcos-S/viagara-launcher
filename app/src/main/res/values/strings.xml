@@ -888,4 +888,38 @@
         <item quantity="one">%1$d setting imported</item>
         <item quantity="other">%1$d settings imported</item>
     </plurals>
+
+    <!-- Background Anomaly Watcher -->
+    <string name="anomaly_channel_name">Background Resource Alerts</string>
+    <string name="anomaly_channel_desc">Notifies when background apps consume high network, CPU or RAM.</string>
+    <string name="anomaly_notif_net_title">🌐 %1$s using data in background</string>
+    <string name="anomaly_notif_cpu_title">⚡ %1$s with high background CPU</string>
+    <string name="anomaly_notif_ram_title">💾 %1$s with high RAM usage</string>
+    <string name="anomaly_desc_net_screen_off">%1$s transferred %2$s in background while screen was off for %3$s min.</string>
+    <string name="anomaly_desc_net_screen_on">%1$s transferred %2$s in background in the last %3$s seconds.</string>
+    <string name="anomaly_desc_cpu">%1$s is consuming %2$s continuous CPU in background.</string>
+    <string name="anomaly_desc_ram">%1$s is holding %2$s of RAM under system memory pressure.</string>
+    <string name="anomaly_action_force_stop">Force stop</string>
+    <string name="anomaly_action_inspect">Inspect</string>
+    <string name="anomaly_action_mute_1h">Mute (1h)</string>
+    <string name="anomaly_toast_force_stopped">%1$s was stopped.</string>
+    <string name="anomaly_toast_open_settings">Open settings to force stop %1$s.</string>
+    <string name="anomaly_toast_muted">Alerts for %1$s muted for 1 hour.</string>
+    <string name="anomaly_sensitivity_high">High (More sensitive)</string>
+    <string name="anomaly_sensitivity_balanced">Balanced (Recommended)</string>
+    <string name="anomaly_sensitivity_low">Low (Only extreme usage)</string>
+    <string name="anomaly_dialog_title">Background Watcher</string>
+    <string name="anomaly_dialog_subtitle">Ultralight detection with zero battery impact</string>
+    <string name="anomaly_enable_watcher">Enable background alerts</string>
+    <string name="anomaly_opt_network">Network data alerts</string>
+    <string name="anomaly_opt_cpu">Continuous CPU alerts</string>
+    <string name="anomaly_opt_ram">RAM memory pressure alerts</string>
+    <string name="anomaly_sensitivity_label">Detection sensitivity</string>
+    <string name="anomaly_recent_alerts">Recent Alerts</string>
+    <string name="anomaly_no_recent_alerts">No background anomalies detected recently.</string>
+    <string name="anomaly_deep_sleep_badge">Screen Off (Deep Sleep)</string>
+    <string name="anomaly_screen_on_badge">Screen On</string>
+    <string name="battery_anomaly_card_title">Background Consumption Alerts</string>
+    <string name="battery_anomaly_card_desc">Notifies when background apps abuse internet data, CPU or RAM, with zero impact on deep sleep.</string>
+    <string name="battery_anomaly_configure">Configure</string>
 </resources>

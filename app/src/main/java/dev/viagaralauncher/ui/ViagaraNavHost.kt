@@ -110,6 +110,17 @@ fun ViagaraNavHost(
         }
     }
 
+    val openTaskManagerRequested by dev.viagaralauncher.root.TaskManagerEvents.openRequested.collectAsState()
+    LaunchedEffect(openTaskManagerRequested) {
+        if (openTaskManagerRequested) {
+            if (navController.currentDestination?.route != "task_manager") {
+                navController.navigate("task_manager") {
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
     var allApps by remember { mutableStateOf(emptyList<AppInfo>()) }
     suspend fun reloadApps() {
         allApps = withContext(Dispatchers.Default) { app.appRepository.queryAllApps() }

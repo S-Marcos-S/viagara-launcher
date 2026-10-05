@@ -899,4 +899,38 @@
         <item quantity="many">%1$d milhões de configurações importadas</item>
         <item quantity="other">%1$d configurações importadas</item>
     </plurals>
+
+    <!-- Monitor de Anomalias em Segundo Plano -->
+    <string name="anomaly_channel_name">Alertas de Recursos em Segundo Plano</string>
+    <string name="anomaly_channel_desc">Notifica quando aplicativos em segundo plano consomem rede, CPU ou memória excessivos.</string>
+    <string name="anomaly_notif_net_title">🌐 %1$s gastando dados em segundo plano</string>
+    <string name="anomaly_notif_cpu_title">⚡ %1$s com alto uso de CPU</string>
+    <string name="anomaly_notif_ram_title">💾 %1$s com alto uso de memória</string>
+    <string name="anomaly_desc_net_screen_off">%1$s transferiu %2$s em segundo plano enquanto a tela esteve apagada por %3$s min.</string>
+    <string name="anomaly_desc_net_screen_on">%1$s transferiu %2$s em segundo plano nos últimos %3$s segundos.</string>
+    <string name="anomaly_desc_cpu">%1$s está consumindo %2$s de processamento contínuo em segundo plano.</string>
+    <string name="anomaly_desc_ram">%1$s está consumindo %2$s de RAM sob alta pressão de memória do sistema.</string>
+    <string name="anomaly_action_force_stop">Forçar parada</string>
+    <string name="anomaly_action_inspect">Inspecionar</string>
+    <string name="anomaly_action_mute_1h">Silenciar (1h)</string>
+    <string name="anomaly_toast_force_stopped">%1$s foi finalizado.</string>
+    <string name="anomaly_toast_open_settings">Abra as configurações para forçar a parada de %1$s.</string>
+    <string name="anomaly_toast_muted">Alertas de %1$s silenciados por 1 hora.</string>
+    <string name="anomaly_sensitivity_high">Alta (Mais sensível)</string>
+    <string name="anomaly_sensitivity_balanced">Equilibrada (Recomendado)</string>
+    <string name="anomaly_sensitivity_low">Baixa (Apenas abusos extremos)</string>
+    <string name="anomaly_dialog_title">Monitor de Segundo Plano</string>
+    <string name="anomaly_dialog_subtitle">Detecção ultraleve com impacto zero na bateria</string>
+    <string name="anomaly_enable_watcher">Ativar notificações em segundo plano</string>
+    <string name="anomaly_opt_network">Alertas de tráfego de rede (Internet)</string>
+    <string name="anomaly_opt_cpu">Alertas de uso contínuo de processador</string>
+    <string name="anomaly_opt_ram">Alertas de memória RAM sob pressão</string>
+    <string name="anomaly_sensitivity_label">Sensibilidade de detecção</string>
+    <string name="anomaly_recent_alerts">Alertas Recentes</string>
+    <string name="anomaly_no_recent_alerts">Nenhuma anomalia detectada recentemente.</string>
+    <string name="anomaly_deep_sleep_badge">Tela Apagada (Deep Sleep)</string>
+    <string name="anomaly_screen_on_badge">Tela Ligada</string>
+    <string name="battery_anomaly_card_title">Alertas de Consumo em Segundo Plano</string>
+    <string name="battery_anomaly_card_desc">Notifica quando aplicativos em segundo plano abusarem de internet, processador ou memória, com impacto zero no sono profundo.</string>
+    <string name="battery_anomaly_configure">Configurar</string>
 </resources>

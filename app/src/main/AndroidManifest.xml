@@ -135,5 +135,15 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".root.anomaly.BackgroundAnomalyReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="dev.viagaralauncher.action.ANOMALY_FORCE_STOP" />
+                <action android:name="dev.viagaralauncher.action.ANOMALY_MUTE_APP" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 </manifest>
