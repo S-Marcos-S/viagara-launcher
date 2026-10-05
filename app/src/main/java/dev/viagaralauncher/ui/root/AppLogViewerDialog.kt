@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -756,9 +757,9 @@ fun AppLogViewerDialog(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxSize(),
                     ) {
-                        if (sourceApp != null) {
+                        if (activeTargetApp != null) {
                             AppIcon(
-                                app = sourceApp,
+                                app = activeTargetApp!!,
                                 sizeDp = 34,
                                 modifier = Modifier.clip(RoundedCornerShape(8.dp)),
                             )
