@@ -79,7 +79,7 @@ data class LogFilterAppProcessItem(
     val key: String,
     val label: String,
     val packageName: String?,
-    val processName: String?,
+    val processName: String? = null,
     val pid: String? = null,
     val appInfo: AppInfo? = null,
     val isSystem: Boolean = false,

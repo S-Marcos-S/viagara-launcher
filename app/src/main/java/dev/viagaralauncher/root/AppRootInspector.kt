@@ -221,7 +221,7 @@ object AppRootInspector {
                 done
                 $extraPidsScript
                 echo "===TOP==="
-                top -b -n 1 -q 2>/dev/null | $topGrep
+                top -b -n 1 -q -m 500 2>/dev/null | $topGrep
                 echo "===PS==="
                 ps -A -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null | $psGrep
                 echo "===SMAPS==="
@@ -280,7 +280,8 @@ object AppRootInspector {
             topProcesses.forEach { processes.add(it) }
             psProcesses.forEach { psProc ->
                 if (processes.none { it.pid == psProc.pid }) {
-                    processes.add(psProc)
+                    // Process present in ps but not active in top (sleeping/idle): instantaneous CPU is 0.0
+                    processes.add(psProc.copy(cpuPercent = 0.0))
                 }
             }
 
@@ -579,9 +580,47 @@ object AppRootInspector {
 
     /**
      * Prevents the app from running in the background via root.
+     * Works effectively even if the app was previously granted "Unrestricted" (Irrestrita)
+     * battery access by revoking the Doze/deviceidle whitelist, enforcing AppOps RUN_ANY_IN_BACKGROUND ignore,
+     * and demoting to the restricted standby bucket.
      */
-    suspend fun restrictBackgroundUsage(packageName: String): Boolean = withContext(Dispatchers.IO) {
-        val result = runSuCommand("cmd appops set $packageName RUN_IN_BACKGROUND ignore; cmd appops set $packageName RUN_ANY_IN_BACKGROUND ignore")
+    suspend fun restrictBackgroundUsage(packageName: String, context: Context? = null): Boolean = withContext(Dispatchers.IO) {
+        val targetUid = context?.let { ctx ->
+            runCatching {
+                ctx.packageManager.getPackageUid(packageName, 0)
+            }.getOrNull()
+        }
+        val uidCommands = if (targetUid != null) {
+            "cmd appops set --uid $targetUid RUN_IN_BACKGROUND ignore 2>/dev/null; " +
+            "cmd appops set --uid $targetUid RUN_ANY_IN_BACKGROUND ignore 2>/dev/null; " +
+            "appops set --uid $targetUid RUN_IN_BACKGROUND ignore 2>/dev/null; " +
+            "appops set --uid $targetUid RUN_ANY_IN_BACKGROUND ignore 2>/dev/null; "
+        } else ""
+
+        val command = buildString {
+            // 1. Remove from Doze/DeviceIdle whitelist (crucial when app is set to "Irrestrita")
+            append("dumpsys deviceidle whitelist -$packageName 2>/dev/null; ")
+            append("cmd deviceidle whitelist -$packageName 2>/dev/null; ")
+            append("cmd deviceidle except-idle-whitelist -$packageName 2>/dev/null; ")
+            // 2. Set AppOps by package name
+            append("cmd appops set $packageName RUN_IN_BACKGROUND ignore 2>/dev/null; ")
+            append("cmd appops set $packageName RUN_ANY_IN_BACKGROUND ignore 2>/dev/null; ")
+            append("cmd appops set --uid $packageName RUN_IN_BACKGROUND ignore 2>/dev/null; ")
+            append("cmd appops set --uid $packageName RUN_ANY_IN_BACKGROUND ignore 2>/dev/null; ")
+            append("appops set $packageName RUN_IN_BACKGROUND ignore 2>/dev/null; ")
+            append("appops set $packageName RUN_ANY_IN_BACKGROUND ignore 2>/dev/null; ")
+            // 3. Set UID AppOps if resolved
+            append(uidCommands)
+            // 4. Android 13+ (API 33+) background restriction level
+            append("cmd activity set-bg-restriction-level $packageName restricted 2>/dev/null; ")
+            // 5. Standby bucket restriction
+            append("cmd activity set-standby-bucket $packageName restricted 2>/dev/null || am set-standby-bucket $packageName restricted 2>/dev/null; ")
+            // 6. Force app inactive
+            append("am set-inactive $packageName true 2>/dev/null; ")
+            append("echo 'OK'")
+        }
+
+        val result = runSuCommand(command)
         result.isSuccess
     }
 

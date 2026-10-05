@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -105,6 +106,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -190,6 +192,7 @@ fun AppLogViewerDialog(
                     key = initialApp.packageName,
                     label = initialApp.label,
                     packageName = initialApp.packageName,
+                    processName = initialApp.packageName,
                     appInfo = initialApp,
                 )
             )
@@ -199,6 +202,7 @@ fun AppLogViewerDialog(
                     key = initialPackageName,
                     label = initialPackageName.substringAfterLast('.'),
                     packageName = initialPackageName,
+                    processName = initialPackageName,
                 )
             )
         }
@@ -968,9 +972,9 @@ internal fun LiveLogsTab(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 6.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // Quick App Filter Selector Button
             if (onOpenSelectAppDialog != null) {
@@ -983,60 +987,65 @@ internal fun LiveLogsTab(
                 }
                 Box(
                     modifier = Modifier
-                        .height(34.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .height(30.dp)
+                        .clip(RoundedCornerShape(7.dp))
                         .background(if (isFiltered) colorScheme.primary.copy(alpha = 0.18f) else colorScheme.onSurface.copy(alpha = 0.06f))
-                        .border(1.dp, if (isFiltered) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                        .border(1.dp, if (isFiltered) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(7.dp))
                         .clickable { onOpenSelectAppDialog() }
-                        .padding(horizontal = 8.dp),
+                        .padding(horizontal = 6.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.FilterList,
                             contentDescription = "Filtrar por aplicativo ou processo",
                             tint = if (isFiltered) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.7f),
-                            modifier = Modifier.size(14.dp),
+                            modifier = Modifier.size(13.dp),
                         )
                         Text(
                             text = buttonText,
                             color = if (isFiltered) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.7f),
-                            fontSize = 10.5.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 64.dp),
                         )
                     }
                 }
             }
-            // Search Input Field
+            // Search Input Field with integrated Case-Sensitive (Aa) toggle
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .height(30.dp)
+                    .clip(RoundedCornerShape(7.dp))
                     .background(colorScheme.onSurface.copy(alpha = 0.06f))
-                    .border(1.dp, colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp),
+                    .border(1.dp, colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(7.dp))
+                    .padding(start = 7.dp, end = 4.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Search,
                         contentDescription = null,
                         tint = colorScheme.onSurface.copy(alpha = 0.5f),
-                        modifier = Modifier.size(15.dp),
+                        modifier = Modifier.size(14.dp),
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(5.dp))
                     BasicTextField(
                         value = searchQuery,
                         onValueChange = onSearchQueryChange,
                         singleLine = true,
                         textStyle = TextStyle(
                             color = colorScheme.onSurface,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
                         ),
                         cursorBrush = SolidColor(colorScheme.primary),
@@ -1052,7 +1061,7 @@ internal fun LiveLogsTab(
                                     Text(
                                         text = "Pesquisar tag, mensagem, PID...",
                                         color = colorScheme.onSurface.copy(alpha = 0.4f),
-                                        fontSize = 11.5.sp,
+                                        fontSize = 11.sp,
                                         fontFamily = FontFamily.Monospace,
                                         maxLines = 1,
                                     )
@@ -1061,44 +1070,51 @@ internal fun LiveLogsTab(
                             }
                         },
                     )
+
+                    // Integrated Case-Sensitive (Aa) toggle
+                    Box(
+                        modifier = Modifier
+                            .height(20.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (caseSensitive) colorScheme.primary.copy(alpha = 0.22f) else Color.Transparent)
+                            .border(
+                                0.8.dp,
+                                if (caseSensitive) colorScheme.primary else colorScheme.outline.copy(alpha = 0.2f),
+                                RoundedCornerShape(4.dp),
+                            )
+                            .clickable { onCaseSensitiveToggle() }
+                            .padding(horizontal = 4.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "Aa",
+                            color = if (caseSensitive) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.55f),
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+
                     if (searchQuery.isNotEmpty()) {
+                        Spacer(Modifier.width(3.dp))
                         Icon(
                             imageVector = Icons.Filled.Clear,
                             contentDescription = "Limpar",
                             tint = colorScheme.onSurface.copy(alpha = 0.6f),
                             modifier = Modifier
-                                .size(14.dp)
+                                .size(13.dp)
                                 .clickable { onSearchQueryChange("") },
                         )
                     }
                 }
             }
 
-            // Case sensitive toggle
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (caseSensitive) colorScheme.primary.copy(alpha = 0.2f) else colorScheme.onSurface.copy(alpha = 0.06f))
-                    .border(1.dp, if (caseSensitive) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                    .clickable { onCaseSensitiveToggle() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "Aa",
-                    color = if (caseSensitive) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
             // Auto-scroll toggle
             Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(7.dp))
                     .background(if (autoScrollToBottom) colorScheme.primary.copy(alpha = 0.2f) else colorScheme.onSurface.copy(alpha = 0.06f))
-                    .border(1.dp, if (autoScrollToBottom) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .border(1.dp, if (autoScrollToBottom) colorScheme.primary else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(7.dp))
                     .clickable { onToggleAutoScroll() },
                 contentAlignment = Alignment.Center,
             ) {
@@ -1106,17 +1122,17 @@ internal fun LiveLogsTab(
                     imageVector = Icons.Filled.ArrowDownward,
                     contentDescription = "Rolar automaticamente",
                     tint = if (autoScrollToBottom) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(15.dp),
                 )
             }
 
             // Pause/Resume Stream
             Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(7.dp))
                     .background(if (isStreamingPaused) Color(0xFFF59E0B).copy(alpha = 0.2f) else colorScheme.onSurface.copy(alpha = 0.06f))
-                    .border(1.dp, if (isStreamingPaused) Color(0xFFF59E0B) else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .border(1.dp, if (isStreamingPaused) Color(0xFFF59E0B) else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(7.dp))
                     .clickable { onTogglePauseStream() },
                 contentAlignment = Alignment.Center,
             ) {
@@ -1124,17 +1140,17 @@ internal fun LiveLogsTab(
                     imageVector = if (isStreamingPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
                     contentDescription = if (isStreamingPaused) "Retomar" else "Pausar",
                     tint = if (isStreamingPaused) Color(0xFFF59E0B) else colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(15.dp),
                 )
             }
 
             // Record / Save Button
             Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(7.dp))
                     .background(if (isRecording) Color(0xFFEF4444).copy(alpha = 0.2f) else colorScheme.onSurface.copy(alpha = 0.06f))
-                    .border(1.dp, if (isRecording) Color(0xFFEF4444) else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .border(1.dp, if (isRecording) Color(0xFFEF4444) else colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(7.dp))
                     .clickable { onToggleRecording() },
                 contentAlignment = Alignment.Center,
             ) {
@@ -1142,17 +1158,17 @@ internal fun LiveLogsTab(
                     imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.FiberManualRecord,
                     contentDescription = if (isRecording) "Salvar gravação" else "Gravar logs",
                     tint = if (isRecording) Color(0xFFEF4444) else Color(0xFFEF4444).copy(alpha = 0.85f),
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(15.dp),
                 )
             }
 
             // Clear Buffer
             Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(7.dp))
                     .background(colorScheme.onSurface.copy(alpha = 0.06f))
-                    .border(1.dp, colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .border(1.dp, colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(7.dp))
                     .clickable { onClearBuffer() },
                 contentAlignment = Alignment.Center,
             ) {
@@ -1160,7 +1176,7 @@ internal fun LiveLogsTab(
                     imageVector = Icons.Filled.Delete,
                     contentDescription = "Limpar buffer",
                     tint = colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(15.dp),
                 )
             }
         }
@@ -1299,7 +1315,7 @@ internal fun LiveLogsTab(
                 selected = selectedLevel == null,
                 color = colorScheme.primary,
                 onClick = { onSelectLevel(null) },
-                modifier = Modifier.weight(1.3f),
+                modifier = Modifier.weight(2.0f),
             )
             LevelFilterChip(
                 label = "V",
@@ -1401,14 +1417,18 @@ private fun LevelFilterChip(
             .background(if (selected) color.copy(alpha = 0.22f) else colorScheme.onSurface.copy(alpha = 0.05f))
             .border(1.dp, if (selected) color else Color.Transparent, RoundedCornerShape(6.dp))
             .clickable { onClick() }
-            .padding(vertical = 4.dp),
+            .padding(horizontal = 2.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
             color = if (selected) color else colorScheme.onSurface.copy(alpha = 0.7f),
             fontSize = 9.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

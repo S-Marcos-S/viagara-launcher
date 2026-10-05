@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.RandomAccessFile
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
@@ -100,6 +101,92 @@ object SystemTaskInspector {
 
     private data class NetSample(val rx: Long, val tx: Long, val timestamp: Long)
     private val lastNetSample = AtomicReference<NetSample?>(null)
+
+    private data class ProcCpuSnapshot(val cpuTimeMs: Long, val timestampMs: Long)
+    private val processCpuHistory = ConcurrentHashMap<Int, ProcCpuSnapshot>()
+
+    /**
+     * Parses time strings produced by ps (e.g., "0:01.01", "52:15.18", "01:36:15.22", "1-02:03:04.50")
+     * into total milliseconds.
+     */
+    fun parseCpuTimeToMs(timeStr: String): Long {
+        val trimmed = timeStr.trim()
+        if (trimmed.isEmpty()) return 0L
+
+        var days = 0L
+        var rest = trimmed
+        if (rest.contains("-")) {
+            val dStr = rest.substringBefore("-")
+            days = dStr.toLongOrNull() ?: 0L
+            rest = rest.substringAfter("-")
+        }
+
+        val parts = rest.split(":")
+        return when (parts.size) {
+            3 -> {
+                val h = parts[0].toLongOrNull() ?: 0L
+                val m = parts[1].toLongOrNull() ?: 0L
+                val secParts = parts[2].split(".")
+                val s = secParts[0].toLongOrNull() ?: 0L
+                val ms = if (secParts.size > 1) {
+                    secParts[1].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
+                } else 0L
+                days * 86_400_000L + h * 3_600_000L + m * 60_000L + s * 1_000L + ms
+            }
+            2 -> {
+                val m = parts[0].toLongOrNull() ?: 0L
+                val secParts = parts[1].split(".")
+                val s = secParts[0].toLongOrNull() ?: 0L
+                val ms = if (secParts.size > 1) {
+                    secParts[1].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
+                } else 0L
+                days * 86_400_000L + m * 60_000L + s * 1_000L + ms
+            }
+            1 -> {
+                val secParts = parts[0].split(".")
+                val s = secParts[0].toLongOrNull() ?: 0L
+                val ms = if (secParts.size > 1) {
+                    secParts[1].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
+                } else 0L
+                days * 86_400_000L + s * 1_000L + ms
+            }
+            else -> 0L
+        }
+    }
+
+    /**
+     * Parses elapsed process uptime produced by ps (e.g., "00:05", "12:34", "01:23:45", "1-02:03:04")
+     * into total milliseconds.
+     */
+    fun parseElapsedTimeToMs(elapsedStr: String): Long {
+        val trimmed = elapsedStr.trim()
+        if (trimmed.isEmpty()) return 0L
+        var days = 0L
+        var rest = trimmed
+        if (rest.contains("-")) {
+            days = rest.substringBefore("-").toLongOrNull() ?: 0L
+            rest = rest.substringAfter("-")
+        }
+        val parts = rest.split(":")
+        return when (parts.size) {
+            3 -> {
+                val h = parts[0].toLongOrNull() ?: 0L
+                val m = parts[1].toLongOrNull() ?: 0L
+                val s = parts[2].toLongOrNull() ?: 0L
+                days * 86_400_000L + h * 3_600_000L + m * 60_000L + s * 1_000L
+            }
+            2 -> {
+                val m = parts[0].toLongOrNull() ?: 0L
+                val s = parts[1].toLongOrNull() ?: 0L
+                days * 86_400_000L + m * 60_000L + s * 1_000L
+            }
+            1 -> {
+                val s = parts[0].toLongOrNull() ?: 0L
+                days * 86_400_000L + s * 1_000L
+            }
+            else -> 0L
+        }
+    }
 
     fun readDeviceTotalNetBytes(): Pair<Long, Long> {
         val tsRx = TrafficStats.getTotalRxBytes()
@@ -228,7 +315,7 @@ object SystemTaskInspector {
             dumpsys window 2>/dev/null | grep -E "mCurrentFocus|mFocusedApp"
             dumpsys activity activities 2>/dev/null | grep -E "topResumedActivity|mResumedActivity"
             echo "===PS==="
-            ps -A -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null || ps -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null
+            ps -A -o PID,USER,S,%MEM,TIME+,ELAPSED,ARGS 2>/dev/null || ps -o PID,USER,S,%MEM,TIME+,ELAPSED,ARGS 2>/dev/null || ps -A -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null || ps -o PID,USER,%CPU,%MEM,ARGS 2>/dev/null
         """.trimIndent()
 
         val output = AppRootInspector.runSuCommand(shellScript).getOrDefault("")
@@ -243,22 +330,70 @@ object SystemTaskInspector {
         // to Solaris / Windows Task Manager total-system scale (where 100% = all cores fully utilized).
         val coresCount = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
 
-        // Parse processes
+        val nowRealtime = SystemClock.elapsedRealtime()
+        val currentPids = mutableSetOf<Int>()
+
+        // Parse processes with instantaneous delta CPU sampling (preventing cumulative lifetime %CPU decay)
         val rawList = mutableListOf<RawProc>()
         psText.lineSequence().forEach { line ->
             val trimmed = line.trim()
             if (trimmed.isEmpty() || trimmed.startsWith("PID")) return@forEach
             val tokens = trimmed.split(Regex("\\s+"))
-            if (tokens.size >= 5) {
-                val pid = tokens[0].toIntOrNull() ?: return@forEach
-                val user = tokens[1]
+            if (tokens.size < 5) return@forEach
+
+            val pid = tokens[0].toIntOrNull() ?: return@forEach
+            val user = tokens[1]
+            currentPids.add(pid)
+
+            // High-precision format with delta CPU calculation: PID,USER,S,%MEM,TIME+,ELAPSED,ARGS
+            val isHighPrecision = tokens.size >= 7 && (tokens[4].contains(":") || tokens[2].length == 1)
+
+            val (cpuPercent, memPercent, args) = if (isHighPrecision) {
+                val state = tokens[2]
+                val mem = tokens[3].toDoubleOrNull() ?: 0.0
+                val timeStr = tokens[4]
+                val elapsedStr = tokens[5]
+                val cmdArgs = tokens.subList(6, tokens.size).joinToString(" ")
+
+                val cpuTimeMs = parseCpuTimeToMs(timeStr)
+                val prev = processCpuHistory[pid]
+                processCpuHistory[pid] = ProcCpuSnapshot(cpuTimeMs, nowRealtime)
+
+                val cpu = if (prev != null) {
+                    val deltaCpuMs = (cpuTimeMs - prev.cpuTimeMs).coerceAtLeast(0L)
+                    val deltaWallMs = (nowRealtime - prev.timestampMs).coerceAtLeast(1L)
+                    if (deltaCpuMs == 0L) {
+                        0.0
+                    } else {
+                        ((deltaCpuMs.toDouble() / (deltaWallMs * coresCount)) * 100.0).coerceIn(0.0, 100.0)
+                    }
+                } else {
+                    // First observation of this PID
+                    if (state == "S" || state == "I" || state == "Z" || state == "T") {
+                        0.0
+                    } else {
+                        val elapsedMs = parseElapsedTimeToMs(elapsedStr)
+                        if (elapsedMs in 1..4000L) {
+                            ((cpuTimeMs.toDouble() / (elapsedMs * coresCount)) * 100.0).coerceIn(0.0, 100.0)
+                        } else {
+                            0.0
+                        }
+                    }
+                }
+                Triple(cpu, mem, cmdArgs)
+            } else {
                 val rawCpu = tokens[2].toDoubleOrNull() ?: 0.0
                 val normalizedCpu = (rawCpu / coresCount).coerceIn(0.0, 100.0)
                 val mem = tokens[3].toDoubleOrNull() ?: 0.0
-                val args = tokens.subList(4, tokens.size).joinToString(" ")
-                rawList.add(RawProc(pid, user, normalizedCpu, mem, args))
+                val cmdArgs = tokens.subList(4, tokens.size).joinToString(" ")
+                Triple(normalizedCpu, mem, cmdArgs)
             }
+
+            rawList.add(RawProc(pid, user, cpuPercent, memPercent, args))
         }
+
+        // Clean up history for dead/terminated PIDs
+        processCpuHistory.keys.retainAll(currentPids)
 
         // Get total system RAM to convert %MEM into MB
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager

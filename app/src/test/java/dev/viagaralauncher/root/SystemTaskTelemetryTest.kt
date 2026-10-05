@@ -47,4 +47,24 @@ class SystemTaskTelemetryTest {
         assertEquals(5.2, item.cpuPercent, 0.01)
         assertEquals(128.5, item.ramMb, 0.01)
     }
+
+    @Test
+    fun `parseCpuTimeToMs parses various ps time formats accurately`() {
+        assertEquals(50L, SystemTaskInspector.parseCpuTimeToMs("0:00.05"))
+        assertEquals(1010L, SystemTaskInspector.parseCpuTimeToMs("0:01.01"))
+        assertEquals(3135180L, SystemTaskInspector.parseCpuTimeToMs("52:15.18"))
+        assertEquals(5775220L, SystemTaskInspector.parseCpuTimeToMs("01:36:15.22"))
+        assertEquals(93784500L, SystemTaskInspector.parseCpuTimeToMs("1-02:03:04.50"))
+        assertEquals(0L, SystemTaskInspector.parseCpuTimeToMs(""))
+        assertEquals(0L, SystemTaskInspector.parseCpuTimeToMs("invalid"))
+    }
+
+    @Test
+    fun `parseElapsedTimeToMs parses various ps elapsed formats accurately`() {
+        assertEquals(5000L, SystemTaskInspector.parseElapsedTimeToMs("00:05"))
+        assertEquals(754000L, SystemTaskInspector.parseElapsedTimeToMs("12:34"))
+        assertEquals(5025000L, SystemTaskInspector.parseElapsedTimeToMs("01:23:45"))
+        assertEquals(183845000L, SystemTaskInspector.parseElapsedTimeToMs("2-03:04:05"))
+        assertEquals(0L, SystemTaskInspector.parseElapsedTimeToMs(""))
+    }
 }

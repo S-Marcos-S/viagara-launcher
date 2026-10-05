@@ -2009,7 +2009,7 @@ private fun ActionsTabContent(app: AppInfo, context: android.content.Context, sc
             borderColor = colorScheme.outline.copy(alpha = 0.2f),
             onClick = {
                 scope.launch {
-                    if (AppRootInspector.restrictBackgroundUsage(app.packageName)) {
+                    if (AppRootInspector.restrictBackgroundUsage(app.packageName, context)) {
                         Toast.makeText(context, "Uso em segundo plano impedido", Toast.LENGTH_SHORT).show()
                         onRefreshData()
                     }
