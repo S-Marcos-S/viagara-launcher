@@ -19,22 +19,22 @@ enum class AnomalySensitivity(
 ) {
     HIGH(
         labelRes = R.string.anomaly_sensitivity_high,
-        netScreenOnMb = 15L,
-        netScreenOffMb = 20L,
+        netScreenOnMb = 10L,
+        netScreenOffMb = 15L,
         cpuPercent = 12.0,
         ramMb = 400L,
     ),
     BALANCED(
         labelRes = R.string.anomaly_sensitivity_balanced,
-        netScreenOnMb = 30L,
-        netScreenOffMb = 35L,
+        netScreenOnMb = 20L,
+        netScreenOffMb = 25L,
         cpuPercent = 20.0,
         ramMb = 600L,
     ),
     LOW(
         labelRes = R.string.anomaly_sensitivity_low,
-        netScreenOnMb = 60L,
-        netScreenOffMb = 70L,
+        netScreenOnMb = 50L,
+        netScreenOffMb = 60L,
         cpuPercent = 32.0,
         ramMb = 850L,
     ),

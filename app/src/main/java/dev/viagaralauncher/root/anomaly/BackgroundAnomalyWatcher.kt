@@ -2,6 +2,8 @@
 package dev.viagaralauncher.root.anomaly
 
 import android.app.ActivityManager
+import android.app.usage.NetworkStats
+import android.app.usage.NetworkStatsManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
@@ -12,6 +14,7 @@ import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
 import android.net.TrafficStats
 import android.os.Build
 import android.os.PowerManager
@@ -81,6 +84,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
 
     private var isScreenInteractive = false
     private var screenOffTimeRealtime = 0L
+    private var screenOffWallTime = 0L
 
     private data class UidNetSample(val rx: Long, val tx: Long, val timestamp: Long)
 
@@ -173,6 +177,12 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
     fun start() {
         if (isRunning.getAndSet(true)) return
 
+        scope.launch(Dispatchers.IO) {
+            if (AppRootInspector.isRootAvailable()) {
+                AppRootInspector.runSuCommand("pm grant ${context.packageName} android.permission.PACKAGE_USAGE_STATS 2>/dev/null; appops set ${context.packageName} GET_USAGE_STATS allow 2>/dev/null")
+            }
+        }
+
         if (!screenReceiverRegistered) {
             val filter = IntentFilter().apply {
                 addAction(Intent.ACTION_SCREEN_OFF)
@@ -210,6 +220,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
     private fun onScreenTurnedOff() {
         isScreenInteractive = false
         screenOffTimeRealtime = SystemClock.elapsedRealtime()
+        screenOffWallTime = System.currentTimeMillis()
 
         // Regra de Ouro: suspende qualquer loop de polling ativo. O processador DEVE dormir 100%.
         screenOnLoopJob?.cancel()
@@ -225,8 +236,8 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
         val now = SystemClock.elapsedRealtime()
         val durationOffMs = now - screenOffTimeRealtime
 
-        // Se a tela ficou desligada por mais de 40 segundos, analisa a fotografia diferencial
-        if (screenOffTimeRealtime > 0L && durationOffMs >= 40_000L) {
+        // Se a tela ficou desligada por mais de 5 segundos, analisa a fotografia diferencial
+        if (screenOffTimeRealtime > 0L && durationOffMs >= 5_000L) {
             scope.launch(Dispatchers.IO) {
                 evaluateScreenOffDifferential(durationOffMs)
             }
@@ -263,6 +274,31 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
         }
     }
 
+    private fun collectUidUsageForInterval(
+        startTimeMs: Long,
+        endTimeMs: Long,
+        resultMap: MutableMap<Int, Long>,
+    ) {
+        val nsm = context.getSystemService(Context.NETWORK_STATS_SERVICE) as? NetworkStatsManager ?: return
+        fun query(type: Int) {
+            runCatching {
+                val stats = nsm.querySummary(type, null, startTimeMs, endTimeMs)
+                val bucket = NetworkStats.Bucket()
+                while (stats.hasNextBucket()) {
+                    stats.getNextBucket(bucket)
+                    val uid = bucket.uid
+                    if (uid >= 10000) {
+                        val prev = resultMap[uid] ?: 0L
+                        resultMap[uid] = prev + bucket.rxBytes + bucket.txBytes
+                    }
+                }
+                stats.close()
+            }
+        }
+        query(ConnectivityManager.TYPE_WIFI)
+        query(ConnectivityManager.TYPE_MOBILE)
+    }
+
     /**
      * Avalia a variação de dados (Delta Bytes) transmitidos enquanto o usuário esteve ausente com a tela apagada.
      */
@@ -272,16 +308,29 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
 
         val thresholdBytes = cfg.sensitivity.netScreenOffMb * 1024L * 1024L
         val pm = context.packageManager
+        val now = System.currentTimeMillis()
 
+        val deltaMap = mutableMapOf<Int, Long>()
+        val startWindow = (screenOffWallTime - 3_000L).coerceAtLeast(0L)
+        val endWindow = now + 1_000L
+
+        // 1. Android Native NetworkStatsManager query (funciona para todos os UIDs no Android 7+)
+        collectUidUsageForInterval(startWindow, endWindow, deltaMap)
+
+        // 2. Fallback via TrafficStats diff
         for ((uid, baseline) in screenOffNetSnapshots) {
             val curRx = TrafficStats.getUidRxBytes(uid)
             val curTx = TrafficStats.getUidTxBytes(uid)
-            if (curRx < baseline.rx || curTx < baseline.tx) continue // Reinício de contadores
+            if (curRx >= baseline.rx && curTx >= baseline.tx) {
+                val d = (curRx - baseline.rx) + (curTx - baseline.tx)
+                val current = deltaMap[uid] ?: 0L
+                if (d > current) {
+                    deltaMap[uid] = d
+                }
+            }
+        }
 
-            val deltaRx = curRx - baseline.rx
-            val deltaTx = curTx - baseline.tx
-            val deltaTotal = deltaRx + deltaTx
-
+        for ((uid, deltaTotal) in deltaMap) {
             if (deltaTotal >= thresholdBytes) {
                 val packages = pm.getPackagesForUid(uid) ?: continue
                 val pkgName = packages.firstOrNull() ?: continue
@@ -290,7 +339,6 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
                     continue
                 }
 
-                val now = System.currentTimeMillis()
                 val lastAlert = lastAlertTimeMap[pkgName] ?: 0L
                 if (now - lastAlert < COOLDOWN_MS) continue
 
@@ -356,57 +404,67 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
 
         // 1. Verificação de Rede (Internet) em Segundo Plano
         if (cfg.notifyNetwork) {
-            val installed = runCatching { pm.getInstalledApplications(0) }.getOrDefault(emptyList())
             val netThresholdBytes = cfg.sensitivity.netScreenOnMb * 1024L * 1024L
+            val onNetMap = mutableMapOf<Int, Long>()
+            val intervalStart = nowWall - SCREEN_ON_INTERVAL_MS - 2_000L
+            val intervalEnd = nowWall + 1_000L
+            collectUidUsageForInterval(intervalStart, intervalEnd, onNetMap)
 
+            // Merge TrafficStats se disponível
+            val installed = runCatching { pm.getInstalledApplications(0) }.getOrDefault(emptyList())
             for (app in installed) {
                 val uid = app.uid
-                val pkgName = app.packageName
-
-                // Ignora app em primeiro plano atual, launcher e lista de exceções
-                if (pkgName == fgPackage || pkgName == context.packageName || cfg.whitelistedPackages.contains(pkgName) || isPackageMuted(pkgName)) {
-                    continue
-                }
-
                 val curRx = TrafficStats.getUidRxBytes(uid)
                 val curTx = TrafficStats.getUidTxBytes(uid)
-                if (curRx <= 0L && curTx <= 0L) continue
-
-                val prev = activeNetSamples[uid]
-                activeNetSamples[uid] = UidNetSample(curRx, curTx, now)
-
-                if (prev != null && prev.rx <= curRx && prev.tx <= curTx) {
-                    val dtSec = (now - prev.timestamp) / 1000.0
-                    if (dtSec in 15.0..60.0) {
+                if (curRx > 0L || curTx > 0L) {
+                    val prev = activeNetSamples[uid]
+                    activeNetSamples[uid] = UidNetSample(curRx, curTx, now)
+                    if (prev != null && prev.rx <= curRx && prev.tx <= curTx) {
                         val dBytes = (curRx - prev.rx) + (curTx - prev.tx)
-                        if (dBytes >= netThresholdBytes) {
-                            val lastAlert = lastAlertTimeMap[pkgName] ?: 0L
-                            if (nowWall - lastAlert >= COOLDOWN_MS) {
-                                val appLabel = runCatching { pm.getApplicationLabel(app).toString() }.getOrDefault(pkgName)
-                                val icon = runCatching { pm.getApplicationIcon(app) }.getOrNull()
-                                val formatted = formatBytes(dBytes)
-                                val desc = context.getString(
-                                    dev.viagaralauncher.R.string.anomaly_desc_net_screen_on,
-                                    appLabel,
-                                    formatted,
-                                    dtSec.toInt().toString(),
-                                )
+                        val curr = onNetMap[uid] ?: 0L
+                        if (dBytes > curr) onNetMap[uid] = dBytes
+                    }
+                }
+            }
 
-                                val anomaly = AnomalyEvent(
-                                    packageName = pkgName,
-                                    appName = appLabel,
-                                    type = AnomalyType.NETWORK,
-                                    valueFormatted = formatted,
-                                    description = desc,
-                                    timestamp = nowWall,
-                                    screenWasOff = false,
-                                )
+            for ((uid, dBytes) in onNetMap) {
+                if (dBytes >= netThresholdBytes) {
+                    val packages = pm.getPackagesForUid(uid) ?: continue
+                    val pkgName = packages.firstOrNull() ?: continue
 
-                                recordAnomaly(anomaly)
-                                notificationManager.postAnomalyNotification(anomaly, icon)
-                                lastAlertTimeMap[pkgName] = nowWall
-                            }
-                        }
+                    if (pkgName == fgPackage || pkgName == context.packageName || cfg.whitelistedPackages.contains(pkgName) || isPackageMuted(pkgName)) {
+                        continue
+                    }
+
+                    val lastAlert = lastAlertTimeMap[pkgName] ?: 0L
+                    if (nowWall - lastAlert >= COOLDOWN_MS) {
+                        val appLabel = runCatching {
+                            val appInfo = pm.getApplicationInfo(pkgName, 0)
+                            pm.getApplicationLabel(appInfo).toString()
+                        }.getOrDefault(pkgName)
+
+                        val icon = runCatching { pm.getApplicationIcon(pkgName) }.getOrNull()
+                        val formatted = formatBytes(dBytes)
+                        val desc = context.getString(
+                            dev.viagaralauncher.R.string.anomaly_desc_net_screen_on,
+                            appLabel,
+                            formatted,
+                            "30",
+                        )
+
+                        val anomaly = AnomalyEvent(
+                            packageName = pkgName,
+                            appName = appLabel,
+                            type = AnomalyType.NETWORK,
+                            valueFormatted = formatted,
+                            description = desc,
+                            timestamp = nowWall,
+                            screenWasOff = false,
+                        )
+
+                        recordAnomaly(anomaly)
+                        notificationManager.postAnomalyNotification(anomaly, icon)
+                        lastAlertTimeMap[pkgName] = nowWall
                     }
                 }
             }
