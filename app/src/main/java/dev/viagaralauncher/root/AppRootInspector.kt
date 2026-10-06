@@ -724,19 +724,19 @@ object AppRootInspector {
                     if (d != null && d > 0.0) {
                         totalMah = d
                     }
-                    Regex("""cpu=([0-9]+(?:\\.[0-9]+)?)""").find(afterColon)?.let {
+                    Regex("""cpu=([0-9]+(?:\.[0-9]+)?)""").find(afterColon)?.let {
                         val c = it.groupValues[1].toDoubleOrNull() ?: 0.0
                         if (c > 0.0) cpuMah = c
                     }
-                    Regex("""wake=([0-9]+(?:\\.[0-9]+)?)""").find(afterColon)?.let {
+                    Regex("""wake=([0-9]+(?:\.[0-9]+)?)""").find(afterColon)?.let {
                         val w = it.groupValues[1].toDoubleOrNull() ?: 0.0
                         if (w > 0.0) wakelockMah = w
                     }
-                    Regex("""(?:mobile_radio|radio)=([0-9]+(?:\\.[0-9]+)?)""").find(afterColon)?.let {
+                    Regex("""(?:mobile_radio|radio)=([0-9]+(?:\.[0-9]+)?)""").find(afterColon)?.let {
                         val r = it.groupValues[1].toDoubleOrNull() ?: 0.0
                         if (r > 0.0) radioMah = r
                     }
-                    Regex("""wifi=([0-9]+(?:\\.[0-9]+)?)""").find(afterColon)?.let {
+                    Regex("""wifi=([0-9]+(?:\.[0-9]+)?)""").find(afterColon)?.let {
                         val wf = it.groupValues[1].toDoubleOrNull() ?: 0.0
                         if (wf > 0.0) wifiMah = wf
                     }

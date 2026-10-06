@@ -451,6 +451,11 @@ class AppRootInspectorTest {
         val data = AppRootInspector.parseBatteryStats(sampleDump, 10185)
 
         assertTrue("totalMah (${data.totalMah}) must be >= sum of components (6.0)", data.totalMah >= 6.0)
+        assertEquals(3.0, data.cpuMah, 0.001)
+        assertEquals(1.5, data.wakelockMah, 0.001)
+        assertEquals(1.0, data.mobileRadioMah, 0.001)
+        assertEquals(0.5, data.wifiMah, 0.001)
+        assertEquals(6.0, data.totalMah, 0.001)
     }
 }
 
