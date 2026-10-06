@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **106**
+Total de papéis de parede: **105**
 
 ### OLED (6)
 
@@ -33,7 +33,7 @@ Total de papéis de parede: **106**
 | <img src="thumbnails/wallpaper_wh_8xj3jo.webp" width="80" alt="Photoshopped" /> | `wallpaper_wh_8xj3jo` | **Photoshopped** | abstract, photoshopped |
 | <img src="thumbnails/wallpaper_wh_eyyreo.webp" width="80" alt="Gradient" /> | `wallpaper_wh_eyyreo` | **Gradient** | abstract, gradient, dark, shapes |
 
-### Anime (23)
+### Anime (22)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -55,7 +55,6 @@ Total de papéis de parede: **106**
 | <img src="thumbnails/wallpaper_wh_3zxokv.webp" width="80" alt="2d" /> | `wallpaper_wh_3zxokv` | **2d** | anime, 2D, Pixiv, petite |
 | <img src="thumbnails/wallpaper_wh_9drj2d.webp" width="80" alt="Trungbui" /> | `wallpaper_wh_9drj2d` | **Trungbui** | anime, Trungbui, illustration, Raven (DC Comics) |
 | <img src="thumbnails/wallpaper_wh_pkd9w3.webp" width="80" alt="Pantyhose" /> | `wallpaper_wh_pkd9w3` | **Pantyhose** | anime, pantyhose, heels, black pantyhose |
-| <img src="thumbnails/wallpaper_wh_z8gr9y.webp" width="80" alt="Himitsu" /> | `wallpaper_wh_z8gr9y` | **Himitsu** | anime, Himitsu, original characters, pantyhose |
 | <img src="thumbnails/wallpaper_wh_57od15.webp" width="80" alt="Fantasy Girl" /> | `wallpaper_wh_57od15` | **Fantasy Girl** | anime, fantasy girl, wataboku |
 | <img src="thumbnails/wallpaper_wh_yx7xqd.webp" width="80" alt="Piano" /> | `wallpaper_wh_yx7xqd` | **Piano** | anime, piano, musical instrument, dress |
 | <img src="thumbnails/wallpaper_wh_3zpde3.webp" width="80" alt="Wlop" /> | `wallpaper_wh_3zpde3` | **Wlop** | anime, WLOP, Ghostblade, Yan Haiqin |
