@@ -249,6 +249,51 @@
         "color burst",
         "smoke"
       ]
+    },
+    {
+      "id": "wallpaper_wh_k7rk61",
+      "name": "Genshin Impact",
+      "author": "Kiaressy",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_k7rk61.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_k7rk61.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "Genshin Impact",
+        "Keqing (Genshin Impact)",
+        "pantyhose"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_rrjevq",
+      "name": "Stars",
+      "author": "KongKreil",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_rrjevq.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_rrjevq.webp",
+      "primary_color": "#424153",
+      "category": "space",
+      "tags": [
+        "space",
+        "stars",
+        "Just Visions",
+        "calm"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_gpm233",
+      "name": "Hair Blowing In The Wind",
+      "author": "Owl279",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_gpm233.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_gpm233.webp",
+      "primary_color": "#999999",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "hair blowing in the wind",
+        "horizon",
+        "windmill"
+      ]
     }
   ]
 }
