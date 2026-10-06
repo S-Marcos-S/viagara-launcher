@@ -745,6 +745,80 @@
         "ASCII art",
         "skull"
       ]
+    },
+    {
+      "id": "wallpaper_wh_y8dvqk",
+      "name": "Xision Wu",
+      "author": "Elesorriu",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_y8dvqk.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_y8dvqk.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "Xision Wu",
+        "mythology",
+        "legend"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_0jm765",
+      "name": "Rocket",
+      "author": "kejsirajbek",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_0jm765.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_0jm765.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "rocket",
+        "spaceship",
+        "flying"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_d6qk9j",
+      "name": "New York City",
+      "author": "MahadiIslam",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_d6qk9j.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_d6qk9j.webp",
+      "primary_color": "#000000",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "New York City",
+        "urban",
+        "sunset"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_9drj2d",
+      "name": "Trungbui",
+      "author": "jrmnt",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_9drj2d.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_9drj2d.webp",
+      "primary_color": "#424153",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "Trungbui",
+        "illustration",
+        "Raven (DC Comics)"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_gj6zlq",
+      "name": "Glitch Art",
+      "author": "Zloigadik",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_gj6zlq.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_gj6zlq.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "glitch art",
+        "skull"
+      ]
     }
   ]
 }
