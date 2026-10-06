@@ -23,6 +23,16 @@ Launcher minimalista e ergonômico para Android baseado em lista vertical, inspi
 
 ---
 
+## ⚡ Recursos Avançados (Root Opcional)
+
+*(Ferramentas extras para usuários avançados; o launcher funciona 100% sem root)*
+
+- **Gerenciador de Processos:** Inspeção detalhada de memória/CPU e encerramento forçado de processos em segundo plano.
+- **Monitor de Desempenho:** Acompanhamento de taxas de uso de hardware em tempo real.
+- **Diagnóstico do Sistema:** Análise profunda de bateria (`batterystats`), rastreamento de anomalias e visualizador de crashes.
+
+---
+
 ## 📥 Download
 
 Baixe o APK da versão mais recente na aba **[Releases](https://github.com/S-Marcos-S/viagra-launcher/releases)**.
