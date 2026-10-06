@@ -72,6 +72,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -526,6 +527,7 @@ private fun WallpaperPreviewOverlay(
                             },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorScheme.primary,
                                 contentColor = colorScheme.onPrimary,
@@ -533,7 +535,9 @@ private fun WallpaperPreviewOverlay(
                         ) {
                             Text(
                                 text = stringResource(R.string.wallpaper_apply_home),
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center,
                                 maxLines = 1,
                             )
                         }
@@ -543,6 +547,7 @@ private fun WallpaperPreviewOverlay(
                                 onClick = { onApply(WallpaperManager.FLAG_LOCK) },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = colorScheme.surfaceContainerHigh,
                                     contentColor = colorScheme.onSurface,
@@ -550,7 +555,9 @@ private fun WallpaperPreviewOverlay(
                             ) {
                                 Text(
                                     text = stringResource(R.string.wallpaper_apply_lock),
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = TextAlign.Center,
                                     maxLines = 1,
                                 )
                             }
@@ -565,6 +572,7 @@ private fun WallpaperPreviewOverlay(
                             },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorScheme.secondaryContainer,
                                 contentColor = colorScheme.onSecondaryContainer,
@@ -572,7 +580,9 @@ private fun WallpaperPreviewOverlay(
                         ) {
                             Text(
                                 text = stringResource(R.string.wallpaper_apply_both),
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center,
                                 maxLines = 1,
                             )
                         }

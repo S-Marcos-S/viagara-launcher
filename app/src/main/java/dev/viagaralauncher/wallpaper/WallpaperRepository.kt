@@ -41,6 +41,13 @@ object WallpaperRepository {
     private const val REMOTE_CATALOG_URL =
         "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/catalog.json"
 
+    private val _wallpaperUpdateTick = kotlinx.coroutines.flow.MutableStateFlow(0L)
+    val wallpaperUpdateTick: kotlinx.coroutines.flow.StateFlow<Long> = _wallpaperUpdateTick
+
+    fun notifyWallpaperChanged() {
+        _wallpaperUpdateTick.value = System.currentTimeMillis()
+    }
+
     val DEFAULT_CATEGORIES = listOf(
         WallpaperCategory("all", "Todos"),
         WallpaperCategory("oled", "OLED"),
@@ -181,6 +188,7 @@ object WallpaperRepository {
             } else {
                 wm.setBitmap(bitmap)
             }
+            notifyWallpaperChanged()
             Unit
         }
     }

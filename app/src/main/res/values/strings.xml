@@ -45,7 +45,7 @@
     <string name="wallpaper_apply_title">Apply Wallpaper</string>
     <string name="wallpaper_apply_home">Home screen</string>
     <string name="wallpaper_apply_lock">Lock screen</string>
-    <string name="wallpaper_apply_both">Both screens</string>
+    <string name="wallpaper_apply_both">Both</string>
     <string name="wallpaper_applied_success">Wallpaper applied successfully!</string>
     <string name="wallpaper_apply_error">Failed to apply wallpaper.</string>
     <string name="wallpaper_applying">Applying wallpaper…</string>

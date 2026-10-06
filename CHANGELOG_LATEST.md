@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.59.69
+### 🚀 Novidades da Versão v0.59.70
 
-- **Filtro por Categorias:** Navegue pelos papéis de parede por categorias (OLED, Abstrato, Espaço, Natureza, etc.) com chips animados.
-- **Novos Wallpapers Curados:** Adicionados novos papéis de parede verticais em alta definição diretamente no catálogo.
-- **Sincronização Contínua:** Pipeline automatizado no GitHub Actions para curadoria periódica de novos papéis de parede.
+- **Cores Dinâmicas Imediatas:** Correção na atualização das cores do sistema logo na primeira troca de papel de parede.
+- **Ajuste nos Botões de Aplicação:** Tipografia e espaçamentos otimizados para encaixe perfeito dos textos em qualquer tamanho de tela.

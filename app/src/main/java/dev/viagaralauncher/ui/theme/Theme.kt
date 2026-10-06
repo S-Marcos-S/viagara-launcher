@@ -3,6 +3,8 @@ package dev.viagaralauncher.ui.theme
 
 import android.app.WallpaperManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -10,12 +12,21 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import dev.viagaralauncher.data.AppFont
+import dev.viagaralauncher.wallpaper.WallpaperRepository
+import kotlinx.coroutines.delay
 
 fun AppFont.toFontFamily(): FontFamily = when (this) {
     AppFont.SYSTEM -> FontFamily.Default
@@ -83,7 +94,37 @@ fun ViagaraTheme(
     }
     val context = LocalContext.current
 
-    val wallpaperPrimary = remember(context) {
+    val repoTick by WallpaperRepository.wallpaperUpdateTick.collectAsState()
+    var colorTick by remember { mutableIntStateOf(0) }
+
+    // When wallpaper is applied inside the app, trigger immediate update and staggered updates
+    // for Android Monet palette generation in SystemUI
+    LaunchedEffect(repoTick) {
+        if (repoTick > 0L) {
+            colorTick++
+            delay(300)
+            colorTick++
+            delay(400)
+            colorTick++
+        }
+    }
+
+    // Listen to system wallpaper color changes
+    DisposableEffect(context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) {
+            return@DisposableEffect onDispose { }
+        }
+        val wm = WallpaperManager.getInstance(context)
+        val listener = WallpaperManager.OnColorsChangedListener { _, which ->
+            if (which and WallpaperManager.FLAG_SYSTEM != 0) {
+                colorTick++
+            }
+        }
+        runCatching { wm.addOnColorsChangedListener(listener, Handler(Looper.getMainLooper())) }
+        onDispose { runCatching { wm.removeOnColorsChangedListener(listener) } }
+    }
+
+    val wallpaperPrimary = remember(context, colorTick) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             runCatching {
                 val wm = WallpaperManager.getInstance(context)
@@ -92,53 +133,55 @@ fun ViagaraTheme(
         } else null
     }
 
-    val baseColors = when (activeThemeId) {
-        "oled_black" -> {
-            val baseDark = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                dynamicDarkColorScheme(context)
-            } else {
-                if (wallpaperPrimary != null) DarkColors.copy(primary = wallpaperPrimary, primaryContainer = wallpaperPrimary.copy(alpha = 0.35f))
-                else DarkColors
+    val baseColors = remember(activeThemeId, darkTheme, wallpaperPrimary, colorTick) {
+        when (activeThemeId) {
+            "oled_black" -> {
+                val baseDark = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    dynamicDarkColorScheme(context)
+                } else {
+                    if (wallpaperPrimary != null) DarkColors.copy(primary = wallpaperPrimary, primaryContainer = wallpaperPrimary.copy(alpha = 0.35f))
+                    else DarkColors
+                }
+                baseDark.copy(
+                    surface = Color.Black,
+                    surfaceContainer = Color(0xFF0D0D0D),
+                    surfaceContainerHigh = Color(0xFF141414),
+                    surfaceContainerHighest = Color(0xFF1F1F1F),
+                    surfaceContainerLow = Color(0xFF070707),
+                    surfaceContainerLowest = Color.Black,
+                    surfaceVariant = Color(0xFF181818),
+                    outline = Color(0xFF404040),
+                    outlineVariant = Color(0xFF262626),
+                )
             }
-            baseDark.copy(
-                surface = Color.Black,
-                surfaceContainer = Color(0xFF0D0D0D),
-                surfaceContainerHigh = Color(0xFF141414),
-                surfaceContainerHighest = Color(0xFF1F1F1F),
-                surfaceContainerLow = Color(0xFF070707),
-                surfaceContainerLowest = Color.Black,
-                surfaceVariant = Color(0xFF181818),
-                outline = Color(0xFF404040),
-                outlineVariant = Color(0xFF262626),
-            )
-        }
-        "dark_modern" -> {
-            if (wallpaperPrimary != null) {
-                DarkColors.copy(
-                    primary = wallpaperPrimary,
-                    primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
-                )
-            } else DarkColors
-        }
-        "light_clean" -> {
-            if (wallpaperPrimary != null) {
-                LightColors.copy(
-                    primary = wallpaperPrimary,
-                    primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
-                )
-            } else LightColors
-        }
-        else -> {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            } else {
-                val fallback = if (darkTheme) DarkColors else LightColors
+            "dark_modern" -> {
                 if (wallpaperPrimary != null) {
-                    fallback.copy(
+                    DarkColors.copy(
                         primary = wallpaperPrimary,
                         primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
                     )
-                } else fallback
+                } else DarkColors
+            }
+            "light_clean" -> {
+                if (wallpaperPrimary != null) {
+                    LightColors.copy(
+                        primary = wallpaperPrimary,
+                        primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+                    )
+                } else LightColors
+            }
+            else -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                } else {
+                    val fallback = if (darkTheme) DarkColors else LightColors
+                    if (wallpaperPrimary != null) {
+                        fallback.copy(
+                            primary = wallpaperPrimary,
+                            primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+                        )
+                    } else fallback
+                }
             }
         }
     }
