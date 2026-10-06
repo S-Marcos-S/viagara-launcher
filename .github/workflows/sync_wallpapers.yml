@@ -8,13 +8,17 @@ on:
   workflow_dispatch:
     inputs:
       max_total:
-        description: 'Max total wallpapers to add'
+        description: 'Max total wallpapers to add (e.g. 12)'
         required: false
-        default: '3'
+        default: '6'
       max_per_category:
-        description: 'Max wallpapers per category'
+        description: 'Max wallpapers per category (e.g. 2)'
         required: false
-        default: '1'
+        default: '2'
+      categories:
+        description: 'Categories to sync (comma-separated: oled,space,nature,minimal,abstract,anime)'
+        required: false
+        default: 'oled,space,nature,minimal,abstract,anime'
 
 permissions:
   contents: write
@@ -42,12 +46,14 @@ jobs:
 
       - name: Run wallpaper synchronization
         env:
-          MAX_TOTAL: ${{ github.event.inputs.max_total || '3' }}
-          MAX_PER_CAT: ${{ github.event.inputs.max_per_category || '1' }}
+          MAX_TOTAL: ${{ github.event.inputs.max_total || '6' }}
+          MAX_PER_CAT: ${{ github.event.inputs.max_per_category || '2' }}
+          CATEGORIES: ${{ github.event.inputs.categories || 'oled,space,nature,minimal,abstract,anime' }}
         run: |
           python scripts/sync_wallpapers.py \
             --max-total "$MAX_TOTAL" \
-            --max-per-category "$MAX_PER_CAT"
+            --max-per-category "$MAX_PER_CAT" \
+            --categories "$CATEGORIES"
 
       - name: Commit and push new wallpapers
         run: |

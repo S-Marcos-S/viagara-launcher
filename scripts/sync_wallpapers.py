@@ -46,15 +46,36 @@ CATEGORY_QUERIES = {
     "anime": "https://wallhaven.cc/api/v1/search?categories=010&ratios=9x16,10x16&sorting=favorites&purity=100",
 }
 
+# Tags that indicate a wallpaper contains characters, human figures, anime, or gaming art
+# Wallpapers with these tags are excluded from general categories (oled, space, nature, minimal, abstract)
+ANIME_CHARACTER_TAGS = {
+    "anime", "anime girls", "anime boy", "manga", "pixiv", "girl", "girls", "women",
+    "men", "boy", "female", "male", "maid", "maid outfit", "pantyhose", "heels", "high heels",
+    "bikini", "cosplay", "cgi", "character", "character design", "genshin", "genshin impact",
+    "honkai", "honkai star rail", "zenless zone zero", "blue archive", "game art", "comic", "comics",
+    "illustration", "fantasy girl", "fantasy art", "waifu", "vtuber", "digital art", "drawing",
+    "model", "actress", "celebrity", "portrait display", "portrait", "crossfire", "ghostblade",
+}
 
-def fetch_json(url: str, timeout: int = 15) -> Optional[Dict[str, Any]]:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except Exception as e:
-        print(f"Error fetching {url}: {e}")
-        return None
+
+def fetch_json(url: str, timeout: int = 15, retries: int = 2) -> Optional[Dict[str, Any]]:
+    for attempt in range(retries + 1):
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                wait_time = 3.0 * (attempt + 1)
+                print(f"Rate limited (429) fetching {url}, waiting {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            print(f"HTTP error fetching {url}: {e}")
+            return None
+        except Exception as e:
+            print(f"Error fetching {url}: {e}")
+            return None
+    return None
 
 
 def fetch_bytes(url: str, timeout: int = 25) -> Optional[bytes]:
@@ -112,9 +133,9 @@ def process_and_save_wallpaper(
 
 def main():
     parser = argparse.ArgumentParser(description="Sync curated wallpapers into repository.")
-    parser.add_argument("--max-per-category", type=int, default=1, help="Max new items per category per run")
-    parser.add_argument("--max-total", type=int, default=3, help="Max total new items added per run")
-    parser.add_argument("--categories", type=str, default="oled,space,nature,minimal,abstract", help="Comma-separated categories")
+    parser.add_argument("--max-per-category", type=int, default=2, help="Max new items per category per run")
+    parser.add_argument("--max-total", type=int, default=12, help="Max total new items added per run")
+    parser.add_argument("--categories", type=str, default="oled,space,nature,minimal,abstract,anime", help="Comma-separated categories")
     parser.add_argument("--dry-run", action="store_true", help="Inspect without modifying files")
     args = parser.parse_args()
 
@@ -132,6 +153,7 @@ def main():
                 {"id": "space", "label": "Espaço"},
                 {"id": "minimal", "label": "Minimalista"},
                 {"id": "nature", "label": "Natureza"},
+                {"id": "anime", "label": "Anime"},
             ],
             "wallpapers": [],
         }
@@ -147,114 +169,139 @@ def main():
     added_count = 0
     new_items: List[Dict[str, Any]] = []
 
-    print(f"Starting wallpaper sync (max total: {args.max_total}, max per category: {args.max_per_category})...")
+    # If the user raised max_total significantly higher than max_per_category * num_cats,
+    # scale max_per_category so the total requested can actually be reached across categories.
+    effective_max_per_cat = args.max_per_category
+    if target_categories and args.max_total > (args.max_per_category * len(target_categories)):
+        scaled = (args.max_total + len(target_categories) - 1) // len(target_categories)
+        effective_max_per_cat = max(args.max_per_category, scaled)
+
+    print(f"Starting wallpaper sync (max total: {args.max_total}, max per category: {effective_max_per_cat}, categories: {', '.join(target_categories)})...")
 
     for cat in target_categories:
         if added_count >= args.max_total:
             break
 
-        query_url = CATEGORY_QUERIES[cat]
-        print(f"\nQuerying category '{cat}'...")
-        res = fetch_json(query_url)
-        if not res or "data" not in res:
-            print(f"No results for category '{cat}'")
-            continue
-
+        base_query_url = CATEGORY_QUERIES[cat]
         cat_added = 0
-        for item in res["data"]:
-            if added_count >= args.max_total or cat_added >= args.max_per_category:
+        page = 1
+        max_pages = 8  # up to 8 pages per category (192 results evaluated)
+
+        print(f"\nQuerying category '{cat}'...")
+
+        while cat_added < effective_max_per_cat and added_count < args.max_total and page <= max_pages:
+            paginated_url = f"{base_query_url}&page={page}"
+            res = fetch_json(paginated_url)
+            if not res or "data" not in res or not res["data"]:
                 break
 
-            wh_id = item["id"]
-            wallpaper_id = f"wallpaper_wh_{wh_id}"
-            if wallpaper_id in existing_ids:
-                continue
+            items = res["data"]
+            for item in items:
+                if added_count >= args.max_total or cat_added >= effective_max_per_cat:
+                    break
 
-            dim_x = item.get("dimension_x", 0)
-            dim_y = item.get("dimension_y", 0)
-            if dim_y <= dim_x or dim_y < 1600:
-                continue
-
-            image_url = item.get("path")
-            if not image_url or image_url in existing_urls:
-                continue
-
-            print(f"Found candidate: {wh_id} ({dim_x}x{dim_y}) for category '{cat}'")
-
-            # Fetch extra details for title and tags if possible
-            time.sleep(1.0)
-            detail = fetch_json(f"https://wallhaven.cc/api/v1/w/{wh_id}")
-            tags = [cat]
-            author = "Wallhaven"
-            title = None
-
-            disallowed_tags = {
-                "vertical", "portrait display", "simple background", "no people",
-                "women", "girl", "girls", "men", "boy", "model", "brunette", "blonde",
-                "long hair", "short hair", "looking at viewer", "asian", "white hair",
-                "black hair", "anime", "anime girls", "drawn", "digital art", "artwork",
-                "wallpaper", "photoshop", "picture", "minimalism", "abstract", "nature", "space", "oled"
-            }
-
-            if detail and "data" in detail:
-                d = detail["data"]
-                uploader = d.get("uploader", {}).get("username")
-                if uploader:
-                    author = uploader
-                d_tags = [t["name"] for t in d.get("tags", []) if t.get("name")]
-                if any(t.lower() in ["error", "errors", "glitch", "broken", "404"] for t in d_tags):
-                    print(f"Skipping candidate {wh_id} due to error/glitch tags.")
+                wh_id = item["id"]
+                wallpaper_id = f"wallpaper_wh_{wh_id}"
+                if wallpaper_id in existing_ids:
                     continue
-                filtered_tags = [t for t in d_tags if t.lower() not in disallowed_tags]
-                if filtered_tags:
-                    title = clean_name(filtered_tags[0])
-                    tags.extend(filtered_tags[:3])
 
-            if not title:
-                title = f"{cat.capitalize()} #{wh_id.upper()}"
+                dim_x = item.get("dimension_x", 0)
+                dim_y = item.get("dimension_y", 0)
+                if dim_y <= dim_x or dim_y < 1600:
+                    continue
 
-            colors = item.get("colors", [])
-            primary_color = colors[0] if colors else "#000000"
+                image_url = item.get("path")
+                if not image_url or image_url in existing_urls:
+                    continue
 
-            full_filename = f"{wallpaper_id}.webp"
-            thumb_filename = f"{wallpaper_id}.webp"
-            full_dest = os.path.join(FULL_DIR, full_filename)
-            thumb_dest = os.path.join(THUMB_DIR, thumb_filename)
+                # Fetch extra details for title and tags
+                time.sleep(1.2)
+                detail = fetch_json(f"https://wallhaven.cc/api/v1/w/{wh_id}")
+                tags = [cat]
+                author = "Wallhaven"
+                title = None
 
-            if args.dry_run:
-                print(f"[DRY-RUN] Would download {image_url} -> {full_dest} ({title} by {author})")
+                disallowed_title_tags = {
+                    "vertical", "portrait display", "simple background", "no people",
+                    "women", "girl", "girls", "men", "boy", "model", "brunette", "blonde",
+                    "long hair", "short hair", "looking at viewer", "asian", "white hair",
+                    "black hair", "anime", "anime girls", "drawn", "digital art", "artwork",
+                    "wallpaper", "photoshop", "picture", "minimalism", "abstract", "nature", "space", "oled"
+                }
+
+                if detail and "data" in detail:
+                    d = detail["data"]
+                    uploader = d.get("uploader", {}).get("username")
+                    if uploader:
+                        author = uploader
+                    d_tags = [t["name"] for t in d.get("tags", []) if t.get("name")]
+                    wh_cat = d.get("category", "")
+
+                    if any(t.lower() in ["error", "errors", "glitch", "broken", "404"] for t in d_tags):
+                        print(f"Skipping candidate {wh_id} due to error/glitch tags.")
+                        continue
+
+                    # Strict category check: if not the anime category, reject any anime/character wallpapers
+                    if cat != "anime":
+                        if wh_cat == "anime":
+                            print(f"Skipping candidate {wh_id} for '{cat}' (Wallhaven category is anime).")
+                            continue
+                        if any(t.lower() in ANIME_CHARACTER_TAGS for t in d_tags):
+                            print(f"Skipping candidate {wh_id} for '{cat}' due to character/anime tags.")
+                            continue
+
+                    filtered_tags = [t for t in d_tags if t.lower() not in disallowed_title_tags]
+                    if filtered_tags:
+                        title = clean_name(filtered_tags[0])
+                        tags.extend(filtered_tags[:3])
+
+                if not title:
+                    title = f"{cat.capitalize()} #{wh_id.upper()}"
+
+                colors = item.get("colors", [])
+                primary_color = colors[0] if colors else "#000000"
+
+                full_filename = f"{wallpaper_id}.webp"
+                thumb_filename = f"{wallpaper_id}.webp"
+                full_dest = os.path.join(FULL_DIR, full_filename)
+                thumb_dest = os.path.join(THUMB_DIR, thumb_filename)
+
+                if args.dry_run:
+                    print(f"[DRY-RUN] Would download {image_url} -> {full_dest} ({title} by {author})")
+                    cat_added += 1
+                    added_count += 1
+                    continue
+
+                print(f"Downloading {image_url} ({title} for '{cat}')...")
+                img_bytes = fetch_bytes(image_url)
+                if not img_bytes:
+                    print(f"Failed to download image for {wh_id}, skipping.")
+                    continue
+
+                print(f"Processing and converting to WebP...")
+                success = process_and_save_wallpaper(wallpaper_id, img_bytes, full_dest, thumb_dest)
+                if not success:
+                    continue
+
+                new_entry = {
+                    "id": wallpaper_id,
+                    "name": title,
+                    "author": author,
+                    "thumbnail_url": f"{GITHUB_RAW_BASE}/thumbnails/{thumb_filename}",
+                    "full_url": f"{GITHUB_RAW_BASE}/full/{full_filename}",
+                    "primary_color": primary_color,
+                    "category": cat,
+                    "tags": list(dict.fromkeys(tags)),
+                }
+
+                existing_ids.add(wallpaper_id)
+                existing_urls.add(image_url)
+                new_items.append(new_entry)
                 cat_added += 1
                 added_count += 1
-                continue
+                print(f"Successfully added '{title}' (id: {wallpaper_id}) to category '{cat}'")
 
-            print(f"Downloading {image_url}...")
-            img_bytes = fetch_bytes(image_url)
-            if not img_bytes:
-                print(f"Failed to download image for {wh_id}, skipping.")
-                continue
-
-            print(f"Processing and converting to WebP...")
-            success = process_and_save_wallpaper(wallpaper_id, img_bytes, full_dest, thumb_dest)
-            if not success:
-                continue
-
-            new_entry = {
-                "id": wallpaper_id,
-                "name": title,
-                "author": author,
-                "thumbnail_url": f"{GITHUB_RAW_BASE}/thumbnails/{thumb_filename}",
-                "full_url": f"{GITHUB_RAW_BASE}/full/{full_filename}",
-                "primary_color": primary_color,
-                "category": cat,
-                "tags": list(dict.fromkeys(tags)),
-            }
-
-            existing_ids.add(wallpaper_id)
-            existing_urls.add(image_url)
-            new_items.append(new_entry)
-            cat_added += 1
-            added_count += 1
-            print(f"Successfully added '{title}' (id: {wallpaper_id}) to category '{cat}'")
+            page += 1
 
     if args.dry_run:
         print(f"\n[DRY-RUN] Finished. Would have added {added_count} wallpapers.")

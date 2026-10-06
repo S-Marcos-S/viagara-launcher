@@ -114,8 +114,7 @@ fun WallpaperPickerScreen(
             all
         } else {
             all.filter {
-                it.category.equals(selectedCategoryId, ignoreCase = true) ||
-                    it.tags.any { tag -> tag.equals(selectedCategoryId, ignoreCase = true) }
+                it.category.equals(selectedCategoryId, ignoreCase = true)
             }
         }
     }

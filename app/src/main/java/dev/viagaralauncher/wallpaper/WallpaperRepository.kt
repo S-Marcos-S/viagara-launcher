@@ -77,10 +77,13 @@ object WallpaperRepository {
 
         // Try downloading remote catalog
         val remoteJson = runCatching {
-            val conn = (URL(REMOTE_CATALOG_URL).openConnection() as HttpURLConnection).apply {
+            val urlWithBuster = "$REMOTE_CATALOG_URL?t=${System.currentTimeMillis()}"
+            val conn = (URL(urlWithBuster).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 6000
                 readTimeout = 6000
                 requestMethod = "GET"
+                setRequestProperty("Cache-Control", "no-cache")
+                setRequestProperty("Pragma", "no-cache")
             }
             if (conn.responseCode == 200) {
                 conn.inputStream.bufferedReader().use { it.readText() }
