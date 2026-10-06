@@ -1,5 +1,31 @@
 {
   "version": 1,
+  "categories": [
+    {
+      "id": "all",
+      "label": "Todos"
+    },
+    {
+      "id": "oled",
+      "label": "OLED"
+    },
+    {
+      "id": "abstract",
+      "label": "Abstrato"
+    },
+    {
+      "id": "space",
+      "label": "Espaço"
+    },
+    {
+      "id": "minimal",
+      "label": "Minimalista"
+    },
+    {
+      "id": "nature",
+      "label": "Natureza"
+    }
+  ],
   "wallpapers": [
     {
       "id": "wallpaper_01",
@@ -8,7 +34,12 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_01.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_01.png",
       "primary_color": "#00121A",
-      "tags": ["oled", "dark", "minimalist"]
+      "category": "oled",
+      "tags": [
+        "oled",
+        "dark",
+        "minimalist"
+      ]
     },
     {
       "id": "wallpaper_02",
@@ -17,7 +48,57 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_02.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_02.png",
       "primary_color": "#001B27",
-      "tags": ["dark", "abstract", "modern"]
+      "category": "abstract",
+      "tags": [
+        "dark",
+        "abstract",
+        "modern"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_y8vvex",
+      "name": "Portrait",
+      "author": "lumberjacck",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_y8vvex.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_y8vvex.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "portrait",
+        "mask",
+        "looking away"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_45v5o1",
+      "name": "Universe",
+      "author": "kejsirajbek",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_45v5o1.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_45v5o1.webp",
+      "primary_color": "#424153",
+      "category": "space",
+      "tags": [
+        "space",
+        "universe",
+        "planet",
+        "stars"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_jxgqyy",
+      "name": "Chocoshi",
+      "author": "Owl279",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_jxgqyy.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_jxgqyy.webp",
+      "primary_color": "#000000",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "Chocoshi",
+        "women outdoors",
+        "clouds"
+      ]
     }
   ]
 }

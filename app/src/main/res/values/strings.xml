@@ -50,6 +50,12 @@
     <string name="wallpaper_apply_error">Failed to apply wallpaper.</string>
     <string name="wallpaper_applying">Applying wallpaper…</string>
     <string name="wallpaper_loading">Loading wallpaper…</string>
+    <string name="wallpaper_category_all">All</string>
+    <string name="wallpaper_category_oled">OLED</string>
+    <string name="wallpaper_category_minimal">Minimal</string>
+    <string name="wallpaper_category_abstract">Abstract</string>
+    <string name="wallpaper_category_space">Space</string>
+    <string name="wallpaper_category_nature">Nature</string>
     <string name="home_option_themes">Themes</string>
     <string name="themes_title">Themes</string>
     <string name="themes_subtitle">Personalize the appearance and colors of your launcher</string>

@@ -1,0 +1,64 @@
+name: Sync Wallpapers
+run-name: Curate and sync wallpapers
+
+on:
+  schedule:
+    # Run every Sunday at 03:00 UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      max_total:
+        description: 'Max total wallpapers to add'
+        required: false
+        default: '3'
+      max_per_category:
+        description: 'Max wallpapers per category'
+        required: false
+        default: '1'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    name: Curate Wallpapers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install Pillow
+
+      - name: Run wallpaper synchronization
+        env:
+          MAX_TOTAL: ${{ github.event.inputs.max_total || '3' }}
+          MAX_PER_CAT: ${{ github.event.inputs.max_per_category || '1' }}
+        run: |
+          python scripts/sync_wallpapers.py \
+            --max-total "$MAX_TOTAL" \
+            --max-per-category "$MAX_PER_CAT"
+
+      - name: Commit and push new wallpapers
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ -n "$(git status --porcelain wallpapers/ app/src/main/assets/wallpapers/)" ]; then
+            git add wallpapers/ app/src/main/assets/wallpapers/
+            git commit -m "chore(wallpapers): auto-sync curated wallpapers [skip ci]"
+            git push origin main
+            echo "Successfully pushed new curated wallpapers."
+          else
+            echo "No new wallpapers to commit."
+          fi

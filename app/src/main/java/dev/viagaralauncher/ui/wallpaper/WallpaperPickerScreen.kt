@@ -76,6 +76,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.viagaralauncher.R
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import dev.viagaralauncher.wallpaper.WallpaperCatalog
+import dev.viagaralauncher.wallpaper.WallpaperCategory
 import dev.viagaralauncher.wallpaper.WallpaperItem
 import dev.viagaralauncher.wallpaper.WallpaperRepository
 import kotlinx.coroutines.launch
@@ -89,14 +96,27 @@ fun WallpaperPickerScreen(
     val coroutineScope = rememberCoroutineScope()
     val surface = MaterialTheme.colorScheme.surface
 
-    var wallpapers by remember { mutableStateOf<List<WallpaperItem>>(emptyList()) }
+    var catalog by remember { mutableStateOf<WallpaperCatalog?>(null) }
+    var selectedCategoryId by remember { mutableStateOf("all") }
     var isLoadingCatalog by remember { mutableStateOf(true) }
     var previewingWallpaper by remember { mutableStateOf<WallpaperItem?>(null) }
     var isApplying by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        wallpapers = WallpaperRepository.loadCatalog(context)
+        catalog = WallpaperRepository.loadCatalog(context)
         isLoadingCatalog = false
+    }
+
+    val filteredWallpapers = remember(catalog, selectedCategoryId) {
+        val all = catalog?.wallpapers ?: emptyList()
+        if (selectedCategoryId.equals("all", ignoreCase = true)) {
+            all
+        } else {
+            all.filter {
+                it.category.equals(selectedCategoryId, ignoreCase = true) ||
+                    it.tags.any { tag -> tag.equals(selectedCategoryId, ignoreCase = true) }
+            }
+        }
     }
 
     BackHandler(enabled = previewingWallpaper != null) {
@@ -162,7 +182,17 @@ fun WallpaperPickerScreen(
                 }
             }
 
-            if (isLoadingCatalog && wallpapers.isEmpty()) {
+            // Categories filter chips
+            item(span = { GridItemSpan(2) }) {
+                val categories = catalog?.categories ?: WallpaperRepository.DEFAULT_CATEGORIES
+                WallpaperCategoriesRow(
+                    categories = categories,
+                    selectedCategoryId = selectedCategoryId,
+                    onSelectCategory = { selectedCategoryId = it },
+                )
+            }
+
+            if (isLoadingCatalog && filteredWallpapers.isEmpty()) {
                 item(span = { GridItemSpan(2) }) {
                     Box(
                         modifier = Modifier
@@ -173,17 +203,23 @@ fun WallpaperPickerScreen(
                         CircularProgressIndicator(modifier = Modifier.size(32.dp))
                     }
                 }
-            } else if (wallpapers.isEmpty()) {
+            } else if (filteredWallpapers.isEmpty()) {
                 item(span = { GridItemSpan(2) }) {
-                    Text(
-                        text = stringResource(R.string.wallpaper_picker_empty),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 24.dp),
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.wallpaper_picker_empty),
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             } else {
-                items(wallpapers, key = { it.id }) { item ->
+                items(filteredWallpapers, key = { it.id }) { item ->
                     WallpaperGridItem(
                         item = item,
                         onClick = { previewingWallpaper = item }
@@ -544,5 +580,77 @@ private fun WallpaperPreviewOverlay(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun WallpaperCategoriesRow(
+    categories: List<WallpaperCategory>,
+    selectedCategoryId: String,
+    onSelectCategory: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val haptic = LocalHapticFeedback.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        categories.forEach { category ->
+            val isSelected = category.id.equals(selectedCategoryId, ignoreCase = true)
+            val backgroundColor by animateColorAsState(
+                targetValue = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                },
+                label = "category_chip_bg",
+            )
+            val contentColor by animateColorAsState(
+                targetValue = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                label = "category_chip_content",
+            )
+
+            Surface(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSelectCategory(category.id)
+                    },
+                shape = CircleShape,
+                color = backgroundColor,
+                border = if (!isSelected) {
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                } else null,
+            ) {
+                Text(
+                    text = getCategoryDisplayName(category),
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = contentColor,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun getCategoryDisplayName(category: WallpaperCategory): String {
+    return when (category.id.lowercase()) {
+        "all" -> stringResource(R.string.wallpaper_category_all)
+        "oled" -> stringResource(R.string.wallpaper_category_oled)
+        "minimal" -> stringResource(R.string.wallpaper_category_minimal)
+        "abstract" -> stringResource(R.string.wallpaper_category_abstract)
+        "space" -> stringResource(R.string.wallpaper_category_space)
+        "nature" -> stringResource(R.string.wallpaper_category_nature)
+        else -> category.label.ifBlank { category.id.replaceFirstChar { it.uppercase() } }
     }
 }

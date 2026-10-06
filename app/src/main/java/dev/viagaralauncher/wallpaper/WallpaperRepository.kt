@@ -15,6 +15,16 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 
+data class WallpaperCategory(
+    val id: String,
+    val label: String,
+)
+
+data class WallpaperCatalog(
+    val categories: List<WallpaperCategory>,
+    val wallpapers: List<WallpaperItem>,
+)
+
 data class WallpaperItem(
     val id: String,
     val name: String,
@@ -22,6 +32,7 @@ data class WallpaperItem(
     val thumbnailUrl: String,
     val fullUrl: String,
     val primaryColorHex: String = "#1E1E1E",
+    val category: String = "oled",
     val tags: List<String> = emptyList(),
 )
 
@@ -29,6 +40,15 @@ object WallpaperRepository {
 
     private const val REMOTE_CATALOG_URL =
         "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/catalog.json"
+
+    val DEFAULT_CATEGORIES = listOf(
+        WallpaperCategory("all", "Todos"),
+        WallpaperCategory("oled", "OLED"),
+        WallpaperCategory("abstract", "Abstrato"),
+        WallpaperCategory("space", "Espaço"),
+        WallpaperCategory("minimal", "Minimalista"),
+        WallpaperCategory("nature", "Natureza"),
+    )
 
     private fun cacheDir(context: Context): File {
         val dir = File(context.cacheDir, "wallpaper_cache")
@@ -41,7 +61,7 @@ object WallpaperRepository {
         return bytes.joinToString("") { "%02x".format(it) }
     }
 
-    suspend fun loadCatalog(context: Context): List<WallpaperItem> = withContext(Dispatchers.IO) {
+    suspend fun loadCatalog(context: Context): WallpaperCatalog = withContext(Dispatchers.IO) {
         val catalogFile = File(cacheDir(context), "catalog.json")
 
         // Try downloading remote catalog
@@ -66,15 +86,33 @@ object WallpaperRepository {
             else -> runCatching {
                 context.assets.open("wallpapers/catalog.json").bufferedReader().use { it.readText() }
             }.getOrNull()
-        } ?: return@withContext emptyList()
+        } ?: return@withContext WallpaperCatalog(DEFAULT_CATEGORIES, emptyList())
 
         parseCatalogJson(jsonText)
     }
 
-    private fun parseCatalogJson(jsonText: String): List<WallpaperItem> {
+    private fun parseCatalogJson(jsonText: String): WallpaperCatalog {
         return runCatching {
             val root = JSONObject(jsonText)
-            val array = root.optJSONArray("wallpapers") ?: return emptyList()
+
+            val categories = mutableListOf<WallpaperCategory>()
+            val catArray = root.optJSONArray("categories")
+            if (catArray != null && catArray.length() > 0) {
+                for (i in 0 until catArray.length()) {
+                    val obj = catArray.getJSONObject(i)
+                    categories.add(
+                        WallpaperCategory(
+                            id = obj.getString("id"),
+                            label = obj.optString("label", obj.getString("id")),
+                        )
+                    )
+                }
+            }
+            if (categories.isEmpty() || categories.none { it.id.equals("all", ignoreCase = true) }) {
+                categories.add(0, WallpaperCategory("all", "Todos"))
+            }
+
+            val array = root.optJSONArray("wallpapers") ?: return WallpaperCatalog(categories, emptyList())
             val list = mutableListOf<WallpaperItem>()
             for (i in 0 until array.length()) {
                 val obj = array.getJSONObject(i)
@@ -93,12 +131,13 @@ object WallpaperRepository {
                         thumbnailUrl = obj.getString("thumbnail_url"),
                         fullUrl = obj.getString("full_url"),
                         primaryColorHex = obj.optString("primary_color", "#1E1E1E"),
+                        category = obj.optString("category", if (tags.isNotEmpty()) tags[0] else "oled"),
                         tags = tags,
                     )
                 )
             }
-            list
-        }.getOrDefault(emptyList())
+            WallpaperCatalog(categories, list)
+        }.getOrDefault(WallpaperCatalog(DEFAULT_CATEGORIES, emptyList()))
     }
 
     suspend fun getCachedOrDownloadBitmap(context: Context, url: String): Bitmap? = withContext(Dispatchers.IO) {

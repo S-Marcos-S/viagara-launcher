@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.68
+### 🚀 Novidades da Versão v0.59.69
 
-- **Catálogo Oficial de Papéis de Parede:** Nova tela de seleção integrada com papéis de parede curados hospedados no repositório.
-- **Aplicação Direta de Wallpaper:** Pré-visualização em alta definição e aplicação com um toque para Tela Inicial, Bloqueio ou Ambas.
-- **Acesso Rápido à Galeria:** Atalho direto para escolher fotos do aparelho ou Google Fotos.
+- **Filtro por Categorias:** Navegue pelos papéis de parede por categorias (OLED, Abstrato, Espaço, Natureza, etc.) com chips animados.
+- **Novos Wallpapers Curados:** Adicionados novos papéis de parede verticais em alta definição diretamente no catálogo.
+- **Sincronização Contínua:** Pipeline automatizado no GitHub Actions para curadoria periódica de novos papéis de parede.

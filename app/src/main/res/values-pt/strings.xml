@@ -51,6 +51,12 @@
     <string name="wallpaper_apply_error">Erro ao aplicar papel de parede.</string>
     <string name="wallpaper_applying">Aplicando papel de parede…</string>
     <string name="wallpaper_loading">Carregando papel de parede…</string>
+    <string name="wallpaper_category_all">Todos</string>
+    <string name="wallpaper_category_oled">OLED</string>
+    <string name="wallpaper_category_minimal">Minimalista</string>
+    <string name="wallpaper_category_abstract">Abstrato</string>
+    <string name="wallpaper_category_space">Espaço</string>
+    <string name="wallpaper_category_nature">Natureza</string>
     <string name="home_option_themes">Temas</string>
     <string name="themes_title">Temas</string>
     <string name="themes_subtitle">Personalize a aparência e cores do seu launcher</string>
