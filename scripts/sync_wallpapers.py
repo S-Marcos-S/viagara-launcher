@@ -22,6 +22,7 @@ from typing import Dict, List, Optional, Any
 
 try:
     from PIL import Image
+    Image.MAX_IMAGE_PIXELS = None
 except ImportError:
     print("Pillow (PIL) is required. Install with: pip install Pillow")
     sys.exit(1)
