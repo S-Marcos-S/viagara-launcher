@@ -262,6 +262,8 @@ fun HomeScreen(
     var logViewerInitialTab by remember { mutableStateOf<String?>(null) }
 
     val logViewerRequest by dev.viagaralauncher.root.log.LogViewerEvents.request.collectAsState()
+    val capturingPackages by dev.viagaralauncher.root.AppLogCaptureService.capturingPackages.collectAsState()
+    val capturingPackage by dev.viagaralauncher.root.AppLogCaptureService.capturingPackage.collectAsState()
     LaunchedEffect(logViewerRequest) {
         val req = logViewerRequest ?: return@LaunchedEffect
         val foundApp = req.packageName?.let { pkg -> appsByKey.values.find { it.packageName == pkg } }
@@ -1134,7 +1136,7 @@ fun HomeScreen(
                         onClick = { rootInspectorFor = app },
                     )
                 )
-                val isCurrentlyCapturing = AppLogCaptureService.isCapturingApp(app.packageName)
+                val isCurrentlyCapturing = capturingPackages.contains(app.packageName) || capturingPackage == app.packageName
                 add(
                     dev.viagaralauncher.ui.common.AppMenuItem(
                         title = stringResource(if (isCurrentlyCapturing) R.string.action_stop_save_logs else R.string.action_capture_logs),

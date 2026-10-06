@@ -301,7 +301,6 @@ fun AppRootInspectorDialog(
     var isRefreshing by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(InspectorTab.MEMORY) }
     var selectedPeriod by remember { mutableStateOf(DataPeriod.TODAY) }
-    var showLogViewer by remember { mutableStateOf(false) }
 
     var isAutoRefreshEnabled by remember { mutableStateOf(true) }
 
@@ -557,7 +556,16 @@ fun AppRootInspectorDialog(
                             }
 
                             IconButton(
-                                onClick = { showLogViewer = true },
+                                onClick = {
+                                    FloatingAppInspectorOverlayManager.updateLayout(context, isMinimized = true)
+                                    dev.viagaralauncher.ui.root.FloatingLogOverlayManager.show(
+                                        context = context,
+                                        app = app,
+                                        packageName = app.packageName,
+                                        initialTab = "logs",
+                                        isMinimized = false,
+                                    )
+                                },
                                 modifier = Modifier.size(28.dp),
                             ) {
                                 Icon(
@@ -899,13 +907,6 @@ fun AppRootInspectorDialog(
                 }
             }
         }
-    }
-
-    if (showLogViewer) {
-        dev.viagaralauncher.ui.root.AppLogViewerDialog(
-            initialApp = app,
-            onDismissRequest = { showLogViewer = false },
-        )
     }
 }
 

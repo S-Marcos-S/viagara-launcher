@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.59.61
+### 🚀 Novidades da Versão v0.59.62
 
-- **Alerta de Sono Profundo:** Identifica e notifica apps que impediram o sono profundo com a tela apagada, com consumo zero de bateria.
-- **Dinamismo na Inspeção:** O card de consumo de dados agora abre o Monitor de Rede por App, e a seção de rede ganhou o botão "Ver mais" alinhado.
-- **Correções de Build:** Resolvidos imports e referências ausentes na tela de configurações e nos visualizadores de logs.
+- **Correção de Crash no Inspetor:** Corrigido erro de BadTokenException ao abrir a tela de captura de logs pelo botão do inspetor flutuante.
+- **Sincronização de Gravação de Logs:** O status de gravação agora é limpo imediatamente ao dispensar a notificação ou concluir a captura.

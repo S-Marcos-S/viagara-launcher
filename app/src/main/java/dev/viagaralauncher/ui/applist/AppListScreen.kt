@@ -74,6 +74,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableFloatStateOf
@@ -186,6 +187,8 @@ fun AppListScreen(
     var rootInspectorFor by remember { mutableStateOf<AppInfo?>(null) }
     var logViewerFor by remember { mutableStateOf<AppInfo?>(null) }
     var confirmUninstallFor by remember { mutableStateOf<AppInfo?>(null) }
+    val capturingPackages by AppLogCaptureService.capturingPackages.collectAsState()
+    val capturingPackage by AppLogCaptureService.capturingPackage.collectAsState()
     val context = LocalContext.current
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
@@ -818,7 +821,7 @@ fun AppListScreen(
                             onClick = { rootInspectorFor = app },
                         )
                     )
-                    val isCurrentlyCapturing = AppLogCaptureService.isCapturingApp(app.packageName)
+                    val isCurrentlyCapturing = capturingPackages.contains(app.packageName) || capturingPackage == app.packageName
                     add(
                         dev.viagaralauncher.ui.common.AppMenuItem(
                             title = stringResource(if (isCurrentlyCapturing) R.string.action_stop_save_logs else R.string.action_capture_logs),

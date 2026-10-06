@@ -219,6 +219,10 @@ class AppLogCaptureService : Service() {
         }
 
         fun cancelCapture(context: Context) {
+            _capturingPackage.value = null
+            _capturingAppName.value = null
+            _capturingPackages.value = emptySet()
+            _capturingAppNames.value = emptyList()
             val intent = Intent(context, AppLogCaptureService::class.java).apply {
                 action = ACTION_CANCEL_CAPTURE
             }
@@ -576,6 +580,7 @@ class AppLogCaptureService : Service() {
             .setContentText(statusText)
             .setOngoing(true)
             .setContentIntent(openPending)
+            .setDeleteIntent(discardPending)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .addAction(
                 android.R.drawable.ic_menu_save,
@@ -605,6 +610,8 @@ class AppLogCaptureService : Service() {
             notificationUpdaterJob?.cancel()
             _capturingPackage.value = null
             _capturingAppName.value = null
+            _capturingPackages.value = emptySet()
+            _capturingAppNames.value = emptyList()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -727,6 +734,8 @@ class AppLogCaptureService : Service() {
 
             _capturingPackage.value = null
             _capturingAppName.value = null
+            _capturingPackages.value = emptySet()
+            _capturingAppNames.value = emptyList()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -765,6 +774,8 @@ class AppLogCaptureService : Service() {
         serviceJob.cancel()
         _capturingPackage.value = null
         _capturingAppName.value = null
+        _capturingPackages.value = emptySet()
+        _capturingAppNames.value = emptyList()
         _isServiceRunning.value = false
         super.onDestroy()
     }
