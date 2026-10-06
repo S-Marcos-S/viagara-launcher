@@ -819,6 +819,77 @@
         "glitch art",
         "skull"
       ]
+    },
+    {
+      "id": "wallpaper_wh_pkd9w3",
+      "name": "Pantyhose",
+      "author": "鬼才济济",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_pkd9w3.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_pkd9w3.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "pantyhose",
+        "heels",
+        "black pantyhose"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_dgppq3",
+      "name": "Saturn",
+      "author": "AliceChe",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_dgppq3.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_dgppq3.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "Saturn",
+        "space art",
+        "colorful"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_zmo97g",
+      "name": "Aerial View",
+      "author": "mpjuan06",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_zmo97g.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_zmo97g.webp",
+      "primary_color": "#000000",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "aerial view"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_od6djp",
+      "name": "Cabin",
+      "author": "Vexel63",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_od6djp.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_od6djp.webp",
+      "primary_color": "#333399",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "cabin",
+        "blue background",
+        "trees"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_o5dkk9",
+      "name": "Red",
+      "author": "sinmax",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_o5dkk9.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_o5dkk9.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "red"
+      ]
     }
   ]
 }
