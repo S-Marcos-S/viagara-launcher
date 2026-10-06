@@ -262,6 +262,26 @@ fun ThemedAppIcon(
                 }
             }
         }
+        ThemedIconStyle.OLED_DARK -> {
+            val squircleShape = remember { RoundedCornerShape(percent = 28) }
+            Box(
+                modifier = modifier
+                    .size(sizeDp.dp)
+                    .clip(squircleShape)
+                    .background(Color.Black, squircleShape)
+                    .border(1.dp, Color(0xFF262626), squircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = app.label,
+                        colorFilter = ColorFilter.tint(Color(0xFFEDEDED), BlendMode.SrcIn),
+                        modifier = Modifier.size((sizeDp * 0.72f).dp),
+                    )
+                }
+            }
+        }
     }
 }
 

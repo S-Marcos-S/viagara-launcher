@@ -3,6 +3,7 @@ package dev.viagaralauncher.ui.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -79,6 +80,24 @@ fun FolderIconImage(override: String, sizeDp: Int, modifier: Modifier = Modifier
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary, BlendMode.SrcIn),
                             modifier = Modifier.size(sizeDp.dp),
+                        )
+                    }
+                }
+                ThemedIconStyle.OLED_DARK -> {
+                    val squircleShape = remember { RoundedCornerShape(percent = 28) }
+                    Box(
+                        modifier = modifier
+                            .size(sizeDp.dp)
+                            .clip(squircleShape)
+                            .background(androidx.compose.ui.graphics.Color.Black, squircleShape)
+                            .border(1.dp, androidx.compose.ui.graphics.Color(0xFF262626), squircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(androidx.compose.ui.graphics.Color(0xFFEDEDED), BlendMode.SrcIn),
+                            modifier = Modifier.size((sizeDp * 0.72f).dp),
                         )
                     }
                 }

@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
@@ -91,6 +92,7 @@ fun HomeOptionsBottomSheet(
     onManageFavorites: () -> Unit,
     onAddWidget: () -> Unit,
     onOpenClockStyle: () -> Unit = {},
+    onOpenThemes: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -396,6 +398,12 @@ fun HomeOptionsBottomSheet(
                     icon = Icons.Filled.Image,
                     label = stringResource(R.string.home_option_wallpaper),
                     onClick = { onDismiss(); launchWallpaperPicker(context) },
+                )
+
+                OptionItem(
+                    icon = Icons.Filled.Palette,
+                    label = stringResource(R.string.home_option_themes),
+                    onClick = { onDismiss(); onOpenThemes() },
                 )
 
                 OptionItem(

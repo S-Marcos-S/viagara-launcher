@@ -652,6 +652,7 @@ fun HomeRoute(
             onManageFavorites = { showHomeOptions = false; onNavigate("favorites") },
             onAddWidget = { showHomeOptions = false; widgetActions.onAddWidget() },
             onOpenClockStyle = { showHomeOptions = false; onNavigate("settings/clock") },
+            onOpenThemes = { showHomeOptions = false; onNavigate("themes") },
         )
 
         val hideStatusBar by app.prefs.hideStatusBar.collectAsState(initial = false)

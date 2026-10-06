@@ -73,9 +73,14 @@ private val LightColors = lightColorScheme(
 @Composable
 fun ViagaraTheme(
     font: AppFont = AppFont.SYSTEM,
+    activeThemeId: String = "system_dynamic",
     content: @Composable () -> Unit,
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = when (activeThemeId) {
+        "oled_black", "dark_modern" -> true
+        "light_clean" -> false
+        else -> isSystemInDarkTheme()
+    }
     val context = LocalContext.current
 
     val wallpaperPrimary = remember(context) {
@@ -87,21 +92,54 @@ fun ViagaraTheme(
         } else null
     }
 
-    // On Android 12+, use the system's Material You palette (derived from the user's
-    // wallpaper) so Settings/dialogs feel like stock Android instead of a bespoke skin;
-    // background stays transparent regardless, since the home screen relies on it to let
-    // the real wallpaper show through.
-    val baseColors = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    } else {
-        val fallback = if (darkTheme) DarkColors else LightColors
-        if (wallpaperPrimary != null) {
-            fallback.copy(
-                primary = wallpaperPrimary,
-                primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+    val baseColors = when (activeThemeId) {
+        "oled_black" -> {
+            val baseDark = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                dynamicDarkColorScheme(context)
+            } else {
+                if (wallpaperPrimary != null) DarkColors.copy(primary = wallpaperPrimary, primaryContainer = wallpaperPrimary.copy(alpha = 0.35f))
+                else DarkColors
+            }
+            baseDark.copy(
+                surface = Color.Black,
+                surfaceContainer = Color(0xFF0D0D0D),
+                surfaceContainerHigh = Color(0xFF141414),
+                surfaceContainerHighest = Color(0xFF1F1F1F),
+                surfaceContainerLow = Color(0xFF070707),
+                surfaceContainerLowest = Color.Black,
+                surfaceVariant = Color(0xFF181818),
+                outline = Color(0xFF404040),
+                outlineVariant = Color(0xFF262626),
             )
-        } else {
-            fallback
+        }
+        "dark_modern" -> {
+            if (wallpaperPrimary != null) {
+                DarkColors.copy(
+                    primary = wallpaperPrimary,
+                    primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+                )
+            } else DarkColors
+        }
+        "light_clean" -> {
+            if (wallpaperPrimary != null) {
+                LightColors.copy(
+                    primary = wallpaperPrimary,
+                    primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+                )
+            } else LightColors
+        }
+        else -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            } else {
+                val fallback = if (darkTheme) DarkColors else LightColors
+                if (wallpaperPrimary != null) {
+                    fallback.copy(
+                        primary = wallpaperPrimary,
+                        primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+                    )
+                } else fallback
+            }
         }
     }
     val colors = baseColors.copy(background = Color.Transparent)

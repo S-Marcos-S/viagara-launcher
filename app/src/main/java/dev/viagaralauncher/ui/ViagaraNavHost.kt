@@ -68,6 +68,7 @@ import dev.viagaralauncher.ui.settings.FolderAppsScreen
 import dev.viagaralauncher.ui.settings.HiddenAppsScreen
 import dev.viagaralauncher.ui.settings.ManageFavoritesScreen
 import dev.viagaralauncher.ui.settings.SettingsScreen
+import dev.viagaralauncher.ui.settings.ThemesScreen
 import dev.viagaralauncher.ui.theme.rememberContentColor
 import dev.viagaralauncher.widget.WidgetPickerActivity
 import dev.viagaralauncher.widget.WidgetSlotActions
@@ -193,6 +194,7 @@ fun ViagaraNavHost(
 
     val themedIcons by app.prefs.themedIcons.collectAsState(initial = false)
     val themedIconStyle by app.prefs.themedIconStyle.collectAsState(initial = ThemedIconStyle.MATERIAL_YOU)
+    val activeThemeId by app.prefs.activeThemeId.collectAsState(initial = "system_dynamic")
 
     val dynamicButtonEnabled by app.prefs.dynamicButtonEnabled.collectAsState(initial = true)
     val dynamicButtonClickApp by app.prefs.dynamicButtonClickApp.collectAsState(initial = null)
@@ -566,6 +568,17 @@ fun ViagaraNavHost(
                 hapticsEnabled = hapticsEnabled,
                 onSelectStyle = { selected ->
                     scope.launch { app.prefs.setClockStyle(selected) }
+                },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable("themes") {
+            ThemesScreen(
+                currentThemeId = activeThemeId,
+                hapticsEnabled = hapticsEnabled,
+                onSelectTheme = { selected ->
+                    scope.launch { app.prefs.setActiveThemeId(selected) }
                 },
                 onBack = { navController.popBackStack() },
             )

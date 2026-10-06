@@ -71,11 +71,12 @@ class MainActivity : ComponentActivity() {
             val iconOverrides by app.prefs.iconOverrides.collectAsState(initial = emptyMap())
             val themedIcons by app.prefs.themedIcons.collectAsState(initial = false)
             val themedIconStyle by app.prefs.themedIconStyle.collectAsState(initial = ThemedIconStyle.MATERIAL_YOU)
+            val activeThemeId by app.prefs.activeThemeId.collectAsState(initial = "system_dynamic")
             val iconConfig = remember(iconPackPackage, iconOverrides, themedIcons, themedIconStyle) {
                 IconConfig(iconPackPackage, iconOverrides, themedIcons, themedIconStyle)
             }
 
-            ViagaraTheme(font = font) {
+            ViagaraTheme(font = font, activeThemeId = activeThemeId) {
                 CompositionLocalProvider(LocalIconConfig provides iconConfig) {
                     ViagaraNavHost(
                         app = app,

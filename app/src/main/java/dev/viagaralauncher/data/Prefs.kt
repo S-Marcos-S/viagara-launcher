@@ -46,7 +46,7 @@ enum class ClockStyle {
 /** AUTO picks light or dark text from the wallpaper's own colours. */
 enum class TextColorMode { AUTO, LIGHT, DARK }
 
-enum class ThemedIconStyle { MATERIAL_YOU, MINIMALIST }
+enum class ThemedIconStyle { MATERIAL_YOU, MINIMALIST, OLED_DARK }
 
 private val Context.dataStore by preferencesDataStore(name = "viagara_prefs")
 
@@ -90,6 +90,7 @@ class Prefs(private val context: Context) {
         val MUSIC_PLAYBACK_DETECTED = booleanPreferencesKey("music_playback_detected")
         val SHOW_APP_NOTIFICATIONS = booleanPreferencesKey("show_app_notifications")
         val FOLDER_WINDOW_POPUP = booleanPreferencesKey("folder_window_popup")
+        val ACTIVE_THEME = stringPreferencesKey("active_theme_id")
         val CLOCK_STYLE = stringPreferencesKey("clock_style")
         val WIDGET_ID = intPreferencesKey("widget_id")
         val WIDGET_IDS = stringPreferencesKey("widget_ids_csv")
@@ -217,6 +218,7 @@ class Prefs(private val context: Context) {
     val musicPlaybackDetected: Flow<Boolean> = data.map { it[Keys.MUSIC_PLAYBACK_DETECTED] ?: false }.distinctUntilChanged()
     val showAppNotifications: Flow<Boolean> = data.map { it[Keys.SHOW_APP_NOTIFICATIONS] ?: true }.distinctUntilChanged()
     val folderWindowPopup: Flow<Boolean> = data.map { it[Keys.FOLDER_WINDOW_POPUP] ?: true }.distinctUntilChanged()
+    val activeThemeId: Flow<String> = data.map { it[Keys.ACTIVE_THEME] ?: "system_dynamic" }.distinctUntilChanged()
     val clockStyle: Flow<ClockStyle> = data.map {
         runCatching { ClockStyle.valueOf(it[Keys.CLOCK_STYLE] ?: ClockStyle.CLASSIC.name) }
             .getOrDefault(ClockStyle.CLASSIC)
@@ -474,6 +476,10 @@ class Prefs(private val context: Context) {
 
     suspend fun setThemedIconStyle(v: ThemedIconStyle) {
         context.dataStore.edit { it[Keys.THEMED_ICON_STYLE] = v.name }
+    }
+
+    suspend fun setActiveThemeId(id: String) {
+        context.dataStore.edit { it[Keys.ACTIVE_THEME] = id }
     }
 
     suspend fun setWidgetId(id: Int) {

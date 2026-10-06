@@ -38,6 +38,20 @@
     <!-- Tela inicial -->
     <string name="options_title">Opções</string>
     <string name="home_option_wallpaper">Papel de parede</string>
+    <string name="home_option_themes">Temas</string>
+    <string name="themes_title">Temas</string>
+    <string name="themes_subtitle">Personalize a aparência e cores do seu launcher</string>
+    <string name="theme_system_dynamic_title">Dinâmico do Sistema</string>
+    <string name="theme_system_dynamic_desc">Cores extraídas do papel de parede com Material You</string>
+    <string name="theme_oled_black_title">OLED Preto Puro</string>
+    <string name="theme_oled_black_desc">Superfícies em preto absoluto, ideal para telas AMOLED</string>
+    <string name="theme_dark_modern_title">Escuro Moderno</string>
+    <string name="theme_dark_modern_desc">Paleta escura balanceada com contraste suave</string>
+    <string name="theme_light_clean_title">Claro Minimalista</string>
+    <string name="theme_light_clean_desc">Design brilhante, limpo e minimalista</string>
+    <string name="themes_custom_header">Catálogo de Temas</string>
+    <string name="themes_coming_soon_title">Temas Personalizados</string>
+    <string name="themes_coming_soon_desc">Novos temas exclusivos e paletas de cores estarão disponíveis em breve</string>
     <string name="home_reorder_hint">Segure e arraste para reordenar</string>
     <string name="home_no_favorites_title">Nenhum favorito ainda</string>
     <string name="home_no_favorites_body">Toque na borda da tela para abrir a lista de apps ou escolha seus favoritos na lista abaixo.</string>
@@ -112,6 +126,7 @@
     <string name="settings_themed_icons_style">Estilo dos ícones</string>
     <string name="settings_themed_icons_style_material_you">Material You</string>
     <string name="settings_themed_icons_style_minimalist">Minimalista</string>
+    <string name="settings_themed_icons_style_oled_dark">OLED Escuro</string>
     <string name="settings_icon_size">Tamanho dos ícones</string>
     <string name="settings_text_size">Tamanho do texto</string>
     <string name="settings_favorite_spacing">Espaçamento entre favoritos</string>
