@@ -12,11 +12,11 @@ on:
           - 'list_all'
           - 'remove'
       wallpaper_ids:
-        description: 'IDs dos wallpapers para remover (separados por vírgula ou espaço, ex: wallpaper_wh_3z1mge, wallpaper_wh_6d2k89 ou wh_3z1mge ou 3z1mge)'
+        description: 'IDs para remover (aceita VÁRIOS! Separe por vírgula, espaço, ponto e vírgula ou cole várias linhas)'
         required: false
         default: ''
       keyword:
-        description: 'Palavra-chave a buscar no título ou tags para remover (ex: car, anime, neon)'
+        description: 'Palavra(s)-chave para remover por título/tags (aceita várias separadas por vírgula, ex: car, anime, neon)'
         required: false
         default: ''
       category:
@@ -69,27 +69,7 @@ jobs:
           CATEGORY: ${{ github.event.inputs.category || 'none' }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
-          ARGS=""
-          if [ "$ACTION" = "remove" ]; then
-            CMD_ACTION="remove"
-            if [ -n "$WALLPAPER_IDS" ]; then
-              ARGS="$ARGS --ids \"$WALLPAPER_IDS\""
-            fi
-            if [ -n "$KEYWORD" ]; then
-              ARGS="$ARGS --keyword \"$KEYWORD\""
-            fi
-            if [ -n "$CATEGORY" ] && [ "$CATEGORY" != "none" ]; then
-              ARGS="$ARGS --category \"$CATEGORY\""
-            fi
-            if [ "$DRY_RUN" = "true" ]; then
-              ARGS="$ARGS --dry-run"
-            fi
-          else
-            CMD_ACTION="list"
-          fi
-
-          echo "Executando: python scripts/manage_wallpapers.py --action $CMD_ACTION $ARGS"
-          eval python scripts/manage_wallpapers.py --action "$CMD_ACTION" $ARGS
+          python scripts/manage_wallpapers.py
 
       - name: Commit and push changes
         if: ${{ github.event.inputs.action == 'remove' && github.event.inputs.dry_run != 'true' }}

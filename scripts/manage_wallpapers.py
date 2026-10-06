@@ -3,13 +3,15 @@
 """
 Script to list, visualize, and remove curated wallpapers from the repository.
 Also generates wallpapers/CATALOG.md for visual browsing on GitHub.
+Supports removing multiple wallpapers at once via IDs, keywords, or category.
 """
 
 import argparse
 import json
 import os
+import re
 import sys
-from typing import List, Set, Dict, Any
+from typing import List, Set, Dict, Any, Tuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CATALOG_PATH = os.path.join(BASE_DIR, "wallpapers", "catalog.json")
@@ -82,10 +84,81 @@ def write_to_step_summary(content: str):
             f.write(content + "\n")
 
 
+def parse_ids_input(raw_input: str) -> Tuple[List[str], Set[str]]:
+    """
+    Parses messy raw input containing multiple IDs.
+    Supports delimiters: commas, semicolons, newlines, pipes, spaces, tabs.
+    Supports markdown backticks, bullet dashes, file extensions (.webp/.jpg),
+    and URL paths. Returns (cleaned_original_list, all_matching_variants_set).
+    """
+    if not raw_input:
+        return [], set()
+
+    tokens = re.split(r'[,;\n\r\t| ]+', raw_input)
+    original_cleaned: List[str] = []
+    variants: Set[str] = set()
+
+    for token in tokens:
+        t = token.strip()
+        # Remove surrounding markdown symbols: `, ", ', *, -, #, [, ], (, )
+        t = re.sub(r"^[`'\"*#\-\[\]()]+", "", t)
+        t = re.sub(r"[`'\"*#\-\[\]()]+$", "", t)
+        t = t.strip()
+        if not t:
+            continue
+
+        # If it's a URL or path, get basename
+        if "/" in t or "\\" in t:
+            t = os.path.basename(t)
+
+        # Strip file extensions
+        for ext in [".webp", ".jpg", ".png", ".jpeg"]:
+            if t.lower().endswith(ext):
+                t = t[:-len(ext)]
+        t = t.strip()
+
+        if not t:
+            continue
+
+        if t not in original_cleaned:
+            original_cleaned.append(t)
+
+        variants.add(t)
+        variants.add(t.lower())
+
+        # Generate prefixes/suffixes for Wallhaven or generic IDs
+        if t.startswith("wallpaper_wh_"):
+            suffix = t[len("wallpaper_wh_"):]
+            variants.add(suffix)
+            variants.add(f"wh_{suffix}")
+        elif t.startswith("wallpaper_"):
+            suffix = t[len("wallpaper_"):]
+            variants.add(suffix)
+        elif t.startswith("wh_"):
+            suffix = t[len("wh_"):]
+            variants.add(suffix)
+            variants.add(f"wallpaper_wh_{suffix}")
+        else:
+            variants.add(f"wallpaper_wh_{t}")
+            variants.add(f"wallpaper_{t}")
+            variants.add(f"wh_{t}")
+
+    return original_cleaned, variants
+
+
+def parse_keywords_input(raw_keywords: str) -> List[str]:
+    """Splits multiple keywords by comma, semicolon, newline, pipe."""
+    if not raw_keywords:
+        return []
+    tokens = re.split(r'[,;\n\r|]+', raw_keywords)
+    return [t.strip().lower() for t in tokens if t.strip()]
+
+
 def remove_wallpapers(
     catalog: Dict[str, Any],
     ids_to_remove: Set[str],
-    keyword: str = "",
+    raw_ids_list: List[str] = None,
+    keywords_raw: str = "",
     category: str = "",
     dry_run: bool = False,
 ) -> int:
@@ -93,23 +166,38 @@ def remove_wallpapers(
     kept = []
     removed = []
 
-    keyword_lower = keyword.strip().lower() if keyword else ""
+    keywords = parse_keywords_input(keywords_raw)
+    matched_requested_ids: Set[str] = set()
 
     for w in wallpapers:
         wid = w["id"]
-        # Match ID (accepts full id or short suffix, e.g. wallpaper_wh_123 or wh_123 or 123)
+        wid_clean = wid.replace("wallpaper_wh_", "").replace("wallpaper_", "")
+
+        # Match ID
         match_id = (
             wid in ids_to_remove
-            or wid.replace("wallpaper_wh_", "") in ids_to_remove
-            or wid.replace("wallpaper_", "") in ids_to_remove
+            or wid.lower() in ids_to_remove
+            or wid_clean in ids_to_remove
+            or wid_clean.lower() in ids_to_remove
+            or f"wh_{wid_clean}" in ids_to_remove
         )
 
-        match_keyword = False
-        if keyword_lower:
-            match_name = keyword_lower in w.get("name", "").lower()
-            match_tags = any(keyword_lower in t.lower() for t in w.get("tags", []))
-            match_keyword = match_name or match_tags
+        if match_id:
+            matched_requested_ids.add(wid)
+            matched_requested_ids.add(wid_clean)
+            matched_requested_ids.add(f"wh_{wid_clean}")
 
+        # Match Keywords (across title and tags)
+        match_keyword = False
+        if keywords:
+            name_lower = w.get("name", "").lower()
+            tags_lower = [t.lower() for t in w.get("tags", [])]
+            for kw in keywords:
+                if kw in name_lower or any(kw in t for t in tags_lower):
+                    match_keyword = True
+                    break
+
+        # Match Category
         match_category = False
         if category and category != "none":
             match_category = (w.get("category") == category)
@@ -119,13 +207,29 @@ def remove_wallpapers(
         else:
             kept.append(w)
 
+    unmatched_ids = []
+    if raw_ids_list:
+        for orig in raw_ids_list:
+            orig_clean = orig.replace("wallpaper_wh_", "").replace("wallpaper_", "")
+            if orig not in matched_requested_ids and orig_clean not in matched_requested_ids:
+                unmatched_ids.append(orig)
+
     if not removed:
         print("Nenhum papel de parede encontrado com os critérios fornecidos.")
-        write_to_step_summary("### ℹ️ Nenhum papel de parede correspondeu aos filtros para remoção.")
+        msg = "### ℹ️ Nenhum papel de parede correspondeu aos filtros para remoção."
+        if unmatched_ids:
+            msg += f"\n\n> ⚠️ **IDs não encontrados no catálogo:** `{', '.join(unmatched_ids)}`"
+        write_to_step_summary(msg)
         return 0
 
     print(f"\nPapéis de parede a remover ({len(removed)}):")
-    summary_lines = [f"### 🗑️ Papéis de parede removidos ({len(removed)}):", "| Prévia | ID | Nome | Categoria |", "| :---: | :--- | :--- | :--- |"]
+    summary_lines = [
+        f"### 🗑️ Papéis de parede removidos ({len(removed)}):",
+        f"Total restante no catálogo: **{len(kept)}**",
+        "",
+        "| Prévia | ID | Nome | Categoria |",
+        "| :---: | :--- | :--- | :--- |",
+    ]
 
     for r in removed:
         wid = r["id"]
@@ -135,9 +239,13 @@ def remove_wallpapers(
         print(f"- [{cat}] `{wid}` - {name}")
         summary_lines.append(f'| <img src="{thumb_url}" width="60" alt="{name}" /> | `{wid}` | {name} | {cat} |')
 
+    if unmatched_ids:
+        print(f"\n⚠️ Atenção: Os seguintes IDs não foram encontrados (já removidos ou incorretos): {', '.join(unmatched_ids)}")
+        summary_lines.append(f"\n> ⚠️ **Aviso:** Os seguintes IDs não foram encontrados no catálogo: `{', '.join(unmatched_ids)}`")
+
     if dry_run:
         print("\n[DRY-RUN] Nenhuma alteração foi salva no catálogo ou no disco.")
-        summary_lines.append("\n> **[DRY-RUN]** Simulação executada. Nenhum arquivo foi removido.")
+        summary_lines.append("\n> **[DRY-RUN]** Simulação executada. Nenhum arquivo foi modificado.")
         write_to_step_summary("\n".join(summary_lines))
         return len(removed)
 
@@ -158,48 +266,68 @@ def remove_wallpapers(
     save_catalog(catalog)
     update_catalog_md(catalog)
 
-    print(f"\nSucesso: {len(removed)} papéis de parede removidos e {deleted_files} arquivos deletados.")
+    print(f"\nSucesso: {len(removed)} papéis de parede removidos e {deleted_files} arquivos de imagem deletados.")
     write_to_step_summary("\n".join(summary_lines))
     return len(removed)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Manage and clean curated wallpapers.")
-    parser.add_argument("--action", type=str, choices=["list", "remove", "update-md"], default="list")
-    parser.add_argument("--ids", type=str, default="", help="Comma or space separated IDs to remove")
-    parser.add_argument("--keyword", type=str, default="", help="Keyword to search in title/tags for removal")
-    parser.add_argument("--category", type=str, default="", help="Category to purge (e.g. oled, anime)")
-    parser.add_argument("--dry-run", action="store_true", help="Simulate without deleting")
+    parser.add_argument("--action", type=str, choices=["list", "remove", "update-md"], default=None)
+    parser.add_argument("--ids", type=str, default=None, help="IDs to remove (supports multiple, comma/space/line separated)")
+    parser.add_argument("--keyword", type=str, default=None, help="Keywords to search in title/tags for removal")
+    parser.add_argument("--category", type=str, default=None, help="Category to purge (e.g. oled, anime)")
+    parser.add_argument("--dry-run", action="store_true", default=None, help="Simulate without deleting")
     args = parser.parse_args()
+
+    # Environment variable fallbacks for seamless GitHub Actions integration
+    action = args.action or os.environ.get("ACTION", "list")
+    if action == "list_all":
+        action = "list"
+
+    ids_input = args.ids if args.ids is not None else os.environ.get("WALLPAPER_IDS", "")
+    keyword_input = args.keyword if args.keyword is not None else os.environ.get("KEYWORD", "")
+    category_input = args.category if args.category is not None else os.environ.get("CATEGORY", "none")
+    dry_run = args.dry_run if args.dry_run is not None and args.dry_run else (os.environ.get("DRY_RUN", "").lower() in ("true", "1", "yes"))
 
     catalog = load_catalog()
 
-    if args.action == "update-md":
+    if action == "update-md":
         update_catalog_md(catalog)
         return
 
-    if args.action == "list":
+    if action == "list":
         update_catalog_md(catalog)
         summary_md = generate_catalog_markdown(catalog, for_github_summary=True)
         write_to_step_summary(summary_md)
         print(f"Catálogo listado com sucesso ({len(catalog.get('wallpapers', []))} itens).")
         return
 
-    if args.action == "remove":
-        raw_ids = [i.strip() for i in args.ids.replace(",", " ").split() if i.strip()]
-        ids_set = set(raw_ids)
+    if action == "remove":
+        orig_ids, ids_set = parse_ids_input(ids_input)
 
-        if not ids_set and not args.keyword and (not args.category or args.category == "none"):
-            print("Erro: Para remover, informe ao menos um ID (--ids), palavra-chave (--keyword) ou categoria (--category).")
+        if not ids_set and not keyword_input and (not category_input or category_input == "none"):
+            print("Erro: Para remover, informe ao menos um ID, palavra-chave ou categoria.")
             write_to_step_summary("### ⚠️ Erro: Nenhum critério de remoção foi informado (IDs, palavra-chave ou categoria).")
             sys.exit(1)
+
+        print(f"Critérios de remoção:")
+        if orig_ids:
+            print(f"- Total de IDs informados: {len(orig_ids)} ({', '.join(orig_ids)})")
+        if keyword_input:
+            print(f"- Palavras-chave: {keyword_input}")
+        if category_input and category_input != "none":
+            print(f"- Categoria: {category_input}")
+        if dry_run:
+            print("- Modo DRY-RUN ativado (simulação)")
 
         remove_wallpapers(
             catalog=catalog,
             ids_to_remove=ids_set,
-            keyword=args.keyword,
-            category=args.category,
-            dry_run=args.dry_run,
+            raw_ids_list=orig_ids,
+            keywords_raw=keyword_input,
+            category=category_input,
+            dry_run=dry_run,
         )
 
 
