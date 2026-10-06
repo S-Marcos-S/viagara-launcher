@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **105**
+Total de papéis de parede: **125**
 
 ### OLED (6)
 
@@ -93,7 +93,7 @@ Total de papéis de parede: **105**
 | <img src="thumbnails/wallpaper_wh_lyypwr.webp" width="80" alt="Cartethyia (wuthering Waves)" /> | `wallpaper_wh_lyypwr` | **Cartethyia (wuthering Waves)** | games, Cartethyia (Wuthering Waves), Wuthering Waves, horns |
 | <img src="thumbnails/wallpaper_wh_dpm6k3.webp" width="80" alt="Illustration" /> | `wallpaper_wh_dpm6k3` | **Illustration** | games, illustration, fan art, drawing |
 
-### Natureza (7)
+### Natureza (27)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -104,6 +104,26 @@ Total de papéis de parede: **105**
 | <img src="thumbnails/wallpaper_wh_9d9d8x.webp" width="80" alt="Clouds" /> | `wallpaper_wh_9d9d8x` | **Clouds** | nature, clouds, sunset |
 | <img src="thumbnails/wallpaper_wh_967z51.webp" width="80" alt="House" /> | `wallpaper_wh_967z51` | **House** | nature, house, ground, landscape |
 | <img src="thumbnails/wallpaper_wh_lqp5dy.webp" width="80" alt="Landscape" /> | `wallpaper_wh_lqp5dy` | **Landscape** | nature, landscape, golden hour, winter |
+| <img src="thumbnails/wallpaper_wh_5gmgk5.webp" width="80" alt="Clouds" /> | `wallpaper_wh_5gmgk5` | **Clouds** | nature, clouds, night, sky |
+| <img src="thumbnails/wallpaper_wh_4llmx2.webp" width="80" alt="Landscape" /> | `wallpaper_wh_4llmx2` | **Landscape** | nature, landscape, lake, ice |
+| <img src="thumbnails/wallpaper_wh_wyg8w7.webp" width="80" alt="Water" /> | `wallpaper_wh_wyg8w7` | **Water** | nature, water, landscape |
+| <img src="thumbnails/wallpaper_wh_d5o5do.webp" width="80" alt="Green Background" /> | `wallpaper_wh_d5o5do` | **Green Background** | nature, green background, green, centered |
+| <img src="thumbnails/wallpaper_wh_p26g59.webp" width="80" alt="Water" /> | `wallpaper_wh_p26g59` | **Water** | nature, water, beach, blue |
+| <img src="thumbnails/wallpaper_wh_eyq6zr.webp" width="80" alt="Mountain Top" /> | `wallpaper_wh_eyq6zr` | **Mountain Top** | nature, mountain top, landscape, snow covered |
+| <img src="thumbnails/wallpaper_wh_48z3my.webp" width="80" alt="Landscape" /> | `wallpaper_wh_48z3my` | **Landscape** | nature, landscape, rocks, sky |
+| <img src="thumbnails/wallpaper_wh_gj6j8e.webp" width="80" alt="Sunset" /> | `wallpaper_wh_gj6j8e` | **Sunset** | nature, sunset, landscape, water |
+| <img src="thumbnails/wallpaper_wh_9dkx98.webp" width="80" alt="Flowers" /> | `wallpaper_wh_9dkx98` | **Flowers** | nature, flowers, pink, photography |
+| <img src="thumbnails/wallpaper_wh_6q9kr6.webp" width="80" alt="Aerial View" /> | `wallpaper_wh_6q9kr6` | **Aerial View** | nature, aerial view |
+| <img src="thumbnails/wallpaper_wh_eo2wpk.webp" width="80" alt="Water" /> | `wallpaper_wh_eo2wpk` | **Water** | nature, water, trees, river |
+| <img src="thumbnails/wallpaper_wh_47r11o.webp" width="80" alt="Forest" /> | `wallpaper_wh_47r11o` | **Forest** | nature, forest, peaceful, outdoors |
+| <img src="thumbnails/wallpaper_wh_vg3vrp.webp" width="80" alt="Hallstatt" /> | `wallpaper_wh_vg3vrp` | **Hallstatt** | nature, Hallstatt, Austria, landscape |
+| <img src="thumbnails/wallpaper_wh_1k3e5w.webp" width="80" alt="Trees" /> | `wallpaper_wh_1k3e5w` | **Trees** | nature, trees, Olympic National Park, national park |
+| <img src="thumbnails/wallpaper_wh_2exokg.webp" width="80" alt="Mountains" /> | `wallpaper_wh_2exokg` | **Mountains** | nature, mountains, highway, desert |
+| <img src="thumbnails/wallpaper_wh_zyrogv.webp" width="80" alt="Flowers" /> | `wallpaper_wh_zyrogv` | **Flowers** | nature, flowers, black background, dark |
+| <img src="thumbnails/wallpaper_wh_o5xw3m.webp" width="80" alt="Seasons" /> | `wallpaper_wh_o5xw3m` | **Seasons** | nature, seasons, mountains, snow |
+| <img src="thumbnails/wallpaper_wh_39gye3.webp" width="80" alt="Mountains" /> | `wallpaper_wh_39gye3` | **Mountains** | nature, mountains, landscape, wilderness |
+| <img src="thumbnails/wallpaper_wh_gjgomq.webp" width="80" alt="Landscape" /> | `wallpaper_wh_gjgomq` | **Landscape** | nature, landscape, lake, hills |
+| <img src="thumbnails/wallpaper_wh_gjgodq.webp" width="80" alt="Landscape" /> | `wallpaper_wh_gjgodq` | **Landscape** | nature, landscape, forest, path |
 
 ### Minimalista (10)
 
