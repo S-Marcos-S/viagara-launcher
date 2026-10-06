@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **107**
+Total de papéis de parede: **106**
 
 ### OLED (6)
 
@@ -33,7 +33,7 @@ Total de papéis de parede: **107**
 | <img src="thumbnails/wallpaper_wh_8xj3jo.webp" width="80" alt="Photoshopped" /> | `wallpaper_wh_8xj3jo` | **Photoshopped** | abstract, photoshopped |
 | <img src="thumbnails/wallpaper_wh_eyyreo.webp" width="80" alt="Gradient" /> | `wallpaper_wh_eyyreo` | **Gradient** | abstract, gradient, dark, shapes |
 
-### Anime (24)
+### Anime (23)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -52,7 +52,6 @@ Total de papéis de parede: **107**
 | <img src="thumbnails/wallpaper_wh_jx8grq.webp" width="80" alt="Makima (chainsaw Man)" /> | `wallpaper_wh_jx8grq` | **Makima (chainsaw Man)** | anime, Makima (Chainsaw Man), Chainsaw Man, redhead |
 | <img src="thumbnails/wallpaper_wh_og9rvm.webp" width="80" alt="Chocoshi" /> | `wallpaper_wh_og9rvm` | **Chocoshi** | anime, Chocoshi, scenery, rear view |
 | <img src="thumbnails/wallpaper_wh_21kkdm.webp" width="80" alt="Illdian" /> | `wallpaper_wh_21kkdm` | **Illdian** | anime, ILLDIAN, illustration, digital painting |
-| <img src="thumbnails/wallpaper_wh_l3539r.webp" width="80" alt="High Heels" /> | `wallpaper_wh_l3539r` | **High Heels** | anime, high heels, CGI, heels |
 | <img src="thumbnails/wallpaper_wh_3zxokv.webp" width="80" alt="2d" /> | `wallpaper_wh_3zxokv` | **2d** | anime, 2D, Pixiv, petite |
 | <img src="thumbnails/wallpaper_wh_9drj2d.webp" width="80" alt="Trungbui" /> | `wallpaper_wh_9drj2d` | **Trungbui** | anime, Trungbui, illustration, Raven (DC Comics) |
 | <img src="thumbnails/wallpaper_wh_pkd9w3.webp" width="80" alt="Pantyhose" /> | `wallpaper_wh_pkd9w3` | **Pantyhose** | anime, pantyhose, heels, black pantyhose |
