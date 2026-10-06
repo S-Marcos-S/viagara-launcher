@@ -467,6 +467,8 @@ fun ViagaraNavHost(
                 themedIconStyle = themedIconStyle,
                 onSetThemedIcons = { scope.launch { app.prefs.setThemedIcons(it) } },
                 onSetThemedIconStyle = { scope.launch { app.prefs.setThemedIconStyle(it) } },
+                activeThemeId = activeThemeId,
+                onSetActiveThemeId = { scope.launch { app.prefs.setActiveThemeId(it) } },
                 onOpenAccessibilitySettings = {
                     context.startActivity(
                         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

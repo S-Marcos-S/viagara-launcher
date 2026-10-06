@@ -23,6 +23,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.draw.clip
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalView
+import dev.viagaralauncher.service.HapticUtil
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
@@ -124,6 +142,8 @@ fun SettingsScreen(
     themedIconStyle: ThemedIconStyle = ThemedIconStyle.MATERIAL_YOU,
     onSetThemedIcons: (Boolean) -> Unit = {},
     onSetThemedIconStyle: (ThemedIconStyle) -> Unit = {},
+    activeThemeId: String = "system_dynamic",
+    onSetActiveThemeId: (String) -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit,
     onOpenHiddenApps: () -> Unit,
     onOpenFavorites: () -> Unit,
@@ -169,6 +189,12 @@ fun SettingsScreen(
         ) {
             item {
                 Section(stringResource(R.string.settings_section_appearance)) {
+                    ThemeColorPaletteRow(
+                        activeThemeId = activeThemeId,
+                        hapticsEnabled = hapticsEnabled,
+                        onSelectTheme = onSetActiveThemeId,
+                    )
+                    RowDivider()
                     // Live preview of exactly how a home row will render.
                     RowPreview(previewApp, iconSizeDp, labelSizeSp, font)
                     RowDivider()
@@ -976,5 +1002,169 @@ private fun NavigationRow(
             modifier = Modifier.padding(4.dp),
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
         )
+    }
+}
+
+private data class ThemeColorDotOption(
+    val id: String,
+    val nameRes: Int,
+    val color: Color,
+    val borderColor: Color,
+    val checkmarkColor: Color,
+)
+
+@Composable
+private fun ThemeColorPaletteRow(
+    activeThemeId: String,
+    hapticsEnabled: Boolean,
+    onSelectTheme: (String) -> Unit,
+) {
+    val view = LocalView.current
+    val colorScheme = MaterialTheme.colorScheme
+
+    val options = remember(colorScheme) {
+        listOf(
+            ThemeColorDotOption(
+                id = "system_dynamic",
+                nameRes = R.string.theme_system_dynamic_title,
+                color = colorScheme.primary,
+                borderColor = colorScheme.outlineVariant.copy(alpha = 0.5f),
+                checkmarkColor = colorScheme.onPrimary,
+            ),
+            ThemeColorDotOption(
+                id = "oled_black",
+                nameRes = R.string.theme_oled_black_title,
+                color = Color.Black,
+                borderColor = Color(0xFF333333),
+                checkmarkColor = Color(0xFFEDEDED),
+            ),
+            ThemeColorDotOption(
+                id = "dark_modern",
+                nameRes = R.string.theme_dark_modern_title,
+                color = Color(0xFF1B2733),
+                borderColor = Color(0xFF384755),
+                checkmarkColor = Color(0xFF7FD1E0),
+            ),
+            ThemeColorDotOption(
+                id = "light_clean",
+                nameRes = R.string.theme_light_clean_title,
+                color = Color(0xFFF3F6F8),
+                borderColor = Color(0xFFB0BCC7),
+                checkmarkColor = Color(0xFF10707F),
+            ),
+        )
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = stringResource(R.string.settings_theme_colors),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            options.forEach { option ->
+                val isSelected = activeThemeId == option.id
+                ThemeColorDot(
+                    option = option,
+                    isSelected = isSelected,
+                    onClick = {
+                        if (!isSelected) {
+                            HapticUtil.tick(view, hapticsEnabled)
+                            onSelectTheme(option.id)
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeColorDot(
+    option: ThemeColorDotOption,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.05f else 0.85f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "dotScale",
+    )
+    val ringSize by animateDpAsState(
+        targetValue = if (isSelected) 36.dp else 26.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "dotRingSize",
+    )
+    val ringAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0f,
+        animationSpec = tween(durationMillis = 200),
+        label = "dotRingAlpha",
+    )
+
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (ringAlpha > 0.01f) {
+            Box(
+                modifier = Modifier
+                    .size(ringSize)
+                    .graphicsLayer { alpha = ringAlpha }
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = ringAlpha),
+                        shape = CircleShape,
+                    ),
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clip(CircleShape)
+                .background(option.color)
+                .border(1.dp, option.borderColor, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            AnimatedVisibility(
+                visible = isSelected,
+                enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(tween(150)),
+                exit = scaleOut(tween(150)) + fadeOut(tween(150)),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = stringResource(option.nameRes),
+                    tint = option.checkmarkColor,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+        }
     }
 }
