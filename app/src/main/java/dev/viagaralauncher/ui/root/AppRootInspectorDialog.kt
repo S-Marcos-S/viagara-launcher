@@ -2,6 +2,7 @@
 package dev.viagaralauncher.ui.root
 
 import android.content.Intent
+import dev.viagaralauncher.MainActivity
 import android.graphics.PixelFormat
 import android.net.Uri
 import android.os.Build
@@ -695,7 +696,7 @@ fun AppRootInspectorDialog(
                                             }
                                             context.startActivity(intent)
                                         } catch (ignored: Exception) {}
-                                        FloatingAppInspectorOverlay.updateLayout(context, isMinimized = true)
+                                        FloatingAppInspectorOverlayManager.updateLayout(context, isMinimized = true)
                                     },
                             )
 
@@ -1564,12 +1565,20 @@ private fun NetworkTabContent(data: AppInspectionData) {
                     .clickable {
                         try {
                             val intent = Intent(Settings.ACTION_IGNORE_BACKGROUND_DATA_RESTRICTIONS_SETTINGS).apply {
-                                data = Uri.parse("package:${data.packageName}")
+                                setData(Uri.parse("package:${data.packageName}"))
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
                             context.startActivity(intent)
                         } catch (e: Exception) {
-                            Toast.makeText(context, "Ação indisponível", Toast.LENGTH_SHORT).show()
+                            try {
+                                val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    setData(Uri.parse("package:${data.packageName}"))
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(fallback)
+                            } catch (e2: Exception) {
+                                Toast.makeText(context, "Ação indisponível", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                     .padding(horizontal = 4.dp, vertical = 2.dp)

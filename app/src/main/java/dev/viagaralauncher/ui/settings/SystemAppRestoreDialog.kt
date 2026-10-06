@@ -48,9 +48,10 @@ fun SystemAppRestoreDialog(onDismiss: () -> Unit) {
             val uninstalledSystemApps = mutableListOf<UninstalledSystemApp>()
             
             for (pkg in allPackages) {
-                if (pkg.applicationInfo != null && (pkg.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) {
+                val appInfo = pkg.applicationInfo
+                if (appInfo != null && (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) {
                     if (!installedPackages.contains(pkg.packageName)) {
-                        val name = pm.getApplicationLabel(pkg.applicationInfo).toString()
+                        val name = pm.getApplicationLabel(appInfo).toString()
                         uninstalledSystemApps.add(UninstalledSystemApp(pkg.packageName, name))
                     }
                 }
