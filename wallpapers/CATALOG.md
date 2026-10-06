@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **125**
+Total de papéis de parede: **124**
 
 ### OLED (6)
 
@@ -79,20 +79,6 @@ Total de papéis de parede: **125**
 | <img src="thumbnails/wallpaper_wh_7295pv.webp" width="80" alt="Stars" /> | `wallpaper_wh_7295pv` | **Stars** | space, stars, spaceship, planet |
 | <img src="thumbnails/wallpaper_wh_nr1de1.webp" width="80" alt="Sky" /> | `wallpaper_wh_nr1de1` | **Sky** | space, sky, stars, dark |
 
-### Jogos (9)
-
-| Prévia | ID | Nome | Tags |
-| :---: | :--- | :--- | :--- |
-| <img src="thumbnails/wallpaper_wh_d6xe7l.webp" width="80" alt="Office Girl" /> | `wallpaper_wh_d6xe7l` | **Office Girl** | anime, office girl, pantyhose, Bronya Zaychik |
-| <img src="thumbnails/wallpaper_wh_k7rk61.webp" width="80" alt="Genshin Impact" /> | `wallpaper_wh_k7rk61` | **Genshin Impact** | anime, Genshin Impact, Keqing (Genshin Impact), pantyhose |
-| <img src="thumbnails/wallpaper_wh_2y2jg6.webp" width="80" alt="Blue Archive" /> | `wallpaper_wh_2y2jg6` | **Blue Archive** | anime, Blue Archive, smiling, hand on face |
-| <img src="thumbnails/wallpaper_wh_po929j.webp" width="80" alt="Evelyn Chevalier (zenless Zone Zero)" /> | `wallpaper_wh_po929j` | **Evelyn Chevalier (zenless Zone Zero)** | anime, Evelyn Chevalier (Zenless Zone Zero), Zenless Zone Zero, pantyhose |
-| <img src="thumbnails/wallpaper_wh_q6dgwd.webp" width="80" alt="2b (nier: Automata)" /> | `wallpaper_wh_q6dgwd` | **2b (nier: Automata)** | games, 2B (Nier: Automata), video games, blindfold |
-| <img src="thumbnails/wallpaper_wh_l3kkep.webp" width="80" alt="Jean (genshin Impact)" /> | `wallpaper_wh_l3kkep` | **Jean (genshin Impact)** | games, Jean (Genshin Impact), Genshin Impact, video games |
-| <img src="thumbnails/wallpaper_wh_yxg2jl.webp" width="80" alt="Video Games" /> | `wallpaper_wh_yxg2jl` | **Video Games** | games, video games, Aether Gazer, Mirco Cabbia |
-| <img src="thumbnails/wallpaper_wh_lyypwr.webp" width="80" alt="Cartethyia (wuthering Waves)" /> | `wallpaper_wh_lyypwr` | **Cartethyia (wuthering Waves)** | games, Cartethyia (Wuthering Waves), Wuthering Waves, horns |
-| <img src="thumbnails/wallpaper_wh_dpm6k3.webp" width="80" alt="Illustration" /> | `wallpaper_wh_dpm6k3` | **Illustration** | games, illustration, fan art, drawing |
-
 ### Natureza (27)
 
 | Prévia | ID | Nome | Tags |
@@ -139,6 +125,19 @@ Total de papéis de parede: **125**
 | <img src="thumbnails/wallpaper_wh_r7p76j.webp" width="80" alt="Red Background" /> | `wallpaper_wh_r7p76j` | **Red Background** | minimal, red background, orange |
 | <img src="thumbnails/wallpaper_wh_g7o3oe.webp" width="80" alt="Firewatch" /> | `wallpaper_wh_g7o3oe` | **Firewatch** | minimal, Firewatch, video games, cel shaded |
 | <img src="thumbnails/wallpaper_wh_od1o3m.webp" width="80" alt="Landscape" /> | `wallpaper_wh_od1o3m` | **Landscape** | minimal, landscape, mountains |
+
+### Jogos (8)
+
+| Prévia | ID | Nome | Tags |
+| :---: | :--- | :--- | :--- |
+| <img src="thumbnails/wallpaper_wh_k7rk61.webp" width="80" alt="Genshin Impact" /> | `wallpaper_wh_k7rk61` | **Genshin Impact** | anime, Genshin Impact, Keqing (Genshin Impact), pantyhose |
+| <img src="thumbnails/wallpaper_wh_2y2jg6.webp" width="80" alt="Blue Archive" /> | `wallpaper_wh_2y2jg6` | **Blue Archive** | anime, Blue Archive, smiling, hand on face |
+| <img src="thumbnails/wallpaper_wh_po929j.webp" width="80" alt="Evelyn Chevalier (zenless Zone Zero)" /> | `wallpaper_wh_po929j` | **Evelyn Chevalier (zenless Zone Zero)** | anime, Evelyn Chevalier (Zenless Zone Zero), Zenless Zone Zero, pantyhose |
+| <img src="thumbnails/wallpaper_wh_q6dgwd.webp" width="80" alt="2b (nier: Automata)" /> | `wallpaper_wh_q6dgwd` | **2b (nier: Automata)** | games, 2B (Nier: Automata), video games, blindfold |
+| <img src="thumbnails/wallpaper_wh_l3kkep.webp" width="80" alt="Jean (genshin Impact)" /> | `wallpaper_wh_l3kkep` | **Jean (genshin Impact)** | games, Jean (Genshin Impact), Genshin Impact, video games |
+| <img src="thumbnails/wallpaper_wh_yxg2jl.webp" width="80" alt="Video Games" /> | `wallpaper_wh_yxg2jl` | **Video Games** | games, video games, Aether Gazer, Mirco Cabbia |
+| <img src="thumbnails/wallpaper_wh_lyypwr.webp" width="80" alt="Cartethyia (wuthering Waves)" /> | `wallpaper_wh_lyypwr` | **Cartethyia (wuthering Waves)** | games, Cartethyia (Wuthering Waves), Wuthering Waves, horns |
+| <img src="thumbnails/wallpaper_wh_dpm6k3.webp" width="80" alt="Illustration" /> | `wallpaper_wh_dpm6k3` | **Illustration** | games, illustration, fan art, drawing |
 
 ### Cyberpunk (6)
 
