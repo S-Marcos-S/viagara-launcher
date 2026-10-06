@@ -646,6 +646,81 @@
         "phone",
         "colorful"
       ]
+    },
+    {
+      "id": "wallpaper_wh_l3539r",
+      "name": "High Heels",
+      "author": "ayc83631286",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_l3539r.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_l3539r.webp",
+      "primary_color": "#000000",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "high heels",
+        "CGI",
+        "heels"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_3zxokv",
+      "name": "2d",
+      "author": "WubbaLubbaDubDub645",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_3zxokv.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_3zxokv.webp",
+      "primary_color": "#424153",
+      "category": "space",
+      "tags": [
+        "space",
+        "2D",
+        "Pixiv",
+        "petite"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_mddodk",
+      "name": "Landscape",
+      "author": "kenzabo",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_mddodk.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_mddodk.webp",
+      "primary_color": "#424153",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "landscape",
+        "city",
+        "sky"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_eyz75k",
+      "name": "Linux",
+      "author": "StaticRocket",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_eyz75k.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_eyz75k.webp",
+      "primary_color": "#000000",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "Linux",
+        "material minimal",
+        "ASCII art"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_p21399",
+      "name": "Glitch Art",
+      "author": "Zloigadik",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_p21399.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_p21399.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "glitch art",
+        "ASCII art",
+        "skull"
+      ]
     }
   ]
 }
