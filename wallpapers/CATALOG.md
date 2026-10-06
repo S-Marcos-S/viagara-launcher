@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **124**
+Total de papéis de parede: **136**
 
 ### OLED (6)
 
@@ -180,3 +180,20 @@ Total de papéis de parede: **124**
 | <img src="thumbnails/wallpaper_wh_z82w6j.webp" width="80" alt="Subway" /> | `wallpaper_wh_z82w6j` | **Subway** | cars, subway, urban, underground |
 | <img src="thumbnails/wallpaper_wh_p8rzx3.webp" width="80" alt="Car" /> | `wallpaper_wh_p8rzx3` | **Car** | cars, car, Porsche, low car |
 | <img src="thumbnails/wallpaper_wh_md8ev8.webp" width="80" alt="Car" /> | `wallpaper_wh_md8ev8` | **Car** | cars, car, Porsche, low car |
+
+### Animais (12)
+
+| Prévia | ID | Nome | Tags |
+| :---: | :--- | :--- | :--- |
+| <img src="thumbnails/wallpaper_wh_8x3dxo.webp" width="80" alt="White Background" /> | `wallpaper_wh_8x3dxo` | **White Background** | animals, white background, dog, humor |
+| <img src="thumbnails/wallpaper_wh_1j3x31.webp" width="80" alt="Landscape" /> | `wallpaper_wh_1j3x31` | **Landscape** | animals, landscape, snow |
+| <img src="thumbnails/wallpaper_wh_1j3d93.webp" width="80" alt="Panda" /> | `wallpaper_wh_1j3d93` | **Panda** | animals, panda, white background |
+| <img src="thumbnails/wallpaper_wh_k9wkw1.webp" width="80" alt="White Background" /> | `wallpaper_wh_k9wkw1` | **White Background** | animals, white background, birds, fruit |
+| <img src="thumbnails/wallpaper_wh_q2r2z5.webp" width="80" alt="Animals" /> | `wallpaper_wh_q2r2z5` | **Animals** | animals, cats, calico |
+| <img src="thumbnails/wallpaper_wh_4dykmm.webp" width="80" alt="Dog" /> | `wallpaper_wh_4dykmm` | **Dog** | animals, dog, Shiba Inu |
+| <img src="thumbnails/wallpaper_wh_2kedp6.webp" width="80" alt="Underwater" /> | `wallpaper_wh_2kedp6` | **Underwater** | animals, underwater, shipwreck |
+| <img src="thumbnails/wallpaper_wh_x8vd2z.webp" width="80" alt="Animal Ears" /> | `wallpaper_wh_x8vd2z` | **Animal Ears** | animals, animal ears, wolf |
+| <img src="thumbnails/wallpaper_wh_83l77o.webp" width="80" alt="Shark" /> | `wallpaper_wh_83l77o` | **Shark** | animals, shark, black background |
+| <img src="thumbnails/wallpaper_wh_6qk2jx.webp" width="80" alt="Gorillas" /> | `wallpaper_wh_6qk2jx` | **Gorillas** | animals, gorillas, monkey, yellow background |
+| <img src="thumbnails/wallpaper_wh_qd6g6r.webp" width="80" alt="Deer" /> | `wallpaper_wh_qd6g6r` | **Deer** | animals, deer, landscape |
+| <img src="thumbnails/wallpaper_wh_8ol91k.webp" width="80" alt="Animal Ears" /> | `wallpaper_wh_8ol91k` | **Animal Ears** | animals, animal ears, cats |
