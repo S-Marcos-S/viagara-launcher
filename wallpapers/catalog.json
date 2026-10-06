@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "wallpapers": [
+    {
+      "id": "wallpaper_01",
+      "name": "Obsidian Cyan",
+      "author": "Viagara Launcher",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_01.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_01.png",
+      "primary_color": "#00121A",
+      "tags": ["oled", "dark", "minimalist"]
+    },
+    {
+      "id": "wallpaper_02",
+      "name": "Midnight Slate",
+      "author": "Viagara Launcher",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_02.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_02.png",
+      "primary_color": "#001B27",
+      "tags": ["dark", "abstract", "modern"]
+    }
+  ]
+}

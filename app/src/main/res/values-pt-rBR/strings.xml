@@ -38,6 +38,18 @@
     <!-- Tela inicial -->
     <string name="options_title">Opções</string>
     <string name="home_option_wallpaper">Papel de parede</string>
+    <string name="wallpaper_picker_title">Papéis de Parede</string>
+    <string name="wallpaper_picker_gallery">Fotos e Galeria</string>
+    <string name="wallpaper_picker_gallery_desc">Escolha uma imagem do seu aparelho ou Google Fotos</string>
+    <string name="wallpaper_picker_curated">Coleção Oficial</string>
+    <string name="wallpaper_picker_empty">Nenhum papel de parede disponível no momento.</string>
+    <string name="wallpaper_apply_title">Aplicar Papel de Parede</string>
+    <string name="wallpaper_apply_home">Tela inicial</string>
+    <string name="wallpaper_apply_lock">Tela de bloqueio</string>
+    <string name="wallpaper_apply_both">Ambas as telas</string>
+    <string name="wallpaper_applied_success">Papel de parede aplicado com sucesso!</string>
+    <string name="wallpaper_apply_error">Erro ao aplicar papel de parede.</string>
+    <string name="wallpaper_applying">Aplicando papel de parede…</string>
     <string name="home_option_themes">Temas</string>
     <string name="themes_title">Temas</string>
     <string name="themes_subtitle">Personalize a aparência e cores do seu launcher</string>

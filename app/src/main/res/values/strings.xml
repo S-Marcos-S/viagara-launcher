@@ -37,6 +37,18 @@
     <!-- Home screen -->
     <string name="options_title">Options</string>
     <string name="home_option_wallpaper">Wallpaper</string>
+    <string name="wallpaper_picker_title">Wallpapers</string>
+    <string name="wallpaper_picker_gallery">Photos &amp; Gallery</string>
+    <string name="wallpaper_picker_gallery_desc">Pick an image from your device or Google Photos</string>
+    <string name="wallpaper_picker_curated">Official Collection</string>
+    <string name="wallpaper_picker_empty">No wallpapers available right now.</string>
+    <string name="wallpaper_apply_title">Apply Wallpaper</string>
+    <string name="wallpaper_apply_home">Home screen</string>
+    <string name="wallpaper_apply_lock">Lock screen</string>
+    <string name="wallpaper_apply_both">Both screens</string>
+    <string name="wallpaper_applied_success">Wallpaper applied successfully!</string>
+    <string name="wallpaper_apply_error">Failed to apply wallpaper.</string>
+    <string name="wallpaper_applying">Applying wallpaper…</string>
     <string name="home_option_themes">Themes</string>
     <string name="themes_title">Themes</string>
     <string name="themes_subtitle">Personalize the appearance and colors of your launcher</string>

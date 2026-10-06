@@ -69,6 +69,7 @@ import dev.viagaralauncher.ui.settings.HiddenAppsScreen
 import dev.viagaralauncher.ui.settings.ManageFavoritesScreen
 import dev.viagaralauncher.ui.settings.SettingsScreen
 import dev.viagaralauncher.ui.settings.ThemesScreen
+import dev.viagaralauncher.ui.wallpaper.WallpaperPickerScreen
 import dev.viagaralauncher.ui.theme.rememberContentColor
 import dev.viagaralauncher.widget.WidgetPickerActivity
 import dev.viagaralauncher.widget.WidgetSlotActions
@@ -582,6 +583,12 @@ fun ViagaraNavHost(
                 onSelectTheme = { selected ->
                     scope.launch { app.prefs.setActiveThemeId(selected) }
                 },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable("wallpapers") {
+            WallpaperPickerScreen(
                 onBack = { navController.popBackStack() },
             )
         }

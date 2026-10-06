@@ -93,6 +93,7 @@ fun HomeOptionsBottomSheet(
     onAddWidget: () -> Unit,
     onOpenClockStyle: () -> Unit = {},
     onOpenThemes: () -> Unit = {},
+    onOpenWallpaperPicker: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -397,7 +398,7 @@ fun HomeOptionsBottomSheet(
                 OptionItem(
                     icon = Icons.Filled.Image,
                     label = stringResource(R.string.home_option_wallpaper),
-                    onClick = { onDismiss(); launchWallpaperPicker(context) },
+                    onClick = { onDismiss(); onOpenWallpaperPicker() },
                 )
 
                 OptionItem(
