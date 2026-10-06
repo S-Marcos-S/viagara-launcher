@@ -574,6 +574,78 @@
         "abstract",
         "pattern"
       ]
+    },
+    {
+      "id": "wallpaper_wh_21kkdm",
+      "name": "Illdian",
+      "author": "jrmnt",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_21kkdm.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_21kkdm.webp",
+      "primary_color": "#999999",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "ILLDIAN",
+        "illustration",
+        "digital painting"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_4l5peq",
+      "name": "Rocket",
+      "author": "kejsirajbek",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_4l5peq.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_4l5peq.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "rocket",
+        "spaceship",
+        "blue background"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_po929j",
+      "name": "Evelyn Chevalier (zenless Zone Zero)",
+      "author": "Sparklesbluesky",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_po929j.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_po929j.webp",
+      "primary_color": "#999999",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "Evelyn Chevalier (Zenless Zone Zero)",
+        "Zenless Zone Zero",
+        "pantyhose"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_gjmjde",
+      "name": "Cyan",
+      "author": "Vexel63",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_gjmjde.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_gjmjde.webp",
+      "primary_color": "#424153",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "cyan"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_mdyqv9",
+      "name": "Phone",
+      "author": "DutifulTetrapus",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_mdyqv9.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_mdyqv9.webp",
+      "primary_color": "#424153",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "phone",
+        "colorful"
+      ]
     }
   ]
 }
