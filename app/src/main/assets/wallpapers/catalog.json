@@ -369,6 +369,79 @@
         "night",
         "dark"
       ]
+    },
+    {
+      "id": "wallpaper_wh_gp9d27",
+      "name": "Fantasy Girl",
+      "author": "SundaySilence",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_gp9d27.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_gp9d27.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "fantasy girl",
+        "4K",
+        "braids"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_o35yv7",
+      "name": "Stars",
+      "author": "SymbioteCoyote",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_o35yv7.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_o35yv7.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "stars",
+        "Milky Way",
+        "planet"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_kxdp9m",
+      "name": "Carriage",
+      "author": "Owl279",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_kxdp9m.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_kxdp9m.webp",
+      "primary_color": "#000000",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "carriage",
+        "trees",
+        "grass"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_x1rvwo",
+      "name": "Black Background",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_x1rvwo.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_x1rvwo.webp",
+      "primary_color": "#000000",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "black background",
+        "sunset"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_r237jm",
+      "name": "Pink",
+      "author": "coolgamer",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_r237jm.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_r237jm.webp",
+      "primary_color": "#424153",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "pink",
+        "purple"
+      ]
     }
   ]
 }
