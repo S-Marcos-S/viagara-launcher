@@ -11,18 +11,27 @@ Um launcher minimalista e elegante para Android baseado em lista — uma alterna
 
 ---
 
-## 📱 Funcionalidades / Features
+## 📱 Recursos e Funcionalidades / Features
 
-- **Design Minimalista & Eficiente:** Lista vertical de aplicativos com foco em usabilidade com uma mão.
-- **Barra Alfabética com Estrela para Favoritos (Scrubber):** Navegação rápida com curva de onda elástica e atalho de estrela (`★`) no topo para retornar instantaneamente à tela inicial e aos favoritos.
+- **Design Minimalista & Eficiente:** Lista vertical ergonômica de aplicativos projetada para uso confortável com uma mão.
+- **Barra Alfabética Inteligente (Scrubber):** Navegação rápida com curva de onda suave e atalho de estrela (`★`) no topo para acesso instantâneo à tela inicial e aos aplicativos favoritos.
+- **Catálogo Oficial de Papéis de Parede:**
+  - Galeria integrada com papéis de parede verticais em alta definição no formato ultra-leve WebP.
+  - Filtro interativo por categorias: **OLED / Preto Puro**, **Espaço**, **Natureza**, **Abstrato** e **Minimalista**.
+  - Pré-visualização em tela cheia e aplicação direta com um toque para **Tela inicial**, **Bloqueio** ou **Ambas**.
+  - Pipeline automático no GitHub Actions para curadoria periódica de novos papéis de parede sem inflar o tamanho do APK.
+  - Atalho rápido para selecionar imagens locais do aparelho ou Google Fotos.
+- **Personalização de Cores & Temas:**
+  - Seletor minimalista animado nas configurações com suporte a **Dinâmico do Sistema (Material You)**, **OLED Preto Puro**, **Escuro Moderno** e **Claro Clean**.
+  - Adaptação imediata das cores da interface às mudanças de papel de parede.
 - **Notificações Integradas com Lista de Mensagens:**
-  - Exibição de prévias de notificações diretamente abaixo dos nomes dos aplicativos.
-  - Diálogo expansível translúcido com desfoque nativo (*frosted glass*), exibindo todo o histórico de mensagens agrupadas (WhatsApp, Telegram, etc.) e abas para múltiplas conversas.
-  - Ação de abertura direta e opção para dispensar.
-- **Atualizador Integrado Direto pelo App:** Download de novas versões e atualizações com indicador de progresso em tempo real diretamente via GitHub Releases.
-- **Widgets & Now Playing:** Suporte a widgets do Android e controle de mídia integrado em tempo real.
-- **Customização Completa:** Suporte a pacotes de ícones, alteração de nomes de apps, ocultação de aplicativos e pastas.
-- **Totalmente Localizado:** Suporte completo para Português (Brasil - pt-BR / pt) e Inglês.
+  - Prévias de notificações exibidas diretamente abaixo do nome do aplicativo.
+  - Diálogo expansível translúcido com desfoque nativo (*frosted glass*), histórico de mensagens agrupadas (WhatsApp, Telegram, etc.) e abas para conversas múltiplas.
+  - Ação rápida para responder/abrir e opção para dispensar.
+- **Widgets & Now Playing:** Suporte a widgets padrão do Android e controle integrado de mídia em tempo real.
+- **Customização Abrangente:** Suporte a pacotes de ícones externos, ícones temáticos monocromáticos / OLED, renomeação de apps, ocultação de aplicativos e pastas organizadas.
+- **Atualizador Embutido:** Sistema de verificação e download de atualizações via GitHub Releases diretamente pelo launcher com balão flutuante de novidades.
+- **Totalmente Localizado:** Interface completa em Português (Brasil - pt-BR / pt) e Inglês.
 
 ---
 
@@ -39,7 +48,7 @@ Após instalar, defina o Viagara Launcher como inicializador padrão:
 
 ## 🛠️ Compilação / Build
 
-Para compilar o projeto localmente, são necessários o JDK 17 e o Android SDK com a plataforma 35 instalada.
+O projeto utiliza compilação automatizada via **GitHub Actions**. Para compilar localmente para desenvolvimento:
 
 ```sh
 # Compilar APK Debug
@@ -57,6 +66,8 @@ Para notas detalhadas sobre contribuição e arquitetura, consulte [docs/CONTRIB
 
 ## 🤝 Créditos / Credits
 
+- **[Niagara Launcher](https://niagaralauncher.app)** — Inspiração para o conceito ergonômico minimalista baseado em lista vertical e scrubber alfabético.
+- **[Wallhaven](https://wallhaven.cc)** e seus respectivos criadores/artistas — Fonte e curadoria dos papéis de parede em alta definição disponibilizados no catálogo oficial.
 - **[LogFox](https://github.com/F0x1d/LogFox)** — Referência e base para as rotinas de captura contínua de logs do sistema, visualizador de registros e rastreador de crashes.
 - **[BatStats](https://github.com/mlm-games/BatStats)** — Referência e base para o coletor/parser de telemetria da bateria (`dumpsys batterystats`), análise de consumo e monitor de drenagem em tempo real.
 
