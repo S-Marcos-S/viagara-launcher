@@ -502,6 +502,78 @@
         "geometry",
         "hexagon"
       ]
+    },
+    {
+      "id": "wallpaper_wh_we1xx7",
+      "name": "Portrait",
+      "author": "jrmnt",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_we1xx7.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_we1xx7.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "portrait",
+        "illustration",
+        "fantasy art"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_zmk3dg",
+      "name": "Black Background",
+      "author": "CygnusK97",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_zmk3dg.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_zmk3dg.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "black background",
+        "planet"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_og9rvm",
+      "name": "Chocoshi",
+      "author": "Owl279",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_og9rvm.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_og9rvm.webp",
+      "primary_color": "#424153",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "Chocoshi",
+        "scenery",
+        "rear view"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_2y2jg6",
+      "name": "Blue Archive",
+      "author": "Inrro",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_2y2jg6.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_2y2jg6.webp",
+      "primary_color": "#ffffff",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "Blue Archive",
+        "smiling",
+        "hand on face"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_6q69dq",
+      "name": "Pattern",
+      "author": "LaCroix",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_6q69dq.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_6q69dq.webp",
+      "primary_color": "#424153",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "pattern"
+      ]
     }
   ]
 }
