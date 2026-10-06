@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **136**
+Total de papéis de parede: **138**
 
 ### OLED (6)
 
@@ -60,7 +60,7 @@ Total de papéis de parede: **136**
 | <img src="thumbnails/wallpaper_wh_3zpde3.webp" width="80" alt="Wlop" /> | `wallpaper_wh_3zpde3` | **Wlop** | anime, WLOP, Ghostblade, Yan Haiqin |
 | <img src="thumbnails/wallpaper_wh_e7182o.webp" width="80" alt="Kitagawa Marin" /> | `wallpaper_wh_e7182o` | **Kitagawa Marin** | anime, Kitagawa Marin, Sono Bisque Doll wa Koi wo Suru, school uniform |
 
-### Espaço (14)
+### Espaço (16)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -78,6 +78,8 @@ Total de papéis de parede: **136**
 | <img src="thumbnails/wallpaper_wh_y8yzyl.webp" width="80" alt="Black Background" /> | `wallpaper_wh_y8yzyl` | **Black Background** | space, black background, Earth |
 | <img src="thumbnails/wallpaper_wh_7295pv.webp" width="80" alt="Stars" /> | `wallpaper_wh_7295pv` | **Stars** | space, stars, spaceship, planet |
 | <img src="thumbnails/wallpaper_wh_nr1de1.webp" width="80" alt="Sky" /> | `wallpaper_wh_nr1de1` | **Sky** | space, sky, stars, dark |
+| <img src="thumbnails/wallpaper_wh_4772m9.webp" width="80" alt="Sky" /> | `wallpaper_wh_4772m9` | **Sky** | space, sky, night sky, stars |
+| <img src="thumbnails/wallpaper_wh_eypzzk.webp" width="80" alt="Jupiter" /> | `wallpaper_wh_eypzzk` | **Jupiter** | space, Jupiter, stars |
 
 ### Natureza (27)
 
