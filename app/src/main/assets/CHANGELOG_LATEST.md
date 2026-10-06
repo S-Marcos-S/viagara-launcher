@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.59.62
+### 🚀 Novidades da Versão v0.59.63
 
-- **Correção de Crash no Inspetor:** Corrigido erro de BadTokenException ao abrir a tela de captura de logs pelo botão do inspetor flutuante.
-- **Sincronização de Gravação de Logs:** O status de gravação agora é limpo imediatamente ao dispensar a notificação ou concluir a captura.
+- **Cálculo Preciso de Bateria por App:** Corrigido cálculo de drenagem de bateria na inspeção do app, eliminando vazamento de métricas globais do sistema.
+- **Ícones e Porcentagens nos Apps de Bateria:** A aba de apps nas estatísticas de bateria agora exibe o ícone de cada app e a porcentagem exata descarregada na sessão.

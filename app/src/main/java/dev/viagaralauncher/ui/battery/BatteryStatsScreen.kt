@@ -51,6 +51,10 @@ import dev.viagaralauncher.battery.ShellRunner
 import dev.viagaralauncher.battery.LocalShowAppNames
 import dev.viagaralauncher.battery.rememberAppLabel
 import dev.viagaralauncher.battery.rememberAppLabelLine
+import dev.viagaralauncher.battery.rememberAppIcon
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import dev.viagaralauncher.battery.BatteryStatsViewModel
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -318,7 +322,11 @@ fun BatteryStatsScreen(
                                 onToggleAnomalyNotification = { vm.toggleAnomalyNotification(it) },
                                 onOpenAnomalySettings = { showAnomalySettingsDialog = true },
                             )
-                            1 -> AppsTab(snapshot?.apps ?: emptyList())
+                            1 -> AppsTab(
+                                apps = snapshot?.apps ?: emptyList(),
+                                estimatedCapacityMah = snapshot?.estimatedCapacityMah ?: 0,
+                                totalDischargePercent = (snapshot?.screenOnDischargePercent ?: 0f) + (snapshot?.screenOffDischargePercent ?: 0f),
+                            )
                             2 -> {
                                 val kwl = if (snapshot?.kernelWakelocks.isNullOrEmpty()) {
                                     kernelWakelocksFlow.map { 
@@ -1230,9 +1238,16 @@ private fun CurrentStateCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppsTab(apps: List<BatteryStatsParser.AppPowerStats>) {
+private fun AppsTab(
+    apps: List<BatteryStatsParser.AppPowerStats>,
+    estimatedCapacityMah: Int = 0,
+    totalDischargePercent: Float = 0f,
+) {
     var sortBy by remember { mutableStateOf(AppSortOption.POWER) }
     var showSystemApps by remember { mutableStateOf(false) }
+
+    val effectiveCapacity = if (estimatedCapacityMah > 0) estimatedCapacityMah.toDouble() else 4500.0
+    val totalAppsPowerMah = remember(apps) { apps.sumOf { it.powerMah } }
 
     val filteredApps = remember(apps, sortBy, showSystemApps) {
         apps.filter { app ->
@@ -1309,7 +1324,13 @@ private fun AppsTab(apps: List<BatteryStatsParser.AppPowerStats>) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 itemsIndexed(filteredApps, key = { _, app -> app.uid }) { index, app ->
-                    AppStatsCard(index + 1, app)
+                    AppStatsCard(
+                        rank = index + 1,
+                        app = app,
+                        capacityMah = effectiveCapacity,
+                        totalSessionAppsMah = totalAppsPowerMah,
+                        sessionDischargePct = totalDischargePercent,
+                    )
                 }
             }
         }
@@ -1334,8 +1355,32 @@ private fun isUserApp(app: BatteryStatsParser.AppPowerStats): Boolean {
 }
 
 @Composable
-private fun AppStatsCard(rank: Int, app: BatteryStatsParser.AppPowerStats) {
+private fun AppStatsCard(
+    rank: Int,
+    app: BatteryStatsParser.AppPowerStats,
+    capacityMah: Double = 4500.0,
+    totalSessionAppsMah: Double = 0.0,
+    sessionDischargePct: Float = 0f,
+) {
     var expanded by remember { mutableStateOf(false) }
+    val appIconDrawable = rememberAppIcon(app.packageName)
+    val appIconBitmap = remember(appIconDrawable) {
+        appIconDrawable?.let {
+            runCatching {
+                it.toBitmap(width = 96, height = 96).asImageBitmap()
+            }.getOrNull()
+        }
+    }
+
+    val percentOfBattery = if (capacityMah > 0.0) {
+        (app.powerMah / capacityMah) * 100.0
+    } else 0.0
+
+    val percentOfSession = if (sessionDischargePct > 0f && totalSessionAppsMah > 0.0) {
+        (app.powerMah / totalSessionAppsMah) * sessionDischargePct.toDouble()
+    } else {
+        percentOfBattery
+    }
 
     FrostedCard(
         onClick = { expanded = !expanded },
@@ -1346,13 +1391,45 @@ private fun AppStatsCard(rank: Int, app: BatteryStatsParser.AppPowerStats) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
-                    modifier = Modifier.size(36.dp)
+                Box(
+                    modifier = Modifier.size(40.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("$rank", style = MaterialTheme.typography.labelMedium)
+                    if (appIconBitmap != null) {
+                        Image(
+                            bitmap = appIconBitmap,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surface),
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(16.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "$rank",
+                                    fontSize = 8.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("$rank", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
 
@@ -1364,6 +1441,7 @@ private fun AppStatsCard(rank: Int, app: BatteryStatsParser.AppPowerStats) {
                         Text(
                             appLabel,
                             style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1378,19 +1456,46 @@ private fun AppStatsCard(rank: Int, app: BatteryStatsParser.AppPowerStats) {
                         Text(
                             app.packageName,
                             style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-                    Text(
-                        stringResource(
-                            R.string.uid_and_power,
-                            app.uid,
-                            String.format(Locale.getDefault(), "%.2f mAh", app.powerMah)
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+
+                    Spacer(Modifier.height(2.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Text(
+                            text = String.format(Locale.getDefault(), "%.2f%%", percentOfSession),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = String.format(Locale.getDefault(), "%.1f mAh", app.powerMah),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = "UID ${app.uid}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+
                     if (app.packages.size > 1) {
                         Text(
                             pluralStringResource(
