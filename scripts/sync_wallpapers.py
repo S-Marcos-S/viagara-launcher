@@ -351,6 +351,13 @@ def main():
         json.dump(catalog, f, indent=2, ensure_ascii=False)
         f.write("\n")
 
+    # Update CATALOG.md visual markdown
+    try:
+        from manage_wallpapers import update_catalog_md
+        update_catalog_md(catalog)
+    except Exception as e:
+        print(f"Notice: Could not update CATALOG.md: {e}")
+
     print(f"\nSuccessfully added {len(new_items)} new wallpapers and updated catalog files.")
     for item in new_items:
         print(f"- [{item['category']}] {item['name']} by {item['author']} ({item['id']})")
