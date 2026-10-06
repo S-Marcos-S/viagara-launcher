@@ -427,6 +427,81 @@
         "pink",
         "purple"
       ]
+    },
+    {
+      "id": "wallpaper_wh_8oez21",
+      "name": "Pink Hair",
+      "author": "wuchen001",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_8oez21.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_8oez21.webp",
+      "primary_color": "#999999",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "pink hair",
+        "umbrella",
+        "kimono"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_47dyd3",
+      "name": "Space Art",
+      "author": "AntiStar",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_47dyd3.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_47dyd3.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "space art",
+        "planet",
+        "Earth"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_g7q6we",
+      "name": "Kneeling",
+      "author": "yyyyxx20040913",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_g7q6we.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_g7q6we.webp",
+      "primary_color": "#abbcda",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "kneeling",
+        "CGI",
+        "jiyuanmei"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_jx8grq",
+      "name": "Makima (chainsaw Man)",
+      "author": "性感阿离",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_jx8grq.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_jx8grq.webp",
+      "primary_color": "#ffffff",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "Makima (Chainsaw Man)",
+        "Chainsaw Man",
+        "redhead"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_01zx33",
+      "name": "Pattern",
+      "author": "kejsirajbek",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_01zx33.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_01zx33.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "pattern",
+        "geometry",
+        "hexagon"
+      ]
     }
   ]
 }
