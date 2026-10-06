@@ -7,18 +7,37 @@ on:
     - cron: '0 3 * * 0'
   workflow_dispatch:
     inputs:
-      max_total:
-        description: 'Max total wallpapers to add (e.g. 12)'
+      category_preset:
+        description: 'Categoria (ou "all" para todas as 12, ou "custom" para personalizada)'
+        type: choice
+        default: 'all'
+        options:
+          - 'all'
+          - 'oled'
+          - 'anime'
+          - 'games'
+          - 'cyberpunk'
+          - 'city'
+          - 'cars'
+          - 'animals'
+          - 'fantasy'
+          - 'minimal'
+          - 'abstract'
+          - 'nature'
+          - 'space'
+          - 'custom'
+      custom_categories:
+        description: 'Se escolheu "custom", digite as categorias desejadas separadas por vírgula (ex: anime,games,cars)'
         required: false
-        default: '6'
+        default: ''
+      max_total:
+        description: 'Total máximo de wallpapers para adicionar'
+        required: false
+        default: '12'
       max_per_category:
-        description: 'Max wallpapers per category (e.g. 2)'
+        description: 'Máximo por categoria (0 para distribuir automaticamente)'
         required: false
         default: '2'
-      categories:
-        description: 'Categories to sync (comma-separated: oled,anime,games,minimal,abstract,nature,space,cyberpunk,city,cars,animals,fantasy)'
-        required: false
-        default: 'oled,anime,games,minimal,abstract,nature,space,cyberpunk,city,cars,animals,fantasy'
 
 permissions:
   contents: write
@@ -46,14 +65,33 @@ jobs:
 
       - name: Run wallpaper synchronization
         env:
+          PRESET: ${{ github.event.inputs.category_preset || 'all' }}
+          CUSTOM: ${{ github.event.inputs.custom_categories || '' }}
           MAX_TOTAL: ${{ github.event.inputs.max_total || '12' }}
           MAX_PER_CAT: ${{ github.event.inputs.max_per_category || '2' }}
-          CATEGORIES: ${{ github.event.inputs.categories || 'oled,anime,games,minimal,abstract,nature,space,cyberpunk,city,cars,animals,fantasy' }}
         run: |
+          ALL_CATS="oled,anime,games,minimal,abstract,nature,space,cyberpunk,city,cars,animals,fantasy"
+          
+          if [ -n "$CUSTOM" ]; then
+            SELECTED_CATS="$CUSTOM"
+          elif [ "$PRESET" = "all" ] || [ -z "$PRESET" ]; then
+            SELECTED_CATS="$ALL_CATS"
+          else
+            SELECTED_CATS="$PRESET"
+          fi
+
+          echo "=========================================="
+          echo "Sincronizando Wallpapers"
+          echo "Preset selecionado: $PRESET"
+          echo "Categorias a baixar: $SELECTED_CATS"
+          echo "Total máximo: $MAX_TOTAL"
+          echo "Máximo por categoria: $MAX_PER_CAT"
+          echo "=========================================="
+
           python scripts/sync_wallpapers.py \
             --max-total "$MAX_TOTAL" \
             --max-per-category "$MAX_PER_CAT" \
-            --categories "$CATEGORIES"
+            --categories "$SELECTED_CATS"
 
       - name: Commit and push new wallpapers
         run: |

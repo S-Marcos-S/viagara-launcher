@@ -196,9 +196,12 @@ def main():
     # If the user raised max_total significantly higher than max_per_category * num_cats,
     # scale max_per_category so the total requested can actually be reached across categories.
     effective_max_per_cat = args.max_per_category
-    if target_categories and args.max_total > (args.max_per_category * len(target_categories)):
+    if target_categories:
         scaled = (args.max_total + len(target_categories) - 1) // len(target_categories)
-        effective_max_per_cat = max(args.max_per_category, scaled)
+        if args.max_per_category <= 0 or args.max_total > (args.max_per_category * len(target_categories)):
+            effective_max_per_cat = max(args.max_per_category, scaled)
+        if effective_max_per_cat <= 0:
+            effective_max_per_cat = 1
 
     print(f"Starting wallpaper sync (max total: {args.max_total}, max per category: {effective_max_per_cat}, categories: {', '.join(target_categories)})...")
 
