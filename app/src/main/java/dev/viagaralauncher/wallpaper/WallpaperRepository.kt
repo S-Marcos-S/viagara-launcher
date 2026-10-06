@@ -142,6 +142,7 @@ object WallpaperRepository {
             } else {
                 wm.setBitmap(bitmap)
             }
+            Unit
         }
     }
 }

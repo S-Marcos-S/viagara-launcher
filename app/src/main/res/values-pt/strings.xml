@@ -50,6 +50,7 @@
     <string name="wallpaper_applied_success">Papel de parede aplicado com sucesso!</string>
     <string name="wallpaper_apply_error">Erro ao aplicar papel de parede.</string>
     <string name="wallpaper_applying">Aplicando papel de parede…</string>
+    <string name="wallpaper_loading">Carregando papel de parede…</string>
     <string name="home_option_themes">Temas</string>
     <string name="themes_title">Temas</string>
     <string name="themes_subtitle">Personalize a aparência e cores do seu launcher</string>

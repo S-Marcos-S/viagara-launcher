@@ -49,6 +49,7 @@
     <string name="wallpaper_applied_success">Wallpaper applied successfully!</string>
     <string name="wallpaper_apply_error">Failed to apply wallpaper.</string>
     <string name="wallpaper_applying">Applying wallpaper…</string>
+    <string name="wallpaper_loading">Loading wallpaper…</string>
     <string name="home_option_themes">Themes</string>
     <string name="themes_title">Themes</string>
     <string name="themes_subtitle">Personalize the appearance and colors of your launcher</string>
