@@ -57,6 +57,17 @@
     <string name="wallpaper_category_space">Space</string>
     <string name="wallpaper_category_nature">Nature</string>
     <string name="wallpaper_category_anime">Anime</string>
+    <string name="wallpaper_category_games">Games</string>
+    <string name="wallpaper_category_cyberpunk">Cyberpunk</string>
+    <string name="wallpaper_category_city">Cities</string>
+    <string name="wallpaper_category_cars">Cars</string>
+    <string name="wallpaper_category_animals">Animals</string>
+    <string name="wallpaper_category_fantasy">Fantasy</string>
+    <string name="wallpaper_notification_channel_name">Wallpapers</string>
+    <string name="wallpaper_notification_channel_desc">Notifications about new wallpapers added to the catalog</string>
+    <string name="wallpaper_new_notification_title">New wallpapers available!</string>
+    <string name="wallpaper_new_notification_single">1 new wallpaper has been added to the catalog.</string>
+    <string name="wallpaper_new_notification_multiple">%1$d new wallpapers have been added to the catalog.</string>
     <string name="home_option_themes">Themes</string>
     <string name="themes_title">Themes</string>
     <string name="themes_subtitle">Personalize the appearance and colors of your launcher</string>

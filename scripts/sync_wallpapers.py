@@ -37,17 +37,31 @@ GITHUB_RAW_BASE = "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
+ALL_CATEGORIES_LIST = [
+    "oled", "anime", "games", "minimal", "abstract", "nature",
+    "space", "cyberpunk", "city", "cars", "animals", "fantasy"
+]
+
 CATEGORY_QUERIES = {
     "oled": "https://wallhaven.cc/api/v1/search?categories=100&colors=000000&ratios=9x16,10x16&sorting=favorites&purity=100",
-    "space": "https://wallhaven.cc/api/v1/search?categories=100&q=space&ratios=9x16,10x16&sorting=favorites&purity=100",
-    "nature": "https://wallhaven.cc/api/v1/search?categories=100&q=nature&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "anime": "https://wallhaven.cc/api/v1/search?categories=010&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "games": "https://wallhaven.cc/api/v1/search?q=video+games&ratios=9x16,10x16&sorting=favorites&purity=100",
     "minimal": "https://wallhaven.cc/api/v1/search?categories=100&q=minimalism&ratios=9x16,10x16&sorting=favorites&purity=100",
     "abstract": "https://wallhaven.cc/api/v1/search?categories=100&q=abstract&ratios=9x16,10x16&sorting=favorites&purity=100",
-    "anime": "https://wallhaven.cc/api/v1/search?categories=010&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "nature": "https://wallhaven.cc/api/v1/search?categories=100&q=nature&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "space": "https://wallhaven.cc/api/v1/search?categories=100&q=space&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "cyberpunk": "https://wallhaven.cc/api/v1/search?q=cyberpunk&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "city": "https://wallhaven.cc/api/v1/search?categories=100&q=city&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "cars": "https://wallhaven.cc/api/v1/search?categories=100&q=car&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "animals": "https://wallhaven.cc/api/v1/search?categories=100&q=animals&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "fantasy": "https://wallhaven.cc/api/v1/search?q=fantasy&ratios=9x16,10x16&sorting=favorites&purity=100",
 }
 
-# Tags that indicate a wallpaper contains characters, human figures, anime, or gaming art
-# Wallpapers with these tags are excluded from general categories (oled, space, nature, minimal, abstract)
+# Categories that must NOT contain anime/character wallpapers
+STRICT_NON_CHARACTER_CATEGORIES = {
+    "oled", "space", "nature", "minimal", "abstract", "city", "cars", "animals"
+}
+
 ANIME_CHARACTER_TAGS = {
     "anime", "anime girls", "anime boy", "manga", "pixiv", "girl", "girls", "women",
     "men", "boy", "female", "male", "maid", "maid outfit", "pantyhose", "heels", "high heels",
@@ -135,7 +149,7 @@ def main():
     parser = argparse.ArgumentParser(description="Sync curated wallpapers into repository.")
     parser.add_argument("--max-per-category", type=int, default=2, help="Max new items per category per run")
     parser.add_argument("--max-total", type=int, default=12, help="Max total new items added per run")
-    parser.add_argument("--categories", type=str, default="oled,space,nature,minimal,abstract,anime", help="Comma-separated categories")
+    parser.add_argument("--categories", type=str, default=",".join(ALL_CATEGORIES_LIST), help="Comma-separated categories")
     parser.add_argument("--dry-run", action="store_true", help="Inspect without modifying files")
     args = parser.parse_args()
 
@@ -143,23 +157,33 @@ def main():
     os.makedirs(THUMB_DIR, exist_ok=True)
     os.makedirs(os.path.dirname(ASSETS_CATALOG_PATH), exist_ok=True)
 
+    default_categories_data = [
+        {"id": "all", "label": "Todos"},
+        {"id": "oled", "label": "OLED"},
+        {"id": "anime", "label": "Anime"},
+        {"id": "games", "label": "Jogos"},
+        {"id": "minimal", "label": "Minimalista"},
+        {"id": "abstract", "label": "Abstrato"},
+        {"id": "nature", "label": "Natureza"},
+        {"id": "space", "label": "Espaço"},
+        {"id": "cyberpunk", "label": "Cyberpunk"},
+        {"id": "city", "label": "Cidades"},
+        {"id": "cars", "label": "Carros"},
+        {"id": "animals", "label": "Animais"},
+        {"id": "fantasy", "label": "Fantasia"},
+    ]
+
     if not os.path.exists(CATALOG_PATH):
         catalog = {
             "version": 1,
-            "categories": [
-                {"id": "all", "label": "Todos"},
-                {"id": "oled", "label": "OLED"},
-                {"id": "abstract", "label": "Abstrato"},
-                {"id": "space", "label": "Espaço"},
-                {"id": "minimal", "label": "Minimalista"},
-                {"id": "nature", "label": "Natureza"},
-                {"id": "anime", "label": "Anime"},
-            ],
+            "categories": default_categories_data,
             "wallpapers": [],
         }
     else:
         with open(CATALOG_PATH, "r", encoding="utf-8") as f:
             catalog = json.load(f)
+
+    catalog["categories"] = default_categories_data
 
     existing_wallpapers = catalog.get("wallpapers", [])
     existing_ids = {w["id"] for w in existing_wallpapers}
@@ -241,8 +265,8 @@ def main():
                         print(f"Skipping candidate {wh_id} due to error/glitch tags.")
                         continue
 
-                    # Strict category check: if not the anime category, reject any anime/character wallpapers
-                    if cat != "anime":
+                    # Strict category check for non-character categories
+                    if cat in STRICT_NON_CHARACTER_CATEGORIES:
                         if wh_cat == "anime":
                             print(f"Skipping candidate {wh_id} for '{cat}' (Wallhaven category is anime).")
                             continue

@@ -6,7 +6,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -54,11 +56,17 @@ object WallpaperRepository {
     val DEFAULT_CATEGORIES = listOf(
         WallpaperCategory("all", "Todos"),
         WallpaperCategory("oled", "OLED"),
-        WallpaperCategory("abstract", "Abstrato"),
-        WallpaperCategory("space", "Espaço"),
-        WallpaperCategory("minimal", "Minimalista"),
-        WallpaperCategory("nature", "Natureza"),
         WallpaperCategory("anime", "Anime"),
+        WallpaperCategory("games", "Jogos"),
+        WallpaperCategory("minimal", "Minimalista"),
+        WallpaperCategory("abstract", "Abstrato"),
+        WallpaperCategory("nature", "Natureza"),
+        WallpaperCategory("space", "Espaço"),
+        WallpaperCategory("cyberpunk", "Cyberpunk"),
+        WallpaperCategory("city", "Cidades"),
+        WallpaperCategory("cars", "Carros"),
+        WallpaperCategory("animals", "Animais"),
+        WallpaperCategory("fantasy", "Fantasia"),
     )
 
     private fun cacheDir(context: Context): File {
@@ -102,7 +110,23 @@ object WallpaperRepository {
             }.getOrNull()
         } ?: return@withContext WallpaperCatalog(DEFAULT_CATEGORIES, emptyList())
 
-        parseCatalogJson(jsonText)
+        val catalog = parseCatalogJson(jsonText)
+        WallpaperNotificationManager.checkAndNotifyNewWallpapers(context, catalog)
+        catalog
+    }
+
+    private var lastWallpaperCheckTimeMs = 0L
+    private const val WALLPAPER_CHECK_INTERVAL_MS = 2 * 60 * 60 * 1000L // 2 hours
+
+    fun checkForNewWallpapers(context: Context, coroutineScope: kotlinx.coroutines.CoroutineScope, force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastWallpaperCheckTimeMs < WALLPAPER_CHECK_INTERVAL_MS) {
+            return
+        }
+        lastWallpaperCheckTimeMs = now
+        coroutineScope.launch(Dispatchers.IO) {
+            loadCatalog(context)
+        }
     }
 
     private fun parseCatalogJson(jsonText: String): WallpaperCatalog {

@@ -10,24 +10,48 @@
       "label": "OLED"
     },
     {
-      "id": "abstract",
-      "label": "Abstrato"
+      "id": "anime",
+      "label": "Anime"
     },
     {
-      "id": "space",
-      "label": "Espaço"
+      "id": "games",
+      "label": "Jogos"
     },
     {
       "id": "minimal",
       "label": "Minimalista"
     },
     {
+      "id": "abstract",
+      "label": "Abstrato"
+    },
+    {
       "id": "nature",
       "label": "Natureza"
     },
     {
-      "id": "anime",
-      "label": "Anime"
+      "id": "space",
+      "label": "Espaço"
+    },
+    {
+      "id": "cyberpunk",
+      "label": "Cyberpunk"
+    },
+    {
+      "id": "city",
+      "label": "Cidades"
+    },
+    {
+      "id": "cars",
+      "label": "Carros"
+    },
+    {
+      "id": "animals",
+      "label": "Animais"
+    },
+    {
+      "id": "fantasy",
+      "label": "Fantasia"
     }
   ],
   "wallpapers": [
@@ -111,7 +135,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_d6xe7l.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_d6xe7l.webp",
       "primary_color": "#424153",
-      "category": "anime",
+      "category": "games",
       "tags": [
         "anime",
         "office girl",
@@ -261,7 +285,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_k7rk61.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_k7rk61.webp",
       "primary_color": "#424153",
-      "category": "anime",
+      "category": "games",
       "tags": [
         "anime",
         "Genshin Impact",
@@ -306,7 +330,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_xlqyrz.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_xlqyrz.webp",
       "primary_color": "#000000",
-      "category": "anime",
+      "category": "cyberpunk",
       "tags": [
         "anime",
         "drink",
@@ -351,7 +375,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_md99mk.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_md99mk.webp",
       "primary_color": "#000000",
-      "category": "abstract",
+      "category": "city",
       "tags": [
         "abstract",
         "city",
@@ -366,7 +390,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_gp9d27.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_gp9d27.webp",
       "primary_color": "#424153",
-      "category": "anime",
+      "category": "fantasy",
       "tags": [
         "anime",
         "fantasy girl",
@@ -514,7 +538,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_we1xx7.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_we1xx7.webp",
       "primary_color": "#424153",
-      "category": "anime",
+      "category": "fantasy",
       "tags": [
         "anime",
         "portrait",
@@ -558,7 +582,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_2y2jg6.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_2y2jg6.webp",
       "primary_color": "#ffffff",
-      "category": "anime",
+      "category": "games",
       "tags": [
         "anime",
         "Blue Archive",
@@ -616,7 +640,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_po929j.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_po929j.webp",
       "primary_color": "#999999",
-      "category": "anime",
+      "category": "games",
       "tags": [
         "anime",
         "Evelyn Chevalier (Zenless Zone Zero)",
@@ -688,7 +712,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_mddodk.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_mddodk.webp",
       "primary_color": "#424153",
-      "category": "nature",
+      "category": "city",
       "tags": [
         "nature",
         "landscape",
@@ -733,7 +757,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_y8dvqk.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_y8dvqk.webp",
       "primary_color": "#424153",
-      "category": "oled",
+      "category": "fantasy",
       "tags": [
         "oled",
         "Xision Wu",
@@ -763,7 +787,7 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_d6qk9j.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_d6qk9j.webp",
       "primary_color": "#000000",
-      "category": "nature",
+      "category": "city",
       "tags": [
         "nature",
         "New York City",

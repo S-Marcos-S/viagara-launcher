@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
         handleBatteryStatsIntent(intent)
         handleNetworkStatsIntent(intent)
         handleAnomalyInspectIntent(intent)
+        handleWallpaperIntent(intent)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
@@ -96,6 +97,8 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         val isExplicitAction = intent.action == dev.viagaralauncher.update.UpdateManager.ACTION_OPEN_UPDATE_CHANGELOG ||
             intent.getBooleanExtra(dev.viagaralauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false) ||
+            intent.action == dev.viagaralauncher.wallpaper.WallpaperNotificationManager.ACTION_OPEN_WALLPAPERS ||
+            intent.getBooleanExtra(dev.viagaralauncher.wallpaper.WallpaperNotificationManager.EXTRA_OPEN_WALLPAPERS, false) ||
             intent.action == dev.viagaralauncher.battery.DrainNotificationManager.ACTION_OPEN_BATTERY_STATS ||
             intent.getBooleanExtra(dev.viagaralauncher.battery.DrainNotificationManager.EXTRA_OPEN_BATTERY_STATS, false) ||
             intent.action == "dev.viagaralauncher.action.OPEN_NETWORK_STATS" ||
@@ -114,11 +117,21 @@ class MainActivity : ComponentActivity() {
         handleBatteryStatsIntent(intent)
         handleNetworkStatsIntent(intent)
         handleAnomalyInspectIntent(intent)
+        handleWallpaperIntent(intent)
     }
 
     override fun onResume() {
         super.onResume()
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.onLauncherResume()
+    }
+
+    private fun handleWallpaperIntent(intent: Intent?) {
+        if (intent == null) return
+        if (intent.action == dev.viagaralauncher.wallpaper.WallpaperNotificationManager.ACTION_OPEN_WALLPAPERS ||
+            intent.getBooleanExtra(dev.viagaralauncher.wallpaper.WallpaperNotificationManager.EXTRA_OPEN_WALLPAPERS, false)
+        ) {
+            dev.viagaralauncher.wallpaper.WallpaperEvents.open()
+        }
     }
 
     private fun handleAnomalyInspectIntent(intent: Intent?) {

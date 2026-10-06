@@ -104,6 +104,7 @@ fun WallpaperPickerScreen(
     var isApplying by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        dev.viagaralauncher.wallpaper.WallpaperNotificationManager.cancelNotification(context)
         catalog = WallpaperRepository.loadCatalog(context)
         isLoadingCatalog = false
     }
@@ -661,6 +662,12 @@ private fun getCategoryDisplayName(category: WallpaperCategory): String {
         "space" -> stringResource(R.string.wallpaper_category_space)
         "nature" -> stringResource(R.string.wallpaper_category_nature)
         "anime" -> stringResource(R.string.wallpaper_category_anime)
+        "games" -> stringResource(R.string.wallpaper_category_games)
+        "cyberpunk" -> stringResource(R.string.wallpaper_category_cyberpunk)
+        "city" -> stringResource(R.string.wallpaper_category_city)
+        "cars" -> stringResource(R.string.wallpaper_category_cars)
+        "animals" -> stringResource(R.string.wallpaper_category_animals)
+        "fantasy" -> stringResource(R.string.wallpaper_category_fantasy)
         else -> category.label.ifBlank { category.id.replaceFirstChar { it.uppercase() } }
     }
 }

@@ -124,6 +124,18 @@ fun ViagaraNavHost(
         }
     }
 
+    val openWallpapersRequested by dev.viagaralauncher.wallpaper.WallpaperEvents.openRequested.collectAsState()
+    LaunchedEffect(openWallpapersRequested) {
+        if (openWallpapersRequested) {
+            dev.viagaralauncher.wallpaper.WallpaperEvents.consume()
+            if (navController.currentDestination?.route != "wallpapers") {
+                navController.navigate("wallpapers") {
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
     val openTaskManagerRequested by dev.viagaralauncher.root.TaskManagerEvents.openRequested.collectAsState()
     LaunchedEffect(openTaskManagerRequested) {
         if (openTaskManagerRequested) {

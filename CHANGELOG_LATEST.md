@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.59.73
+### 🚀 Novidades da Versão v0.59.74
 
-- **Separação Rígida por Categoria:** Filtro exclusivo por aba impedindo que papéis de parede de anime apareçam em outras categorias.
-- **Sincronização Aprimorada:** Paginação automática, suporte nativo à categoria Anime e filtro estrito anti-mistura na curadoria.
+- **Novas Categorias Populares:** Adicionadas as abas Jogos, Cyberpunk, Cidades, Carros, Animais e Fantasia no seletor de papéis de parede.
+- **Notificação Automática:** Alerta no sistema informando a quantidade de novos papéis de parede adicionados ao catálogo com abertura direta.
+- **Curadoria Expandida:** Suporte completo às 12 categorias no catálogo e no sincronizador automático com paginação.

@@ -16,9 +16,9 @@ on:
         required: false
         default: '2'
       categories:
-        description: 'Categories to sync (comma-separated: oled,space,nature,minimal,abstract,anime)'
+        description: 'Categories to sync (comma-separated: oled,anime,games,minimal,abstract,nature,space,cyberpunk,city,cars,animals,fantasy)'
         required: false
-        default: 'oled,space,nature,minimal,abstract,anime'
+        default: 'oled,anime,games,minimal,abstract,nature,space,cyberpunk,city,cars,animals,fantasy'
 
 permissions:
   contents: write
@@ -46,9 +46,9 @@ jobs:
 
       - name: Run wallpaper synchronization
         env:
-          MAX_TOTAL: ${{ github.event.inputs.max_total || '6' }}
+          MAX_TOTAL: ${{ github.event.inputs.max_total || '12' }}
           MAX_PER_CAT: ${{ github.event.inputs.max_per_category || '2' }}
-          CATEGORIES: ${{ github.event.inputs.categories || 'oled,space,nature,minimal,abstract,anime' }}
+          CATEGORIES: ${{ github.event.inputs.categories || 'oled,anime,games,minimal,abstract,nature,space,cyberpunk,city,cars,animals,fantasy' }}
         run: |
           python scripts/sync_wallpapers.py \
             --max-total "$MAX_TOTAL" \
