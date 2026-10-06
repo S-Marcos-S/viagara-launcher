@@ -136,6 +136,9 @@
     <string name="clock_style_retro_terminal">Terminal Geek</string>
     <string name="clock_style_daily_reflection">Reflexão Diária</string>
     <string name="clock_style_daily_reflection_stats">Reflexão Diária + Métricas</string>
+    <string name="clock_style_nothing_dots">Nothing Dot-Matrix</string>
+    <string name="clock_style_centered_pill">Cápsula de Vidro Centralizada</string>
+    <string name="clock_style_dual_tone_stack">Tipografia Dupla Centralizada</string>
     <string name="quote_of_the_day_tag">Reflexão do dia</string>
     <string name="quote_copied">Frase copiada para a área de transferência</string>
     <string name="settings_hide_status_bar">Ocultar barra de status</string>

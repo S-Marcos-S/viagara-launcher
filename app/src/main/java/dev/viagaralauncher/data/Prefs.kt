@@ -38,6 +38,9 @@ enum class ClockStyle {
     RETRO_TERMINAL,
     DAILY_REFLECTION,
     DAILY_REFLECTION_STATS,
+    NOTHING_DOTS,
+    CENTERED_PILL,
+    DUAL_TONE_STACK,
 }
 
 /** AUTO picks light or dark text from the wallpaper's own colours. */

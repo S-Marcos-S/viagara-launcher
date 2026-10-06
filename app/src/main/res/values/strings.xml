@@ -135,6 +135,9 @@
     <string name="clock_style_retro_terminal">Retro Terminal</string>
     <string name="clock_style_daily_reflection">Daily Reflection</string>
     <string name="clock_style_daily_reflection_stats">Daily Reflection + Stats</string>
+    <string name="clock_style_nothing_dots">Nothing Dot-Matrix</string>
+    <string name="clock_style_centered_pill">Centered Glass Pill</string>
+    <string name="clock_style_dual_tone_stack">Dual-Tone Typo Stack</string>
     <string name="quote_of_the_day_tag">Reflection</string>
     <string name="quote_copied">Quote copied to clipboard</string>
     <string name="settings_hide_status_bar">Hide status bar</string>

@@ -77,6 +77,13 @@ import kotlin.math.sin
 /** Distance from the top of the screen: ~2.5 cm (25 mm = ~158 dp at 160 dpi). */
 val CLOCK_TOP_PADDING_DP = 158.dp
 
+fun isCenteredClockStyle(style: ClockStyle): Boolean = when (style) {
+    ClockStyle.NOTHING_DOTS,
+    ClockStyle.CENTERED_PILL,
+    ClockStyle.DUAL_TONE_STACK -> true
+    else -> false
+}
+
 /**
  * Niagara-style clock and date widget with multiple style options.
  * Sits on the home screen above favorite apps.
@@ -149,12 +156,21 @@ fun NiagaraClockWidget(
         SimpleDateFormat(weekdayShortPattern, Locale.getDefault()).format(currentTime).uppercase()
     }
 
-    val horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start
+    val shortDatePattern = if (Locale.getDefault().language == "pt") "EEE, d 'de' MMM" else "EEE, MMM d"
+    val shortDateString = remember(currentTime) {
+        SimpleDateFormat(shortDatePattern, Locale.getDefault()).format(currentTime).replace(".", "")
+    }
+
+    val isCentered = isCenteredClockStyle(clockStyle)
+    val horizontalAlignment = if (isCentered) Alignment.CenterHorizontally else if (alignRight) Alignment.End else Alignment.Start
+    val symmetricPadding = if (isCentered) maxOf(startPaddingDp, endPaddingDp) else null
+    val effectiveStartPadding = symmetricPadding ?: startPaddingDp
+    val effectiveEndPadding = symmetricPadding ?: endPaddingDp
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = startPaddingDp.dp, end = endPaddingDp.dp),
+            .padding(start = effectiveStartPadding.dp, end = effectiveEndPadding.dp),
         horizontalAlignment = horizontalAlignment,
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -370,6 +386,42 @@ fun NiagaraClockWidget(
                         onRamClick = { launchMemorySettings(context) },
                         onBatteryClick = { launchBatterySettings(context) },
                         onStorageClick = { launchStorageSettings(context) },
+                    )
+                }
+                ClockStyle.NOTHING_DOTS -> {
+                    NothingDotsClockContent(
+                        hoursString = hoursString,
+                        minutesString = minutesString,
+                        dateString = shortDateString,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onBatteryClick = { launchBatterySettings(context) },
+                    )
+                }
+                ClockStyle.CENTERED_PILL -> {
+                    CenteredPillClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onBatteryClick = { launchBatterySettings(context) },
+                    )
+                }
+                ClockStyle.DUAL_TONE_STACK -> {
+                    DualToneStackClockContent(
+                        hoursString = hoursString,
+                        minutesString = minutesString,
+                        shortDateString = shortDateString,
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
                     )
                 }
             }
@@ -1555,6 +1607,293 @@ private fun DailyReflectionStatsClockContent(
     }
 }
 
+@Composable
+private fun NothingDotsClockContent(
+    hoursString: String,
+    minutesString: String,
+    dateString: String,
+    stats: SystemStats,
+    contentColor: Color,
+    widthFactor: Float = 1.0f,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+    onBatteryClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClockClick,
+            ),
+        ) {
+            Text(
+                text = hoursString,
+                color = contentColor,
+                fontSize = (50 * widthFactor).sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 2.sp,
+            )
+
+            Column(
+                modifier = Modifier.padding(horizontal = (6 * widthFactor).dp),
+                verticalArrangement = Arrangement.spacedBy((6 * widthFactor).dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size((5 * widthFactor).dp.coerceAtLeast(3.dp))
+                        .background(contentColor.copy(alpha = 0.85f), CircleShape)
+                )
+                Box(
+                    modifier = Modifier
+                        .size((5 * widthFactor).dp.coerceAtLeast(3.dp))
+                        .background(Color(0xFFE53935), CircleShape)
+                )
+            }
+
+            Text(
+                text = minutesString,
+                color = contentColor,
+                fontSize = (50 * widthFactor).sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 2.sp,
+            )
+        }
+
+        Spacer(modifier = Modifier.height((8 * widthFactor).dp))
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(18.dp))
+                .background(contentColor.copy(alpha = 0.08f))
+                .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(18.dp))
+                .padding(horizontal = 14.dp, vertical = 6.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = dateString.uppercase(Locale.getDefault()),
+                    color = contentColor.copy(alpha = 0.85f),
+                    fontSize = (11 * widthFactor).sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDateClick,
+                    ),
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .background(Color(0xFFE53935), CircleShape)
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onBatteryClick,
+                    ),
+                ) {
+                    Text(
+                        text = "${stats.batteryPercent}%",
+                        color = contentColor.copy(alpha = 0.9f),
+                        fontSize = (11 * widthFactor).sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                    )
+                    if (stats.isCharging) {
+                        Text(
+                            text = "⚡",
+                            color = Color(0xFFE53935),
+                            fontSize = (10 * widthFactor).sp,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CenteredPillClockContent(
+    timeString: String,
+    dateString: String,
+    stats: SystemStats,
+    contentColor: Color,
+    widthFactor: Float = 1.0f,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+    onBatteryClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape((28 * widthFactor).dp.coerceAtLeast(20.dp)))
+                .background(contentColor.copy(alpha = 0.08f))
+                .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape((28 * widthFactor).dp.coerceAtLeast(20.dp)))
+                .padding(
+                    horizontal = (24 * widthFactor).dp.coerceAtLeast(16.dp),
+                    vertical = (12 * widthFactor).dp.coerceAtLeast(8.dp),
+                ),
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = timeString,
+                    color = contentColor,
+                    fontSize = (46 * widthFactor).sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.5).sp,
+                    lineHeight = (46 * widthFactor).sp,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClockClick,
+                    ),
+                )
+
+                Spacer(modifier = Modifier.height((6 * widthFactor).dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = dateString,
+                        color = contentColor.copy(alpha = 0.85f),
+                        fontSize = (12.5 * widthFactor).sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onDateClick,
+                        ),
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(3.dp)
+                            .background(contentColor.copy(alpha = 0.4f), CircleShape)
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onBatteryClick,
+                        ),
+                    ) {
+                        Text(
+                            text = "${stats.batteryPercent}%",
+                            color = contentColor.copy(alpha = 0.85f),
+                            fontSize = (12 * widthFactor).sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        if (stats.isCharging) {
+                            Text(
+                                text = "⚡",
+                                color = contentColor,
+                                fontSize = (10 * widthFactor).sp,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DualToneStackClockContent(
+    hoursString: String,
+    minutesString: String,
+    shortDateString: String,
+    contentColor: Color,
+    widthFactor: Float = 1.0f,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClockClick,
+            ),
+        ) {
+            Text(
+                text = hoursString,
+                color = contentColor,
+                fontSize = (60 * widthFactor).sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-1.5).sp,
+                lineHeight = (50 * widthFactor).sp,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = minutesString,
+                color = contentColor.copy(alpha = 0.45f),
+                fontSize = (60 * widthFactor).sp,
+                fontWeight = FontWeight.Light,
+                letterSpacing = (-1.5).sp,
+                lineHeight = (50 * widthFactor).sp,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        Spacer(modifier = Modifier.height((10 * widthFactor).dp))
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(contentColor.copy(alpha = 0.07f))
+                .border(1.dp, contentColor.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                .padding(horizontal = 14.dp, vertical = 5.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDateClick,
+                ),
+        ) {
+            Text(
+                text = shortDateString.uppercase(Locale.getDefault()),
+                color = contentColor.copy(alpha = 0.85f),
+                fontSize = (11 * widthFactor).sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
 /**
  * Scaled mini preview of a clock style used in the 2-column grid picker.
  */
@@ -1993,6 +2332,106 @@ fun ClockStylePreview(
                             }
                         }
                     }
+                }
+            }
+            ClockStyle.NOTHING_DOTS -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = hoursString,
+                            color = tint,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 1.sp,
+                        )
+                        Column(
+                            modifier = Modifier.padding(horizontal = 3.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Box(modifier = Modifier.size(3.dp).background(tint.copy(alpha = 0.8f), CircleShape))
+                            Box(modifier = Modifier.size(3.dp).background(Color(0xFFE53935), CircleShape))
+                        }
+                        Text(
+                            text = minutesString,
+                            color = tint,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 1.sp,
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(tint.copy(alpha = 0.08f))
+                            .border(1.dp, tint.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = "${shortDateString.uppercase()} · ${stats.batteryPercent}%",
+                            color = tint.copy(alpha = 0.8f),
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+            }
+            ClockStyle.CENTERED_PILL -> {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(tint.copy(alpha = 0.08f))
+                        .border(1.dp, tint.copy(alpha = 0.16f), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = timeString,
+                            color = tint,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = "$shortDateString • ${stats.batteryPercent}%",
+                            color = tint.copy(alpha = 0.75f),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+            }
+            ClockStyle.DUAL_TONE_STACK -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = hoursString,
+                        color = tint,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        lineHeight = 20.sp,
+                    )
+                    Text(
+                        text = minutesString,
+                        color = tint.copy(alpha = 0.45f),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Light,
+                        lineHeight = 20.sp,
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = shortDateString.uppercase(),
+                        color = tint.copy(alpha = 0.75f),
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                    )
                 }
             }
         }
