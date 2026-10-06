@@ -40,6 +40,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.platform.LocalContext
 import dev.viagaralauncher.battery.RootBatteryStatsCollector
 import dev.viagaralauncher.update.RootInstaller
 import androidx.compose.ui.Alignment

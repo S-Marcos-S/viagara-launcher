@@ -110,6 +110,18 @@ fun ViagaraNavHost(
         }
     }
 
+    val openNetworkRequested by dev.viagaralauncher.ui.network.NetworkStatsEvents.openRequested.collectAsState()
+    LaunchedEffect(openNetworkRequested) {
+        if (openNetworkRequested) {
+            dev.viagaralauncher.ui.network.NetworkStatsEvents.consume()
+            if (navController.currentDestination?.route != "network_monitor") {
+                navController.navigate("network_monitor") {
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
     val openTaskManagerRequested by dev.viagaralauncher.root.TaskManagerEvents.openRequested.collectAsState()
     LaunchedEffect(openTaskManagerRequested) {
         if (openTaskManagerRequested) {

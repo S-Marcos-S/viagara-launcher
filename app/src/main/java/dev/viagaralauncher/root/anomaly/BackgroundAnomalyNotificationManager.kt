@@ -108,6 +108,7 @@ class BackgroundAnomalyNotificationManager private constructor(private val conte
             AnomalyType.NETWORK -> context.getString(R.string.anomaly_notif_net_title, anomaly.appName)
             AnomalyType.CPU -> context.getString(R.string.anomaly_notif_cpu_title, anomaly.appName)
             AnomalyType.RAM -> context.getString(R.string.anomaly_notif_ram_title, anomaly.appName)
+            AnomalyType.DEEP_SLEEP -> context.getString(R.string.anomaly_notif_deep_sleep_title, anomaly.appName)
         }
 
         val largeBitmap = appIcon?.let { drawableToBitmap(it) }

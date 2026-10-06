@@ -48,6 +48,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
         private const val KEY_NOTIFY_NET = "key_notify_net"
         private const val KEY_NOTIFY_CPU = "key_notify_cpu"
         private const val KEY_NOTIFY_RAM = "key_notify_ram"
+        private const val KEY_NOTIFY_DEEP_SLEEP = "key_notify_deep_sleep"
         private const val KEY_WHITELIST = "key_whitelist"
 
         private const val SCREEN_ON_INTERVAL_MS = 30_000L
@@ -84,6 +85,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
 
     private var isScreenInteractive = false
     private var screenOffTimeRealtime = 0L
+    private var screenOffUptime = 0L
     private var screenOffWallTime = 0L
 
     private data class UidNetSample(val rx: Long, val tx: Long, val timestamp: Long)
@@ -126,6 +128,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
         val notifyNet = prefs.getBoolean(KEY_NOTIFY_NET, true)
         val notifyCpu = prefs.getBoolean(KEY_NOTIFY_CPU, true)
         val notifyRam = prefs.getBoolean(KEY_NOTIFY_RAM, true)
+        val notifyDeepSleep = prefs.getBoolean(KEY_NOTIFY_DEEP_SLEEP, true)
         val whitelist = prefs.getStringSet(KEY_WHITELIST, emptySet()) ?: emptySet()
 
         return AnomalyWatcherConfig(
@@ -134,6 +137,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
             notifyNetwork = notifyNet,
             notifyCpu = notifyCpu,
             notifyRam = notifyRam,
+            notifyDeepSleep = notifyDeepSleep,
             whitelistedPackages = whitelist,
         )
     }
@@ -146,6 +150,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
             .putBoolean(KEY_NOTIFY_NET, newConfig.notifyNetwork)
             .putBoolean(KEY_NOTIFY_CPU, newConfig.notifyCpu)
             .putBoolean(KEY_NOTIFY_RAM, newConfig.notifyRam)
+            .putBoolean(KEY_NOTIFY_DEEP_SLEEP, newConfig.notifyDeepSleep)
             .putStringSet(KEY_WHITELIST, newConfig.whitelistedPackages)
             .apply()
 
@@ -220,6 +225,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
     private fun onScreenTurnedOff() {
         isScreenInteractive = false
         screenOffTimeRealtime = SystemClock.elapsedRealtime()
+        screenOffUptime = SystemClock.uptimeMillis()
         screenOffWallTime = System.currentTimeMillis()
 
         // Regra de Ouro: suspende qualquer loop de polling ativo. O processador DEVE dormir 100%.
@@ -234,12 +240,15 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
         isScreenInteractive = true
 
         val now = SystemClock.elapsedRealtime()
+        val nowUptime = SystemClock.uptimeMillis()
         val durationOffMs = now - screenOffTimeRealtime
+        val awakeOffMs = (nowUptime - screenOffUptime).coerceAtLeast(0L)
 
         // Se a tela ficou desligada por mais de 5 segundos, analisa a fotografia diferencial
         if (screenOffTimeRealtime > 0L && durationOffMs >= 5_000L) {
             scope.launch(Dispatchers.IO) {
                 evaluateScreenOffDifferential(durationOffMs)
+                evaluateDeepSleepDisruption(durationOffMs, awakeOffMs)
             }
         }
 
@@ -373,6 +382,125 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
                 lastAlertTimeMap[pkgName] = now
             }
         }
+    }
+
+    /**
+     * Avalia se aplicativos impediram o aparelho de entrar em sono profundo (Deep Sleep)
+     * durante o período em que a tela esteve desligada.
+     * Custo de bateria: ZERO. Executado passivamente no retorno da tela (ACTION_SCREEN_ON),
+     * sem nenhum alarm, wakelock ou polling em segundo plano enquanto a tela estava apagada.
+     */
+    private suspend fun evaluateDeepSleepDisruption(sleepDurationMs: Long, awakeOffMs: Long) {
+        val cfg = _config.value
+        if (!cfg.isEnabled || !cfg.notifyDeepSleep) return
+
+        // Exige pelo menos 10 minutos de tela desligada para caracterizar análise estatística confiável
+        if (sleepDurationMs < 10 * 60 * 1000L) return
+
+        val awakeRatio = awakeOffMs.toDouble() / sleepDurationMs.toDouble()
+        val minAwakeMs = when (cfg.sensitivity) {
+            AnomalySensitivity.HIGH -> 2 * 60 * 1000L
+            AnomalySensitivity.BALANCED -> 3 * 60 * 1000L
+            AnomalySensitivity.LOW -> 6 * 60 * 1000L
+        }
+        val ratioThreshold = when (cfg.sensitivity) {
+            AnomalySensitivity.HIGH -> 0.15
+            AnomalySensitivity.BALANCED -> 0.25
+            AnomalySensitivity.LOW -> 0.40
+        }
+
+        if (awakeOffMs < minAwakeMs || awakeRatio < ratioThreshold) return
+
+        val pm = context.packageManager
+        val now = System.currentTimeMillis()
+        var suspectPackage: String? = null
+
+        // 1. Investigação com Root (se disponível): procura wakelocks parciais ativos
+        if (AppRootInspector.isRootAvailable()) {
+            val powerDumpsys = AppRootInspector.runSuCommand("dumpsys power 2>/dev/null").getOrNull() ?: ""
+            if (powerDumpsys.isNotBlank()) {
+                val wlRegex = Regex("PARTIAL_WAKE_LOCK\\s+'[^']*'\\s+.*\\(uid=([0-9]+)")
+                val match = wlRegex.find(powerDumpsys)
+                if (match != null) {
+                    val uid = match.groupValues[1].toIntOrNull()
+                    if (uid != null && uid >= 10000) {
+                        val pkgs = pm.getPackagesForUid(uid)
+                        suspectPackage = pkgs?.firstOrNull { it != context.packageName }
+                    }
+                }
+            }
+        }
+
+        // 2. Investigação via UsageEvents (Android padrão, sem necessidade de root)
+        if (suspectPackage == null) {
+            val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+            if (usm != null) {
+                runCatching {
+                    val events = usm.queryEvents((screenOffWallTime - 1000L).coerceAtLeast(0L), now)
+                    val event = UsageEvents.Event()
+                    val packageHits = mutableMapOf<String, Int>()
+
+                    while (events.hasNextEvent()) {
+                        events.getNextEvent(event)
+                        val pkg = event.packageName
+                        if (pkg != null && pkg != context.packageName && !cfg.whitelistedPackages.contains(pkg)) {
+                            if (event.eventType == UsageEvents.Event.FOREGROUND_SERVICE_START ||
+                                event.eventType == 1 /* ACTIVITY_RESUMED */) {
+                                packageHits[pkg] = (packageHits[pkg] ?: 0) + 1
+                            }
+                        }
+                    }
+                    suspectPackage = packageHits.maxByOrNull { it.value }?.key
+                }
+            }
+        }
+
+        // 3. Cruzamento com consumo de dados capturado no mesmo intervalo com tela apagada
+        if (suspectPackage == null && screenOffNetSnapshots.isNotEmpty()) {
+            val candidateUid = screenOffNetSnapshots.maxByOrNull { it.value.rx + it.value.tx }?.key
+            if (candidateUid != null && candidateUid >= 10000) {
+                val pkgs = pm.getPackagesForUid(candidateUid)
+                suspectPackage = pkgs?.firstOrNull { it != context.packageName }
+            }
+        }
+
+        val targetPkg = suspectPackage ?: return
+        if (targetPkg == context.packageName || cfg.whitelistedPackages.contains(targetPkg) || isPackageMuted(targetPkg)) {
+            return
+        }
+
+        val lastAlert = lastAlertTimeMap[targetPkg] ?: 0L
+        if (now - lastAlert < COOLDOWN_MS) return
+
+        val appName = runCatching {
+            val appInfo = pm.getApplicationInfo(targetPkg, 0)
+            pm.getApplicationLabel(appInfo).toString()
+        }.getOrDefault(targetPkg)
+
+        val appIcon = runCatching { pm.getApplicationIcon(targetPkg) }.getOrNull()
+        val awakeMinutes = (awakeOffMs / 60_000L).coerceAtLeast(1)
+        val offMinutes = (sleepDurationMs / 60_000L).coerceAtLeast(1)
+
+        val desc = context.getString(
+            dev.viagaralauncher.R.string.anomaly_desc_deep_sleep,
+            appName,
+            awakeMinutes.toString(),
+            offMinutes.toString(),
+        )
+
+        val anomaly = AnomalyEvent(
+            packageName = targetPkg,
+            appName = appName,
+            type = AnomalyType.DEEP_SLEEP,
+            valueFormatted = "${awakeMinutes}m acordado",
+            description = desc,
+            timestamp = now,
+            screenWasOff = true,
+        )
+
+        recordAnomaly(anomaly)
+        notificationManager.postAnomalyNotification(anomaly, appIcon)
+        lastAlertTimeMap[targetPkg] = now
     }
 
     /**

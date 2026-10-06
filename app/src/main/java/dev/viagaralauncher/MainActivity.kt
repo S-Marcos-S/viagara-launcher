@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
         handleUpdateIntent(intent)
         handleLogViewerIntent(intent)
         handleBatteryStatsIntent(intent)
+        handleNetworkStatsIntent(intent)
         handleAnomalyInspectIntent(intent)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -96,6 +97,8 @@ class MainActivity : ComponentActivity() {
             intent.getBooleanExtra(dev.viagaralauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false) ||
             intent.action == dev.viagaralauncher.battery.DrainNotificationManager.ACTION_OPEN_BATTERY_STATS ||
             intent.getBooleanExtra(dev.viagaralauncher.battery.DrainNotificationManager.EXTRA_OPEN_BATTERY_STATS, false) ||
+            intent.action == "dev.viagaralauncher.action.OPEN_NETWORK_STATS" ||
+            intent.getBooleanExtra("open_network_stats", false) ||
             intent.action == dev.viagaralauncher.root.anomaly.BackgroundAnomalyNotificationManager.ACTION_INSPECT_APP ||
             intent.hasExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_OPEN_CRASH_ID) ||
             intent.hasExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_CRASH_PACKAGE)
@@ -108,6 +111,7 @@ class MainActivity : ComponentActivity() {
         handleUpdateIntent(intent)
         handleLogViewerIntent(intent)
         handleBatteryStatsIntent(intent)
+        handleNetworkStatsIntent(intent)
         handleAnomalyInspectIntent(intent)
     }
 
@@ -140,6 +144,15 @@ class MainActivity : ComponentActivity() {
             intent.getBooleanExtra("open_battery_stats", false)
         ) {
             dev.viagaralauncher.battery.BatteryStatsEvents.open()
+        }
+    }
+
+    private fun handleNetworkStatsIntent(intent: Intent?) {
+        if (intent == null) return
+        if (intent.action == "dev.viagaralauncher.action.OPEN_NETWORK_STATS" ||
+            intent.getBooleanExtra("open_network_stats", false)
+        ) {
+            dev.viagaralauncher.ui.network.NetworkStatsEvents.open()
         }
     }
 

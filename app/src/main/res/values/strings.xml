@@ -895,10 +895,12 @@
     <string name="anomaly_notif_net_title">🌐 %1$s using data in background</string>
     <string name="anomaly_notif_cpu_title">⚡ %1$s with high background CPU</string>
     <string name="anomaly_notif_ram_title">💾 %1$s with high RAM usage</string>
+    <string name="anomaly_notif_deep_sleep_title">🌙 %1$s disrupting deep sleep</string>
     <string name="anomaly_desc_net_screen_off">%1$s transferred %2$s in background while screen was off for %3$s min.</string>
     <string name="anomaly_desc_net_screen_on">%1$s transferred %2$s in background in the last %3$s seconds.</string>
     <string name="anomaly_desc_cpu">%1$s is consuming %2$s continuous CPU in background.</string>
     <string name="anomaly_desc_ram">%1$s is holding %2$s of RAM under system memory pressure.</string>
+    <string name="anomaly_desc_deep_sleep">%1$s kept the device awake for %2$s min while screen was off for %3$s min.</string>
     <string name="anomaly_action_force_stop">Force stop</string>
     <string name="anomaly_action_inspect">Inspect</string>
     <string name="anomaly_action_mute_1h">Mute (1h)</string>
@@ -916,6 +918,7 @@
     <string name="anomaly_opt_network">Network data alerts</string>
     <string name="anomaly_opt_cpu">Continuous CPU alerts</string>
     <string name="anomaly_opt_ram">RAM memory pressure alerts</string>
+    <string name="anomaly_opt_deep_sleep">Deep sleep disruption alerts</string>
     <string name="anomaly_sensitivity_label">Detection sensitivity</string>
     <string name="anomaly_recent_alerts">Recent Alerts</string>
     <string name="anomaly_no_recent_alerts">No background anomalies detected recently.</string>

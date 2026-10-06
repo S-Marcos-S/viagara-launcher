@@ -210,6 +210,13 @@ fun BackgroundAnomalySettingsDialog(
                             onCheckedChange = { watcher.updateConfig(config.copy(notifyRam = it)) },
                         )
 
+                        ResourceOptionRow(
+                            label = stringResource(R.string.anomaly_opt_deep_sleep),
+                            icon = "🌙",
+                            checked = config.notifyDeepSleep,
+                            onCheckedChange = { watcher.updateConfig(config.copy(notifyDeepSleep = it)) },
+                        )
+
                         Spacer(Modifier.height(14.dp))
 
                         // Sensitivity Selector

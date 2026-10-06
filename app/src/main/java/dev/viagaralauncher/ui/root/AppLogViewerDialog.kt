@@ -94,6 +94,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -3085,7 +3086,7 @@ internal fun CreateFilterDialog(
 private fun shareFile(context: Context, file: File) {
     val fileUri = try {
         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-    } catch (_: Throwable) {
+    } catch (ignored: Throwable) {
         null
     } ?: return
 

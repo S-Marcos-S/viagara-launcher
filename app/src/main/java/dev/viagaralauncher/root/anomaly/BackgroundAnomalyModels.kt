@@ -8,6 +8,7 @@ enum class AnomalyType(val labelPt: String, val labelEn: String, val iconEmoji: 
     NETWORK("Rede / Dados", "Network / Data", "🌐"),
     CPU("Processador", "Processor / CPU", "⚡"),
     RAM("Memória RAM", "RAM Memory", "💾"),
+    DEEP_SLEEP("Sono Profundo", "Deep Sleep", "🌙"),
 }
 
 enum class AnomalySensitivity(
@@ -58,5 +59,6 @@ data class AnomalyWatcherConfig(
     val notifyNetwork: Boolean = true,
     val notifyCpu: Boolean = true,
     val notifyRam: Boolean = true,
+    val notifyDeepSleep: Boolean = true,
     val whitelistedPackages: Set<String> = emptySet(),
 )

@@ -682,7 +682,21 @@ fun AppRootInspectorDialog(
                                 data = data,
                                 selectedPeriod = selectedPeriod,
                                 onPeriodSelect = { selectedPeriod = it },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable {
+                                        dev.viagaralauncher.ui.network.NetworkStatsEvents.open()
+                                        try {
+                                            val intent = Intent(context, MainActivity::class.java).apply {
+                                                action = "dev.viagaralauncher.action.OPEN_NETWORK_STATS"
+                                                putExtra("open_network_stats", true)
+                                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                            }
+                                            context.startActivity(intent)
+                                        } catch (ignored: Exception) {}
+                                        FloatingAppInspectorOverlay.updateLayout(context, isMinimized = true)
+                                    },
                             )
 
                             Spacer(Modifier.height(6.dp))
@@ -1523,14 +1537,44 @@ private fun ProcessesTabContent(
 @Composable
 private fun NetworkTabContent(data: AppInspectionData) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
     Column {
-        Text(
-            text = "CONSUMO DE DADOS (SISTEMA NATIVO)",
-            color = colorScheme.onSurface.copy(alpha = 0.55f),
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "CONSUMO DE DADOS (SISTEMA NATIVO)",
+                color = colorScheme.onSurface.copy(alpha = 0.55f),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "Ver mais",
+                color = colorScheme.primary,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable {
+                        try {
+                            val intent = Intent(Settings.ACTION_IGNORE_BACKGROUND_DATA_RESTRICTIONS_SETTINGS).apply {
+                                data = Uri.parse("package:${data.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Ação indisponível", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            )
+        }
         Spacer(Modifier.height(6.dp))
 
         Box(
