@@ -24,6 +24,10 @@
     {
       "id": "nature",
       "label": "Natureza"
+    },
+    {
+      "id": "anime",
+      "label": "Anime"
     }
   ],
   "wallpapers": [
@@ -92,8 +96,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_jxgqyy.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_jxgqyy.webp",
       "primary_color": "#000000",
-      "category": "nature",
+      "category": "anime",
       "tags": [
+        "anime",
         "nature",
         "Chocoshi",
         "women outdoors",
@@ -107,8 +112,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_d6xe7l.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_d6xe7l.webp",
       "primary_color": "#424153",
-      "category": "oled",
+      "category": "anime",
       "tags": [
+        "anime",
         "oled",
         "office girl",
         "pantyhose",
@@ -122,8 +128,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_85j96y.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_85j96y.webp",
       "primary_color": "#424153",
-      "category": "oled",
+      "category": "anime",
       "tags": [
+        "anime",
         "oled",
         "looking away",
         "sea",
@@ -137,8 +144,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_7pe7yo.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_7pe7yo.webp",
       "primary_color": "#424153",
-      "category": "space",
+      "category": "anime",
       "tags": [
+        "anime",
         "space",
         "Pixiv",
         "bunny girl",
@@ -152,8 +160,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_je93gy.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_je93gy.webp",
       "primary_color": "#000000",
-      "category": "space",
+      "category": "anime",
       "tags": [
+        "anime",
         "space",
         "couple",
         "looking away",
@@ -182,8 +191,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_ex9g7k.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_ex9g7k.webp",
       "primary_color": "#333399",
-      "category": "nature",
+      "category": "anime",
       "tags": [
+        "anime",
         "nature",
         "illustration",
         "environment",
@@ -197,8 +207,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_rrjw61.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_rrjw61.webp",
       "primary_color": "#424153",
-      "category": "minimal",
+      "category": "anime",
       "tags": [
+        "anime",
         "minimal",
         "ILLDIAN",
         "illustration",
@@ -257,8 +268,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_k7rk61.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_k7rk61.webp",
       "primary_color": "#424153",
-      "category": "oled",
+      "category": "anime",
       "tags": [
+        "anime",
         "oled",
         "Genshin Impact",
         "Keqing (Genshin Impact)",
@@ -287,8 +299,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_gpm233.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_gpm233.webp",
       "primary_color": "#999999",
-      "category": "nature",
+      "category": "anime",
       "tags": [
+        "anime",
         "nature",
         "hair blowing in the wind",
         "horizon",
@@ -302,8 +315,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_xlqyrz.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_xlqyrz.webp",
       "primary_color": "#000000",
-      "category": "oled",
+      "category": "anime",
       "tags": [
+        "anime",
         "oled",
         "drink",
         "cyber",
@@ -332,8 +346,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_28wxwy.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_28wxwy.webp",
       "primary_color": "#abbcda",
-      "category": "nature",
+      "category": "anime",
       "tags": [
+        "anime",
         "nature",
         "women outdoors",
         "skirt",
@@ -362,8 +377,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_gp9d27.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_gp9d27.webp",
       "primary_color": "#424153",
-      "category": "oled",
+      "category": "anime",
       "tags": [
+        "anime",
         "oled",
         "fantasy girl",
         "4K",
@@ -392,8 +408,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_kxdp9m.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_kxdp9m.webp",
       "primary_color": "#000000",
-      "category": "nature",
+      "category": "anime",
       "tags": [
+        "anime",
         "nature",
         "carriage",
         "trees",
@@ -435,8 +452,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_8oez21.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_8oez21.webp",
       "primary_color": "#999999",
-      "category": "oled",
+      "category": "anime",
       "tags": [
+        "anime",
         "oled",
         "pink hair",
         "umbrella",
@@ -480,8 +498,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_jx8grq.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_jx8grq.webp",
       "primary_color": "#ffffff",
-      "category": "minimal",
+      "category": "anime",
       "tags": [
+        "anime",
         "minimal",
         "Makima (Chainsaw Man)",
         "Chainsaw Man",
@@ -539,8 +558,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_og9rvm.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_og9rvm.webp",
       "primary_color": "#424153",
-      "category": "nature",
+      "category": "anime",
       "tags": [
+        "anime",
         "nature",
         "Chocoshi",
         "scenery",
@@ -554,8 +574,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_2y2jg6.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_2y2jg6.webp",
       "primary_color": "#ffffff",
-      "category": "minimal",
+      "category": "anime",
       "tags": [
+        "anime",
         "minimal",
         "Blue Archive",
         "smiling",
@@ -582,8 +603,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_21kkdm.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_21kkdm.webp",
       "primary_color": "#999999",
-      "category": "oled",
+      "category": "anime",
       "tags": [
+        "anime",
         "oled",
         "ILLDIAN",
         "illustration",
@@ -612,8 +634,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_po929j.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_po929j.webp",
       "primary_color": "#999999",
-      "category": "nature",
+      "category": "anime",
       "tags": [
+        "anime",
         "nature",
         "Evelyn Chevalier (Zenless Zone Zero)",
         "Zenless Zone Zero",
@@ -669,8 +692,9 @@
       "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_3zxokv.webp",
       "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_3zxokv.webp",
       "primary_color": "#424153",
-      "category": "space",
+      "category": "anime",
       "tags": [
+        "anime",
         "space",
         "2D",
         "Pixiv",

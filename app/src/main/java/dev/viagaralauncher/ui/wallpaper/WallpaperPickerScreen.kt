@@ -661,6 +661,7 @@ private fun getCategoryDisplayName(category: WallpaperCategory): String {
         "abstract" -> stringResource(R.string.wallpaper_category_abstract)
         "space" -> stringResource(R.string.wallpaper_category_space)
         "nature" -> stringResource(R.string.wallpaper_category_nature)
+        "anime" -> stringResource(R.string.wallpaper_category_anime)
         else -> category.label.ifBlank { category.id.replaceFirstChar { it.uppercase() } }
     }
 }

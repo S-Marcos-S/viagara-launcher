@@ -38,11 +38,12 @@ GITHUB_RAW_BASE = "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
 CATEGORY_QUERIES = {
-    "oled": "https://wallhaven.cc/api/v1/search?colors=000000&ratios=9x16,10x16&sorting=favorites&purity=100",
-    "space": "https://wallhaven.cc/api/v1/search?q=space&ratios=9x16,10x16&sorting=favorites&purity=100",
-    "nature": "https://wallhaven.cc/api/v1/search?q=nature&ratios=9x16,10x16&sorting=favorites&purity=100",
-    "minimal": "https://wallhaven.cc/api/v1/search?q=minimalism&ratios=9x16,10x16&sorting=favorites&purity=100",
-    "abstract": "https://wallhaven.cc/api/v1/search?q=abstract&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "oled": "https://wallhaven.cc/api/v1/search?categories=100&colors=000000&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "space": "https://wallhaven.cc/api/v1/search?categories=100&q=space&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "nature": "https://wallhaven.cc/api/v1/search?categories=100&q=nature&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "minimal": "https://wallhaven.cc/api/v1/search?categories=100&q=minimalism&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "abstract": "https://wallhaven.cc/api/v1/search?categories=100&q=abstract&ratios=9x16,10x16&sorting=favorites&purity=100",
+    "anime": "https://wallhaven.cc/api/v1/search?categories=010&ratios=9x16,10x16&sorting=favorites&purity=100",
 }
 
 

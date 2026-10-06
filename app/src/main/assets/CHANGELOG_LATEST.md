@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.59.71
+### 🚀 Novidades da Versão v0.59.72
 
-- **Cores Dinâmicas Imediatas:** Extração direta e aplicação instantânea da cor primária do novo papel de parede no tema.
-- **Catálogo Limpo:** Remoção de imagem com erro de exibição e aprimoramento no filtro automático de curadoria.
+- **Categoria Anime Dedicada:** Papéis de parede de anime agora agrupados em uma aba exclusiva.
+- **Filtros por Categoria:** Organização limpa nas abas OLED, Minimalista, Natureza e Espaço.

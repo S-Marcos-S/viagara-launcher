@@ -58,6 +58,7 @@ object WallpaperRepository {
         WallpaperCategory("space", "Espaço"),
         WallpaperCategory("minimal", "Minimalista"),
         WallpaperCategory("nature", "Natureza"),
+        WallpaperCategory("anime", "Anime"),
     )
 
     private fun cacheDir(context: Context): File {
