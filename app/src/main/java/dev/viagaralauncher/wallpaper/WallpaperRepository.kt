@@ -44,6 +44,9 @@ object WallpaperRepository {
     private val _wallpaperUpdateTick = kotlinx.coroutines.flow.MutableStateFlow(0L)
     val wallpaperUpdateTick: kotlinx.coroutines.flow.StateFlow<Long> = _wallpaperUpdateTick
 
+    private val _currentPrimaryColor = kotlinx.coroutines.flow.MutableStateFlow<Int?>(null)
+    val currentPrimaryColor: kotlinx.coroutines.flow.StateFlow<Int?> = _currentPrimaryColor
+
     fun notifyWallpaperChanged() {
         _wallpaperUpdateTick.value = System.currentTimeMillis()
     }
@@ -177,6 +180,40 @@ object WallpaperRepository {
         }.getOrNull()
     }
 
+    suspend fun applyWallpaper(
+        context: Context,
+        item: WallpaperItem,
+        flags: Int,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val bitmap = getCachedOrDownloadBitmap(context, item.fullUrl)
+                ?: throw IllegalStateException("Could not download wallpaper bitmap")
+
+            val wm = WallpaperManager.getInstance(context)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                wm.setBitmap(bitmap, null, true, flags)
+            } else {
+                wm.setBitmap(bitmap)
+            }
+
+            // Immediately extract primary color from the applied wallpaper
+            val extractedColor: Int? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                runCatching {
+                    android.app.WallpaperColors.fromBitmap(bitmap)?.primaryColor?.toArgb()
+                }.getOrNull()
+            } else null ?: runCatching {
+                android.graphics.Color.parseColor(item.primaryColorHex)
+            }.getOrNull()
+
+            if (extractedColor != null) {
+                _currentPrimaryColor.value = extractedColor
+            }
+
+            notifyWallpaperChanged()
+            Unit
+        }
+    }
+
     suspend fun applyWallpaper(context: Context, fullUrl: String, flags: Int): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val bitmap = getCachedOrDownloadBitmap(context, fullUrl)
@@ -188,6 +225,15 @@ object WallpaperRepository {
             } else {
                 wm.setBitmap(bitmap)
             }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                runCatching {
+                    android.app.WallpaperColors.fromBitmap(bitmap)?.primaryColor?.toArgb()?.let {
+                        _currentPrimaryColor.value = it
+                    }
+                }
+            }
+
             notifyWallpaperChanged()
             Unit
         }

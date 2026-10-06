@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.59.70
+### 🚀 Novidades da Versão v0.59.71
 
-- **Cores Dinâmicas Imediatas:** Correção na atualização das cores do sistema logo na primeira troca de papel de parede.
-- **Ajuste nos Botões de Aplicação:** Tipografia e espaçamentos otimizados para encaixe perfeito dos textos em qualquer tamanho de tela.
+- **Cores Dinâmicas Imediatas:** Extração direta e aplicação instantânea da cor primária do novo papel de parede no tema.
+- **Catálogo Limpo:** Remoção de imagem com erro de exibição e aprimoramento no filtro automático de curadoria.

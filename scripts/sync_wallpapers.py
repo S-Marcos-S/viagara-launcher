@@ -201,6 +201,9 @@ def main():
                 if uploader:
                     author = uploader
                 d_tags = [t["name"] for t in d.get("tags", []) if t.get("name")]
+                if any(t.lower() in ["error", "errors", "glitch", "broken", "404"] for t in d_tags):
+                    print(f"Skipping candidate {wh_id} due to error/glitch tags.")
+                    continue
                 filtered_tags = [t for t in d_tags if t.lower() not in disallowed_tags]
                 if filtered_tags:
                     title = clean_name(filtered_tags[0])

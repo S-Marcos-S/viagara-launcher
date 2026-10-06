@@ -246,7 +246,7 @@ fun WallpaperPickerScreen(
                 onApply = { flags ->
                     isApplying = true
                     coroutineScope.launch {
-                        val result = WallpaperRepository.applyWallpaper(context, item.fullUrl, flags)
+                        val result = WallpaperRepository.applyWallpaper(context, item, flags)
                         isApplying = false
                         if (result.isSuccess) {
                             Toast.makeText(context, R.string.wallpaper_applied_success, Toast.LENGTH_SHORT).show()

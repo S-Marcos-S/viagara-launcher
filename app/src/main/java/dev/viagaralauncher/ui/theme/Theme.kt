@@ -124,13 +124,28 @@ fun ViagaraTheme(
         onDispose { runCatching { wm.removeOnColorsChangedListener(listener) } }
     }
 
-    val wallpaperPrimary = remember(context, colorTick) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+    val appliedPrimaryArgb by WallpaperRepository.currentPrimaryColor.collectAsState()
+
+    val rawWallpaperPrimary = remember(context, colorTick, appliedPrimaryArgb) {
+        if (appliedPrimaryArgb != null) {
+            Color(appliedPrimaryArgb!!)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             runCatching {
                 val wm = WallpaperManager.getInstance(context)
                 wm.getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb()?.let { Color(it) }
             }.getOrNull()
         } else null
+    }
+
+    val wallpaperPrimary = remember(rawWallpaperPrimary, darkTheme) {
+        rawWallpaperPrimary?.let { color ->
+            val lum = 0.299f * color.red + 0.587f * color.green + 0.114f * color.blue
+            when {
+                darkTheme && lum < 0.35f -> lerp(color, Color.White, 0.45f)
+                !darkTheme && lum > 0.70f -> lerp(color, Color.Black, 0.45f)
+                else -> color
+            }
+        }
     }
 
     val baseColors = remember(activeThemeId, darkTheme, wallpaperPrimary, colorTick) {
@@ -139,10 +154,15 @@ fun ViagaraTheme(
                 val baseDark = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     dynamicDarkColorScheme(context)
                 } else {
-                    if (wallpaperPrimary != null) DarkColors.copy(primary = wallpaperPrimary, primaryContainer = wallpaperPrimary.copy(alpha = 0.35f))
-                    else DarkColors
+                    DarkColors
                 }
-                baseDark.copy(
+                val tinted = if (wallpaperPrimary != null) {
+                    baseDark.copy(
+                        primary = wallpaperPrimary,
+                        primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+                    )
+                } else baseDark
+                tinted.copy(
                     surface = Color.Black,
                     surfaceContainer = Color(0xFF0D0D0D),
                     surfaceContainerHigh = Color(0xFF141414),
@@ -172,7 +192,16 @@ fun ViagaraTheme(
             }
             else -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                    val systemColors = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                    if (wallpaperPrimary != null) {
+                        systemColors.copy(
+                            primary = wallpaperPrimary,
+                            primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+                            onPrimaryContainer = if (darkTheme) Color.White else Color.Black,
+                        )
+                    } else {
+                        systemColors
+                    }
                 } else {
                     val fallback = if (darkTheme) DarkColors else LightColors
                     if (wallpaperPrimary != null) {
