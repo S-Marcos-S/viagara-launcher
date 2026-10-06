@@ -294,6 +294,81 @@
         "horizon",
         "windmill"
       ]
+    },
+    {
+      "id": "wallpaper_wh_xlqyrz",
+      "name": "Drink",
+      "author": "chowdermonkey",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_xlqyrz.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_xlqyrz.webp",
+      "primary_color": "#000000",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "drink",
+        "cyber",
+        "red eyes"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_nee1rn",
+      "name": "Universe",
+      "author": "alexander2033",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_nee1rn.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_nee1rn.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "universe",
+        "planet",
+        "Earth"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_28wxwy",
+      "name": "Women Outdoors",
+      "author": "xiaochuyiqie",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_28wxwy.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_28wxwy.webp",
+      "primary_color": "#abbcda",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "women outdoors",
+        "skirt",
+        "clouds"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_572128",
+      "name": "Black Background",
+      "author": "ranisalt",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_572128.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_572128.webp",
+      "primary_color": "#000000",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "black background",
+        "browser",
+        "errors"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_md99mk",
+      "name": "City",
+      "author": "AliceChe",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_md99mk.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_md99mk.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "city",
+        "night",
+        "dark"
+      ]
     }
   ]
 }
