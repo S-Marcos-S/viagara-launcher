@@ -41,6 +41,9 @@ enum class ClockStyle {
     NOTHING_DOTS,
     CENTERED_PILL,
     DUAL_TONE_STACK,
+    CALLIGRAPHY_LARGE,
+    CALLIGRAPHY_STACKED,
+    CALLIGRAPHY_MINIMAL,
 }
 
 /** AUTO picks light or dark text from the wallpaper's own colours. */

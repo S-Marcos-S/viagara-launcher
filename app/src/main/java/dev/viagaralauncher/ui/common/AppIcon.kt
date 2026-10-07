@@ -377,21 +377,18 @@ private fun stripCornerBackground(bitmap: Bitmap) {
     val pixels = IntArray(w * h)
     bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
 
-    val tolerance = 42.0
+    val toleranceSq = 42 * 42
     var strippedCount = 0
 
     for (i in pixels.indices) {
         val p = pixels[i]
         val a = AndroidColor.alpha(p)
         if (a > 180) {
-            val r = AndroidColor.red(p)
-            val g = AndroidColor.green(p)
-            val b = AndroidColor.blue(p)
-            val dr = r - bgR
-            val dg = g - bgG
-            val db = b - bgB
-            val dist = kotlin.math.sqrt((dr * dr + dg * dg + db * db).toDouble())
-            if (dist <= tolerance) {
+            val dr = AndroidColor.red(p) - bgR
+            val dg = AndroidColor.green(p) - bgG
+            val db = AndroidColor.blue(p) - bgB
+            val distSq = dr * dr + dg * dg + db * db
+            if (distSq <= toleranceSq) {
                 pixels[i] = 0
                 strippedCount++
             }
@@ -414,6 +411,7 @@ private fun convertToWhiteMask(bitmap: Bitmap) {
     var maxLum = 0.0f
     var hasVisiblePixels = false
 
+    val lums = FloatArray(count)
     for (i in 0 until count) {
         val pixel = pixels[i]
         val a = AndroidColor.alpha(pixel)
@@ -421,7 +419,8 @@ private fun convertToWhiteMask(bitmap: Bitmap) {
             val r = AndroidColor.red(pixel)
             val g = AndroidColor.green(pixel)
             val b = AndroidColor.blue(pixel)
-            val lum = (0.299f * r + 0.587f * g + 0.114f * b) / 255f
+            val lum = (299 * r + 587 * g + 114 * b) / 255000f
+            lums[i] = lum
             if (lum < minLum) minLum = lum
             if (lum > maxLum) maxLum = lum
             hasVisiblePixels = true
@@ -441,11 +440,7 @@ private fun convertToWhiteMask(bitmap: Bitmap) {
             continue
         }
 
-        val r = AndroidColor.red(pixel)
-        val g = AndroidColor.green(pixel)
-        val b = AndroidColor.blue(pixel)
-        val lum = (0.299f * r + 0.587f * g + 0.114f * b) / 255f
-
+        val lum = lums[i]
         val finalAlpha = if (hasContrast) {
             val normLum = ((lum - minLum) / contrast).coerceIn(0f, 1f)
             val factor = 0.35f + 0.65f * normLum

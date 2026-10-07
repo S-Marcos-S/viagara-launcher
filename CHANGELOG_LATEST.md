@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.59.75
+### 🚀 Novidades da Versão v0.59.76
 
-- **Visualização e Cópia de ID:** Exibição do identificador do papel de parede na tela de prévia com toque para copiar.
-- **Gerenciador de Catálogo:** Suporte a remoção e listagem de wallpapers via GitHub Actions e Markdown visual.
+- **Scrubber Sem Lag:** Navegação pelo alfabeto ultrafluida a 120 FPS renderizada em Canvas de alta performance.
+- **Scroller Reativo:** Otimização da lista com cancelamento instantâneo de requisições ao deslizar rápido.
+- **Novos Relógios Caligráficos:** Estilos elegantes com fontes de caligrafia centralizadas e em tamanho grande.

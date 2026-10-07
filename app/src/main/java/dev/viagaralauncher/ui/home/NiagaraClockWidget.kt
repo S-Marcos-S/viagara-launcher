@@ -80,7 +80,10 @@ val CLOCK_TOP_PADDING_DP = 158.dp
 fun isCenteredClockStyle(style: ClockStyle): Boolean = when (style) {
     ClockStyle.NOTHING_DOTS,
     ClockStyle.CENTERED_PILL,
-    ClockStyle.DUAL_TONE_STACK -> true
+    ClockStyle.DUAL_TONE_STACK,
+    ClockStyle.CALLIGRAPHY_LARGE,
+    ClockStyle.CALLIGRAPHY_STACKED,
+    ClockStyle.CALLIGRAPHY_MINIMAL -> true
     else -> false
 }
 
@@ -418,6 +421,37 @@ fun NiagaraClockWidget(
                         hoursString = hoursString,
                         minutesString = minutesString,
                         shortDateString = shortDateString,
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
+                }
+                ClockStyle.CALLIGRAPHY_LARGE -> {
+                    CalligraphyLargeClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
+                }
+                ClockStyle.CALLIGRAPHY_STACKED -> {
+                    CalligraphyStackedClockContent(
+                        hoursString = hoursString,
+                        minutesString = minutesString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
+                }
+                ClockStyle.CALLIGRAPHY_MINIMAL -> {
+                    CalligraphyMinimalClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
@@ -1894,6 +1928,172 @@ private fun DualToneStackClockContent(
     }
 }
 
+@Composable
+private fun CalligraphyLargeClockContent(
+    timeString: String,
+    dateString: String,
+    contentColor: Color,
+    widthFactor: Float = 1.0f,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = timeString,
+            color = contentColor,
+            fontSize = (86 * widthFactor).sp,
+            fontFamily = FontFamily.Cursive,
+            fontStyle = FontStyle.Italic,
+            fontWeight = FontWeight.Bold,
+            lineHeight = (86 * widthFactor).sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClockClick,
+            ),
+        )
+        Box(
+            modifier = Modifier
+                .padding(vertical = (6 * widthFactor).dp.coerceAtLeast(3.dp))
+                .width((72 * widthFactor).dp)
+                .height(2.dp)
+                .clip(CircleShape)
+                .background(contentColor.copy(alpha = 0.35f)),
+        )
+        Text(
+            text = dateString,
+            color = contentColor.copy(alpha = 0.88f),
+            fontSize = (16 * widthFactor).sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = (0.8 * widthFactor).sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDateClick,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun CalligraphyStackedClockContent(
+    hoursString: String,
+    minutesString: String,
+    dateString: String,
+    contentColor: Color,
+    widthFactor: Float = 1.0f,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClockClick,
+            ),
+        ) {
+            Text(
+                text = hoursString,
+                color = contentColor,
+                fontSize = (76 * widthFactor).sp,
+                fontFamily = FontFamily.Cursive,
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.Bold,
+                lineHeight = (68 * widthFactor).sp,
+                textAlign = TextAlign.Center,
+            )
+            Box(
+                modifier = Modifier
+                    .padding(vertical = (4 * widthFactor).dp.coerceAtLeast(2.dp))
+                    .width((52 * widthFactor).dp)
+                    .height(1.5.dp)
+                    .clip(CircleShape)
+                    .background(contentColor.copy(alpha = 0.30f)),
+            )
+            Text(
+                text = minutesString,
+                color = contentColor.copy(alpha = 0.78f),
+                fontSize = (76 * widthFactor).sp,
+                fontFamily = FontFamily.Cursive,
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.Normal,
+                lineHeight = (68 * widthFactor).sp,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Spacer(modifier = Modifier.height((8 * widthFactor).dp.coerceAtLeast(4.dp)))
+        Text(
+            text = dateString,
+            color = contentColor.copy(alpha = 0.85f),
+            fontSize = (15 * widthFactor).sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = (1.0 * widthFactor).sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDateClick,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun CalligraphyMinimalClockContent(
+    timeString: String,
+    dateString: String,
+    contentColor: Color,
+    widthFactor: Float = 1.0f,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = timeString,
+            color = contentColor,
+            fontSize = (94 * widthFactor).sp,
+            fontFamily = FontFamily.Cursive,
+            fontStyle = FontStyle.Italic,
+            fontWeight = FontWeight.Normal,
+            lineHeight = (94 * widthFactor).sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClockClick,
+            ),
+        )
+        Spacer(modifier = Modifier.height((2 * widthFactor).dp.coerceAtLeast(1.dp)))
+        Text(
+            text = "—  $dateString  —",
+            color = contentColor.copy(alpha = 0.80f),
+            fontSize = (15 * widthFactor).sp,
+            fontWeight = FontWeight.Normal,
+            fontStyle = FontStyle.Italic,
+            letterSpacing = (0.5 * widthFactor).sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDateClick,
+            ),
+        )
+    }
+}
+
 /**
  * Scaled mini preview of a clock style used in the 2-column grid picker.
  */
@@ -2431,6 +2631,78 @@ fun ClockStylePreview(
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
+                    )
+                }
+            }
+            ClockStyle.CALLIGRAPHY_LARGE -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = timeString,
+                        color = tint,
+                        fontSize = 32.sp,
+                        fontFamily = FontFamily.Cursive,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = shortDateString,
+                        color = tint.copy(alpha = 0.8f),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 1.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+            ClockStyle.CALLIGRAPHY_STACKED -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = hoursString,
+                        color = tint,
+                        fontSize = 24.sp,
+                        fontFamily = FontFamily.Cursive,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 22.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = minutesString,
+                        color = tint.copy(alpha = 0.7f),
+                        fontSize = 24.sp,
+                        fontFamily = FontFamily.Cursive,
+                        fontWeight = FontWeight.Normal,
+                        lineHeight = 22.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = shortDateString.uppercase(),
+                        color = tint.copy(alpha = 0.75f),
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.8.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+            ClockStyle.CALLIGRAPHY_MINIMAL -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = timeString,
+                        color = tint,
+                        fontSize = 34.sp,
+                        fontFamily = FontFamily.Cursive,
+                        fontWeight = FontWeight.Normal,
+                        fontStyle = FontStyle.Italic,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = "— $shortDateString —",
+                        color = tint.copy(alpha = 0.75f),
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontStyle = FontStyle.Italic,
+                        textAlign = TextAlign.Center,
                     )
                 }
             }

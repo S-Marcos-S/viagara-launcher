@@ -118,7 +118,11 @@ import dev.viagaralauncher.ui.common.recordTouchPosition
 import dev.viagaralauncher.ui.common.EditAppDialog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -201,8 +205,6 @@ fun AppListScreen(
     // Reading these here confines the invalidation to this composable: the home screen
     // behind the overlay never sees the letter change. currentY/currentPull stay as
     // function references so their callers read them in the draw phase, not composition.
-    val scrubLetter = scrub.letter
-    val scrubbing = scrub.scrubbing
     val activeSide = scrub.side
     val scrubY = remember(scrub) { scrub::currentY }
     val pullPx = remember(scrub) { scrub::currentPull }
@@ -216,26 +218,14 @@ fun AppListScreen(
     // is the same list the whole time. Only ever read inside a graphicsLayer, so the fade
     // runs in the draw phase instead of recomposing every visible row 60 times a second.
     val othersAlpha by animateFloatAsState(
-        // Only while a finger is travelling through the alphabet: a tap on the edge sets a
-        // letter too, and fading out for it cost a quarter of a second of ghosted list on
-        // every open.
-        targetValue = if (scrubLetter != null && scrubbing) 0f else 1f,
+        targetValue = if (scrub.scrubbing) 0f else 1f,
         animationSpec = tween(durationMillis = 180),
         label = "othersAlpha",
     )
     val sectionTopPx = (viewportHeightPx * SECTION_TOP_FRACTION).roundToInt()
 
-    // The LazyColumn always holds the full list — while scrubbing it's just hidden and
-    // pre-scrolled, with the letter's apps drawn over the top. Filtering the rows themselves
-    // meant that on release the unfiltered list was briefly parked back at A.
-    val scrubRowIndex = remember(model, scrubLetter) {
-        val letter = scrubLetter ?: return@remember -1
-        if (letter == SCRUBBER_STAR) return@remember 0
-        model.letterIndex.firstOrNull { it.first == letter }?.second ?: -1
-    }
-
     // Row indices of the highlighted section. Applied *after* the scroll lands, otherwise
-    // the new letter lights up a frame before the list moves to it — that was the jitter.
+    // the new letter lights up a frame before the list moves to it.
     var highlightRange by remember { mutableStateOf(IntRange.EMPTY) }
 
     // Dismissing on the first tap is what made double-tap-to-lock unreachable: the overlay
@@ -337,8 +327,8 @@ fun AppListScreen(
     // once gone the idle gap is all that is left, so there is no scrolling back into it unless
     // A is picked again.
     var userDragged by remember { mutableStateOf(false) }
-    LaunchedEffect(userDragged, scrubLetter) {
-        if (!userDragged || scrubLetter != null || highlightRange.isEmpty()) {
+    LaunchedEffect(userDragged) {
+        if (!userDragged || scrub.letter != null || highlightRange.isEmpty()) {
             return@LaunchedEffect
         }
         snapshotFlow { placementSettled() }.first { it }
@@ -360,27 +350,20 @@ fun AppListScreen(
         if (compensate > 0f) listState.dispatchRawDelta(-compensate)
     }
 
-    val currentScrubRowIndex by rememberUpdatedState(scrubRowIndex)
-    val isScrubbing by rememberUpdatedState(scrubbing)
-
     LaunchedEffect(model) {
-        var lastScrolledIndex = -1
-        while (true) {
-            val targetIndex = snapshotFlow {
-                if (userDragged || currentScrubRowIndex < 0) {
-                    lastScrolledIndex = -1
-                }
-                currentScrubRowIndex
-            }.first { it >= 0 && it != lastScrolledIndex }
-
-            listState.scrollToItem(targetIndex)
-            lastScrolledIndex = targetIndex
-            val end = model.letterIndex.firstOrNull { it.second > targetIndex }?.second ?: model.rows.size
-            highlightRange = targetIndex until end
-            userDragged = false
-            // Seamless 120 FPS scrubbing without artificial frame throttling.
-            // snapshotFlow naturally conflates updates when the finger moves faster than the display frame rate.
+        snapshotFlow {
+            val letter = scrub.letter ?: return@snapshotFlow -1
+            if (letter == SCRUBBER_STAR) 0
+            else model.letterIndex.firstOrNull { it.first == letter }?.second ?: -1
         }
+            .filter { it >= 0 }
+            .distinctUntilChanged()
+            .collectLatest { targetIndex ->
+                listState.scrollToItem(targetIndex)
+                val end = model.letterIndex.firstOrNull { it.second > targetIndex }?.second ?: model.rows.size
+                highlightRange = targetIndex until end
+                userDragged = false
+            }
     }
 
     val scope = rememberCoroutineScope()
@@ -609,8 +592,11 @@ fun AppListScreen(
                 }
             },
     ) {
+      val isStarSelected by remember(scrub) {
+          derivedStateOf { scrub.letter == SCRUBBER_STAR }
+      }
       val starAlpha by animateFloatAsState(
-          targetValue = if (scrubLetter == SCRUBBER_STAR) 0f else 1f,
+          targetValue = if (isStarSelected) 0f else 1f,
           animationSpec = if (!visible) snap() else tween(120),
           label = "starAlpha",
       )
@@ -643,7 +629,7 @@ fun AppListScreen(
             // broken rather than as placement, so the last letter simply lands as high as its
             // own content allows.
             contentPadding = with(density) {
-                val top = if (scrubLetter != null || !highlightRange.isEmpty()) {
+                val top = if (scrub.active || !highlightRange.isEmpty()) {
                     sectionTopPx.toDp()
                 } else {
                     IDLE_TOP_PADDING
@@ -994,44 +980,13 @@ fun AppListScreen(
             )
         }
 
-        // Bubble for the current letter, dragged out from the strip and springing back.
-        if (scrubLetter != null) {
-            val bubble = 72.dp
-            val halfPx = with(density) { (bubble / 2).toPx() }
-            val insetPx = with(density) { 122.dp.toPx() }
-            Surface(
-                color = Color.Black.copy(alpha = 0.6f),
-                shape = RoundedCornerShape(22.dp),
-                modifier = Modifier
-                    .align(if (activeSide == EdgeSide.LEFT) Alignment.TopStart else Alignment.TopEnd)
-                    .offset {
-                        val x = insetPx + pullPx()
-                        IntOffset(
-                            x = if (activeSide == EdgeSide.LEFT) x.roundToInt() else -x.roundToInt(),
-                            y = ((scrubY() ?: 0f) - halfPx).roundToInt(),
-                        )
-                    }
-                    .size(bubble),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (scrubLetter == SCRUBBER_STAR) {
-                        Icon(
-                            imageVector = Icons.Rounded.Star,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(38.dp),
-                        )
-                    } else {
-                        Text(
-                            scrubLetter.toString(),
-                            color = Color.White,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-            }
-        }
+        // Bubble for the current letter, isolated so letter changes do not recompose AppListScreen.
+        ScrubLetterBubble(
+            scrub = scrub,
+            activeSide = activeSide,
+            density = density,
+            modifier = Modifier.align(if (activeSide == EdgeSide.LEFT) Alignment.TopStart else Alignment.TopEnd),
+        )
 
         if (searchButtonEnabled && visible) {
             val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -1046,7 +1001,7 @@ fun AppListScreen(
                     listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 30
                 }
             }
-            val showButton = (isScrolling || isScrolled) && scrubLetter == null
+            val showButton = (isScrolling || isScrolled) && !scrub.active
 
             AnimatedVisibility(
                 visible = showButton,
@@ -1205,8 +1160,8 @@ private fun AppRow(
     val iconBounds = remember { Rect() }
     var isBoundsRegistered by remember { mutableStateOf(false) }
 
-    val iconModifier = Modifier.onGloballyPositioned { coords ->
-        if (coords.isAttached) {
+    val iconModifier = if (isBoundsRegistered) Modifier else Modifier.onGloballyPositioned { coords ->
+        if (coords.isAttached && !isBoundsRegistered) {
             val b = coords.boundsInWindow()
             iconBounds.set(
                 b.left.toInt(),
@@ -1214,10 +1169,8 @@ private fun AppRow(
                 b.right.toInt(),
                 b.bottom.toInt(),
             )
-            if (!isBoundsRegistered) {
-                dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(app.packageName, iconBounds)
-                isBoundsRegistered = true
-            }
+            dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.updateIconBounds(app.packageName, iconBounds)
+            isBoundsRegistered = true
         }
     }
 
@@ -1328,3 +1281,50 @@ private fun AppRow(
         }
     }
 }
+
+@Composable
+private fun ScrubLetterBubble(
+    scrub: ScrubState,
+    activeSide: EdgeSide,
+    density: androidx.compose.ui.unit.Density,
+    modifier: Modifier = Modifier,
+) {
+    val letter = scrub.letter ?: return
+    val bubble = 72.dp
+    val halfPx = with(density) { (bubble / 2).toPx() }
+    val insetPx = with(density) { 122.dp.toPx() }
+
+    Surface(
+        color = Color.Black.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(22.dp),
+        modifier = modifier
+            .offset {
+                val x = insetPx + scrub.currentPull()
+                val y = (scrub.currentY() ?: 0f) - halfPx
+                IntOffset(
+                    x = if (activeSide == EdgeSide.LEFT) x.roundToInt() else -x.roundToInt(),
+                    y = y.roundToInt(),
+                )
+            }
+            .size(bubble),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (letter == SCRUBBER_STAR) {
+                Icon(
+                    imageVector = Icons.Rounded.Star,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(38.dp),
+                )
+            } else {
+                Text(
+                    text = letter.toString(),
+                    color = Color.White,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+

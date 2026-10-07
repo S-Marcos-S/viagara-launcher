@@ -55,6 +55,9 @@ fun ClockStyle.labelRes(): Int = when (this) {
     ClockStyle.NOTHING_DOTS -> R.string.clock_style_nothing_dots
     ClockStyle.CENTERED_PILL -> R.string.clock_style_centered_pill
     ClockStyle.DUAL_TONE_STACK -> R.string.clock_style_dual_tone_stack
+    ClockStyle.CALLIGRAPHY_LARGE -> R.string.clock_style_calligraphy_large
+    ClockStyle.CALLIGRAPHY_STACKED -> R.string.clock_style_calligraphy_stacked
+    ClockStyle.CALLIGRAPHY_MINIMAL -> R.string.clock_style_calligraphy_minimal
 }
 
 @StringRes
