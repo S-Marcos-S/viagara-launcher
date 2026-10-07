@@ -37,6 +37,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -49,6 +50,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +62,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -129,31 +132,89 @@ fun WallpaperPickerScreen(
         if (!isApplying) previewingWallpaper = null
     }
 
+    val gridState = rememberLazyGridState()
+    val isScrolled by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0
+        }
+    }
+
     Scaffold(
         containerColor = surface,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.wallpaper_picker_title),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
+            Surface(
+                color = surface,
+                tonalElevation = if (isScrolled) 2.dp else 0.dp,
+                shadowElevation = if (isScrolled) 3.dp else 0.dp,
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = stringResource(R.string.wallpaper_picker_title),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.action_back),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        },
+                        actions = {
+                            IconButton(
+                                onClick = {
+                                    try {
+                                        val intent = Intent(Intent.ACTION_SET_WALLPAPER)
+                                        context.startActivity(Intent.createChooser(intent, "Escolher papel de parede"))
+                                    } catch (_: Exception) {}
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PhotoLibrary,
+                                    contentDescription = stringResource(R.string.wallpaper_picker_gallery),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                            tint = MaterialTheme.colorScheme.onSurface,
+
+                    val categories = catalog?.categories ?: WallpaperRepository.DEFAULT_CATEGORIES
+                    WallpaperCategoriesRow(
+                        categories = categories,
+                        selectedCategoryId = selectedCategoryId,
+                        onSelectCategory = { newCategory ->
+                            if (!selectedCategoryId.equals(newCategory, ignoreCase = true)) {
+                                selectedCategoryId = newCategory
+                                coroutineScope.launch {
+                                    gridState.scrollToItem(0)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp),
+                    )
+
+                    if (isScrolled) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                            thickness = 0.5.dp,
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = surface),
-            )
+                }
+            }
         },
     ) { innerPadding ->
         LazyVerticalGrid(
+            state = gridState,
             columns = GridCells.Fixed(2),
             modifier = Modifier
                 .fillMaxSize()
@@ -162,40 +223,32 @@ fun WallpaperPickerScreen(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Header card: Choose from System / Google Photos
-            item(span = { GridItemSpan(2) }) {
-                SystemWallpaperCard(
-                    onClick = {
-                        try {
-                            val intent = Intent(Intent.ACTION_SET_WALLPAPER)
-                            context.startActivity(Intent.createChooser(intent, "Escolher papel de parede"))
-                        } catch (_: Exception) {}
-                    }
-                )
-            }
-
-            item(span = { GridItemSpan(2) }) {
-                Row(
-                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.wallpaper_picker_curated),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
+            // Header card: Choose from System / Google Photos (shown in "Todos")
+            if (selectedCategoryId.equals("all", ignoreCase = true)) {
+                item(span = { GridItemSpan(2) }) {
+                    SystemWallpaperCard(
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_SET_WALLPAPER)
+                                context.startActivity(Intent.createChooser(intent, "Escolher papel de parede"))
+                            } catch (_: Exception) {}
+                        }
                     )
                 }
-            }
 
-            // Categories filter chips
-            item(span = { GridItemSpan(2) }) {
-                val categories = catalog?.categories ?: WallpaperRepository.DEFAULT_CATEGORIES
-                WallpaperCategoriesRow(
-                    categories = categories,
-                    selectedCategoryId = selectedCategoryId,
-                    onSelectCategory = { selectedCategoryId = it },
-                )
+                item(span = { GridItemSpan(2) }) {
+                    Row(
+                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.wallpaper_picker_curated),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
             }
 
             if (isLoadingCatalog && filteredWallpapers.isEmpty()) {
@@ -638,7 +691,8 @@ private fun WallpaperCategoriesRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
