@@ -2078,6 +2078,896 @@
         "Jupiter",
         "stars"
       ]
+    },
+    {
+      "id": "wallpaper_wh_e7r65o",
+      "name": "Insist (artist)",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_e7r65o.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_e7r65o.webp",
+      "primary_color": "#000000",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "Insist __ (Artist)",
+        "Jinx (League of Legends)",
+        "League of Legends"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_zx5e9v",
+      "name": "Darth Vader",
+      "author": "OsumWalls",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_zx5e9v.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_zx5e9v.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "Darth Vader",
+        "Star Wars",
+        "Sith"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_8ogz8o",
+      "name": "Lady Dimitrescu",
+      "author": "RomanLima",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_8ogz8o.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_8ogz8o.webp",
+      "primary_color": "#663300",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "Lady Dimitrescu",
+        "Resident Evil",
+        "Resident Evil 8: Village"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_g8vp5l",
+      "name": "Sunrise",
+      "author": "KirinBill",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_g8vp5l.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_g8vp5l.webp",
+      "primary_color": "#999999",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "sunrise",
+        "Hangmoon",
+        "beach"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_1kp1m9",
+      "name": "Bloodborne",
+      "author": "luwe",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_1kp1m9.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_1kp1m9.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "Bloodborne",
+        "FromSoftware",
+        "Lady Maria"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_13l6xg",
+      "name": "Resident Evil",
+      "author": "RomanLima",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_13l6xg.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_13l6xg.webp",
+      "primary_color": "#424153",
+      "category": "oled",
+      "tags": [
+        "oled",
+        "Resident Evil",
+        "Resident Evil 2 Remake",
+        "Resident Evil 2"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_d6xe7l",
+      "name": "Office Girl",
+      "author": "stepbro",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_d6xe7l.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_d6xe7l.webp",
+      "primary_color": "#424153",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "office girl",
+        "pantyhose",
+        "Bronya Zaychik"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_z8gr9y",
+      "name": "Himitsu",
+      "author": "ludendorf",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_z8gr9y.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_z8gr9y.webp",
+      "primary_color": "#424153",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "Himitsu",
+        "original characters",
+        "pantyhose"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_rdxgxw",
+      "name": "2d",
+      "author": "WubbaLubbaDubDub645",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_rdxgxw.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_rdxgxw.webp",
+      "primary_color": "#424153",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "2D",
+        "portrait",
+        "purple hair"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_e759yk",
+      "name": "Raiden Shogun (genshin Impact)",
+      "author": "asdfdqwwwe",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_e759yk.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_e759yk.webp",
+      "primary_color": "#999999",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "Raiden Shogun (Genshin Impact)",
+        "Torino Akua",
+        "purple eyes"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_wey8vq",
+      "name": "Cat Ears",
+      "author": "ludendorf",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_wey8vq.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_wey8vq.webp",
+      "primary_color": "#424153",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "cat ears",
+        "smiling",
+        "sitting"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_yx8vjk",
+      "name": "Mobile Suit Gundam: The Witch From Mercury",
+      "author": "Yukinoshita",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_yx8vjk.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_yx8vjk.webp",
+      "primary_color": "#424153",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "Mobile Suit Gundam: The Witch from Mercury",
+        "Gundam Aerial",
+        "Gundam"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_wqx56q",
+      "name": "Ponytail",
+      "author": "Kisarashi",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_wqx56q.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_wqx56q.webp",
+      "primary_color": "#ffffff",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "ponytail",
+        "blue eyes",
+        "sportswear"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_jx86pp",
+      "name": "City",
+      "author": "Fennel",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_jx86pp.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_jx86pp.webp",
+      "primary_color": "#424153",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "city",
+        "street",
+        "umbrella"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_rd1lem",
+      "name": "Kitagawa Marin",
+      "author": "Zains",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_rd1lem.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_rd1lem.webp",
+      "primary_color": "#999999",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "Kitagawa Marin",
+        "Sono Bisque Doll wa Koi wo Suru",
+        "fan art"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_exel8o",
+      "name": "Honkai: Star Rail",
+      "author": "Kiaressy",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_exel8o.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_exel8o.webp",
+      "primary_color": "#993399",
+      "category": "anime",
+      "tags": [
+        "anime",
+        "Honkai: Star Rail",
+        "Eternity (artist)",
+        "Kafka (Honkai: Star Rail)"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_k755z6",
+      "name": "D.va (overwatch)",
+      "author": "ThorRagnarok",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_k755z6.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_k755z6.webp",
+      "primary_color": "#424153",
+      "category": "games",
+      "tags": [
+        "games",
+        "D.Va (Overwatch)",
+        "video games",
+        "video game girls"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_28qrjg",
+      "name": "Genshin Impact",
+      "author": "Yukinoshita",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_28qrjg.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_28qrjg.webp",
+      "primary_color": "#cccccc",
+      "category": "games",
+      "tags": [
+        "games",
+        "Genshin Impact",
+        "Raiden Shogun (Genshin Impact)",
+        "video game girls"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_572x71",
+      "name": "Tifa Lockhart",
+      "author": "Avispon217",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_572x71.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_572x71.webp",
+      "primary_color": "#424153",
+      "category": "games",
+      "tags": [
+        "games",
+        "Tifa Lockhart",
+        "Final Fantasy (series)",
+        "video games"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_578yl7",
+      "name": "Volga (azur Lane)",
+      "author": "ThorRagnarok",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_578yl7.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_578yl7.webp",
+      "primary_color": "#424153",
+      "category": "games",
+      "tags": [
+        "games",
+        "Volga (Azur Lane)",
+        "Azur Lane",
+        "video games"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_exo8ww",
+      "name": "Lejia Chan",
+      "author": "lumberjacck",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_exo8ww.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_exo8ww.webp",
+      "primary_color": "#424153",
+      "category": "games",
+      "tags": [
+        "games",
+        "Lejia Chan",
+        "drawing",
+        "League of Legends"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_x8me7l",
+      "name": "Yelan (genshin Impact)",
+      "author": "kosmos224",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_x8me7l.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_x8me7l.webp",
+      "primary_color": "#424153",
+      "category": "games",
+      "tags": [
+        "games",
+        "Yelan (Genshin Impact)",
+        "Genshin Impact",
+        "Chinese dress"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_1p3op3",
+      "name": "Tower Of Fantasy",
+      "author": "HiguchiMadokaS",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_1p3op3.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_1p3op3.webp",
+      "primary_color": "#424153",
+      "category": "games",
+      "tags": [
+        "games",
+        "Tower of Fantasy",
+        "Lin (Tower of Fantasy)",
+        "video games"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_je8qom",
+      "name": "Wuthering Waves",
+      "author": "Xyros",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_je8qom.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_je8qom.webp",
+      "primary_color": "#ffffff",
+      "category": "games",
+      "tags": [
+        "games",
+        "Wuthering Waves",
+        "fan art",
+        "video game characters"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_qzw7z5",
+      "name": "Wuthering Waves",
+      "author": "Xyros",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_qzw7z5.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_qzw7z5.webp",
+      "primary_color": "#000000",
+      "category": "games",
+      "tags": [
+        "games",
+        "Wuthering Waves",
+        "fan art",
+        "video game characters"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_qz1oy5",
+      "name": "Miside",
+      "author": "fategenesisboii",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_qz1oy5.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_qz1oy5.webp",
+      "primary_color": "#424153",
+      "category": "games",
+      "tags": [
+        "games",
+        "MiSide",
+        "Mita (MiSide)",
+        "void_0"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_w8232p",
+      "name": "Hollow Knight",
+      "author": "holyshietbiscuits",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_w8232p.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_w8232p.webp",
+      "primary_color": "#000000",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "Hollow Knight",
+        "video games",
+        "dark"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_57l171",
+      "name": "White Background",
+      "author": "Fennel",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_57l171.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_57l171.webp",
+      "primary_color": "#ffffff",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "white background",
+        "ramen",
+        "kanji"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_2kok26",
+      "name": "Aircraft",
+      "author": "Vexel63",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_2kok26.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_2kok26.webp",
+      "primary_color": "#424153",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "aircraft",
+        "purple background"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_vmdme3",
+      "name": "Aircraft",
+      "author": "Vexel63",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_vmdme3.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_vmdme3.webp",
+      "primary_color": "#0066cc",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "aircraft",
+        "blue background"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_vmw27m",
+      "name": "Hollow Knight",
+      "author": "holyshietbiscuits",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_vmw27m.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_vmw27m.webp",
+      "primary_color": "#000000",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "Hollow Knight",
+        "video games",
+        "dark"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_mpdwp8",
+      "name": "Star Wars",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_mpdwp8.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_mpdwp8.webp",
+      "primary_color": "#cc6633",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "Star Wars",
+        "BB-8",
+        "robot"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_1358pg",
+      "name": "Playstation",
+      "author": "DarkStrauss",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_1358pg.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_1358pg.webp",
+      "primary_color": "#000000",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "PlayStation",
+        "Playstation 5",
+        "logo"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_nklgq7",
+      "name": "Lines",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_nklgq7.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_nklgq7.webp",
+      "primary_color": "#000000",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "lines",
+        "black background"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_r2ygom",
+      "name": "Blue",
+      "author": "SKROLL",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_r2ygom.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_r2ygom.webp",
+      "primary_color": "#0099cc",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "blue",
+        "turquoise",
+        "gradient"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_r72o3j",
+      "name": "Nintendo Game Boy",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_r72o3j.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_r72o3j.webp",
+      "primary_color": "#66cccc",
+      "category": "minimal",
+      "tags": [
+        "minimal",
+        "Nintendo Game Boy",
+        "Nintendo",
+        "video games"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_nr1d51",
+      "name": "Pivot",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_nr1d51.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_nr1d51.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "pivot",
+        "texture",
+        "dark"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_e75zzo",
+      "name": "Hampus Olsson",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_e75zzo.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_e75zzo.webp",
+      "primary_color": "#424153",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "Hampus Olsson"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_4ogm9m",
+      "name": "Lines",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_4ogm9m.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_4ogm9m.webp",
+      "primary_color": "#424153",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "lines",
+        "texture"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_eogzx8",
+      "name": "Glitch Art",
+      "author": "Zloigadik",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_eogzx8.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_eogzx8.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "glitch art",
+        "ASCII art",
+        "cake"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_6om516",
+      "name": "Rose",
+      "author": "Zloigadik",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_6om516.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_6om516.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "rose",
+        "3D Abstract",
+        "Cinema 4D"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_qdegmr",
+      "name": "Glitch Art",
+      "author": "Zloigadik",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_qdegmr.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_qdegmr.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "glitch art",
+        "music",
+        "sound"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_x1kl5o",
+      "name": "Glitch Art",
+      "author": "Zloigadik",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_x1kl5o.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_x1kl5o.webp",
+      "primary_color": "#000000",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "glitch art",
+        "black"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_wqx15p",
+      "name": "Glitch Art",
+      "author": "Zloigadik",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_wqx15p.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_wqx15p.webp",
+      "primary_color": "#424153",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "glitch art",
+        "3D Abstract",
+        "cyberpunk"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_w8gvjx",
+      "name": "Astronaut",
+      "author": "PedroScooby",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_w8gvjx.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_w8gvjx.webp",
+      "primary_color": "#424153",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "astronaut",
+        "Lost Planet"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_nml6qk",
+      "name": "Lines",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_nml6qk.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_nml6qk.webp",
+      "primary_color": "#424153",
+      "category": "abstract",
+      "tags": [
+        "abstract",
+        "lines",
+        "texture"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_ody177",
+      "name": "Sea",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_ody177.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_ody177.webp",
+      "primary_color": "#999999",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "sea",
+        "outdoors",
+        "beach"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_od8z6l",
+      "name": "Landscape",
+      "author": "LaCroix",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_od8z6l.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_od8z6l.webp",
+      "primary_color": "#424153",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "landscape",
+        "glacier",
+        "snow"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_q67g17",
+      "name": "Clouds",
+      "author": "Zhikari",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_q67g17.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_q67g17.webp",
+      "primary_color": "#424153",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "clouds",
+        "depressing",
+        "calm"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_966j9d",
+      "name": "Water",
+      "author": "mpjuan06",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_966j9d.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_966j9d.webp",
+      "primary_color": "#424153",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "water",
+        "beach",
+        "boat"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_md5gzk",
+      "name": "Earth",
+      "author": "Ellen",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_md5gzk.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_md5gzk.webp",
+      "primary_color": "#663300",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "Earth",
+        "satellite",
+        "aerial view"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_5w3mp5",
+      "name": "New Zealand",
+      "author": "swafie",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_5w3mp5.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_5w3mp5.webp",
+      "primary_color": "#996633",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "New Zealand",
+        "landscape",
+        "fall"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_5dxe65",
+      "name": "Supreme",
+      "author": "PaulAbstracto",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_5dxe65.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_5dxe65.webp",
+      "primary_color": "#424153",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "Supreme",
+        "landscape"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_6k79gl",
+      "name": "Cliff",
+      "author": "gyokanbeats",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_6k79gl.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_6k79gl.webp",
+      "primary_color": "#000000",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "cliff",
+        "rocks",
+        "winter"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_49pmew",
+      "name": "Landscape",
+      "author": "deleted",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_49pmew.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_49pmew.webp",
+      "primary_color": "#424153",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "landscape",
+        "pine trees",
+        "winter"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_q6km3d",
+      "name": "Earth",
+      "author": "Ellen",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_q6km3d.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_q6km3d.webp",
+      "primary_color": "#996633",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "Earth",
+        "satellite",
+        "landscape"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_133lx1",
+      "name": "Earth",
+      "author": "PPV",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_133lx1.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_133lx1.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "Earth",
+        "planet",
+        "space art"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_p8rjg9",
+      "name": "Arms",
+      "author": "YouFoundMe",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_p8rjg9.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_p8rjg9.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "arms",
+        "reaching",
+        "stars"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_q665gr",
+      "name": "Moon",
+      "author": "PPV",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_q665gr.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_q665gr.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "Moon",
+        "monochrome",
+        "black background"
+      ]
+    },
+    {
+      "id": "wallpaper_wh_6qljex",
+      "name": "Nasa",
+      "author": "ohmytea",
+      "thumbnail_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/thumbnails/wallpaper_wh_6qljex.webp",
+      "full_url": "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/full/wallpaper_wh_6qljex.webp",
+      "primary_color": "#000000",
+      "category": "space",
+      "tags": [
+        "space",
+        "NASA",
+        "Mars",
+        "spacesuit"
+      ]
     }
   ]
 }
