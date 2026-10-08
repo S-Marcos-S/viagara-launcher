@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.90
+### 🚀 Novidades da Versão v0.59.91
 
-- **Ajustador de Velocidade:** Controle deslizante em Configurações > Reproduzindo Agora para calibrar a velocidade do visualizador (20% a 100%).
-- **Balística Suave e Amortecida:** Subida ágil nos impactos e descida com amortecimento, eliminando oscilações frenéticas.
-- **Transições Confortáveis:** Movimento fluido e relaxante para as 14 barras do espectro de áudio.
+- **Espectro Real de 14 Bandas:** Transição de 4 zonas sintéticas para 14 faixas acústicas físicas e independentes (25Hz a 18.5kHz).
+- **Resposta Dinâmica a Batidas:** Bumbo (kick drum) e contrabaixo pulsam com clareza a cada impacto rítmico.
+- **Curva Perceptual Calibrada:** Equilíbrio visual harmônico e eliminação de ruídos artificiais (jitter simulado).

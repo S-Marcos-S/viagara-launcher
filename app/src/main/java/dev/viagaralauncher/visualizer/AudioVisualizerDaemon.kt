@@ -80,23 +80,57 @@ object AudioVisualizerDaemon {
             val sampleRateHz = if (rawSampleRate > 0) rawSampleRate / 1000 else 48000
             val binWidth = sampleRateHz.toFloat() / actualCaptureSize.toFloat()
 
-            // Acoustic frequency bands:
-            // Sub:  0 - 90 Hz (captures fundamental kick & 808 sub frequencies)
-            // Bass: 90 - 250 Hz
-            // Mid:  250 - 2000 Hz
-            // High: 2000 - 20000 Hz
-            val subStartBin = 0
-            val subEndBin = max(1, (90.0f / binWidth).roundToInt())
+            // 14 Logarithmic Acoustic Frequency Bands (25 Hz to 18,500 Hz):
+            // Band 0:  25 - 65 Hz   (Deep Sub / Subgrave profundo)
+            // Band 1:  65 - 115 Hz  (Kick Drum / Bumbo)
+            // Band 2:  115 - 175 Hz (Punch / Percussão de ataque)
+            // Band 3:  175 - 260 Hz (Bassline / Linha de contrabaixo)
+            // Band 4:  260 - 390 Hz (Corpo / Calor)
+            // Band 5:  390 - 580 Hz (Caixa / Snare / harmônicos baixos)
+            // Band 6:  580 - 870 Hz (Médios / Harmônicos melódicos e voz)
+            // Band 7:  870 - 1300 Hz (Clareza vocal / sintetizadores)
+            // Band 8:  1300 - 2000 Hz (Ataque melódico / presença)
+            // Band 9:  2000 - 3200 Hz (Estalo da caixa / transientes)
+            // Band 10: 3200 - 5000 Hz (Agudos / pratos de ataque)
+            // Band 11: 5000 - 8000 Hz (Pratos de condução / ride)
+            // Band 12: 8000 - 12500 Hz (Chimbal / hi-hat / estalo metálico)
+            // Band 13: 12500 - 18500 Hz (Ar / shimmer / ambiência cristalina)
+            val bandFreqs = floatArrayOf(
+                25f, 65f, 115f, 175f, 260f, 390f, 580f, 870f,
+                1300f, 2000f, 3200f, 5000f, 8000f, 12500f, 18500f
+            )
 
-            val bassStartBin = subEndBin + 1
-            val bassEndBin = max(bassStartBin, (250.0f / binWidth).roundToInt())
+            val bandStartBins = IntArray(NUM_BANDS)
+            val bandEndBins = IntArray(NUM_BANDS)
+            var lastEndBin = 0
+            for (b in 0 until NUM_BANDS) {
+                val start = max(lastEndBin + 1, (bandFreqs[b] / binWidth).roundToInt())
+                val end = max(start, (bandFreqs[b + 1] / binWidth).roundToInt())
+                bandStartBins[b] = start
+                bandEndBins[b] = min(511, end)
+                lastEndBin = bandEndBins[b]
+            }
 
-            val midStartBin = bassEndBin + 1
-            val midEndBin = max(midStartBin, (2000.0f / binWidth).roundToInt())
+            // ISO-calibrated perceptual EQ curve:
+            // Balanced visual energy across sub, bass, mids, and treble
+            val eqGains = floatArrayOf(
+                1.70f, // Band 0: Deep Sub
+                1.55f, // Band 1: Kick drum
+                1.35f, // Band 2: Punch
+                1.20f, // Band 3: Bass
+                1.10f, // Band 4: Low mid
+                1.00f, // Band 5: Snare
+                1.00f, // Band 6: Vocal body
+                1.00f, // Band 7: Vocal clarity
+                1.05f, // Band 8: Presence
+                1.10f, // Band 9: Attack
+                1.15f, // Band 10: Treble
+                1.25f, // Band 11: Cymbals
+                1.35f, // Band 12: Hi-hat
+                1.50f  // Band 13: Air / shimmer
+            )
 
-            val highStartBin = midEndBin + 1
-            val highEndBin = min(511, max(highStartBin, (20000.0f / binWidth).roundToInt()))
-
+            val emaBands = FloatArray(NUM_BANDS)
             val fftBuffer = ByteArray(CAPTURE_SIZE)
             val waveBuffer = ByteArray(CAPTURE_SIZE)
             val magnitudes = FloatArray(NUM_BANDS)
@@ -106,29 +140,9 @@ object AudioVisualizerDaemon {
             }
 
             var isPaused = false
-            var frameSeed = 0L
             var sampleCounter = 0L
 
-            // Persistent EMA state per acoustic band (matching Oboe alpha = 0.20f)
-            var emaSub = 0f
-            var emaBass = 0f
-            var emaMid = 0f
-            var emaHigh = 0f
-
-            logDiag(
-                String.format(
-                    "Acoustic Bands configured:\nsr=%d Hz, capture=%d, binWidth=%.2f Hz\n" +
-                    "Sub:  [%d..%d] (%d bins, 0 - %.1f Hz)\n" +
-                    "Bass: [%d..%d] (%d bins, %.1f - %.1f Hz)\n" +
-                    "Mid:  [%d..%d] (%d bins, %.1f - %.1f Hz)\n" +
-                    "High: [%d..%d] (%d bins, %.1f - %.1f Hz)\n",
-                    sampleRateHz, actualCaptureSize, binWidth,
-                    subStartBin, subEndBin, (subEndBin - subStartBin + 1), subEndBin * binWidth,
-                    bassStartBin, bassEndBin, (bassEndBin - bassStartBin + 1), bassStartBin * binWidth, bassEndBin * binWidth,
-                    midStartBin, midEndBin, (midEndBin - midStartBin + 1), midStartBin * binWidth, midEndBin * binWidth,
-                    highStartBin, highEndBin, (highEndBin - highStartBin + 1), highStartBin * binWidth, highEndBin * binWidth
-                )
-            )
+            logDiag("14 physical acoustic bands configured (25Hz - 18.5kHz)")
 
             while (true) {
                 // 1. Process control commands from launcher
@@ -163,75 +177,44 @@ object AudioVisualizerDaemon {
                 var rms = 0f
 
                 if (fftResult == Visualizer.SUCCESS) {
-                    // Spectral RMS per acoustic band using Parseval integration:
-                    // re = fft[2k]/128, im = fft[2k+1]/128
-                    // power_k = re^2 + im^2
-                    // rms_band = sqrt(sum(power_k) / 2) (sinusoidal peak-to-RMS factor 2)
-                    val rawSub  = computeBandRms(fftBuffer, subStartBin, subEndBin)
-                    val rawBass = computeBandRms(fftBuffer, bassStartBin, bassEndBin)
-                    val rawMid  = computeBandRms(fftBuffer, midStartBin, midEndBin)
-                    val rawHigh = computeBandRms(fftBuffer, highStartBin, highEndBin)
+                    var totalLevelSum = 0f
 
-                    // Persistent EMA per band (Oboe alpha = 0.20f)
-                    emaSub  = emaSub  * 0.80f + rawSub  * 0.20f
-                    emaBass = emaBass * 0.80f + rawBass * 0.20f
-                    emaMid  = emaMid  * 0.80f + rawMid  * 0.20f
-                    emaHigh = emaHigh * 0.80f + rawHigh * 0.20f
+                    for (b in 0 until NUM_BANDS) {
+                        val rawRms = computeBandRms(fftBuffer, bandStartBins[b], bandEndBins[b])
 
-                    // Calibrated acoustic gains: Sub (2.4x) and Bass (1.35x) bring low-end
-                    // to parity with Mid (1.0x) and High (1.1x), avoiding recessed bass bars.
-                    val gainSub  = 2.4f
-                    val gainBass = 1.35f
-                    val gainMid  = 1.0f
-                    val gainHigh = 1.1f
-                    val finalSub  = min(1.0f, emaSub  * gainSub)
-                    val finalBass = min(1.0f, emaBass * gainBass)
-                    val finalMid  = min(1.0f, emaMid  * gainMid)
-                    val finalHigh = min(1.0f, emaHigh * gainHigh)
+                        // Fast, punchy EMA (alpha = 0.35f) so transient beats (e.g. 0.5s kicks) pump dynamically
+                        emaBands[b] = emaBands[b] * 0.65f + rawRms * 0.35f
+
+                        val level = min(1.0f, emaBands[b] * eqGains[b])
+                        magnitudes[b] = level
+                        totalLevelSum += level
+                    }
 
                     // Waveform RMS
                     rms = if (waveResult == Visualizer.SUCCESS) {
                         computeWaveRms(waveBuffer)
                     } else {
-                        finalSub * 0.3f + finalBass * 0.4f + finalMid * 0.2f + finalHigh * 0.1f
+                        (totalLevelSum / NUM_BANDS).coerceIn(0f, 1f)
                     }
 
-                    // Periodic diagnostic logging (~500ms = every 30 frames)
+                    // Periodic diagnostic logging (~1s = every 60 frames)
                     sampleCounter++
-                    if (sampleCounter % 30L == 0L) {
-                        val diag = String.format(
-                            "FFT_BANDS:\nsr=%d\ncapture=%d\nbins: sub=%d, bass=%d, mid=%d, high=%d\n\n" +
-                            "RAW:\nsub=%.5f\nbass=%.5f\nmid=%.5f\nhigh=%.5f\n\n" +
-                            "EMA:\nsub=%.5f\nbass=%.5f\nmid=%.5f\nhigh=%.5f\n\n" +
-                            "FINAL:\nsub=%.5f\nbass=%.5f\nmid=%.5f\nhigh=%.5f\n",
-                            sampleRateHz, actualCaptureSize,
-                            (subEndBin - subStartBin + 1),
-                            (bassEndBin - bassStartBin + 1),
-                            (midEndBin - midStartBin + 1),
-                            (highEndBin - highStartBin + 1),
-                            rawSub, rawBass, rawMid, rawHigh,
-                            emaSub, emaBass, emaMid, emaHigh,
-                            finalSub, finalBass, finalMid, finalHigh
+                    if (sampleCounter % 60L == 0L) {
+                        logDiag(
+                            String.format(
+                                "14_BANDS:\n" +
+                                "B0=%.3f B1(Kick)=%.3f B2=%.3f B3(Bass)=%.3f B4=%.3f B5=%.3f B6=%.3f\n" +
+                                "B7=%.3f B8=%.3f B9=%.3f B10=%.3f B11=%.3f B12(HiHat)=%.3f B13=%.3f\n",
+                                magnitudes[0], magnitudes[1], magnitudes[2], magnitudes[3],
+                                magnitudes[4], magnitudes[5], magnitudes[6], magnitudes[7],
+                                magnitudes[8], magnitudes[9], magnitudes[10], magnitudes[11],
+                                magnitudes[12], magnitudes[13]
+                            )
                         )
-                        logDiag(diag)
-                    }
-
-                    frameSeed++
-
-                    // Feed VuMixer 14 strips via existing jittered() function
-                    for (i in 0 until NUM_BANDS) {
-                        val bi = (i * 24 / NUM_BANDS).coerceIn(0, 23)
-                        val raw = when {
-                            bi < 6 -> finalSub
-                            bi < 14 -> finalBass
-                            bi < 20 -> finalMid
-                            else -> finalHigh
-                        }
-                        val target = jittered(raw, bi, 24, frameSeed)
-                        magnitudes[i] = target
                     }
                 } else {
                     magnitudes.fill(0f)
+                    emaBands.fill(0f)
                     if (waveResult == Visualizer.SUCCESS) {
                         rms = computeWaveRms(waveBuffer)
                     }
@@ -320,19 +303,5 @@ object AudioVisualizerDaemon {
         }
         val mean = sumSquares / wave.size
         return min(1.0, sqrt(mean) / 128.0).toFloat()
-    }
-
-    private fun jittered(v: Float, barIndex: Int, totalBars: Int, frameSeed: Long): Float {
-        if (v < 0.01f) return 0f
-        val pos = barIndex.toFloat() / (totalBars - 1)
-        val shape = when {
-            pos < 0.25f -> 0.6f + 0.4f * sin(pos * Math.PI.toFloat() * 4f)
-            pos < 0.45f -> 1.0f - 0.15f * sin(pos * Math.PI.toFloat() * 2.5f)
-            pos < 0.65f -> 0.85f + 0.15f * sin(pos * Math.PI.toFloat() * 3f)
-            else -> 0.7f + 0.3f * sin(pos * Math.PI.toFloat() * 5f + frameSeed * 0.1f)
-        }
-        val h = sin((barIndex * 7919 + frameSeed % 1009).toFloat() * 0.73f) * 0.5f + 0.5f
-        val jitter = 0.85f + h * 0.30f
-        return (v * shape * jitter).coerceIn(0f, 1f)
     }
 }
