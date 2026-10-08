@@ -21,8 +21,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.max
-import kotlin.math.pow
+
 
 /**
  * Visualizer spectrum frame containing 32 smooth frequency bands and floating peak positions.
@@ -97,24 +96,13 @@ object AudioVisualizerManager {
     private val currentLevels = FloatArray(NUM_BANDS)
     private val currentPeaks = FloatArray(NUM_BANDS)
 
-    // --- SDWMP3_CN Dynamic Spectrum Pipeline Constants ---
-    // 1. Noise cutoff threshold: below 1% normalized magnitude is strict zero/silence
-    private const val NOISE_FLOOR_CUTOFF = 0.010f
-
-    // 2. Ballistics ported from SDWMP3_CN Smooth(0.70f) filter and EMA
-    private const val ATTACK_ALPHA = 0.70f       // Fast attack: beats register within 1-2 frames
-    private const val DECAY_ALPHA = 0.18f        // Organic decay matching SDWMP3_CN EMA (0.85 / 0.15)
-    private const val PEAK_FALL_ALPHA = 0.015f   // Asymptotic peak descent: peak += (v - peak) * 0.015f
-
-    // 3. 4-Zone frequency weighting adapted from SDWMP3_CN (sub, bass, mid, high with 1/f compensation)
-    private val zoneGains = FloatArray(NUM_BANDS) { b ->
-        when {
-            b <= 3 -> 3.2f                                         // Sub-bass (35-100 Hz): solid kick response
-            b <= 9 -> 3.5f                                         // Bass (100-300 Hz): punch
-            b <= 21 -> 2.8f + ((b - 10).toFloat() / 11f) * 0.4f    // Midrange (300-3500 Hz): vocal/instrument presence
-            else -> 3.2f + ((b - 22).toFloat() / 9f) * 1.6f        // Treble (3.5-18 kHz): 1/f falloff compensation
-        }
-    }
+    // --- SDWMP3_CN Ballistics Constants ---
+    // Fast attack (0.70f): instantaneous response to beats/kicks
+    // Musical decay (0.18f): smooth exponential release matching SDWMP3_CN EMA
+    // Peak descent (0.015f): continuous asymptotic fall
+    private const val ATTACK_ALPHA = 0.70f
+    private const val DECAY_ALPHA = 0.18f
+    private const val PEAK_FALL_ALPHA = 0.015f
 
     fun start(context: Context) {
         scope.launch {
@@ -339,51 +327,34 @@ object AudioVisualizerManager {
                     incomingBands[b] = byteBuffer.float
                 }
 
-                // Dynamic spectrum pipeline and ballistics ported from SDWMP3_CN
+                // Directly consume incoming 32 linear frequency bands from daemon
                 var activeSignal = false
                 val bandsOut = FloatArray(NUM_BANDS)
                 val peaksOut = FloatArray(NUM_BANDS)
 
                 for (i in 0 until NUM_BANDS) {
-                    val rawVal = incomingBands[i].coerceIn(0f, 1f)
+                    val target = incomingBands[i].coerceIn(0f, 1f)
 
-                    // 1. Reconstruct linear FFT magnitude from daemon's packet:
-                    // Daemon mapped: ((db + 6.0) / 48.0) where db = 20 * log10(avgMagnitude)
-                    val rawDb = (rawVal * 48.0f) - 6.0f
-                    val rawMag = if (rawVal <= 0.001f) 0f else 10.0f.pow(rawDb / 20.0f)
+                    if (target > 0.015f) activeSignal = true
 
-                    // 2. Linear normalization by 128.0f (exact scaling of SDWMP3_CN: re = fft[k]/128, im = fft[k+1]/128)
-                    val normMag = rawMag / 128.0f
-
-                    // 3. Strict Noise Cutoff & Linear Dynamic Gain from SDWMP3_CN
-                    val target = if (normMag <= NOISE_FLOOR_CUTOFF) {
-                        0f
+                    // 1. SDWMP3_CN Ballistics (Attack & Decay)
+                    if (target >= currentLevels[i]) {
+                        currentLevels[i] += (target - currentLevels[i]) * ATTACK_ALPHA
                     } else {
-                        val activeMag = normMag - NOISE_FLOOR_CUTOFF
-                        (activeMag * zoneGains[i]).coerceIn(0f, 1f)
+                        currentLevels[i] += (target - currentLevels[i]) * DECAY_ALPHA
                     }
-
-                    if (target > 0.02f) activeSignal = true
-
-                    // 4. Smooth Filter (SDWMP3_CN ballistics): fast attack for beats, organic decay
-                    val prevLevel = currentLevels[i]
-                    val newLevel = if (target >= prevLevel) {
-                        prevLevel + (target - prevLevel) * ATTACK_ALPHA
-                    } else {
-                        prevLevel + (target - prevLevel) * DECAY_ALPHA
-                    }
-                    currentLevels[i] = if (newLevel < 0.005f) 0f else newLevel
+                    if (currentLevels[i] < 0.002f) currentLevels[i] = 0f
                     bandsOut[i] = currentLevels[i]
 
-                    // 5. SDWMP3_CN Peak Physics: instant rise, slow asymptotic fall
-                    // (SDWMP3_CN VuMeter: if (v > peak) peak = v else peak += (v - peak) * 0.015f)
+                    // 2. SDWMP3_CN Peak Physics: instant rise, slow asymptotic fall
+                    // if (current >= peak) peak = current else peak += (current - peak) * 0.015f
                     val v = currentLevels[i]
                     if (v >= currentPeaks[i]) {
                         currentPeaks[i] = v
                     } else {
-                        currentPeaks[i] = (currentPeaks[i] + (v - currentPeaks[i]) * PEAK_FALL_ALPHA).coerceAtLeast(v)
+                        currentPeaks[i] += (v - currentPeaks[i]) * PEAK_FALL_ALPHA
                     }
-                    if (currentPeaks[i] < 0.005f) currentPeaks[i] = 0f
+                    if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
                     peaksOut[i] = currentPeaks[i]
                 }
 

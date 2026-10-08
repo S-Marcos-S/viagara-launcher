@@ -8,8 +8,6 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.ln
-import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -65,12 +63,11 @@ object AudioVisualizerDaemon {
             visualizer.captureSize = CAPTURE_SIZE
             visualizer.enabled = true
 
-            val sampleRateHz = max(44100, visualizer.samplingRate / 1000)
             val fftBuffer = ByteArray(CAPTURE_SIZE)
             val waveBuffer = ByteArray(CAPTURE_SIZE)
             val magnitudes = FloatArray(NUM_BANDS)
 
-            val bandEdges = computeLogBandEdges(NUM_BANDS, CAPTURE_SIZE, sampleRateHz)
+            val bandEdges = computeSdwBandEdges(CAPTURE_SIZE)
 
             val packetBuffer = ByteBuffer.allocate(4 + 1 + 4 + (NUM_BANDS * 4)).apply {
                 order(ByteOrder.LITTLE_ENDIAN)
@@ -170,39 +167,41 @@ object AudioVisualizerDaemon {
 
     private data class BandEdge(val startBin: Int, val endBin: Int)
 
-    private fun computeLogBandEdges(bandsCount: Int, captureSize: Int, sampleRateHz: Int): Array<BandEdge> {
-        val nyquist = sampleRateHz / 2.0
-        val minFreq = 35.0
-        val maxFreq = min(18000.0, nyquist)
-        val hzPerBin = sampleRateHz.toDouble() / captureSize.toDouble()
+    /**
+     * Maps 512 FFT bins into 32 bands adhering strictly to SDWMP3_CN frequency zones:
+     * - Sub (0% .. 8% of bins: 1..40)     -> 8 bands (bands 0..7)
+     * - Bass (8% .. 20% of bins: 41..102)  -> 10 bands (bands 8..17)
+     * - Mid (20% .. 55% of bins: 103..281) -> 8 bands (bands 18..25)
+     * - High (55% .. 100% of bins: 282..511) -> 6 bands (bands 26..31)
+     */
+    private fun computeSdwBandEdges(captureSize: Int): Array<BandEdge> {
+        val maxBin = (captureSize / 2) - 1 // 511
+        val edges = ArrayList<BandEdge>(NUM_BANDS)
 
-        val logMin = ln(minFreq)
-        val logMax = ln(maxFreq)
-        val logStep = (logMax - logMin) / bandsCount
-
-        val edges = ArrayList<BandEdge>(bandsCount)
-        var lastBin = 1
-
-        for (i in 0 until bandsCount) {
-            val fStart = Math.exp(logMin + i * logStep)
-            val fEnd = Math.exp(logMin + (i + 1) * logStep)
-
-            var binStart = (fStart / hzPerBin).toInt().coerceIn(1, (captureSize / 2) - 1)
-            var binEnd = (fEnd / hzPerBin).toInt().coerceIn(binStart, (captureSize / 2) - 1)
-
-            if (binStart <= lastBin && i > 0) {
-                binStart = lastBin
+        fun addZone(startBin: Int, endBin: Int, count: Int) {
+            val total = endBin - startBin + 1
+            for (i in 0 until count) {
+                val bStart = startBin + (i * total) / count
+                val bEnd = (startBin + ((i + 1) * total) / count - 1).coerceAtLeast(bStart)
+                edges.add(BandEdge(bStart, bEnd))
             }
-            if (binEnd < binStart) {
-                binEnd = binStart
-            }
-            edges.add(BandEdge(binStart, binEnd))
-            lastBin = binEnd
         }
+
+        addZone(1, 40, 8)       // Sub-bass
+        addZone(41, 102, 10)    // Bass
+        addZone(103, 281, 8)    // Midrange
+        addZone(282, maxBin, 6) // High frequencies
 
         return edges.toTypedArray()
     }
 
+    /**
+     * SDWMP3_CN Linear Spectrum Analysis:
+     * 1. Linear normalized magnitude: re = fft[2k]/128, im = fft[2k+1]/128, mag = sqrt(re^2 + im^2)
+     * 2. Band magnitude = arithmetic mean of bin magnitudes
+     * 3. Noise floor cutoff: if mag < 0.01f -> 0f (SDWMP3_CN strict silence)
+     * 4. SDWMP3_CN proportional scaling with 1/f high frequency compensation
+     */
     private fun processFftToBands(
         fft: ByteArray,
         bandEdges: Array<BandEdge>,
@@ -214,26 +213,27 @@ object AudioVisualizerDaemon {
             var count = 0
 
             for (k in edge.startBin..edge.endBin) {
-                val real = fft[2 * k].toFloat()
-                val imag = fft[2 * k + 1].toFloat()
+                val real = fft[2 * k].toFloat() / 128f
+                val imag = fft[2 * k + 1].toFloat() / 128f
                 val mag = sqrt(real * real + imag * imag)
                 sumMagnitude += mag
                 count++
             }
 
-            val avgMagnitude = if (count > 0) sumMagnitude / count else 0f
+            val avgMag = if (count > 0) sumMagnitude / count else 0f
 
-            // Robust Logarithmic / dB Normalization:
-            // Dynamic range ~48 dB: Floor at -48 dB (magnitude ~0.35), Ceiling at 0 dB (magnitude ~90.0)
-            if (avgMagnitude <= 0.35f) {
-                outBands[i] = 0f
-            } else {
-                val db = 20.0 * log10(avgMagnitude.toDouble())
-                // db ranges from ~ -9 dB (for 0.35) to ~ 39 dB (for 90)
-                // Normalize 48 dB dynamic range: [ -6 dB .. 42 dB ] -> [ 0.0 .. 1.0 ]
-                val normalized = ((db + 6.0) / 48.0).toFloat()
-                outBands[i] = max(0f, min(1f, normalized))
+            // Noise floor cutoff from SDWMP3_CN: values below 1% are strict zero
+            val raw = if (avgMag < 0.01f) 0f else avgMag
+
+            // Proportional linear scale matching SDWMP3_CN dynamics (oboe_bridge gain & 1/f compensation)
+            val gain = when {
+                i <= 7 -> 3.0f   // Sub-bass (drums/kicks)
+                i <= 17 -> 3.5f  // Bass punch
+                i <= 25 -> 3.2f  // Midrange
+                else -> 4.5f     // High frequencies (compensates acoustic 1/f roll-off)
             }
+
+            outBands[i] = (raw * gain).coerceIn(0f, 1f)
         }
     }
 }
