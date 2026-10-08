@@ -93,35 +93,26 @@ object AudioVisualizerManager {
     private var daemonProcess: Process? = null
     private var daemonPid: Int = -1
 
-    // Ballistic physics state
+    // Ballistic physics state ported from SDWMP3_CN
     private val currentLevels = FloatArray(NUM_BANDS)
     private val currentPeaks = FloatArray(NUM_BANDS)
-    private val peakHoldFrames = IntArray(NUM_BANDS)
 
-    // --- Perceptual Dynamic Range Calibration ---
-    // The daemon maps [-6 dB .. +42 dB] linearly into [0.0 .. 1.0].
-    // We calibrate an active musical range that cuts DAC/mixer noise while emphasizing beats and basslines.
-    private const val NOISE_FLOOR_DB = 9.0f         // Below ~9 dB (mag < 2.8) is clamped to 0 (rejects residual noise/hiss)
-    private const val CEILING_DB = 38.0f            // Upper reference ceiling (~80x FFT magnitude)
-    private const val DYNAMIC_RANGE_DB = CEILING_DB - NOISE_FLOOR_DB // 29.0 dB active dynamic span
-    private const val DYNAMIC_EXPONENT = 1.35f      // Stevens' power-law perceptual contrast curve
+    // --- SDWMP3_CN Dynamic Spectrum Pipeline Constants ---
+    // 1. Noise cutoff threshold: below 1% normalized magnitude is strict zero/silence
+    private const val NOISE_FLOOR_CUTOFF = 0.010f
 
-    // Ballistic physics constants
-    private const val ATTACK_FACTOR = 0.85f         // Fast attack: beats register within 1-2 frames
-    private const val DECAY_PERCENT = 0.86f         // Musical exponential decay per frame (~60 FPS)
-    private const val DECAY_SUBTRACTION = 0.012f    // Linear baseline bleed to guarantee decay reaches true 0
-    private const val PEAK_HOLD_COUNT = 9           // ~150 ms peak hold at 60 FPS
-    private const val PEAK_FALL_SPEED = 0.032f      // Swift, organic peak descent
+    // 2. Ballistics ported from SDWMP3_CN Smooth(0.70f) filter and EMA
+    private const val ATTACK_ALPHA = 0.70f       // Fast attack: beats register within 1-2 frames
+    private const val DECAY_ALPHA = 0.18f        // Organic decay matching SDWMP3_CN EMA (0.85 / 0.15)
+    private const val PEAK_FALL_ALPHA = 0.015f   // Asymptotic peak descent: peak += (v - peak) * 0.015f
 
-    // Perceptual spectral weighting:
-    // - Boosts bass impact (bands 0..5: 35-180 Hz) so kick drums produce dramatic leaps
-    // - Slightly relaxes dense midrange (bands 6..18: 200-2500 Hz) to avoid a static wall of bars
-    // - Smoothly compensates natural 1/f falloff in treble (bands 19..31: 3-18 kHz)
-    private val spectralWeights = FloatArray(NUM_BANDS) { b ->
+    // 3. 4-Zone frequency weighting adapted from SDWMP3_CN (sub, bass, mid, high with 1/f compensation)
+    private val zoneGains = FloatArray(NUM_BANDS) { b ->
         when {
-            b <= 5 -> 1.18f - (b.toFloat() / 5f) * 0.18f
-            b <= 18 -> 0.90f + ((b - 6).toFloat() / 12f) * 0.10f
-            else -> 1.00f + ((b - 18).toFloat() / 13f) * 0.28f
+            b <= 3 -> 3.2f                                         // Sub-bass (35-100 Hz): solid kick response
+            b <= 9 -> 3.5f                                         // Bass (100-300 Hz): punch
+            b <= 21 -> 2.8f + ((b - 10).toFloat() / 11f) * 0.4f    // Midrange (300-3500 Hz): vocal/instrument presence
+            else -> 3.2f + ((b - 22).toFloat() / 9f) * 1.6f        // Treble (3.5-18 kHz): 1/f falloff compensation
         }
     }
 
@@ -158,7 +149,6 @@ object AudioVisualizerManager {
                 withContext(Dispatchers.Default) {
                     currentLevels.fill(0f)
                     currentPeaks.fill(0f)
-                    peakHoldFrames.fill(0)
                     _frameFlow.value = VisualizerFrame()
                 }
 
@@ -349,7 +339,7 @@ object AudioVisualizerManager {
                     incomingBands[b] = byteBuffer.float
                 }
 
-                // Apply perceptual dynamic range mapping and physics ballistics
+                // Dynamic spectrum pipeline and ballistics ported from SDWMP3_CN
                 var activeSignal = false
                 val bandsOut = FloatArray(NUM_BANDS)
                 val peaksOut = FloatArray(NUM_BANDS)
@@ -357,41 +347,43 @@ object AudioVisualizerManager {
                 for (i in 0 until NUM_BANDS) {
                     val rawVal = incomingBands[i].coerceIn(0f, 1f)
 
-                    // 1. Reconstruct estimated dB from daemon's linear [-6 dB .. +42 dB] mapping
+                    // 1. Reconstruct linear FFT magnitude from daemon's packet:
+                    // Daemon mapped: ((db + 6.0) / 48.0) where db = 20 * log10(avgMagnitude)
                     val rawDb = (rawVal * 48.0f) - 6.0f
+                    val rawMag = if (rawVal <= 0.001f) 0f else 10.0f.pow(rawDb / 20.0f)
 
-                    // 2. Noise floor gate & active dynamic range normalization
-                    val target: Float
-                    if (rawDb <= NOISE_FLOOR_DB) {
-                        target = 0f
+                    // 2. Linear normalization by 128.0f (exact scaling of SDWMP3_CN: re = fft[k]/128, im = fft[k+1]/128)
+                    val normMag = rawMag / 128.0f
+
+                    // 3. Strict Noise Cutoff & Linear Dynamic Gain from SDWMP3_CN
+                    val target = if (normMag <= NOISE_FLOOR_CUTOFF) {
+                        0f
                     } else {
-                        val linearSpan = ((rawDb - NOISE_FLOOR_DB) / DYNAMIC_RANGE_DB).coerceIn(0f, 1f)
-                        val weighted = (linearSpan * spectralWeights[i]).coerceIn(0f, 1f)
-                        target = weighted.toDouble().pow(DYNAMIC_EXPONENT.toDouble()).toFloat()
+                        val activeMag = normMag - NOISE_FLOOR_CUTOFF
+                        (activeMag * zoneGains[i]).coerceIn(0f, 1f)
                     }
 
-                    if (target > 0.03f) activeSignal = true
+                    if (target > 0.02f) activeSignal = true
 
-                    // 3. Attack (instant rise) & Decay (exponential drop + linear floor bleed)
-                    if (target >= currentLevels[i]) {
-                        currentLevels[i] = currentLevels[i] + (target - currentLevels[i]) * ATTACK_FACTOR
+                    // 4. Smooth Filter (SDWMP3_CN ballistics): fast attack for beats, organic decay
+                    val prevLevel = currentLevels[i]
+                    val newLevel = if (target >= prevLevel) {
+                        prevLevel + (target - prevLevel) * ATTACK_ALPHA
                     } else {
-                        val decayed = currentLevels[i] * DECAY_PERCENT - DECAY_SUBTRACTION
-                        currentLevels[i] = max(target, decayed).coerceAtLeast(0f)
+                        prevLevel + (target - prevLevel) * DECAY_ALPHA
                     }
+                    currentLevels[i] = if (newLevel < 0.005f) 0f else newLevel
                     bandsOut[i] = currentLevels[i]
 
-                    // 4. Peak Hold & Swift Fall
-                    if (currentLevels[i] >= currentPeaks[i]) {
-                        currentPeaks[i] = currentLevels[i]
-                        peakHoldFrames[i] = PEAK_HOLD_COUNT
+                    // 5. SDWMP3_CN Peak Physics: instant rise, slow asymptotic fall
+                    // (SDWMP3_CN VuMeter: if (v > peak) peak = v else peak += (v - peak) * 0.015f)
+                    val v = currentLevels[i]
+                    if (v >= currentPeaks[i]) {
+                        currentPeaks[i] = v
                     } else {
-                        if (peakHoldFrames[i] > 0) {
-                            peakHoldFrames[i]--
-                        } else {
-                            currentPeaks[i] = (currentPeaks[i] - PEAK_FALL_SPEED).coerceAtLeast(currentLevels[i])
-                        }
+                        currentPeaks[i] = (currentPeaks[i] + (v - currentPeaks[i]) * PEAK_FALL_ALPHA).coerceAtLeast(v)
                     }
+                    if (currentPeaks[i] < 0.005f) currentPeaks[i] = 0f
                     peaksOut[i] = currentPeaks[i]
                 }
 
@@ -399,7 +391,7 @@ object AudioVisualizerManager {
                     bands = bandsOut,
                     peaks = peaksOut,
                     rms = rms,
-                    hasAudio = activeSignal || rms > 0.02f,
+                    hasAudio = activeSignal || rms > 0.015f,
                 )
             }
         }

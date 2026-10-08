@@ -120,12 +120,7 @@ fun AudioVisualizerView(
                 val rawLevel = displayBands[i]
                 val peakLevel = displayPeaks[i]
 
-                val minVisualHeight = 1.5f * density
-                val barHeight = if (rawLevel > 0.005f) {
-                    (maxBarHeight * rawLevel).coerceAtLeast(minVisualHeight)
-                } else {
-                    0f
-                }
+                val barHeight = (maxBarHeight * rawLevel).coerceAtLeast(0f)
                 val barTop = baselineY - barHeight
 
                 // 1. Subtle track placeholder (optional background guide)
@@ -138,8 +133,8 @@ fun AudioVisualizerView(
                     )
                 }
 
-                // 2. Integrated background spectrum bar
-                if (barHeight > 0f) {
+                // 2. Integrated background spectrum bar (SDWMP3_CN: lh > 1f)
+                if (barHeight > 1f) {
                     val barAlpha = (0.16f + rawLevel * 0.52f).coerceIn(0.16f, 0.75f)
                     drawRoundRect(
                         color = barColor.copy(alpha = barAlpha),
@@ -149,9 +144,10 @@ fun AudioVisualizerView(
                     )
                 }
 
-                // 3. Floating peak indicator
-                if (peakLevel > 0.05f && peakLevel >= rawLevel && barHeight > 0f) {
-                    val peakTop = (baselineY - (maxBarHeight * peakLevel) - peakHeight).coerceAtLeast(0f)
+                // 3. Floating peak indicator (SDWMP3_CN: pk > 0.03f && pkH > 2f)
+                val peakY = maxBarHeight * peakLevel
+                if (peakLevel > 0.03f && peakLevel >= rawLevel && peakY > 2f) {
+                    val peakTop = (baselineY - peakY - peakHeight).coerceAtLeast(0f)
                     drawRoundRect(
                         color = peakColor.copy(alpha = 0.85f),
                         topLeft = Offset(x, peakTop),
