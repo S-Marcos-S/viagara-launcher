@@ -89,6 +89,7 @@ class Prefs(private val context: Context) {
         val THEMED_ICONS = booleanPreferencesKey("themed_icons")
         val THEMED_ICON_STYLE = stringPreferencesKey("themed_icon_style")
         val NOW_PLAYING_ENABLED = booleanPreferencesKey("now_playing_enabled")
+        val AUDIO_VISUALIZER_ENABLED = booleanPreferencesKey("audio_visualizer_enabled")
         val NOW_PLAYING_PROMPT_DISMISSED = booleanPreferencesKey("now_playing_prompt_dismissed")
         val MUSIC_PLAYBACK_DETECTED = booleanPreferencesKey("music_playback_detected")
         val SHOW_APP_NOTIFICATIONS = booleanPreferencesKey("show_app_notifications")
@@ -217,6 +218,7 @@ class Prefs(private val context: Context) {
     }.distinctUntilChanged()
 
     val nowPlayingEnabled: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_ENABLED] ?: true }.distinctUntilChanged()
+    val audioVisualizerEnabled: Flow<Boolean> = data.map { it[Keys.AUDIO_VISUALIZER_ENABLED] ?: false }.distinctUntilChanged()
     val nowPlayingPromptDismissed: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_PROMPT_DISMISSED] ?: false }.distinctUntilChanged()
     val musicPlaybackDetected: Flow<Boolean> = data.map { it[Keys.MUSIC_PLAYBACK_DETECTED] ?: false }.distinctUntilChanged()
     val showAppNotifications: Flow<Boolean> = data.map { it[Keys.SHOW_APP_NOTIFICATIONS] ?: true }.distinctUntilChanged()
@@ -578,6 +580,12 @@ class Prefs(private val context: Context) {
             if (v) {
                 it[Keys.NOW_PLAYING_PROMPT_DISMISSED] = false
             }
+        }
+    }
+
+    suspend fun setAudioVisualizerEnabled(v: Boolean) {
+        context.dataStore.edit {
+            it[Keys.AUDIO_VISUALIZER_ENABLED] = v
         }
     }
 

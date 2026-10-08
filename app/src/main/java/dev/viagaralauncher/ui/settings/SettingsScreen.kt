@@ -77,7 +77,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.viagaralauncher.BuildConfig
 import dev.viagaralauncher.data.AppFont
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.ClockStyle
@@ -131,6 +130,8 @@ fun SettingsScreen(
     onSetShowAlphabet: (Boolean) -> Unit,
     onSetAlignRight: (Boolean) -> Unit,
     onSetNowPlayingEnabled: (Boolean) -> Unit,
+    audioVisualizerEnabled: Boolean = false,
+    onSetAudioVisualizerEnabled: (Boolean) -> Unit = {},
     showAppNotifications: Boolean,
     onSetShowAppNotifications: (Boolean) -> Unit,
     folderWindowPopup: Boolean,
@@ -405,6 +406,13 @@ fun SettingsScreen(
                     SwitchRow(stringResource(R.string.settings_now_playing_show), nowPlayingEnabled, onSetNowPlayingEnabled)
                     RowDivider()
                     SwitchRowWithDetail(
+                        label = "Visualizador de música",
+                        detail = "Exibe um espectro animado baseado no áudio reproduzido pelo sistema. Requer acesso root.",
+                        checked = audioVisualizerEnabled,
+                        onCheckedChange = onSetAudioVisualizerEnabled,
+                    )
+                    RowDivider()
+                    SwitchRowWithDetail(
                         label = stringResource(R.string.settings_show_notifications),
                         detail = stringResource(R.string.settings_show_notifications_detail),
                         checked = showAppNotifications,
@@ -545,10 +553,16 @@ fun SettingsScreen(
             item {
                 Section(stringResource(R.string.settings_section_about)) {
                     var showCurrentChangelog by remember { mutableStateOf(false) }
+                    val context = LocalContext.current
+                    val appVersionName = remember(context) {
+                        runCatching {
+                            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                        }.getOrNull() ?: "0.59.64"
+                    }
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         Text(
-                            stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+                            stringResource(R.string.settings_version, appVersionName),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         )
@@ -604,7 +618,7 @@ fun SettingsScreen(
                                             .padding(22.dp),
                                     ) {
                                         Text(
-                                            text = "O que há de novo na v${BuildConfig.VERSION_NAME}",
+                                            text = "O que há de novo na v$appVersionName",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface,

@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.59.77
+### 🚀 Novidades da Versão v0.59.78
 
-- **Categorias Fixas de Papéis de Parede:** O cabeçalho com os tipos de papéis de parede permanece visível no topo mesmo ao rolar a galeria.
-- **Transição com Elevação Dinâmica:** Sombra e divisor sutil surgem automaticamente durante a rolagem dos papéis de parede.
-- **Acesso Rápido à Galeria:** Atalho direto no cabeçalho para abrir fotos do dispositivo ou padrões do sistema de qualquer categoria.
+- **Visualizador de Música Real na Home:** Adicionado espectro animado em tempo real com 32 bandas logarítmicas e picos flutuantes, capturando áudio de qualquer app (Session 0).
+- **Controle e Eficiência Energética:** Novo switch nas configurações para ligar/desligar com consumo zero de CPU quando inativo e suspensão automática em segundo plano.

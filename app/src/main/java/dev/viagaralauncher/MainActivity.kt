@@ -123,6 +123,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.onLauncherResume()
+        dev.viagaralauncher.visualizer.AudioVisualizerManager.onLauncherResume()
+    }
+
+    override fun onPause() {
+        dev.viagaralauncher.visualizer.AudioVisualizerManager.onLauncherPause()
+        super.onPause()
     }
 
     private fun handleWallpaperIntent(intent: Intent?) {

@@ -197,8 +197,16 @@ fun ViagaraNavHost(
     val widgetId by app.prefs.widgetId.collectAsState(initial = -1)
     val widgetIds by app.prefs.widgetIds.collectAsState(initial = emptyList())
     val widgetPosition by app.prefs.widgetPosition.collectAsState(initial = 0)
-    val widgetHeightDp by app.prefs.widgetHeightDp.collectAsState(initial = 180)
     val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = true)
+    val audioVisualizerEnabled by app.prefs.audioVisualizerEnabled.collectAsState(initial = false)
+
+    LaunchedEffect(audioVisualizerEnabled) {
+        if (audioVisualizerEnabled) {
+            dev.viagaralauncher.visualizer.AudioVisualizerManager.start(context)
+        } else {
+            dev.viagaralauncher.visualizer.AudioVisualizerManager.stop()
+        }
+    }
     val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
     val folderWindowPopup by app.prefs.folderWindowPopup.collectAsState(initial = true)
     val clockStyle by app.prefs.clockStyle.collectAsState(initial = ClockStyle.CLASSIC)
@@ -285,6 +293,7 @@ fun ViagaraNavHost(
         alphabetSidePaddingDp = alphabetSidePaddingDp,
         nowPlayingHeightDp = nowPlayingHeightDp,
         nowPlayingEnabled = nowPlayingEnabled,
+        audioVisualizerEnabled = audioVisualizerEnabled,
         edgeSide = edgeSide,
         alwaysShowAz = alwaysShowAz,
         showAlphabet = showAlphabet,
@@ -451,6 +460,8 @@ fun ViagaraNavHost(
                 showAlphabet = showAlphabet,
                 alignRight = alignRight,
                 nowPlayingEnabled = nowPlayingEnabled,
+                audioVisualizerEnabled = audioVisualizerEnabled,
+                onSetAudioVisualizerEnabled = { scope.launch { app.prefs.setAudioVisualizerEnabled(it) } },
                 nowPlayingListenerEnabled = listenerEnabled,
                 showAppNotifications = showAppNotifications,
                 onSetShowAppNotifications = { scope.launch { app.prefs.setShowAppNotifications(it) } },

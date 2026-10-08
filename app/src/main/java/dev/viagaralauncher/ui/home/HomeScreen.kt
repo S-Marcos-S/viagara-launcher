@@ -199,6 +199,7 @@ fun HomeScreen(
     widgetHeightDp: Int,
     hapticsEnabled: Boolean,
     nowPlayingEnabled: Boolean,
+    audioVisualizerEnabled: Boolean = false,
     nowPlayingHeightDp: Int,
     onResizeNowPlaying: (Int) -> Unit,
     widgetActions: WidgetSlotActions,
@@ -766,6 +767,18 @@ fun HomeScreen(
                         onCommit = { onCommitPadding(PaddingSlot.WIDGET_BOTTOM, it); liveSlot = null },
                     )
                 }
+            }
+
+            // Real-time audio spectrum visualizer (Session 0)
+            if (audioVisualizerEnabled && !editMode) {
+                dev.viagaralauncher.visualizer.AudioVisualizerView(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = contentStart, end = contentEnd)
+                        .padding(bottom = 8.dp),
+                    barColor = contentColor.copy(alpha = 0.90f),
+                    peakColor = MaterialTheme.colorScheme.primary,
+                )
             }
 
             // Now Playing widget block: rendered below clock / widget and above favorites
