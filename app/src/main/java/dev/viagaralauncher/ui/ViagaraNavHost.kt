@@ -197,6 +197,7 @@ fun ViagaraNavHost(
     val widgetId by app.prefs.widgetId.collectAsState(initial = -1)
     val widgetIds by app.prefs.widgetIds.collectAsState(initial = emptyList())
     val widgetPosition by app.prefs.widgetPosition.collectAsState(initial = 0)
+    val widgetHeightDp by app.prefs.widgetHeightDp.collectAsState(initial = 180)
     val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = true)
     val audioVisualizerEnabled by app.prefs.audioVisualizerEnabled.collectAsState(initial = false)
 

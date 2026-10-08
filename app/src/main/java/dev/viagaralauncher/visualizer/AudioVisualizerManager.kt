@@ -13,13 +13,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Visualizer spectrum frame containing 32 smooth frequency bands and floating peak positions.
@@ -50,13 +51,21 @@ data class VisualizerFrame(
     }
 }
 
+private enum class VisualizerState {
+    STOPPED,
+    STARTING,
+    RUNNING,
+    PAUSED,
+    STOPPING,
+}
+
 /**
  * Manages the lifecycle of the root audio visualizer daemon:
- * - Listens on abstract LocalServerSocket "viagara_audio_viz"
- * - Spawns privileged worker via su and app_process64 using visualizer_daemon.dex
- * - Applies 60 FPS ballistic physics (fast attack, smooth gravitational decay, peak hold & gradual drop)
- * - Suspends processing when the launcher is in the background (ON_PAUSE / ON_STOP)
- * - Performs graceful shutdown (sends 'Q' command over socket, waits, falls back to SIGTERM, never immediate SIGKILL)
+ * - State machine: STOPPED -> STARTING -> RUNNING <-> PAUSED -> STOPPING -> STOPPED
+ * - Mutex-guarded lifecycle to eliminate race conditions between start() and stop()
+ * - Sends 'P' (Pause) / 'R' (Resume) over LocalSocket to prevent CPU & IPC queue accumulation
+ * - Sends 'S' (Stop) for graceful termination
+ * - Specifically tracks daemon PID and kills only that PID with SIGTERM (fallback SIGKILL)
  * - Zero CPU / memory consumption when disabled.
  */
 object AudioVisualizerManager {
@@ -68,6 +77,9 @@ object AudioVisualizerManager {
     val frameFlow: StateFlow<VisualizerFrame> = _frameFlow.asStateFlow()
 
     private val scope = CoroutineScope(Dispatchers.IO + Job())
+    private val lifecycleMutex = Mutex()
+    private var currentState = VisualizerState.STOPPED
+
     private var supervisorJob: Job? = null
     private var readerJob: Job? = null
 
@@ -76,8 +88,7 @@ object AudioVisualizerManager {
     private var clientOut: OutputStream? = null
 
     private var daemonProcess: Process? = null
-    private val isRunning = AtomicBoolean(false)
-    private val isSuspended = AtomicBoolean(false)
+    private var daemonPid: Int = -1
 
     // Ballistic physics state
     private val currentLevels = FloatArray(NUM_BANDS)
@@ -90,78 +101,145 @@ object AudioVisualizerManager {
     private const val PEAK_FALL_SPEED = 0.018f
 
     fun start(context: Context) {
-        if (isRunning.getAndSet(true)) return
-        isSuspended.set(false)
+        scope.launch {
+            lifecycleMutex.withLock {
+                if (currentState != VisualizerState.STOPPED) {
+                    return@withLock
+                }
+                currentState = VisualizerState.STARTING
 
-        supervisorJob = scope.launch {
-            runSupervisor(context.applicationContext)
+                supervisorJob = scope.launch {
+                    runSupervisor(context.applicationContext)
+                }
+            }
         }
     }
 
     fun stop() {
-        if (!isRunning.getAndSet(false)) return
-        isSuspended.set(false)
-
-        supervisorJob?.cancel()
-        supervisorJob = null
-
         scope.launch {
-            cleanupDaemon()
-            withContext(Dispatchers.Default) {
-                currentLevels.fill(0f)
-                currentPeaks.fill(0f)
-                peakHoldFrames.fill(0)
-                _frameFlow.value = VisualizerFrame()
+            lifecycleMutex.withLock {
+                if (currentState == VisualizerState.STOPPED || currentState == VisualizerState.STOPPING) {
+                    return@withLock
+                }
+                currentState = VisualizerState.STOPPING
+
+                supervisorJob?.cancel()
+                supervisorJob = null
+
+                cleanupDaemonLocked()
+
+                withContext(Dispatchers.Default) {
+                    currentLevels.fill(0f)
+                    currentPeaks.fill(0f)
+                    peakHoldFrames.fill(0)
+                    _frameFlow.value = VisualizerFrame()
+                }
+
+                currentState = VisualizerState.STOPPED
             }
         }
     }
 
     fun onLauncherResume() {
-        if (isRunning.get()) {
-            isSuspended.set(false)
+        scope.launch {
+            lifecycleMutex.withLock {
+                if (currentState == VisualizerState.PAUSED) {
+                    currentState = VisualizerState.RUNNING
+                    sendControlCommand('R')
+                }
+            }
         }
     }
 
     fun onLauncherPause() {
-        if (isRunning.get()) {
-            isSuspended.set(true)
+        scope.launch {
+            lifecycleMutex.withLock {
+                if (currentState == VisualizerState.RUNNING) {
+                    currentState = VisualizerState.PAUSED
+                    sendControlCommand('P')
+                }
+            }
         }
+    }
+
+    private fun sendControlCommand(cmd: Char) {
+        try {
+            clientOut?.let {
+                it.write(cmd.code)
+                it.flush()
+            }
+        } catch (_: Throwable) {}
     }
 
     private suspend fun runSupervisor(context: Context) = withContext(Dispatchers.IO) {
         try {
-            // 1. Terminate any previous orphan daemon instance cleanly
-            killOrphanDaemons()
-
-            // 2. Open LocalServerSocket
+            // 1. Open LocalServerSocket
             try {
                 serverSocket = LocalServerSocket(SOCKET_NAME)
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 serverSocket?.close()
                 serverSocket = LocalServerSocket(SOCKET_NAME)
             }
 
-            // 3. Prepare standalone DEX asset in filesDir
-            val dexPath = extractOrPrepareDex(context) ?: return@withContext
+            // 2. Prepare standalone DEX asset in filesDir
+            val dexPath = extractOrPrepareDex(context) ?: run {
+                lifecycleMutex.withLock {
+                    cleanupDaemonLocked()
+                    currentState = VisualizerState.STOPPED
+                }
+                return@withContext
+            }
 
-            // 4. Start daemon via su
+            // 3. Start daemon via su and extract PID
             val launchScript = """
                 export CLASSPATH="$dexPath"
-                exec /system/bin/app_process64 /data/local/tmp dev.viagaralauncher.visualizer.AudioVisualizerDaemon
+                /system/bin/app_process64 /data/local/tmp dev.viagaralauncher.visualizer.AudioVisualizerDaemon &
+                echo "PID:${'$'}!"
+                wait
             """.trimIndent()
 
             val process = ProcessBuilder("su", "-c", launchScript).start()
             daemonProcess = process
 
-            // 5. Accept client socket connection
-            val client = serverSocket?.accept() ?: return@withContext
-            clientSocket = client
-            clientOut = client.outputStream
-            val inputStream = client.inputStream
+            // Read the PID line emitted by the shell script
+            val reader = process.inputStream.bufferedReader()
+            var extractedPid = -1
+            val timeoutMillis = System.currentTimeMillis() + 1500L
+            while (System.currentTimeMillis() < timeoutMillis && reader.ready()) {
+                val line = reader.readLine() ?: break
+                if (line.startsWith("PID:")) {
+                    extractedPid = line.substring(4).trim().toIntOrNull() ?: -1
+                    break
+                }
+            }
+            daemonPid = extractedPid
 
-            startReaderLoop(inputStream)
+            // 4. Accept client socket connection
+            val client = serverSocket?.accept() ?: run {
+                lifecycleMutex.withLock {
+                    cleanupDaemonLocked()
+                    currentState = VisualizerState.STOPPED
+                }
+                return@withContext
+            }
+
+            lifecycleMutex.withLock {
+                if (currentState != VisualizerState.STARTING) {
+                    client.close()
+                    cleanupDaemonLocked()
+                    return@withLock
+                }
+                clientSocket = client
+                clientOut = client.outputStream
+                currentState = VisualizerState.RUNNING
+            }
+
+            startReaderLoop(client.inputStream)
         } catch (_: Throwable) {
-            cleanupDaemon()
+            lifecycleMutex.withLock {
+                cleanupDaemonLocked()
+                currentState = VisualizerState.STOPPED
+            }
         }
     }
 
@@ -173,8 +251,8 @@ object AudioVisualizerManager {
             val byteBuffer = ByteBuffer.wrap(rawBytes).order(ByteOrder.LITTLE_ENDIAN)
             val incomingBands = FloatArray(NUM_BANDS)
 
-            while (isActive && isRunning.get()) {
-                if (isSuspended.get()) {
+            while (isActive && (currentState == VisualizerState.RUNNING || currentState == VisualizerState.PAUSED)) {
+                if (currentState == VisualizerState.PAUSED) {
                     delay(100)
                     continue
                 }
@@ -247,13 +325,13 @@ object AudioVisualizerManager {
         }
     }
 
-    private suspend fun cleanupDaemon() = withContext(Dispatchers.IO) {
+    private suspend fun cleanupDaemonLocked() = withContext(Dispatchers.IO) {
         readerJob?.cancel()
         readerJob = null
 
-        // 1. Graceful exit: send 'Q' command to daemon socket
+        // 1. Graceful exit: send 'S' command to daemon socket
         try {
-            clientOut?.write('Q'.code)
+            clientOut?.write('S'.code)
             clientOut?.flush()
         } catch (_: Throwable) {}
 
@@ -268,8 +346,13 @@ object AudioVisualizerManager {
         } catch (_: Throwable) {}
         serverSocket = null
 
+        val targetPid = daemonPid
+        daemonPid = -1
+
         // 2. Wait up to 300 ms for normal exit
         val proc = daemonProcess
+        daemonProcess = null
+
         if (proc != null) {
             val exited = runCatching {
                 var count = 0
@@ -281,27 +364,28 @@ object AudioVisualizerManager {
                 false
             }.getOrDefault(false)
 
-            // 3. Fallback to SIGTERM (and SIGKILL only if stubborn)
             if (!exited) {
-                proc.destroy() // Sends SIGTERM
+                proc.destroy() // SIGTERM
                 delay(100)
                 if (proc.isAlive) {
                     proc.destroyForcibly() // SIGKILL fallback
                 }
             }
         }
-        daemonProcess = null
 
-        // Ensure no lingering background process
-        killOrphanDaemons()
+        // 3. If targetPid was known, ensure specific process termination
+        if (targetPid > 0) {
+            killSpecificPid(targetPid)
+        }
     }
 
-    private fun killOrphanDaemons() {
+    private fun killSpecificPid(pid: Int) {
         try {
-            Runtime.getRuntime().exec(arrayOf(
-                "su", "-c",
-                "pkill -TERM -f 'dev.viagaralauncher.visualizer.AudioVisualizerDaemon' || true"
-            )).waitFor()
+            // First SIGTERM
+            Runtime.getRuntime().exec(arrayOf("su", "-c", "kill -TERM $pid || true")).waitFor()
+            Thread.sleep(80)
+            // If still alive, fallback to SIGKILL
+            Runtime.getRuntime().exec(arrayOf("su", "-c", "kill -0 $pid && kill -KILL $pid || true")).waitFor()
         } catch (_: Throwable) {}
     }
 
@@ -316,7 +400,6 @@ object AudioVisualizerManager {
             targetFile.setReadable(true, false)
             return targetFile.absolutePath
         } catch (_: Throwable) {
-            // Fallback to /data/local/tmp if previously pushed or available
             val fallback = File("/data/local/tmp/visualizer_daemon.dex")
             if (fallback.exists()) {
                 return fallback.absolutePath
