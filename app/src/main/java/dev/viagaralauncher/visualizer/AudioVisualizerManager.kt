@@ -79,6 +79,7 @@ object AudioVisualizerManager {
     private val scope = CoroutineScope(Dispatchers.IO + Job())
     private val lifecycleMutex = Mutex()
     private var currentState = VisualizerState.STOPPED
+    private var currentGeneration = 0L
 
     private var supervisorJob: Job? = null
     private var readerJob: Job? = null
@@ -107,9 +108,10 @@ object AudioVisualizerManager {
                     return@withLock
                 }
                 currentState = VisualizerState.STARTING
+                val gen = ++currentGeneration
 
                 supervisorJob = scope.launch {
-                    runSupervisor(context.applicationContext)
+                    runSupervisor(context.applicationContext, gen)
                 }
             }
         }
@@ -122,11 +124,12 @@ object AudioVisualizerManager {
                     return@withLock
                 }
                 currentState = VisualizerState.STOPPING
+                val gen = currentGeneration
 
                 supervisorJob?.cancel()
                 supervisorJob = null
 
-                cleanupDaemonLocked()
+                cleanupDaemonLocked(gen)
 
                 withContext(Dispatchers.Default) {
                     currentLevels.fill(0f)
@@ -171,7 +174,10 @@ object AudioVisualizerManager {
         } catch (_: Throwable) {}
     }
 
-    private suspend fun runSupervisor(context: Context) = withContext(Dispatchers.IO) {
+    private suspend fun runSupervisor(context: Context, generation: Long) = withContext(Dispatchers.IO) {
+        var localDaemonPid = -1
+        var localProcess: Process? = null
+        var localClient: LocalSocket? = null
         try {
             // 1. Open LocalServerSocket
             try {
@@ -181,11 +187,20 @@ object AudioVisualizerManager {
                 serverSocket = LocalServerSocket(SOCKET_NAME)
             }
 
+            // Check generation before heavy work
+            lifecycleMutex.withLock {
+                if (generation != currentGeneration) {
+                    return@withContext
+                }
+            }
+
             // 2. Prepare standalone DEX asset in filesDir
             val dexPath = extractOrPrepareDex(context) ?: run {
                 lifecycleMutex.withLock {
-                    cleanupDaemonLocked()
-                    currentState = VisualizerState.STOPPED
+                    if (generation == currentGeneration) {
+                        cleanupDaemonLocked(generation)
+                        currentState = VisualizerState.STOPPED
+                    }
                 }
                 return@withContext
             }
@@ -199,7 +214,7 @@ object AudioVisualizerManager {
             """.trimIndent()
 
             val process = ProcessBuilder("su", "-c", launchScript).start()
-            daemonProcess = process
+            localProcess = process
 
             // Read the PID line emitted by the shell script
             val reader = process.inputStream.bufferedReader()
@@ -212,21 +227,38 @@ object AudioVisualizerManager {
                     break
                 }
             }
-            daemonPid = extractedPid
+            localDaemonPid = extractedPid
+
+            lifecycleMutex.withLock {
+                if (generation != currentGeneration || currentState != VisualizerState.STARTING) {
+                    // Stale supervisor: terminate spawned process immediately without touching current state
+                    terminateProcessAndPid(process, localDaemonPid)
+                    return@withContext
+                }
+                daemonProcess = process
+                daemonPid = extractedPid
+            }
 
             // 4. Accept client socket connection
             val client = serverSocket?.accept() ?: run {
                 lifecycleMutex.withLock {
-                    cleanupDaemonLocked()
-                    currentState = VisualizerState.STOPPED
+                    if (generation == currentGeneration) {
+                        cleanupDaemonLocked(generation)
+                        currentState = VisualizerState.STOPPED
+                    }
                 }
                 return@withContext
             }
+            localClient = client
 
             lifecycleMutex.withLock {
-                if (currentState != VisualizerState.STARTING) {
-                    client.close()
-                    cleanupDaemonLocked()
+                if (generation != currentGeneration || currentState != VisualizerState.STARTING) {
+                    try { client.close() } catch (_: Throwable) {}
+                    if (generation == currentGeneration) {
+                        cleanupDaemonLocked(generation)
+                    } else {
+                        terminateProcessAndPid(process, localDaemonPid)
+                    }
                     return@withLock
                 }
                 clientSocket = client
@@ -237,8 +269,17 @@ object AudioVisualizerManager {
             startReaderLoop(client.inputStream)
         } catch (_: Throwable) {
             lifecycleMutex.withLock {
-                cleanupDaemonLocked()
-                currentState = VisualizerState.STOPPED
+                if (generation == currentGeneration) {
+                    cleanupDaemonLocked(generation)
+                    currentState = VisualizerState.STOPPED
+                } else {
+                    // Stale supervisor received exception (e.g. socket closed during accept):
+                    // Clean up only our local orphan process/socket if it wasn't adopted
+                    try { localClient?.close() } catch (_: Throwable) {}
+                    if (localDaemonPid > 0 && localDaemonPid != daemonPid) {
+                        terminateProcessAndPid(localProcess, localDaemonPid)
+                    }
+                }
             }
         }
     }
@@ -325,7 +366,11 @@ object AudioVisualizerManager {
         }
     }
 
-    private suspend fun cleanupDaemonLocked() = withContext(Dispatchers.IO) {
+    private suspend fun cleanupDaemonLocked(expectedGeneration: Long) = withContext(Dispatchers.IO) {
+        if (expectedGeneration != currentGeneration) {
+            return@withContext
+        }
+
         readerJob?.cancel()
         readerJob = null
 
@@ -349,16 +394,20 @@ object AudioVisualizerManager {
         val targetPid = daemonPid
         daemonPid = -1
 
-        // 2. Wait up to 300 ms for normal exit
         val proc = daemonProcess
         daemonProcess = null
 
+        // 2. Wait up to 300 ms for normal exit and kill specific process
+        terminateProcessAndPid(proc, targetPid)
+    }
+
+    private fun terminateProcessAndPid(proc: Process?, pid: Int) {
         if (proc != null) {
             val exited = runCatching {
                 var count = 0
                 while (count < 6) {
                     if (!proc.isAlive) return@runCatching true
-                    delay(50)
+                    Thread.sleep(50)
                     count++
                 }
                 false
@@ -366,16 +415,16 @@ object AudioVisualizerManager {
 
             if (!exited) {
                 proc.destroy() // SIGTERM
-                delay(100)
+                try { Thread.sleep(100) } catch (_: Throwable) {}
                 if (proc.isAlive) {
                     proc.destroyForcibly() // SIGKILL fallback
                 }
             }
         }
 
-        // 3. If targetPid was known, ensure specific process termination
-        if (targetPid > 0) {
-            killSpecificPid(targetPid)
+        // Ensure specific PID is terminated
+        if (pid > 0) {
+            killSpecificPid(pid)
         }
     }
 
