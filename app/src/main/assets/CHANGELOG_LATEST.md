@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.93
+### 🚀 Novidades da Versão v0.59.96
 
-- **Zero Consumo em Segundo Plano:** Daemon e leitor de áudio em espera bloqueante sem wakeups de CPU.
-- **Transparência Elegante:** Capa do álbum e nome da música ainda mais translúcidos sobre o visualizador.
-- **Eficiência Térmica e de Bateria:** Economia inteligente durante pausas e momentos de silêncio.
+- **Restauração de Estabilidade:** Reversão dos commits recentes para restaurar o visualizador funcional.
+- **Transparência do Widget:** Elementos de capa e título com opacidade aprimorada sobre o espectro.
+- **Eficiência:** Standby otimizado com zero consumo de CPU fora de reprodução.
