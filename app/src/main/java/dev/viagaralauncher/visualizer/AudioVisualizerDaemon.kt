@@ -178,8 +178,9 @@ object AudioVisualizerDaemon {
                     emaMid  = emaMid  * 0.80f + rawMid  * 0.20f
                     emaHigh = emaHigh * 0.80f + rawHigh * 0.20f
 
-                    // Uniform gain = 6.0f and clamp = 1.0f (exact Oboe constants)
-                    val gain = 6.0f
+                    // Natural 1:1 scale (Parseval band energy is already full-scale [0..1])
+                    // Uniform gain = 1.0f across all bands, avoiding saturation clipping
+                    val gain = 1.0f
                     val finalSub  = min(1.0f, emaSub  * gain)
                     val finalBass = min(1.0f, emaBass * gain)
                     val finalMid  = min(1.0f, emaMid  * gain)
