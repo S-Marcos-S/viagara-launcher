@@ -111,24 +111,9 @@ object AudioVisualizerDaemon {
                 lastEndBin = bandEndBins[b]
             }
 
-            // ISO-calibrated perceptual EQ curve:
-            // Balanced visual energy across sub, bass, mids, and treble
-            val eqGains = floatArrayOf(
-                1.70f, // Band 0: Deep Sub
-                1.55f, // Band 1: Kick drum
-                1.35f, // Band 2: Punch
-                1.20f, // Band 3: Bass
-                1.10f, // Band 4: Low mid
-                1.00f, // Band 5: Snare
-                1.00f, // Band 6: Vocal body
-                1.00f, // Band 7: Vocal clarity
-                1.05f, // Band 8: Presence
-                1.10f, // Band 9: Attack
-                1.15f, // Band 10: Treble
-                1.25f, // Band 11: Cymbals
-                1.35f, // Band 12: Hi-hat
-                1.50f  // Band 13: Air / shimmer
-            )
+            // Uniform calibrated gain across all 14 physical bands:
+            // Lowers bass/sub sensitivity slightly while giving mids and highs a clean boost
+            val uniformGain = 1.25f
 
             val emaBands = FloatArray(NUM_BANDS)
             val fftBuffer = ByteArray(CAPTURE_SIZE)
@@ -185,7 +170,7 @@ object AudioVisualizerDaemon {
                         // Fast, punchy EMA (alpha = 0.35f) so transient beats (e.g. 0.5s kicks) pump dynamically
                         emaBands[b] = emaBands[b] * 0.65f + rawRms * 0.35f
 
-                        val level = min(1.0f, emaBands[b] * eqGains[b])
+                        val level = min(1.0f, emaBands[b] * uniformGain)
                         magnitudes[b] = level
                         totalLevelSum += level
                     }

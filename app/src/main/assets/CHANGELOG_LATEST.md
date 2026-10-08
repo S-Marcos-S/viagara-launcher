@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.91
+### 🚀 Novidades da Versão v0.59.92
 
-- **Espectro Real de 14 Bandas:** Transição de 4 zonas sintéticas para 14 faixas acústicas físicas e independentes (25Hz a 18.5kHz).
-- **Resposta Dinâmica a Batidas:** Bumbo (kick drum) e contrabaixo pulsam com clareza a cada impacto rítmico.
-- **Curva Perceptual Calibrada:** Equilíbrio visual harmônico e eliminação de ruídos artificiais (jitter simulado).
+- **Ganho Uniforme de 1.25x:** Calibração nivelada e idêntica para todas as 14 bandas do espectro.
+- **Sensibilidade Equilibrada:** Graves e subgraves suavizados para evitar saturação prematura.
+- **Realce Natural em Médios e Agudos:** Melhor resposta visual para voz, melodias e pratos.
