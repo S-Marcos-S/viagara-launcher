@@ -21,6 +21,8 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.max
+import kotlin.math.pow
 
 /**
  * Visualizer spectrum frame containing 32 smooth frequency bands and floating peak positions.
@@ -96,10 +98,32 @@ object AudioVisualizerManager {
     private val currentPeaks = FloatArray(NUM_BANDS)
     private val peakHoldFrames = IntArray(NUM_BANDS)
 
-    private const val ATTACK_FACTOR = 0.82f
-    private const val DECAY_FACTOR = 0.10f
-    private const val PEAK_HOLD_COUNT = 14 // ~230 ms @ 60 FPS
-    private const val PEAK_FALL_SPEED = 0.018f
+    // --- Perceptual Dynamic Range Calibration ---
+    // The daemon maps [-6 dB .. +42 dB] linearly into [0.0 .. 1.0].
+    // We calibrate an active musical range that cuts DAC/mixer noise while emphasizing beats and basslines.
+    private const val NOISE_FLOOR_DB = 9.0f         // Below ~9 dB (mag < 2.8) is clamped to 0 (rejects residual noise/hiss)
+    private const val CEILING_DB = 38.0f            // Upper reference ceiling (~80x FFT magnitude)
+    private const val DYNAMIC_RANGE_DB = CEILING_DB - NOISE_FLOOR_DB // 29.0 dB active dynamic span
+    private const val DYNAMIC_EXPONENT = 1.35f      // Stevens' power-law perceptual contrast curve
+
+    // Ballistic physics constants
+    private const val ATTACK_FACTOR = 0.85f         // Fast attack: beats register within 1-2 frames
+    private const val DECAY_PERCENT = 0.86f         // Musical exponential decay per frame (~60 FPS)
+    private const val DECAY_SUBTRACTION = 0.012f    // Linear baseline bleed to guarantee decay reaches true 0
+    private const val PEAK_HOLD_COUNT = 9           // ~150 ms peak hold at 60 FPS
+    private const val PEAK_FALL_SPEED = 0.032f      // Swift, organic peak descent
+
+    // Perceptual spectral weighting:
+    // - Boosts bass impact (bands 0..5: 35-180 Hz) so kick drums produce dramatic leaps
+    // - Slightly relaxes dense midrange (bands 6..18: 200-2500 Hz) to avoid a static wall of bars
+    // - Smoothly compensates natural 1/f falloff in treble (bands 19..31: 3-18 kHz)
+    private val spectralWeights = FloatArray(NUM_BANDS) { b ->
+        when {
+            b <= 5 -> 1.18f - (b.toFloat() / 5f) * 0.18f
+            b <= 18 -> 0.90f + ((b - 6).toFloat() / 12f) * 0.10f
+            else -> 1.00f + ((b - 18).toFloat() / 13f) * 0.28f
+        }
+    }
 
     fun start(context: Context) {
         scope.launch {
@@ -325,24 +349,39 @@ object AudioVisualizerManager {
                     incomingBands[b] = byteBuffer.float
                 }
 
-                // Apply physics & ballistics: attack, decay, peak hold
+                // Apply perceptual dynamic range mapping and physics ballistics
                 var activeSignal = false
                 val bandsOut = FloatArray(NUM_BANDS)
                 val peaksOut = FloatArray(NUM_BANDS)
 
                 for (i in 0 until NUM_BANDS) {
-                    val target = incomingBands[i]
-                    if (target > 0.02f) activeSignal = true
+                    val rawVal = incomingBands[i].coerceIn(0f, 1f)
 
-                    // Attack / Decay
+                    // 1. Reconstruct estimated dB from daemon's linear [-6 dB .. +42 dB] mapping
+                    val rawDb = (rawVal * 48.0f) - 6.0f
+
+                    // 2. Noise floor gate & active dynamic range normalization
+                    val target: Float
+                    if (rawDb <= NOISE_FLOOR_DB) {
+                        target = 0f
+                    } else {
+                        val linearSpan = ((rawDb - NOISE_FLOOR_DB) / DYNAMIC_RANGE_DB).coerceIn(0f, 1f)
+                        val weighted = (linearSpan * spectralWeights[i]).coerceIn(0f, 1f)
+                        target = weighted.toDouble().pow(DYNAMIC_EXPONENT.toDouble()).toFloat()
+                    }
+
+                    if (target > 0.03f) activeSignal = true
+
+                    // 3. Attack (instant rise) & Decay (exponential drop + linear floor bleed)
                     if (target >= currentLevels[i]) {
                         currentLevels[i] = currentLevels[i] + (target - currentLevels[i]) * ATTACK_FACTOR
                     } else {
-                        currentLevels[i] = (currentLevels[i] - DECAY_FACTOR).coerceAtLeast(target).coerceAtLeast(0f)
+                        val decayed = currentLevels[i] * DECAY_PERCENT - DECAY_SUBTRACTION
+                        currentLevels[i] = max(target, decayed).coerceAtLeast(0f)
                     }
                     bandsOut[i] = currentLevels[i]
 
-                    // Peak Hold & Fall
+                    // 4. Peak Hold & Swift Fall
                     if (currentLevels[i] >= currentPeaks[i]) {
                         currentPeaks[i] = currentLevels[i]
                         peakHoldFrames[i] = PEAK_HOLD_COUNT
@@ -360,7 +399,7 @@ object AudioVisualizerManager {
                     bands = bandsOut,
                     peaks = peaksOut,
                     rms = rms,
-                    hasAudio = activeSignal || rms > 0.015f,
+                    hasAudio = activeSignal || rms > 0.02f,
                 )
             }
         }

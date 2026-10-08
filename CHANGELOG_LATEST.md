@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.81
+### 🚀 Novidades da Versão v0.59.82
 
-- **Visualizador Integrado ao Player:** As barras de espectro agora são renderizadas como camada de fundo dinâmica dentro do próprio widget de "Em reprodução".
-- **Dimensionamento Responsivo:** Quantidade, largura e altura das barras adaptam-se automaticamente ao tamanho real do widget sem alterar o layout vertical.
-- **Transparência Dinâmica Elegante:** Transição suave de opacidade no texto durante a reprodução, preservando contraste e legibilidade.
+- **Faixa Dinâmica Aprimorada:** Noise floor calibrado e curva perceptual (Lei de Stevens) eliminam ruídos residuais e separam silêncio de batidas.
+- **Destaque em Graves e Transientes:** Equalização espectral balanceada com ataque veloz e decaimento exponencial orgânico.
+- **Repouso Visual Real:** Barras descem até zero em trechos calmos sem alturas mínimas artificiais.

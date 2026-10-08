@@ -120,13 +120,18 @@ fun AudioVisualizerView(
                 val rawLevel = displayBands[i]
                 val peakLevel = displayPeaks[i]
 
-                val barHeight = (maxBarHeight * rawLevel).coerceAtLeast(barWidth * 0.5f)
+                val minVisualHeight = 1.5f * density
+                val barHeight = if (rawLevel > 0.005f) {
+                    (maxBarHeight * rawLevel).coerceAtLeast(minVisualHeight)
+                } else {
+                    0f
+                }
                 val barTop = baselineY - barHeight
 
                 // 1. Subtle track placeholder (optional background guide)
                 if (trackColor.alpha > 0f) {
                     drawRoundRect(
-                        color = trackColor,
+                        color = trackColor.copy(alpha = trackColor.alpha * 0.4f),
                         topLeft = Offset(x, baselineY - maxBarHeight),
                         size = Size(barWidth, maxBarHeight),
                         cornerRadius = cornerRadius,
@@ -134,16 +139,18 @@ fun AudioVisualizerView(
                 }
 
                 // 2. Integrated background spectrum bar
-                val barAlpha = (0.28f + rawLevel * 0.35f).coerceIn(0.20f, 0.75f)
-                drawRoundRect(
-                    color = barColor.copy(alpha = barAlpha),
-                    topLeft = Offset(x, barTop),
-                    size = Size(barWidth, barHeight),
-                    cornerRadius = cornerRadius,
-                )
+                if (barHeight > 0f) {
+                    val barAlpha = (0.16f + rawLevel * 0.52f).coerceIn(0.16f, 0.75f)
+                    drawRoundRect(
+                        color = barColor.copy(alpha = barAlpha),
+                        topLeft = Offset(x, barTop),
+                        size = Size(barWidth, barHeight),
+                        cornerRadius = cornerRadius,
+                    )
+                }
 
                 // 3. Floating peak indicator
-                if (peakLevel > 0.04f && peakLevel >= rawLevel) {
+                if (peakLevel > 0.05f && peakLevel >= rawLevel && barHeight > 0f) {
                     val peakTop = (baselineY - (maxBarHeight * peakLevel) - peakHeight).coerceAtLeast(0f)
                     drawRoundRect(
                         color = peakColor.copy(alpha = 0.85f),
