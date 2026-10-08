@@ -484,14 +484,19 @@ fun NowPlayingWidget(
     val isVisualizerActive = audioVisualizerEnabled && !editMode && visualizerFrame.hasAudio
 
     val titleAlpha by animateFloatAsState(
-        targetValue = if (isVisualizerActive) 0.88f else 1.0f,
+        targetValue = if (isVisualizerActive) 0.65f else 0.85f,
         animationSpec = tween(durationMillis = 350),
         label = "nowPlayingTitleAlpha",
     )
     val artistAlpha by animateFloatAsState(
-        targetValue = if (isVisualizerActive) 0.60f else 0.70f,
+        targetValue = if (isVisualizerActive) 0.45f else 0.65f,
         animationSpec = tween(durationMillis = 350),
         label = "nowPlayingArtistAlpha",
+    )
+    val artAlpha by animateFloatAsState(
+        targetValue = if (isVisualizerActive) 0.55f else 0.80f,
+        animationSpec = tween(durationMillis = 350),
+        label = "nowPlayingArtAlpha",
     )
 
     Surface(
@@ -543,7 +548,9 @@ fun NowPlayingWidget(
             ) {
                 val artBox: @Composable () -> Unit = {
                     Box(
-                        modifier = Modifier.size(artSize),
+                        modifier = Modifier
+                            .size(artSize)
+                            .graphicsLayer { alpha = artAlpha },
                         contentAlignment = Alignment.Center,
                     ) {
                         val art = current.art

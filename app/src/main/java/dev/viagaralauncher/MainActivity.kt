@@ -199,6 +199,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        dev.viagaralauncher.visualizer.AudioVisualizerManager.onLauncherPause()
         (application as ViagaraApp).widgetHost.stopListening()
         // The fader holds a static controller for this window; don't outlive the Activity.
         StatusBarFader.release()

@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.92
+### 🚀 Novidades da Versão v0.59.93
 
-- **Ganho Uniforme de 1.25x:** Calibração nivelada e idêntica para todas as 14 bandas do espectro.
-- **Sensibilidade Equilibrada:** Graves e subgraves suavizados para evitar saturação prematura.
-- **Realce Natural em Médios e Agudos:** Melhor resposta visual para voz, melodias e pratos.
+- **Zero Consumo em Segundo Plano:** Daemon e leitor de áudio em espera bloqueante sem wakeups de CPU.
+- **Transparência Elegante:** Capa do álbum e nome da música ainda mais translúcidos sobre o visualizador.
+- **Eficiência Térmica e de Bateria:** Economia inteligente durante pausas e momentos de silêncio.
