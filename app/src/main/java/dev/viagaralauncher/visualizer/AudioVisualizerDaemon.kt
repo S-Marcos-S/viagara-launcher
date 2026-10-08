@@ -136,15 +136,10 @@ object AudioVisualizerDaemon {
                     if (cmd == -1 || cmd == 'S'.code || cmd == 'Q'.code) {
                         return
                     } else if (cmd == 'P'.code) {
-                        if (!isPaused) {
-                            isPaused = true
-                            try { visualizer.enabled = false } catch (_: Throwable) {}
-                        }
+                        isPaused = true
                     } else if (cmd == 'R'.code) {
-                        if (isPaused) {
-                            isPaused = false
-                            try { visualizer.enabled = true } catch (_: Throwable) {}
-                        }
+                        isPaused = false
+                        silentFrameCount = 0
                     }
                 }
 
@@ -159,7 +154,6 @@ object AudioVisualizerDaemon {
                         return
                     } else if (cmd == 'R'.code) {
                         isPaused = false
-                        try { visualizer.enabled = true } catch (_: Throwable) {}
                         silentFrameCount = 0
                     }
                     continue
@@ -167,8 +161,16 @@ object AudioVisualizerDaemon {
 
                 val loopStartTime = System.currentTimeMillis()
 
-                val fftResult = visualizer.getFft(fftBuffer)
-                val waveResult = visualizer.getWaveForm(waveBuffer)
+                val fftResult = try {
+                    visualizer.getFft(fftBuffer)
+                } catch (_: Throwable) {
+                    Visualizer.ERROR
+                }
+                val waveResult = try {
+                    visualizer.getWaveForm(waveBuffer)
+                } catch (_: Throwable) {
+                    Visualizer.ERROR
+                }
 
                 var rms = 0f
                 var hasActiveBand = false
@@ -205,9 +207,8 @@ object AudioVisualizerDaemon {
                 }
 
                 // Adaptive idle silence throttle:
-                // 0..60 frames: active audio (~60 FPS, 16ms)
-                // 61..180 frames: initial silence (~20 FPS, 50ms) allows smooth ballistic decay and fade out
-                // > 180 frames: deep idle silence (~5 FPS, 200ms) near-zero CPU, instant wake-up on next audio beat
+                // Active audio: 16ms (~60 FPS)
+                // Prolonged silence (>1s): 33ms (~30 FPS) saves CPU while waking up instantly on next beat
                 if (!hasActiveBand && rms < 0.005f) {
                     if (silentFrameCount < 1000) silentFrameCount++
                 } else {
@@ -228,11 +229,7 @@ object AudioVisualizerDaemon {
                 outStream.write(packetBuffer.array())
                 outStream.flush()
 
-                val frameInterval = when {
-                    silentFrameCount > 180 -> 200L
-                    silentFrameCount > 60 -> 50L
-                    else -> FRAME_INTERVAL_MS
-                }
+                val frameInterval = if (silentFrameCount > 60) 33L else FRAME_INTERVAL_MS
                 val elapsed = System.currentTimeMillis() - loopStartTime
                 val sleepTime = frameInterval - elapsed
                 if (sleepTime > 0) {

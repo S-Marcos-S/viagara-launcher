@@ -117,6 +117,8 @@ object AudioVisualizerManager {
                 if (currentState != VisualizerState.STOPPED) {
                     return@withLock
                 }
+                isLauncherForeground = true
+                isHomeVisible = true
                 currentState = VisualizerState.STARTING
                 val gen = ++currentGeneration
 
@@ -381,7 +383,7 @@ object AudioVisualizerManager {
                 for (i in 0 until NUM_BANDS) {
                     val target = incomingBands[i].coerceIn(0f, 1f)
 
-                    if (target > 0.01f) activeSignal = true
+                    if (target > 0.005f) activeSignal = true
 
                     // 1. Asymmetric ballistics: responsive rise, graceful damped fall
                     val current = currentLevels[i]
@@ -400,12 +402,12 @@ object AudioVisualizerManager {
                     if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
                     peaksOut[i] = currentPeaks[i]
 
-                    if (bandsOut[i] > 0f || peaksOut[i] > 0f) {
+                    if (bandsOut[i] > 0.002f || peaksOut[i] > 0.002f) {
                         hasRemainingEnergy = true
                     }
                 }
 
-                val hasAudio = activeSignal || rms > 0.015f
+                val hasAudio = activeSignal || rms > 0.005f || hasRemainingEnergy
 
                 // Drop duplicate silent frames once the UI has decayed to rest state (0),
                 // completely eliminating Compose recomposition loops during silence.

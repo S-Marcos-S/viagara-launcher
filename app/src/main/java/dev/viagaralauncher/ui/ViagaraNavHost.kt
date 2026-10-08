@@ -216,7 +216,8 @@ fun ViagaraNavHost(
 
     DisposableEffect(navController) {
         val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-            val isHome = destination.route == "home"
+            val route = destination.route
+            val isHome = route == null || route == "home"
             dev.viagaralauncher.visualizer.AudioVisualizerManager.onHomeVisibilityChanged(isHome)
         }
         navController.addOnDestinationChangedListener(listener)
