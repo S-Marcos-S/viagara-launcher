@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.viagaralauncher.visualizer
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -19,86 +17,140 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
  * High-performance Jetpack Compose Audio Spectrum Visualizer.
- * Renders 24-32 logarithmic frequency bands with:
- * - Dynamic rounded bars (rounded pills)
- * - Independent floating peak markers
- * - Smooth 60 FPS transitions
- * - Seamless integration with Material 3 dynamic colors and wallpaper themes.
+ * Dynamically adapts to the host container (e.g. Now Playing widget) without fixed bounds:
+ * - Adapts bar count (16, 24, 32) and spacing dynamically to available canvas width
+ * - Samples/averages the 32 daemon frequency bands without modifying the backend daemon
+ * - Smooth entrance and exit alpha transitions on audio activity changes
+ * - Renders behind foreground content with subtle, readable transparency
+ * - Respects rounded corners and widget layout padding.
  */
 @Composable
 fun AudioVisualizerView(
     modifier: Modifier = Modifier,
-    height: Dp = 48.dp,
+    height: Dp = Dp.Unspecified,
     barColor: Color = MaterialTheme.colorScheme.primary,
     peakColor: Color = MaterialTheme.colorScheme.tertiary,
-    trackColor: Color = barColor.copy(alpha = 0.08f),
+    trackColor: Color = barColor.copy(alpha = 0.05f),
 ) {
     val frame by AudioVisualizerManager.frameFlow.collectAsState()
 
-    AnimatedVisibility(
-        visible = frame.hasAudio,
-        enter = fadeIn() + expandVertically(),
-        exit = fadeOut() + shrinkVertically(),
-    ) {
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(height)
+    val alphaAnim by animateFloatAsState(
+        targetValue = if (frame.hasAudio) 1f else 0f,
+        animationSpec = tween(durationMillis = 350),
+        label = "visualizerFade",
+    )
+
+    if (alphaAnim <= 0.001f) return
+
+    val boxModifier = if (height != Dp.Unspecified) {
+        modifier.fillMaxWidth().height(height)
+    } else {
+        modifier
+    }
+
+    Box(modifier = boxModifier) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = alphaAnim }
         ) {
-            Canvas(modifier = Modifier.matchParentSize()) {
-                val bands = frame.bands
-                val peaks = frame.peaks
-                val count = bands.size
-                if (count == 0) return@Canvas
+            val bands = frame.bands
+            val peaks = frame.peaks
+            val totalBands = bands.size
+            if (totalBands == 0) return@Canvas
 
-                val canvasWidth = size.width
-                val canvasHeight = size.height
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+            if (canvasWidth <= 0f || canvasHeight <= 0f) return@Canvas
 
-                val totalSpacing = canvasWidth * 0.28f
-                val spacing = totalSpacing / (count + 1)
-                val barWidth = (canvasWidth - totalSpacing) / count
-                val cornerRadius = CornerRadius(barWidth / 2f, barWidth / 2f)
-                val peakHeight = (barWidth * 0.7f).coerceIn(2f, 4.dp.toPx())
+            // Dynamic bar count selection based on available dp width
+            val densityDpWidth = canvasWidth / density
+            val targetCount = when {
+                densityDpWidth < 180f -> 16
+                densityDpWidth < 260f -> 24
+                else -> 32
+            }
 
-                for (i in 0 until count) {
-                    val x = spacing + i * (barWidth + spacing)
-                    val rawLevel = bands[i].coerceIn(0f, 1f)
-                    val peakLevel = peaks[i].coerceIn(0f, 1f)
+            // Downsample/aggregate 32 daemon frequency bands to targetCount bars cleanly
+            val displayBands = FloatArray(targetCount)
+            val displayPeaks = FloatArray(targetCount)
 
-                    val barHeight = (canvasHeight * rawLevel).coerceAtLeast(barWidth * 0.5f)
-                    val barTop = canvasHeight - barHeight
+            for (i in 0 until targetCount) {
+                val startBin = (i * totalBands) / targetCount
+                val endBin = (((i + 1) * totalBands) / targetCount).coerceAtLeast(startBin + 1)
+                var sumBand = 0f
+                var sumPeak = 0f
+                for (b in startBin until endBin) {
+                    sumBand += bands[b]
+                    sumPeak += peaks[b]
+                }
+                val binCount = (endBin - startBin).toFloat()
+                displayBands[i] = (sumBand / binCount).coerceIn(0f, 1f)
+                displayPeaks[i] = (sumPeak / binCount).coerceIn(0f, 1f)
+            }
 
-                    // 1. Dim track placeholder
+            // Internal horizontal margins to stay within rounded bounds & padding
+            val horizontalPadding = (12f * density).coerceAtMost(canvasWidth * 0.08f)
+            val usableWidth = (canvasWidth - 2 * horizontalPadding).coerceAtLeast(10f)
+
+            // Dynamic bar width and spacing
+            val spacingRatio = 0.38f
+            val rawBarWidth = usableWidth / (targetCount + (targetCount - 1) * spacingRatio)
+            val barWidth = rawBarWidth.coerceIn(2.5f * density, 8f * density)
+            val spacing = (barWidth * spacingRatio).coerceAtLeast(1.5f * density)
+            val totalBarsWidth = targetCount * barWidth + (targetCount - 1) * spacing
+            val startX = (canvasWidth - totalBarsWidth) / 2f
+
+            val cornerRadius = CornerRadius(barWidth / 2f, barWidth / 2f)
+            val peakHeight = (barWidth * 0.75f).coerceIn(2f * density, 4f * density)
+
+            // Vertical dimensions adapting dynamically to widget height
+            val bottomMargin = (4f * density).coerceAtMost(canvasHeight * 0.08f)
+            val baselineY = canvasHeight - bottomMargin
+            val maxBarHeight = (canvasHeight * 0.82f).coerceAtLeast(barWidth)
+
+            for (i in 0 until targetCount) {
+                val x = startX + i * (barWidth + spacing)
+                val rawLevel = displayBands[i]
+                val peakLevel = displayPeaks[i]
+
+                val barHeight = (maxBarHeight * rawLevel).coerceAtLeast(barWidth * 0.5f)
+                val barTop = baselineY - barHeight
+
+                // 1. Subtle track placeholder (optional background guide)
+                if (trackColor.alpha > 0f) {
                     drawRoundRect(
                         color = trackColor,
-                        topLeft = Offset(x, 0f),
-                        size = Size(barWidth, canvasHeight),
+                        topLeft = Offset(x, baselineY - maxBarHeight),
+                        size = Size(barWidth, maxBarHeight),
                         cornerRadius = cornerRadius,
                     )
+                }
 
-                    // 2. Active spectrum bar
+                // 2. Integrated background spectrum bar
+                val barAlpha = (0.28f + rawLevel * 0.35f).coerceIn(0.20f, 0.75f)
+                drawRoundRect(
+                    color = barColor.copy(alpha = barAlpha),
+                    topLeft = Offset(x, barTop),
+                    size = Size(barWidth, barHeight),
+                    cornerRadius = cornerRadius,
+                )
+
+                // 3. Floating peak indicator
+                if (peakLevel > 0.04f && peakLevel >= rawLevel) {
+                    val peakTop = (baselineY - (maxBarHeight * peakLevel) - peakHeight).coerceAtLeast(0f)
                     drawRoundRect(
-                        color = barColor.copy(alpha = (0.55f + rawLevel * 0.45f).coerceIn(0.55f, 1f)),
-                        topLeft = Offset(x, barTop),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = cornerRadius,
+                        color = peakColor.copy(alpha = 0.85f),
+                        topLeft = Offset(x, peakTop),
+                        size = Size(barWidth, peakHeight),
+                        cornerRadius = CornerRadius(peakHeight / 2f, peakHeight / 2f),
                     )
-
-                    // 3. Floating peak line/pill
-                    if (peakLevel > 0.04f && peakLevel >= rawLevel) {
-                        val peakTop = (canvasHeight - (canvasHeight * peakLevel) - peakHeight).coerceAtLeast(0f)
-                        drawRoundRect(
-                            color = peakColor.copy(alpha = 0.95f),
-                            topLeft = Offset(x, peakTop),
-                            size = Size(barWidth, peakHeight),
-                            cornerRadius = CornerRadius(peakHeight / 2f, peakHeight / 2f),
-                        )
-                    }
                 }
             }
         }

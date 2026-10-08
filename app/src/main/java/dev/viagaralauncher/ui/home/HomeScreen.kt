@@ -769,19 +769,7 @@ fun HomeScreen(
                 }
             }
 
-            // Real-time audio spectrum visualizer (Session 0)
-            if (audioVisualizerEnabled && !editMode) {
-                dev.viagaralauncher.visualizer.AudioVisualizerView(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = contentStart, end = contentEnd)
-                        .padding(bottom = 8.dp),
-                    barColor = contentColor.copy(alpha = 0.90f),
-                    peakColor = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            // Now Playing widget block: rendered below clock / widget and above favorites
+            // Now Playing widget block (with integrated spectrum visualizer): rendered below clock / widget and above favorites
             if (nowPlayingHasContent || (editMode && nowPlayingEnabled)) {
                 NowPlayingBlock(
                     editMode = editMode,
@@ -791,6 +779,7 @@ fun HomeScreen(
                     contentColor = contentColor,
                     sidePaddingDp = sidePaddingDp,
                     alignRight = alignRight,
+                    audioVisualizerEnabled = audioVisualizerEnabled,
                     contentStart = contentStart,
                     contentEnd = contentEnd,
                     padTop = padOf(PaddingSlot.NOW_PLAYING_TOP),
@@ -1741,6 +1730,7 @@ private fun NowPlayingBlock(
     contentColor: Color,
     sidePaddingDp: Int,
     alignRight: Boolean,
+    audioVisualizerEnabled: Boolean = false,
     padTop: Int,
     padBottom: Int,
     touchPosition: MutableState<Offset>,
@@ -1777,6 +1767,7 @@ private fun NowPlayingBlock(
             contentColor = contentColor,
             alignRight = alignRight,
             editMode = editMode,
+            audioVisualizerEnabled = audioVisualizerEnabled,
             onDismissPermissionPrompt = onDismissPermissionPrompt,
             modifier = Modifier
                 .fillMaxWidth()

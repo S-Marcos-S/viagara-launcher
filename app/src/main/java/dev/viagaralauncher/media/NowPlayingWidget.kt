@@ -101,6 +101,8 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import dev.viagaralauncher.R
 import androidx.compose.ui.res.stringResource
+import dev.viagaralauncher.visualizer.AudioVisualizerManager
+import dev.viagaralauncher.visualizer.AudioVisualizerView
 
 fun isListenerEnabled(context: Context) =
     NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
@@ -142,6 +144,7 @@ fun NowPlayingWidget(
     contentColor: Color = Color.White,
     alignRight: Boolean = false,
     editMode: Boolean = false,
+    audioVisualizerEnabled: Boolean = false,
     onDismissPermissionPrompt: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -477,6 +480,20 @@ fun NowPlayingWidget(
         (currentPosition.toFloat() / liveDuration.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
+    val visualizerFrame by AudioVisualizerManager.frameFlow.collectAsState()
+    val isVisualizerActive = audioVisualizerEnabled && !editMode && visualizerFrame.hasAudio
+
+    val titleAlpha by animateFloatAsState(
+        targetValue = if (isVisualizerActive) 0.88f else 1.0f,
+        animationSpec = tween(durationMillis = 350),
+        label = "nowPlayingTitleAlpha",
+    )
+    val artistAlpha by animateFloatAsState(
+        targetValue = if (isVisualizerActive) 0.60f else 0.70f,
+        animationSpec = tween(durationMillis = 350),
+        label = "nowPlayingArtistAlpha",
+    )
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -501,133 +518,151 @@ fun NowPlayingWidget(
         color = Color.Transparent,
         shape = RoundedCornerShape(16.dp),
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            verticalArrangement = Arrangement.Center,
+                .clip(RoundedCornerShape(16.dp)),
+            contentAlignment = Alignment.Center,
         ) {
-            val artBox: @Composable () -> Unit = {
-                Box(
-                    modifier = Modifier.size(artSize),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val art = current.art
-                    if (art != null) {
-                        Image(
-                            bitmap = art.asImageBitmap(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(8.dp)),
-                        )
-                    } else {
-                        Icon(
-                            Icons.Filled.MusicNote,
-                            contentDescription = null,
-                            tint = contentColor.copy(alpha = 0.7f),
-                            modifier = Modifier.size(artSize * 0.75f),
-                        )
-                    }
-                }
+            // Background Layer: Integrated Spectrum Visualizer
+            if (audioVisualizerEnabled && !editMode) {
+                AudioVisualizerView(
+                    modifier = Modifier.matchParentSize(),
+                    barColor = MaterialTheme.colorScheme.primary,
+                    peakColor = MaterialTheme.colorScheme.tertiary,
+                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.04f),
+                )
             }
 
-            val textColumn: @Composable (Modifier) -> Unit = { mod ->
-                Column(
-                    modifier = mod,
-                    horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
-                ) {
-                    Text(
-                        current.title.ifBlank { stringResource(R.string.now_playing_unknown_title) },
-                        color = contentColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = titleSp,
-                        textAlign = if (alignRight) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start,
-                    )
-                    Text(
-                        current.artist,
-                        color = contentColor.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = artistSp,
-                        textAlign = if (alignRight) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start,
-                    )
-                }
-            }
-
-            val controlsRow: @Composable () -> Unit = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TransportButton(
-                        Icons.Filled.SkipPrevious,
-                        stringResource(R.string.now_playing_previous),
-                        controlSize,
-                        contentColor,
-                    ) {
-                        current.controller.transportControls.skipToPrevious()
-                    }
-                    TransportButton(
-                        if (current.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        stringResource(R.string.now_playing_play_pause),
-                        controlSize,
-                        contentColor,
-                    ) {
-                        if (current.isPlaying) {
-                            current.controller.transportControls.pause()
-                        } else {
-                            current.controller.transportControls.play()
-                        }
-                    }
-                    TransportButton(
-                        Icons.Filled.SkipNext,
-                        stringResource(R.string.now_playing_next),
-                        controlSize,
-                        contentColor,
-                    ) {
-                        current.controller.transportControls.skipToNext()
-                    }
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (alignRight) {
-                    controlsRow()
-                    Spacer(Modifier.width(8.dp))
-                    textColumn(Modifier.weight(1f))
-                    Spacer(Modifier.width(16.dp))
-                    artBox()
-                } else {
-                    artBox()
-                    Spacer(Modifier.width(16.dp))
-                    textColumn(Modifier.weight(1f))
-                    Spacer(Modifier.width(8.dp))
-                    controlsRow()
-                }
-            }
-
-            Spacer(Modifier.height(4.dp))
-            MaterialExpressiveWavyProgressIndicator(
-                progress = progressFraction,
-                isPlaying = current.isPlaying,
-                isIndeterminate = isIndeterminate,
-                color = contentColor.copy(alpha = 0.85f),
-                trackColor = contentColor.copy(alpha = 0.20f),
-                onSeek = if (!isIndeterminate) { fraction ->
-                    val targetMs = (fraction * liveDuration).toLong()
-                    currentPosition = targetMs
-                    runCatching { current.controller.transportControls.seekTo(targetMs) }
-                } else null,
+            // Foreground Layer: Artwork, title/artist, controls and wavy scrubber
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(14.dp),
-            )
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                val artBox: @Composable () -> Unit = {
+                    Box(
+                        modifier = Modifier.size(artSize),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        val art = current.art
+                        if (art != null) {
+                            Image(
+                                bitmap = art.asImageBitmap(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(8.dp)),
+                            )
+                        } else {
+                            Icon(
+                                Icons.Filled.MusicNote,
+                                contentDescription = null,
+                                tint = contentColor.copy(alpha = 0.7f),
+                                modifier = Modifier.size(artSize * 0.75f),
+                            )
+                        }
+                    }
+                }
+
+                val textColumn: @Composable (Modifier) -> Unit = { mod ->
+                    Column(
+                        modifier = mod,
+                        horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
+                    ) {
+                        Text(
+                            current.title.ifBlank { stringResource(R.string.now_playing_unknown_title) },
+                            color = contentColor.copy(alpha = titleAlpha),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontSize = titleSp,
+                            textAlign = if (alignRight) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start,
+                        )
+                        Text(
+                            current.artist,
+                            color = contentColor.copy(alpha = artistAlpha),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontSize = artistSp,
+                            textAlign = if (alignRight) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start,
+                        )
+                    }
+                }
+
+                val controlsRow: @Composable () -> Unit = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TransportButton(
+                            Icons.Filled.SkipPrevious,
+                            stringResource(R.string.now_playing_previous),
+                            controlSize,
+                            contentColor,
+                        ) {
+                            current.controller.transportControls.skipToPrevious()
+                        }
+                        TransportButton(
+                            if (current.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            stringResource(R.string.now_playing_play_pause),
+                            controlSize,
+                            contentColor,
+                        ) {
+                            if (current.isPlaying) {
+                                current.controller.transportControls.pause()
+                            } else {
+                                current.controller.transportControls.play()
+                            }
+                        }
+                        TransportButton(
+                            Icons.Filled.SkipNext,
+                            stringResource(R.string.now_playing_next),
+                            controlSize,
+                            contentColor,
+                        ) {
+                            current.controller.transportControls.skipToNext()
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (alignRight) {
+                        controlsRow()
+                        Spacer(Modifier.width(8.dp))
+                        textColumn(Modifier.weight(1f))
+                        Spacer(Modifier.width(16.dp))
+                        artBox()
+                    } else {
+                        artBox()
+                        Spacer(Modifier.width(16.dp))
+                        textColumn(Modifier.weight(1f))
+                        Spacer(Modifier.width(8.dp))
+                        controlsRow()
+                    }
+                }
+
+                Spacer(Modifier.height(4.dp))
+                MaterialExpressiveWavyProgressIndicator(
+                    progress = progressFraction,
+                    isPlaying = current.isPlaying,
+                    isIndeterminate = isIndeterminate,
+                    color = contentColor.copy(alpha = 0.85f),
+                    trackColor = contentColor.copy(alpha = 0.20f),
+                    onSeek = if (!isIndeterminate) { fraction ->
+                        val targetMs = (fraction * liveDuration).toLong()
+                        currentPosition = targetMs
+                        runCatching { current.controller.transportControls.seekTo(targetMs) }
+                    } else null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(14.dp),
+                )
+            }
         }
     }
 }
