@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.84
+### 🚀 Novidades da Versão v0.59.85
 
-- **Pipeline Espectral Fiel ao SDWMP3:** Magnitude linear direta (/128) agrupada nas 4 zonas (Sub, Bass, Mid, High) sem conversões em dB.
-- **Noise Gate Real (0.01):** Corte estrito de ruído residual antes do ganho garantindo repouso total em silêncio.
-- **Balística Analógica Direta:** Ataque imediato (0.70) para transientes e decaimento musical suave (0.18) com picos assintóticos (0.015).
+- **Correção de Saturação Espectral:** Ganhos zonais lineares recalibrados (Sub 1.0, Bass 1.05, Mid 1.10, High 1.20) eliminando o travamento das barras no topo.
+- **Preservação de Faixa Dinâmica:** Diferenciação proporcional entre graves suaves e batidas fortes sem saturação precoce.
+- **Resposta Equilibrada:** Barras mantêm contraste natural sem distorção espectral ou compressão artificial.

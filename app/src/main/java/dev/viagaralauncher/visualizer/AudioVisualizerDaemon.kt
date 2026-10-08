@@ -225,12 +225,12 @@ object AudioVisualizerDaemon {
             // Noise floor cutoff from SDWMP3_CN: values below 1% are strict zero
             val raw = if (avgMag < 0.01f) 0f else avgMag
 
-            // Proportional linear scale matching SDWMP3_CN dynamics (oboe_bridge gain & 1/f compensation)
+            // Linear scale avoiding saturation and preserving spectral dynamic range
             val gain = when {
-                i <= 7 -> 3.0f   // Sub-bass (drums/kicks)
-                i <= 17 -> 3.5f  // Bass punch
-                i <= 25 -> 3.2f  // Midrange
-                else -> 4.5f     // High frequencies (compensates acoustic 1/f roll-off)
+                i <= 7 -> 1.00f   // Sub-bass (drums/kicks fundamental): 1:1 scale avoids saturation on heavy bass
+                i <= 17 -> 1.05f  // Bass punch (100-450 Hz)
+                i <= 25 -> 1.10f  // Midrange (vocal & instrument presence)
+                else -> 1.20f     // High frequencies (gentle balance without artificial distortion)
             }
 
             outBands[i] = (raw * gain).coerceIn(0f, 1f)
