@@ -7,7 +7,6 @@ import android.net.LocalSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -93,6 +92,9 @@ object AudioVisualizerManager {
     private var daemonPid: Int = -1
 
     // Ballistic physics state ported from SDWMP3_CN
+    // Guarded by ballisticsLock: written by readerJob (Dispatchers.Default),
+    // read/cleared by syncPlaybackStateLocked and stop (lifecycleMutex coroutines).
+    private val ballisticsLock = Any()
     private val currentLevels = FloatArray(NUM_BANDS)
     private val currentPeaks = FloatArray(NUM_BANDS)
 
@@ -144,8 +146,10 @@ object AudioVisualizerManager {
                 cleanupDaemonLocked(gen)
 
                 withContext(Dispatchers.Default) {
-                    currentLevels.fill(0f)
-                    currentPeaks.fill(0f)
+                    synchronized(ballisticsLock) {
+                        currentLevels.fill(0f)
+                        currentPeaks.fill(0f)
+                    }
                     _frameFlow.value = VisualizerFrame()
                 }
 
@@ -192,8 +196,10 @@ object AudioVisualizerManager {
                 currentState = VisualizerState.PAUSED
                 sendControlCommand('P')
                 withContext(Dispatchers.Default) {
-                    currentLevels.fill(0f)
-                    currentPeaks.fill(0f)
+                    synchronized(ballisticsLock) {
+                        currentLevels.fill(0f)
+                        currentPeaks.fill(0f)
+                    }
                     _frameFlow.value = VisualizerFrame()
                 }
             }
@@ -380,30 +386,32 @@ object AudioVisualizerManager {
 
                 var hasRemainingEnergy = false
 
-                for (i in 0 until NUM_BANDS) {
-                    val target = incomingBands[i].coerceIn(0f, 1f)
+                synchronized(ballisticsLock) {
+                    for (i in 0 until NUM_BANDS) {
+                        val target = incomingBands[i].coerceIn(0f, 1f)
 
-                    if (target > 0.005f) activeSignal = true
+                        if (target > 0.005f) activeSignal = true
 
-                    // 1. Asymmetric ballistics: responsive rise, graceful damped fall
-                    val current = currentLevels[i]
-                    val alpha = if (target >= current) riseAlpha else fallAlpha
-                    currentLevels[i] = current + (target - current) * alpha
-                    if (currentLevels[i] < 0.002f) currentLevels[i] = 0f
-                    bandsOut[i] = currentLevels[i]
+                        // 1. Asymmetric ballistics: responsive rise, graceful damped fall
+                        val current = currentLevels[i]
+                        val alpha = if (target >= current) riseAlpha else fallAlpha
+                        currentLevels[i] = current + (target - current) * alpha
+                        if (currentLevels[i] < 0.002f) currentLevels[i] = 0f
+                        bandsOut[i] = currentLevels[i]
 
-                    // 2. Peak physics: instant rise, continuous asymptotic fall
-                    val v = currentLevels[i]
-                    if (v >= currentPeaks[i]) {
-                        currentPeaks[i] = v
-                    } else {
-                        currentPeaks[i] += (v - currentPeaks[i]) * peakFallAlpha
-                    }
-                    if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
-                    peaksOut[i] = currentPeaks[i]
+                        // 2. Peak physics: instant rise, continuous asymptotic fall
+                        val v = currentLevels[i]
+                        if (v >= currentPeaks[i]) {
+                            currentPeaks[i] = v
+                        } else {
+                            currentPeaks[i] += (v - currentPeaks[i]) * peakFallAlpha
+                        }
+                        if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
+                        peaksOut[i] = currentPeaks[i]
 
-                    if (bandsOut[i] > 0.002f || peaksOut[i] > 0.002f) {
-                        hasRemainingEnergy = true
+                        if (bandsOut[i] > 0.002f || peaksOut[i] > 0.002f) {
+                            hasRemainingEnergy = true
+                        }
                     }
                 }
 

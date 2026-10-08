@@ -21,9 +21,9 @@ import kotlin.math.sqrt
 /**
  * Privileged daemon executed via app_process64 as UID 0 (root).
  * Captures system-wide audio output using global session 0,
- * calculates 4 acoustic frequency bands (Sub, Bass, Mid, High) matching Oboe DSP,
- * applies spectral Parseval RMS, persistent EMA (alpha = 0.20), uniform gain (6.0),
- * and feeds the 14-strip VuMixer distribution over an abstract LocalSocket.
+ * calculates 14 logarithmic acoustic frequency bands (25 Hz – 18.5 kHz),
+ * applies spectral Parseval RMS per band, fast EMA (alpha = 0.35) for punchy transients,
+ * uniform gain (1.25×), and streams packets over an abstract LocalSocket.
  *
  * Command protocol (from Launcher to Daemon):
  * - 'P' : Pause visualizer (disables capture, sleeps, stops sending packets)
@@ -102,12 +102,13 @@ object AudioVisualizerDaemon {
 
             val bandStartBins = IntArray(NUM_BANDS)
             val bandEndBins = IntArray(NUM_BANDS)
+            val maxValidBin = actualCaptureSize / 2 - 1  // highest valid FFT bin for this device
             var lastEndBin = 0
             for (b in 0 until NUM_BANDS) {
                 val start = max(lastEndBin + 1, (bandFreqs[b] / binWidth).roundToInt())
                 val end = max(start, (bandFreqs[b + 1] / binWidth).roundToInt())
                 bandStartBins[b] = start
-                bandEndBins[b] = min(511, end)
+                bandEndBins[b] = min(maxValidBin, end)
                 lastEndBin = bandEndBins[b]
             }
 
@@ -260,7 +261,7 @@ object AudioVisualizerDaemon {
      */
     private fun computeBandRms(fft: ByteArray, startBin: Int, endBin: Int): Float {
         var sumPower = 0.0
-        val maxK = min(511, endBin)
+        val maxK = min(fft.size / 2 - 1, endBin)
 
         for (k in startBin..maxK) {
             val re: Float

@@ -1,5 +1,6 @@
-### 🚀 Novidades da Versão v0.59.95
+### 🔧 Correções Técnicas v0.59.95
 
-- **Correção no Visualizador:** Restauração da renderização das barras e prevenção de encerramento do daemon na pausa.
-- **Ciclo de Vida Estável:** Inicialização e navegação corrigidas para evitar pausa indevida na tela inicial.
-- **Sensibilidade Aperfeiçoada:** Detecção de áudio e decaimento calibrados para exibição contínua e suave.
+- **Segurança de threads:** Race condition nos arrays de balística eliminada com lock dedicado.
+- **Bounds do FFT:** Clamp de bin corrigido para respeitar o `captureSize` real do dispositivo.
+- **Docstring atualizada:** Daemon documentado com valores reais (14 bandas, alpha=0.35, gain=1.25×).
+- **Import morto removido:** `kotlinx.coroutines.delay` não utilizado eliminado do Manager.
