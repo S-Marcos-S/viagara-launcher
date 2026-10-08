@@ -8,15 +8,16 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
  * Privileged daemon executed via app_process64 as UID 0 (root).
  * Captures system-wide audio output using global session 0,
- * calculates 32 logarithmic frequency bands from 1024-point FFT,
- * and streams binary packets to the launcher UI over an abstract LocalSocket.
+ * faithfully reproduces SDWMP3_CN 4-zone spectrum extraction, EMA temporal smoothing,
+ * and 14-strip sinusoidal jittered distribution, and streams binary packets
+ * to the launcher UI over an abstract LocalSocket.
  *
  * Command protocol (from Launcher to Daemon):
  * - 'P' : Pause visualizer (disables capture, sleeps, stops sending packets)
@@ -27,7 +28,7 @@ object AudioVisualizerDaemon {
 
     private const val SOCKET_NAME = "viagara_audio_viz"
     private const val CAPTURE_SIZE = 1024
-    private const val NUM_BANDS = 32
+    private const val NUM_BANDS = 14
     private const val FRAME_INTERVAL_MS = 16L // ~60 FPS
 
     @JvmStatic
@@ -67,13 +68,17 @@ object AudioVisualizerDaemon {
             val waveBuffer = ByteArray(CAPTURE_SIZE)
             val magnitudes = FloatArray(NUM_BANDS)
 
-            val bandEdges = computeSdwBandEdges(CAPTURE_SIZE)
-
             val packetBuffer = ByteBuffer.allocate(4 + 1 + 4 + (NUM_BANDS * 4)).apply {
                 order(ByteOrder.LITTLE_ENDIAN)
             }
 
             var isPaused = false
+            var frameSeed = 0L
+
+            var emaSub = 0f
+            var emaBass = 0f
+            var emaMid = 0f
+            var emaHigh = 0f
 
             while (true) {
                 // 1. Process control commands from launcher
@@ -105,15 +110,77 @@ object AudioVisualizerDaemon {
                 val fftResult = visualizer.getFft(fftBuffer)
                 val waveResult = visualizer.getWaveForm(waveBuffer)
 
+                var rms = 0f
+
                 if (fftResult == Visualizer.SUCCESS) {
-                    processFftToBands(fftBuffer, bandEdges, magnitudes)
+                    val n = fftBuffer.size / 2 // 512 pairs
+                    var s = 0f
+                    var b = 0f
+                    var m = 0f
+                    var h = 0f
+                    var cs = 0
+                    var cb = 0
+                    var cm = 0
+                    var ch = 0
+
+                    val subEnd = (n * 0.08f).toInt().coerceAtLeast(1)   // 40
+                    val bassEnd = (n * 0.20f).toInt().coerceAtLeast(2)  // 102
+                    val midEnd = (n * 0.55f).toInt().coerceAtLeast(4)   // 281
+
+                    for (i in 0 until n step 2) {
+                        val re = fftBuffer[i].toFloat() / 128f
+                        val im = if (i + 1 < fftBuffer.size) fftBuffer[i + 1].toFloat() / 128f else 0f
+                        val mag = sqrt(re * re + im * im)
+                        if (i < subEnd) {
+                            s += mag
+                            cs++
+                        } else if (i < bassEnd) {
+                            b += mag
+                            cb++
+                        } else if (i < midEnd) {
+                            m += mag
+                            cm++
+                        } else {
+                            h += mag
+                            ch++
+                        }
+                    }
+
+                    val sv = (s / maxOf(1, cs)).coerceIn(0f, 1f)
+                    val bv = (b / maxOf(1, cb)).coerceIn(0f, 1f)
+                    val mv = (m / maxOf(1, cm)).coerceIn(0f, 1f)
+                    val hv = (h / maxOf(1, ch)).coerceIn(0f, 1f)
+
+                    // SDWMP3_CN PlayerScreen.kt EMA (alpha = 0.15f)
+                    emaSub = emaSub * 0.85f + sv * 0.15f
+                    emaBass = emaBass * 0.85f + bv * 0.15f
+                    emaMid = emaMid * 0.85f + mv * 0.15f
+                    emaHigh = emaHigh * 0.85f + hv * 0.15f
+
+                    // SDWMP3_CN PlayerScreen.kt RMS calculation
+                    rms = (emaSub * 0.3f + emaBass * 0.4f + emaMid * 0.2f + emaHigh * 0.1f)
+
+                    // SDWMP3_CN VuMeter.kt (VuMixer) 14 strips expansion
+                    frameSeed++
+                    val isActive = (emaSub > 0.005f || emaBass > 0.005f || emaMid > 0.005f || emaHigh > 0.005f)
+
+                    for (i in 0 until NUM_BANDS) {
+                        val bi = (i * 24 / NUM_BANDS).coerceIn(0, 23)
+                        val raw = when {
+                            bi < 6 -> emaSub
+                            bi < 14 -> emaBass
+                            bi < 20 -> emaMid
+                            else -> emaHigh
+                        }
+                        val target = if (isActive) jittered(raw, bi, 24, frameSeed) else 0f
+                        magnitudes[i] = target
+                    }
                 } else {
                     magnitudes.fill(0f)
+                    if (waveResult == Visualizer.SUCCESS) {
+                        rms = computeWaveRms(waveBuffer)
+                    }
                 }
-
-                val rms = if (waveResult == Visualizer.SUCCESS) {
-                    computeWaveRms(waveBuffer)
-                } else 0f
 
                 packetBuffer.clear()
                 packetBuffer.put('V'.code.toByte())
@@ -122,8 +189,8 @@ object AudioVisualizerDaemon {
                 packetBuffer.put('1'.code.toByte())
                 packetBuffer.put(NUM_BANDS.toByte())
                 packetBuffer.putFloat(rms)
-                for (b in 0 until NUM_BANDS) {
-                    packetBuffer.putFloat(magnitudes[b])
+                for (bandIndex in 0 until NUM_BANDS) {
+                    packetBuffer.putFloat(magnitudes[bandIndex])
                 }
 
                 outStream.write(packetBuffer.array())
@@ -137,21 +204,11 @@ object AudioVisualizerDaemon {
             }
         } catch (_: Throwable) {
         } finally {
-            try {
-                visualizer?.enabled = false
-            } catch (_: Throwable) {}
-            try {
-                visualizer?.release()
-            } catch (_: Throwable) {}
-            try {
-                inStream?.close()
-            } catch (_: Throwable) {}
-            try {
-                outStream?.close()
-            } catch (_: Throwable) {}
-            try {
-                socket?.close()
-            } catch (_: Throwable) {}
+            try { visualizer?.enabled = false } catch (_: Throwable) {}
+            try { visualizer?.release() } catch (_: Throwable) {}
+            try { inStream?.close() } catch (_: Throwable) {}
+            try { outStream?.close() } catch (_: Throwable) {}
+            try { socket?.close() } catch (_: Throwable) {}
         }
     }
 
@@ -165,75 +222,23 @@ object AudioVisualizerDaemon {
         return min(1.0, sqrt(mean) / 128.0).toFloat()
     }
 
-    private data class BandEdge(val startBin: Int, val endBin: Int)
-
     /**
-     * Maps 512 FFT bins into 32 bands adhering strictly to SDWMP3_CN frequency zones:
-     * - Sub (0% .. 8% of bins: 1..40)     -> 8 bands (bands 0..7)
-     * - Bass (8% .. 20% of bins: 41..102)  -> 10 bands (bands 8..17)
-     * - Mid (20% .. 55% of bins: 103..281) -> 8 bands (bands 18..25)
-     * - High (55% .. 100% of bins: 282..511) -> 6 bands (bands 26..31)
+     * SDWMP3_CN VuMeter.kt jittered implementation:
+     * - Strict noise gate: if v < 0.01f -> 0f
+     * - Sinusoidal shape across frequency position
+     * - Deterministic trig hash avoiding random allocations
      */
-    private fun computeSdwBandEdges(captureSize: Int): Array<BandEdge> {
-        val maxBin = (captureSize / 2) - 1 // 511
-        val edges = ArrayList<BandEdge>(NUM_BANDS)
-
-        fun addZone(startBin: Int, endBin: Int, count: Int) {
-            val total = endBin - startBin + 1
-            for (i in 0 until count) {
-                val bStart = startBin + (i * total) / count
-                val bEnd = (startBin + ((i + 1) * total) / count - 1).coerceAtLeast(bStart)
-                edges.add(BandEdge(bStart, bEnd))
-            }
+    private fun jittered(v: Float, barIndex: Int, totalBars: Int, frameSeed: Long): Float {
+        if (v < 0.01f) return 0f
+        val pos = barIndex.toFloat() / (totalBars - 1)
+        val shape = when {
+            pos < 0.25f -> 0.6f + 0.4f * sin(pos * Math.PI.toFloat() * 4f)
+            pos < 0.45f -> 1.0f - 0.15f * sin(pos * Math.PI.toFloat() * 2.5f)
+            pos < 0.65f -> 0.85f + 0.15f * sin(pos * Math.PI.toFloat() * 3f)
+            else -> 0.7f + 0.3f * sin(pos * Math.PI.toFloat() * 5f + frameSeed * 0.1f)
         }
-
-        addZone(1, 40, 8)       // Sub-bass
-        addZone(41, 102, 10)    // Bass
-        addZone(103, 281, 8)    // Midrange
-        addZone(282, maxBin, 6) // High frequencies
-
-        return edges.toTypedArray()
-    }
-
-    /**
-     * SDWMP3_CN Linear Spectrum Analysis:
-     * 1. Linear normalized magnitude: re = fft[2k]/128, im = fft[2k+1]/128, mag = sqrt(re^2 + im^2)
-     * 2. Band magnitude = arithmetic mean of bin magnitudes
-     * 3. Noise floor cutoff: if mag < 0.01f -> 0f (SDWMP3_CN strict silence)
-     * 4. SDWMP3_CN proportional scaling with 1/f high frequency compensation
-     */
-    private fun processFftToBands(
-        fft: ByteArray,
-        bandEdges: Array<BandEdge>,
-        outBands: FloatArray,
-    ) {
-        for (i in bandEdges.indices) {
-            val edge = bandEdges[i]
-            var sumMagnitude = 0f
-            var count = 0
-
-            for (k in edge.startBin..edge.endBin) {
-                val real = fft[2 * k].toFloat() / 128f
-                val imag = fft[2 * k + 1].toFloat() / 128f
-                val mag = sqrt(real * real + imag * imag)
-                sumMagnitude += mag
-                count++
-            }
-
-            val avgMag = if (count > 0) sumMagnitude / count else 0f
-
-            // Noise floor cutoff from SDWMP3_CN: values below 1% are strict zero
-            val raw = if (avgMag < 0.01f) 0f else avgMag
-
-            // Linear scale avoiding saturation and preserving spectral dynamic range
-            val gain = when {
-                i <= 7 -> 1.00f   // Sub-bass (drums/kicks fundamental): 1:1 scale avoids saturation on heavy bass
-                i <= 17 -> 1.05f  // Bass punch (100-450 Hz)
-                i <= 25 -> 1.10f  // Midrange (vocal & instrument presence)
-                else -> 1.20f     // High frequencies (gentle balance without artificial distortion)
-            }
-
-            outBands[i] = (raw * gain).coerceIn(0f, 1f)
-        }
+        val h = sin((barIndex * 7919 + frameSeed % 1009).toFloat() * 0.73f) * 0.5f + 0.5f
+        val jitter = 0.85f + h * 0.30f
+        return (v * shape * jitter).coerceIn(0f, 1f)
     }
 }

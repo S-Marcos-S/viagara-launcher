@@ -24,11 +24,11 @@ import java.nio.ByteOrder
 
 
 /**
- * Visualizer spectrum frame containing 32 smooth frequency bands and floating peak positions.
+ * Visualizer spectrum frame containing 14 smooth frequency bands and floating peak positions.
  */
 data class VisualizerFrame(
-    val bands: FloatArray = FloatArray(32),
-    val peaks: FloatArray = FloatArray(32),
+    val bands: FloatArray = FloatArray(14),
+    val peaks: FloatArray = FloatArray(14),
     val rms: Float = 0f,
     val hasAudio: Boolean = false,
 ) {
@@ -72,7 +72,7 @@ private enum class VisualizerState {
 object AudioVisualizerManager {
 
     private const val SOCKET_NAME = "viagara_audio_viz"
-    private const val NUM_BANDS = 32
+    private const val NUM_BANDS = 14
 
     private val _frameFlow = MutableStateFlow(VisualizerFrame())
     val frameFlow: StateFlow<VisualizerFrame> = _frameFlow.asStateFlow()
@@ -97,11 +97,9 @@ object AudioVisualizerManager {
     private val currentPeaks = FloatArray(NUM_BANDS)
 
     // --- SDWMP3_CN Ballistics Constants ---
-    // Fast attack (0.70f): instantaneous response to beats/kicks
-    // Musical decay (0.18f): smooth exponential release matching SDWMP3_CN EMA
+    // Smooth(alpha = 0.70f): exact ballistic filter from VuMeter.kt (VuMixer)
     // Peak descent (0.015f): continuous asymptotic fall
-    private const val ATTACK_ALPHA = 0.70f
-    private const val DECAY_ALPHA = 0.18f
+    private const val SMOOTH_ALPHA = 0.70f
     private const val PEAK_FALL_ALPHA = 0.015f
 
     fun start(context: Context) {
@@ -289,7 +287,7 @@ object AudioVisualizerManager {
     private fun startReaderLoop(inputStream: InputStream) {
         readerJob?.cancel()
         readerJob = scope.launch(Dispatchers.Default) {
-            val packetSize = 4 + 1 + 4 + (NUM_BANDS * 4) // 137 bytes
+            val packetSize = 4 + 1 + 4 + (NUM_BANDS * 4) // 65 bytes
             val rawBytes = ByteArray(packetSize)
             val byteBuffer = ByteBuffer.wrap(rawBytes).order(ByteOrder.LITTLE_ENDIAN)
             val incomingBands = FloatArray(NUM_BANDS)
@@ -327,7 +325,7 @@ object AudioVisualizerManager {
                     incomingBands[b] = byteBuffer.float
                 }
 
-                // Directly consume incoming 32 linear frequency bands from daemon
+                // Directly consume incoming 14 linear frequency strips from daemon
                 var activeSignal = false
                 val bandsOut = FloatArray(NUM_BANDS)
                 val peaksOut = FloatArray(NUM_BANDS)
@@ -335,19 +333,14 @@ object AudioVisualizerManager {
                 for (i in 0 until NUM_BANDS) {
                     val target = incomingBands[i].coerceIn(0f, 1f)
 
-                    if (target > 0.015f) activeSignal = true
+                    if (target > 0.01f) activeSignal = true
 
-                    // 1. SDWMP3_CN Ballistics (Attack & Decay)
-                    if (target >= currentLevels[i]) {
-                        currentLevels[i] += (target - currentLevels[i]) * ATTACK_ALPHA
-                    } else {
-                        currentLevels[i] += (target - currentLevels[i]) * DECAY_ALPHA
-                    }
+                    // 1. SDWMP3_CN Ballistics: Smooth(alpha = 0.70f)
+                    currentLevels[i] += (target - currentLevels[i]) * SMOOTH_ALPHA
                     if (currentLevels[i] < 0.002f) currentLevels[i] = 0f
                     bandsOut[i] = currentLevels[i]
 
-                    // 2. SDWMP3_CN Peak Physics: instant rise, slow asymptotic fall
-                    // if (current >= peak) peak = current else peak += (current - peak) * 0.015f
+                    // 2. SDWMP3_CN Peak Physics: instant rise, continuous asymptotic fall (0.015f)
                     val v = currentLevels[i]
                     if (v >= currentPeaks[i]) {
                         currentPeaks[i] = v

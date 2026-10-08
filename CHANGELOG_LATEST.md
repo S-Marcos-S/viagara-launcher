@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.85
+### 🚀 Novidades da Versão v0.59.86
 
-- **Correção de Saturação Espectral:** Ganhos zonais lineares recalibrados (Sub 1.0, Bass 1.05, Mid 1.10, High 1.20) eliminando o travamento das barras no topo.
-- **Preservação de Faixa Dinâmica:** Diferenciação proporcional entre graves suaves e batidas fortes sem saturação precoce.
-- **Resposta Equilibrada:** Barras mantêm contraste natural sem distorção espectral ou compressão artificial.
+- **Port Fiel do SDWMP3_CN:** Pipeline espectral de 4 zonas (Sub, Bass, Mid, High) com EMA (0.15) e expansão em 14 strips estéreo idêntica ao VuMixer.
+- **Balística e Suavização Oficiais:** Filtro de atenuação Smooth (0.70f) e queda assintótica de pico (0.015f) sem ganhos zonais artificiais.
+- **Renderização em Canal Duplo:** 14 pares de barras (L/R) com atenuação suave do canal direito e marcadores flutuantes de pico.
