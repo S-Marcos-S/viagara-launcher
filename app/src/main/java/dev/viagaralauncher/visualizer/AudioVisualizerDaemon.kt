@@ -80,13 +80,13 @@ object AudioVisualizerDaemon {
             val sampleRateHz = if (rawSampleRate > 0) rawSampleRate / 1000 else 48000
             val binWidth = sampleRateHz.toFloat() / actualCaptureSize.toFloat()
 
-            // Acoustic frequency bands (matching Oboe DSP cutoffs):
-            // Sub:  0 - 60 Hz
-            // Bass: 60 - 250 Hz
+            // Acoustic frequency bands:
+            // Sub:  0 - 90 Hz (captures fundamental kick & 808 sub frequencies)
+            // Bass: 90 - 250 Hz
             // Mid:  250 - 2000 Hz
             // High: 2000 - 20000 Hz
             val subStartBin = 0
-            val subEndBin = max(1, (60.0f / binWidth).roundToInt())
+            val subEndBin = max(1, (90.0f / binWidth).roundToInt())
 
             val bassStartBin = subEndBin + 1
             val bassEndBin = max(bassStartBin, (250.0f / binWidth).roundToInt())
@@ -178,13 +178,16 @@ object AudioVisualizerDaemon {
                     emaMid  = emaMid  * 0.80f + rawMid  * 0.20f
                     emaHigh = emaHigh * 0.80f + rawHigh * 0.20f
 
-                    // Natural 1:1 scale (Parseval band energy is already full-scale [0..1])
-                    // Uniform gain = 1.0f across all bands, avoiding saturation clipping
-                    val gain = 1.0f
-                    val finalSub  = min(1.0f, emaSub  * gain)
-                    val finalBass = min(1.0f, emaBass * gain)
-                    val finalMid  = min(1.0f, emaMid  * gain)
-                    val finalHigh = min(1.0f, emaHigh * gain)
+                    // Calibrated acoustic gains: Sub (2.4x) and Bass (1.35x) bring low-end
+                    // to parity with Mid (1.0x) and High (1.1x), avoiding recessed bass bars.
+                    val gainSub  = 2.4f
+                    val gainBass = 1.35f
+                    val gainMid  = 1.0f
+                    val gainHigh = 1.1f
+                    val finalSub  = min(1.0f, emaSub  * gainSub)
+                    val finalBass = min(1.0f, emaBass * gainBass)
+                    val finalMid  = min(1.0f, emaMid  * gainMid)
+                    val finalHigh = min(1.0f, emaHigh * gainHigh)
 
                     // Waveform RMS
                     rms = if (waveResult == Visualizer.SUCCESS) {

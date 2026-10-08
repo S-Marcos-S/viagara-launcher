@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.88
+### 🚀 Novidades da Versão v0.59.89
 
-- **Ganho Uniforme 1:1:** Calibração da escala linear em 1.0f para eliminar saturação no teto.
-- **Dinâmica Espectral Equilibrada:** Resposta proporcional e viva para graves, médios e agudos sem clipping.
-- **Ajuste de Diagnóstico:** Monitoramento espectral otimizado no daemon.
+- **Graves e Subgraves Reforçados:** Ajuste da frequência de corte de subgraves para 90Hz e ganhos calibrados (Sub 2.4x, Bass 1.35x).
+- **Elevação e Presença das Linhas:** Resposta de impacto nos primeiros blocos de barras sem recuo visual.
+- **Equilíbrio Espectral Completo:** Harmonia entre graves ativos, médios expressivos e agudos detalhados.
