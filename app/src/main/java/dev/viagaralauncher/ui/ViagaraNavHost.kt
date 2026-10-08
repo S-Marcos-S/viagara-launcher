@@ -200,6 +200,7 @@ fun ViagaraNavHost(
     val widgetHeightDp by app.prefs.widgetHeightDp.collectAsState(initial = 180)
     val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = true)
     val audioVisualizerEnabled by app.prefs.audioVisualizerEnabled.collectAsState(initial = false)
+    val audioVisualizerSpeed by app.prefs.audioVisualizerSpeed.collectAsState(initial = 0.50f)
 
     LaunchedEffect(audioVisualizerEnabled) {
         if (audioVisualizerEnabled) {
@@ -207,6 +208,9 @@ fun ViagaraNavHost(
         } else {
             dev.viagaralauncher.visualizer.AudioVisualizerManager.stop()
         }
+    }
+    LaunchedEffect(audioVisualizerSpeed) {
+        dev.viagaralauncher.visualizer.AudioVisualizerManager.setSpeed(audioVisualizerSpeed)
     }
     val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
     val folderWindowPopup by app.prefs.folderWindowPopup.collectAsState(initial = true)
@@ -463,6 +467,8 @@ fun ViagaraNavHost(
                 nowPlayingEnabled = nowPlayingEnabled,
                 audioVisualizerEnabled = audioVisualizerEnabled,
                 onSetAudioVisualizerEnabled = { scope.launch { app.prefs.setAudioVisualizerEnabled(it) } },
+                audioVisualizerSpeed = audioVisualizerSpeed,
+                onSetAudioVisualizerSpeed = { scope.launch { app.prefs.setAudioVisualizerSpeed(it) } },
                 nowPlayingListenerEnabled = listenerEnabled,
                 showAppNotifications = showAppNotifications,
                 onSetShowAppNotifications = { scope.launch { app.prefs.setShowAppNotifications(it) } },

@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.89
+### 🚀 Novidades da Versão v0.59.90
 
-- **Graves e Subgraves Reforçados:** Ajuste da frequência de corte de subgraves para 90Hz e ganhos calibrados (Sub 2.4x, Bass 1.35x).
-- **Elevação e Presença das Linhas:** Resposta de impacto nos primeiros blocos de barras sem recuo visual.
-- **Equilíbrio Espectral Completo:** Harmonia entre graves ativos, médios expressivos e agudos detalhados.
+- **Ajustador de Velocidade:** Controle deslizante em Configurações > Reproduzindo Agora para calibrar a velocidade do visualizador (20% a 100%).
+- **Balística Suave e Amortecida:** Subida ágil nos impactos e descida com amortecimento, eliminando oscilações frenéticas.
+- **Transições Confortáveis:** Movimento fluido e relaxante para as 14 barras do espectro de áudio.

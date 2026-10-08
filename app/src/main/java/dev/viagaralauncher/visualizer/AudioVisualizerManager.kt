@@ -96,11 +96,12 @@ object AudioVisualizerManager {
     private val currentLevels = FloatArray(NUM_BANDS)
     private val currentPeaks = FloatArray(NUM_BANDS)
 
-    // --- SDWMP3_CN Ballistics Constants ---
-    // Smooth(alpha = 0.70f): exact ballistic filter from VuMeter.kt (VuMixer)
-    // Peak descent (0.015f): continuous asymptotic fall
-    private const val SMOOTH_ALPHA = 0.70f
-    private const val PEAK_FALL_ALPHA = 0.015f
+    @Volatile
+    private var currentSpeed: Float = 0.50f
+
+    fun setSpeed(speed: Float) {
+        currentSpeed = speed.coerceIn(0.20f, 1.00f)
+    }
 
     fun start(context: Context) {
         scope.launch {
@@ -330,22 +331,30 @@ object AudioVisualizerManager {
                 val bandsOut = FloatArray(NUM_BANDS)
                 val peaksOut = FloatArray(NUM_BANDS)
 
+                val speed = currentSpeed
+                // Responsive rise to catch beat attacks + damped fall for silky smooth motion
+                val riseAlpha = (0.20f + 0.50f * speed).coerceIn(0.15f, 0.85f)
+                val fallAlpha = (0.08f + 0.32f * speed).coerceIn(0.05f, 0.50f)
+                val peakFallAlpha = (0.008f + 0.015f * speed).coerceIn(0.005f, 0.030f)
+
                 for (i in 0 until NUM_BANDS) {
                     val target = incomingBands[i].coerceIn(0f, 1f)
 
                     if (target > 0.01f) activeSignal = true
 
-                    // 1. SDWMP3_CN Ballistics: Smooth(alpha = 0.70f)
-                    currentLevels[i] += (target - currentLevels[i]) * SMOOTH_ALPHA
+                    // 1. Asymmetric ballistics: responsive rise, graceful damped fall
+                    val current = currentLevels[i]
+                    val alpha = if (target >= current) riseAlpha else fallAlpha
+                    currentLevels[i] = current + (target - current) * alpha
                     if (currentLevels[i] < 0.002f) currentLevels[i] = 0f
                     bandsOut[i] = currentLevels[i]
 
-                    // 2. SDWMP3_CN Peak Physics: instant rise, continuous asymptotic fall (0.015f)
+                    // 2. Peak physics: instant rise, continuous asymptotic fall
                     val v = currentLevels[i]
                     if (v >= currentPeaks[i]) {
                         currentPeaks[i] = v
                     } else {
-                        currentPeaks[i] += (v - currentPeaks[i]) * PEAK_FALL_ALPHA
+                        currentPeaks[i] += (v - currentPeaks[i]) * peakFallAlpha
                     }
                     if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
                     peaksOut[i] = currentPeaks[i]

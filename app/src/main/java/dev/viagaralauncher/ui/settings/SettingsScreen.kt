@@ -132,6 +132,8 @@ fun SettingsScreen(
     onSetNowPlayingEnabled: (Boolean) -> Unit,
     audioVisualizerEnabled: Boolean = false,
     onSetAudioVisualizerEnabled: (Boolean) -> Unit = {},
+    audioVisualizerSpeed: Float = 0.50f,
+    onSetAudioVisualizerSpeed: (Float) -> Unit = {},
     showAppNotifications: Boolean,
     onSetShowAppNotifications: (Boolean) -> Unit,
     folderWindowPopup: Boolean,
@@ -411,6 +413,24 @@ fun SettingsScreen(
                         checked = audioVisualizerEnabled,
                         onCheckedChange = onSetAudioVisualizerEnabled,
                     )
+                    if (audioVisualizerEnabled) {
+                        RowDivider()
+                        val speedPercent = (audioVisualizerSpeed * 100).toInt()
+                        val speedDesc = when {
+                            audioVisualizerSpeed <= 0.30f -> "Suave"
+                            audioVisualizerSpeed <= 0.60f -> "Equilibrado"
+                            audioVisualizerSpeed <= 0.80f -> "Dinâmico"
+                            else -> "Rápido"
+                        }
+                        SliderRow(
+                            label = "Velocidade do visualizador",
+                            value = audioVisualizerSpeed,
+                            range = 0.20f..1.00f,
+                            valueLabel = "$speedPercent% ($speedDesc)",
+                            onValueChange = onSetAudioVisualizerSpeed,
+                            step = 0.10f,
+                        )
+                    }
                     RowDivider()
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_show_notifications),
