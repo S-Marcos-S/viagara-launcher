@@ -262,6 +262,13 @@ fun HomeScreen(
     var logViewerInitialPkg by remember { mutableStateOf<String?>(null) }
     var logViewerInitialTab by remember { mutableStateOf<String?>(null) }
 
+    DisposableEffect(Unit) {
+        dev.viagaralauncher.visualizer.AudioVisualizerManager.onHomeVisibilityChanged(true)
+        onDispose {
+            dev.viagaralauncher.visualizer.AudioVisualizerManager.onHomeVisibilityChanged(false)
+        }
+    }
+
     val logViewerRequest by dev.viagaralauncher.root.log.LogViewerEvents.request.collectAsState()
     val capturingPackages by dev.viagaralauncher.root.AppLogCaptureService.capturingPackages.collectAsState()
     val capturingPackage by dev.viagaralauncher.root.AppLogCaptureService.capturingPackage.collectAsState()

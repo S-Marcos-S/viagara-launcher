@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.59.93
+### 🚀 Novidades da Versão v0.59.94
 
-- **Zero Consumo em Segundo Plano:** Daemon e leitor de áudio em espera bloqueante sem wakeups de CPU.
-- **Transparência Elegante:** Capa do álbum e nome da música ainda mais translúcidos sobre o visualizador.
-- **Eficiência Térmica e de Bateria:** Economia inteligente durante pausas e momentos de silêncio.
+- **Zero Consumo em Navegação:** Pausa automática do visualizador ao navegar fora da tela inicial ou desligar a tela.
+- **Transparência Aperfeiçoada:** Capa do álbum e nome da faixa ainda mais translúcidos para destacar o espectro.
+- **Repouso Inteligente:** Suspensão de renderização e throttle em silêncio contínuo com zero consumo em standby.

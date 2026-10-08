@@ -100,6 +100,11 @@ object AudioVisualizerManager {
     private var isLauncherForeground: Boolean = true
 
     @Volatile
+    private var isHomeVisible: Boolean = true
+
+    private fun shouldBeRunning(): Boolean = isLauncherForeground && isHomeVisible
+
+    @Volatile
     private var currentSpeed: Float = 0.50f
 
     fun setSpeed(speed: Float) {
@@ -147,14 +152,20 @@ object AudioVisualizerManager {
         }
     }
 
+    fun onHomeVisibilityChanged(visible: Boolean) {
+        scope.launch {
+            lifecycleMutex.withLock {
+                isHomeVisible = visible
+                syncPlaybackStateLocked()
+            }
+        }
+    }
+
     fun onLauncherResume() {
         scope.launch {
             lifecycleMutex.withLock {
                 isLauncherForeground = true
-                if (currentState == VisualizerState.PAUSED) {
-                    currentState = VisualizerState.RUNNING
-                    sendControlCommand('R')
-                }
+                syncPlaybackStateLocked()
             }
         }
     }
@@ -163,10 +174,21 @@ object AudioVisualizerManager {
         scope.launch {
             lifecycleMutex.withLock {
                 isLauncherForeground = false
-                if (currentState == VisualizerState.RUNNING) {
-                    currentState = VisualizerState.PAUSED
-                    sendControlCommand('P')
-                }
+                syncPlaybackStateLocked()
+            }
+        }
+    }
+
+    private suspend fun syncPlaybackStateLocked() {
+        if (shouldBeRunning()) {
+            if (currentState == VisualizerState.PAUSED) {
+                currentState = VisualizerState.RUNNING
+                sendControlCommand('R')
+            }
+        } else {
+            if (currentState == VisualizerState.RUNNING) {
+                currentState = VisualizerState.PAUSED
+                sendControlCommand('P')
                 withContext(Dispatchers.Default) {
                     currentLevels.fill(0f)
                     currentPeaks.fill(0f)
@@ -274,7 +296,7 @@ object AudioVisualizerManager {
                 }
                 clientSocket = client
                 clientOut = client.outputStream
-                if (!isLauncherForeground) {
+                if (!shouldBeRunning()) {
                     currentState = VisualizerState.PAUSED
                     sendControlCommand('P')
                 } else {
@@ -307,6 +329,7 @@ object AudioVisualizerManager {
             val rawBytes = ByteArray(packetSize)
             val byteBuffer = ByteBuffer.wrap(rawBytes).order(ByteOrder.LITTLE_ENDIAN)
             val incomingBands = FloatArray(NUM_BANDS)
+            var wasAlreadySilent = false
 
             while (isActive && (currentState == VisualizerState.RUNNING || currentState == VisualizerState.PAUSED)) {
                 // Read full packet (blocking in kernel with 0 CPU wakeups when daemon is paused or idle)
@@ -323,6 +346,7 @@ object AudioVisualizerManager {
 
                 // If paused, drop any trailing frame from the pause transition and wait for next packet
                 if (currentState == VisualizerState.PAUSED) {
+                    wasAlreadySilent = false
                     continue
                 }
 
@@ -352,6 +376,8 @@ object AudioVisualizerManager {
                 val fallAlpha = (0.08f + 0.32f * speed).coerceIn(0.05f, 0.50f)
                 val peakFallAlpha = (0.008f + 0.015f * speed).coerceIn(0.005f, 0.030f)
 
+                var hasRemainingEnergy = false
+
                 for (i in 0 until NUM_BANDS) {
                     val target = incomingBands[i].coerceIn(0f, 1f)
 
@@ -373,13 +399,30 @@ object AudioVisualizerManager {
                     }
                     if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
                     peaksOut[i] = currentPeaks[i]
+
+                    if (bandsOut[i] > 0f || peaksOut[i] > 0f) {
+                        hasRemainingEnergy = true
+                    }
+                }
+
+                val hasAudio = activeSignal || rms > 0.015f
+
+                // Drop duplicate silent frames once the UI has decayed to rest state (0),
+                // completely eliminating Compose recomposition loops during silence.
+                if (!hasAudio && !hasRemainingEnergy) {
+                    if (wasAlreadySilent) {
+                        continue
+                    }
+                    wasAlreadySilent = true
+                } else {
+                    wasAlreadySilent = false
                 }
 
                 _frameFlow.value = VisualizerFrame(
                     bands = bandsOut,
                     peaks = peaksOut,
                     rms = rms,
-                    hasAudio = activeSignal || rms > 0.015f,
+                    hasAudio = hasAudio,
                 )
             }
         }

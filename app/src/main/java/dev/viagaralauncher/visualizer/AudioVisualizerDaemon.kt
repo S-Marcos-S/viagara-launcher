@@ -204,7 +204,10 @@ object AudioVisualizerDaemon {
                     }
                 }
 
-                // Adaptive idle silence throttle: after ~1.5s of complete silence, poll at ~25 FPS instead of 60 FPS
+                // Adaptive idle silence throttle:
+                // 0..60 frames: active audio (~60 FPS, 16ms)
+                // 61..180 frames: initial silence (~20 FPS, 50ms) allows smooth ballistic decay and fade out
+                // > 180 frames: deep idle silence (~5 FPS, 200ms) near-zero CPU, instant wake-up on next audio beat
                 if (!hasActiveBand && rms < 0.005f) {
                     if (silentFrameCount < 1000) silentFrameCount++
                 } else {
@@ -225,7 +228,11 @@ object AudioVisualizerDaemon {
                 outStream.write(packetBuffer.array())
                 outStream.flush()
 
-                val frameInterval = if (silentFrameCount > 90) 40L else FRAME_INTERVAL_MS
+                val frameInterval = when {
+                    silentFrameCount > 180 -> 200L
+                    silentFrameCount > 60 -> 50L
+                    else -> FRAME_INTERVAL_MS
+                }
                 val elapsed = System.currentTimeMillis() - loopStartTime
                 val sleepTime = frameInterval - elapsed
                 if (sleepTime > 0) {

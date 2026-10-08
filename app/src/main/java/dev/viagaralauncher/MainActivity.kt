@@ -205,4 +205,13 @@ class MainActivity : ComponentActivity() {
         StatusBarFader.release()
         super.onStop()
     }
+
+    override fun onDestroy() {
+        if (isFinishing) {
+            dev.viagaralauncher.visualizer.AudioVisualizerManager.stop()
+        } else {
+            dev.viagaralauncher.visualizer.AudioVisualizerManager.onLauncherPause()
+        }
+        super.onDestroy()
+    }
 }
