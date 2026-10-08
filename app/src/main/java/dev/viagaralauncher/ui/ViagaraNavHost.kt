@@ -35,7 +35,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -212,18 +211,6 @@ fun ViagaraNavHost(
     }
     LaunchedEffect(audioVisualizerSpeed) {
         dev.viagaralauncher.visualizer.AudioVisualizerManager.setSpeed(audioVisualizerSpeed)
-    }
-
-    DisposableEffect(navController) {
-        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-            val route = destination.route
-            val isHome = route == null || route == "home"
-            dev.viagaralauncher.visualizer.AudioVisualizerManager.onHomeVisibilityChanged(isHome)
-        }
-        navController.addOnDestinationChangedListener(listener)
-        onDispose {
-            navController.removeOnDestinationChangedListener(listener)
-        }
     }
     val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
     val folderWindowPopup by app.prefs.folderWindowPopup.collectAsState(initial = true)

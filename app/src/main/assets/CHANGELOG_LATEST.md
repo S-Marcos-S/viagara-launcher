@@ -1,6 +1,5 @@
-### 🔧 Correções Técnicas v0.59.95
+### 🚀 Novidades da Versão v0.59.93
 
-- **Segurança de threads:** Race condition nos arrays de balística eliminada com lock dedicado.
-- **Bounds do FFT:** Clamp de bin corrigido para respeitar o `captureSize` real do dispositivo.
-- **Docstring atualizada:** Daemon documentado com valores reais (14 bandas, alpha=0.35, gain=1.25×).
-- **Import morto removido:** `kotlinx.coroutines.delay` não utilizado eliminado do Manager.
+- **Zero Consumo em Segundo Plano:** Daemon e leitor de áudio em espera bloqueante sem wakeups de CPU.
+- **Transparência Elegante:** Capa do álbum e nome da música ainda mais translúcidos sobre o visualizador.
+- **Eficiência Térmica e de Bateria:** Economia inteligente durante pausas e momentos de silêncio.

@@ -7,6 +7,7 @@ import android.net.LocalSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -92,19 +93,11 @@ object AudioVisualizerManager {
     private var daemonPid: Int = -1
 
     // Ballistic physics state ported from SDWMP3_CN
-    // Guarded by ballisticsLock: written by readerJob (Dispatchers.Default),
-    // read/cleared by syncPlaybackStateLocked and stop (lifecycleMutex coroutines).
-    private val ballisticsLock = Any()
     private val currentLevels = FloatArray(NUM_BANDS)
     private val currentPeaks = FloatArray(NUM_BANDS)
 
     @Volatile
     private var isLauncherForeground: Boolean = true
-
-    @Volatile
-    private var isHomeVisible: Boolean = true
-
-    private fun shouldBeRunning(): Boolean = isLauncherForeground && isHomeVisible
 
     @Volatile
     private var currentSpeed: Float = 0.50f
@@ -119,8 +112,6 @@ object AudioVisualizerManager {
                 if (currentState != VisualizerState.STOPPED) {
                     return@withLock
                 }
-                isLauncherForeground = true
-                isHomeVisible = true
                 currentState = VisualizerState.STARTING
                 val gen = ++currentGeneration
 
@@ -146,10 +137,8 @@ object AudioVisualizerManager {
                 cleanupDaemonLocked(gen)
 
                 withContext(Dispatchers.Default) {
-                    synchronized(ballisticsLock) {
-                        currentLevels.fill(0f)
-                        currentPeaks.fill(0f)
-                    }
+                    currentLevels.fill(0f)
+                    currentPeaks.fill(0f)
                     _frameFlow.value = VisualizerFrame()
                 }
 
@@ -158,20 +147,14 @@ object AudioVisualizerManager {
         }
     }
 
-    fun onHomeVisibilityChanged(visible: Boolean) {
-        scope.launch {
-            lifecycleMutex.withLock {
-                isHomeVisible = visible
-                syncPlaybackStateLocked()
-            }
-        }
-    }
-
     fun onLauncherResume() {
         scope.launch {
             lifecycleMutex.withLock {
                 isLauncherForeground = true
-                syncPlaybackStateLocked()
+                if (currentState == VisualizerState.PAUSED) {
+                    currentState = VisualizerState.RUNNING
+                    sendControlCommand('R')
+                }
             }
         }
     }
@@ -180,26 +163,13 @@ object AudioVisualizerManager {
         scope.launch {
             lifecycleMutex.withLock {
                 isLauncherForeground = false
-                syncPlaybackStateLocked()
-            }
-        }
-    }
-
-    private suspend fun syncPlaybackStateLocked() {
-        if (shouldBeRunning()) {
-            if (currentState == VisualizerState.PAUSED) {
-                currentState = VisualizerState.RUNNING
-                sendControlCommand('R')
-            }
-        } else {
-            if (currentState == VisualizerState.RUNNING) {
-                currentState = VisualizerState.PAUSED
-                sendControlCommand('P')
+                if (currentState == VisualizerState.RUNNING) {
+                    currentState = VisualizerState.PAUSED
+                    sendControlCommand('P')
+                }
                 withContext(Dispatchers.Default) {
-                    synchronized(ballisticsLock) {
-                        currentLevels.fill(0f)
-                        currentPeaks.fill(0f)
-                    }
+                    currentLevels.fill(0f)
+                    currentPeaks.fill(0f)
                     _frameFlow.value = VisualizerFrame()
                 }
             }
@@ -304,7 +274,7 @@ object AudioVisualizerManager {
                 }
                 clientSocket = client
                 clientOut = client.outputStream
-                if (!shouldBeRunning()) {
+                if (!isLauncherForeground) {
                     currentState = VisualizerState.PAUSED
                     sendControlCommand('P')
                 } else {
@@ -337,7 +307,6 @@ object AudioVisualizerManager {
             val rawBytes = ByteArray(packetSize)
             val byteBuffer = ByteBuffer.wrap(rawBytes).order(ByteOrder.LITTLE_ENDIAN)
             val incomingBands = FloatArray(NUM_BANDS)
-            var wasAlreadySilent = false
 
             while (isActive && (currentState == VisualizerState.RUNNING || currentState == VisualizerState.PAUSED)) {
                 // Read full packet (blocking in kernel with 0 CPU wakeups when daemon is paused or idle)
@@ -354,7 +323,6 @@ object AudioVisualizerManager {
 
                 // If paused, drop any trailing frame from the pause transition and wait for next packet
                 if (currentState == VisualizerState.PAUSED) {
-                    wasAlreadySilent = false
                     continue
                 }
 
@@ -384,55 +352,34 @@ object AudioVisualizerManager {
                 val fallAlpha = (0.08f + 0.32f * speed).coerceIn(0.05f, 0.50f)
                 val peakFallAlpha = (0.008f + 0.015f * speed).coerceIn(0.005f, 0.030f)
 
-                var hasRemainingEnergy = false
+                for (i in 0 until NUM_BANDS) {
+                    val target = incomingBands[i].coerceIn(0f, 1f)
 
-                synchronized(ballisticsLock) {
-                    for (i in 0 until NUM_BANDS) {
-                        val target = incomingBands[i].coerceIn(0f, 1f)
+                    if (target > 0.01f) activeSignal = true
 
-                        if (target > 0.005f) activeSignal = true
+                    // 1. Asymmetric ballistics: responsive rise, graceful damped fall
+                    val current = currentLevels[i]
+                    val alpha = if (target >= current) riseAlpha else fallAlpha
+                    currentLevels[i] = current + (target - current) * alpha
+                    if (currentLevels[i] < 0.002f) currentLevels[i] = 0f
+                    bandsOut[i] = currentLevels[i]
 
-                        // 1. Asymmetric ballistics: responsive rise, graceful damped fall
-                        val current = currentLevels[i]
-                        val alpha = if (target >= current) riseAlpha else fallAlpha
-                        currentLevels[i] = current + (target - current) * alpha
-                        if (currentLevels[i] < 0.002f) currentLevels[i] = 0f
-                        bandsOut[i] = currentLevels[i]
-
-                        // 2. Peak physics: instant rise, continuous asymptotic fall
-                        val v = currentLevels[i]
-                        if (v >= currentPeaks[i]) {
-                            currentPeaks[i] = v
-                        } else {
-                            currentPeaks[i] += (v - currentPeaks[i]) * peakFallAlpha
-                        }
-                        if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
-                        peaksOut[i] = currentPeaks[i]
-
-                        if (bandsOut[i] > 0.002f || peaksOut[i] > 0.002f) {
-                            hasRemainingEnergy = true
-                        }
+                    // 2. Peak physics: instant rise, continuous asymptotic fall
+                    val v = currentLevels[i]
+                    if (v >= currentPeaks[i]) {
+                        currentPeaks[i] = v
+                    } else {
+                        currentPeaks[i] += (v - currentPeaks[i]) * peakFallAlpha
                     }
-                }
-
-                val hasAudio = activeSignal || rms > 0.005f || hasRemainingEnergy
-
-                // Drop duplicate silent frames once the UI has decayed to rest state (0),
-                // completely eliminating Compose recomposition loops during silence.
-                if (!hasAudio && !hasRemainingEnergy) {
-                    if (wasAlreadySilent) {
-                        continue
-                    }
-                    wasAlreadySilent = true
-                } else {
-                    wasAlreadySilent = false
+                    if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
+                    peaksOut[i] = currentPeaks[i]
                 }
 
                 _frameFlow.value = VisualizerFrame(
                     bands = bandsOut,
                     peaks = peaksOut,
                     rms = rms,
-                    hasAudio = hasAudio,
+                    hasAudio = activeSignal || rms > 0.015f,
                 )
             }
         }

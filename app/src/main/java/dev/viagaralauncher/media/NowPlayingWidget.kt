@@ -484,17 +484,17 @@ fun NowPlayingWidget(
     val isVisualizerActive = audioVisualizerEnabled && !editMode && visualizerFrame.hasAudio
 
     val titleAlpha by animateFloatAsState(
-        targetValue = if (isVisualizerActive) 0.45f else 0.65f,
+        targetValue = if (isVisualizerActive) 0.65f else 0.85f,
         animationSpec = tween(durationMillis = 350),
         label = "nowPlayingTitleAlpha",
     )
     val artistAlpha by animateFloatAsState(
-        targetValue = if (isVisualizerActive) 0.30f else 0.48f,
+        targetValue = if (isVisualizerActive) 0.45f else 0.65f,
         animationSpec = tween(durationMillis = 350),
         label = "nowPlayingArtistAlpha",
     )
     val artAlpha by animateFloatAsState(
-        targetValue = if (isVisualizerActive) 0.35f else 0.55f,
+        targetValue = if (isVisualizerActive) 0.55f else 0.80f,
         animationSpec = tween(durationMillis = 350),
         label = "nowPlayingArtAlpha",
     )

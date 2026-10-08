@@ -21,9 +21,9 @@ import kotlin.math.sqrt
 /**
  * Privileged daemon executed via app_process64 as UID 0 (root).
  * Captures system-wide audio output using global session 0,
- * calculates 14 logarithmic acoustic frequency bands (25 Hz – 18.5 kHz),
- * applies spectral Parseval RMS per band, fast EMA (alpha = 0.35) for punchy transients,
- * uniform gain (1.25×), and streams packets over an abstract LocalSocket.
+ * calculates 4 acoustic frequency bands (Sub, Bass, Mid, High) matching Oboe DSP,
+ * applies spectral Parseval RMS, persistent EMA (alpha = 0.20), uniform gain (6.0),
+ * and feeds the 14-strip VuMixer distribution over an abstract LocalSocket.
  *
  * Command protocol (from Launcher to Daemon):
  * - 'P' : Pause visualizer (disables capture, sleeps, stops sending packets)
@@ -102,13 +102,12 @@ object AudioVisualizerDaemon {
 
             val bandStartBins = IntArray(NUM_BANDS)
             val bandEndBins = IntArray(NUM_BANDS)
-            val maxValidBin = actualCaptureSize / 2 - 1  // highest valid FFT bin for this device
             var lastEndBin = 0
             for (b in 0 until NUM_BANDS) {
                 val start = max(lastEndBin + 1, (bandFreqs[b] / binWidth).roundToInt())
                 val end = max(start, (bandFreqs[b + 1] / binWidth).roundToInt())
                 bandStartBins[b] = start
-                bandEndBins[b] = min(maxValidBin, end)
+                bandEndBins[b] = min(511, end)
                 lastEndBin = bandEndBins[b]
             }
 
@@ -137,10 +136,15 @@ object AudioVisualizerDaemon {
                     if (cmd == -1 || cmd == 'S'.code || cmd == 'Q'.code) {
                         return
                     } else if (cmd == 'P'.code) {
-                        isPaused = true
+                        if (!isPaused) {
+                            isPaused = true
+                            try { visualizer.enabled = false } catch (_: Throwable) {}
+                        }
                     } else if (cmd == 'R'.code) {
-                        isPaused = false
-                        silentFrameCount = 0
+                        if (isPaused) {
+                            isPaused = false
+                            try { visualizer.enabled = true } catch (_: Throwable) {}
+                        }
                     }
                 }
 
@@ -155,6 +159,7 @@ object AudioVisualizerDaemon {
                         return
                     } else if (cmd == 'R'.code) {
                         isPaused = false
+                        try { visualizer.enabled = true } catch (_: Throwable) {}
                         silentFrameCount = 0
                     }
                     continue
@@ -162,16 +167,8 @@ object AudioVisualizerDaemon {
 
                 val loopStartTime = System.currentTimeMillis()
 
-                val fftResult = try {
-                    visualizer.getFft(fftBuffer)
-                } catch (_: Throwable) {
-                    Visualizer.ERROR
-                }
-                val waveResult = try {
-                    visualizer.getWaveForm(waveBuffer)
-                } catch (_: Throwable) {
-                    Visualizer.ERROR
-                }
+                val fftResult = visualizer.getFft(fftBuffer)
+                val waveResult = visualizer.getWaveForm(waveBuffer)
 
                 var rms = 0f
                 var hasActiveBand = false
@@ -207,9 +204,7 @@ object AudioVisualizerDaemon {
                     }
                 }
 
-                // Adaptive idle silence throttle:
-                // Active audio: 16ms (~60 FPS)
-                // Prolonged silence (>1s): 33ms (~30 FPS) saves CPU while waking up instantly on next beat
+                // Adaptive idle silence throttle: after ~1.5s of complete silence, poll at ~25 FPS instead of 60 FPS
                 if (!hasActiveBand && rms < 0.005f) {
                     if (silentFrameCount < 1000) silentFrameCount++
                 } else {
@@ -230,7 +225,7 @@ object AudioVisualizerDaemon {
                 outStream.write(packetBuffer.array())
                 outStream.flush()
 
-                val frameInterval = if (silentFrameCount > 60) 33L else FRAME_INTERVAL_MS
+                val frameInterval = if (silentFrameCount > 90) 40L else FRAME_INTERVAL_MS
                 val elapsed = System.currentTimeMillis() - loopStartTime
                 val sleepTime = frameInterval - elapsed
                 if (sleepTime > 0) {
@@ -261,7 +256,7 @@ object AudioVisualizerDaemon {
      */
     private fun computeBandRms(fft: ByteArray, startBin: Int, endBin: Int): Float {
         var sumPower = 0.0
-        val maxK = min(fft.size / 2 - 1, endBin)
+        val maxK = min(511, endBin)
 
         for (k in startBin..maxK) {
             val re: Float
