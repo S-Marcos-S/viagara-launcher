@@ -1,4 +1,3 @@
-### 🚀 Novidades da Versão v0.59.98
+### 🚀 Novidades da Versão v0.59.99
 
-- **Aviso de Atualização Corrigido:** Eliminação de notificações falsas-positivas quando o app já está na versão mais recente.
-- **Verificação Precisa:** Validação estrita por versão semântica e limpeza automática de notificações antigas.
+- **Otimização de Bateria e Logs:** O visualizador agora é encerrado automaticamente quando nenhuma música está tocando, eliminando o consumo em segundo plano e os loops de logs do sistema.

@@ -99,70 +99,127 @@ object AudioVisualizerManager {
     @Volatile
     private var currentSpeed: Float = 0.50f
 
+    @Volatile
+    private var isLauncherForeground = true
+    @Volatile
+    private var lastEnabledSetting = false
+    @Volatile
+    private var lastHasSession = false
+    @Volatile
+    private var lastIsPlaying = false
+    @Volatile
+    private var appContext: Context? = null
+    private var stopJob: Job? = null
+
     fun setSpeed(speed: Float) {
         currentSpeed = speed.coerceIn(0.20f, 1.00f)
     }
 
+    fun updatePlaybackState(context: Context, enabled: Boolean, isPlaying: Boolean, hasSession: Boolean) {
+        appContext = context.applicationContext
+        lastEnabledSetting = enabled
+        lastHasSession = hasSession
+        lastIsPlaying = isPlaying
+
+        scope.launch {
+            evaluateStateAndAct()
+        }
+    }
+
+    private suspend fun evaluateStateAndAct() {
+        val shouldBeRunning = isLauncherForeground && lastEnabledSetting && lastHasSession && lastIsPlaying
+        val isPausedSession = isLauncherForeground && lastEnabledSetting && lastHasSession && !lastIsPlaying
+
+        if (shouldBeRunning) {
+            stopJob?.cancel()
+            stopJob = null
+            appContext?.let { startInternal(it) }
+        } else if (isPausedSession) {
+            // Se a música pausou, aguarda tolerância de 4 segundos antes de encerrar o processo (transição de faixas)
+            if (currentState != VisualizerState.STOPPED && stopJob == null) {
+                stopJob = scope.launch {
+                    delay(4000L)
+                    stopInternal()
+                    stopJob = null
+                }
+            }
+        } else {
+            // Sem reprodução de música, launcher em segundo plano ou desativado: encerra imediatamente
+            stopJob?.cancel()
+            stopJob = null
+            stopInternal()
+        }
+    }
+
     fun start(context: Context) {
         scope.launch {
-            lifecycleMutex.withLock {
-                if (currentState != VisualizerState.STOPPED) {
-                    return@withLock
-                }
-                currentState = VisualizerState.STARTING
-                val gen = ++currentGeneration
+            startInternal(context)
+        }
+    }
 
-                supervisorJob = scope.launch {
-                    runSupervisor(context.applicationContext, gen)
-                }
+    private suspend fun startInternal(context: Context) {
+        lifecycleMutex.withLock {
+            if (currentState != VisualizerState.STOPPED) {
+                return@withLock
+            }
+            currentState = VisualizerState.STARTING
+            val gen = ++currentGeneration
+
+            supervisorJob = scope.launch {
+                runSupervisor(context.applicationContext, gen)
             }
         }
     }
 
     fun stop() {
         scope.launch {
-            lifecycleMutex.withLock {
-                if (currentState == VisualizerState.STOPPED || currentState == VisualizerState.STOPPING) {
-                    return@withLock
-                }
-                currentState = VisualizerState.STOPPING
-                val gen = currentGeneration
-
-                supervisorJob?.cancel()
-                supervisorJob = null
-
-                cleanupDaemonLocked(gen)
-
-                withContext(Dispatchers.Default) {
-                    currentLevels.fill(0f)
-                    currentPeaks.fill(0f)
-                    _frameFlow.value = VisualizerFrame()
-                }
-
-                currentState = VisualizerState.STOPPED
-            }
+            stopInternal()
         }
     }
 
-    fun onLauncherResume() {
-        scope.launch {
-            lifecycleMutex.withLock {
-                if (currentState == VisualizerState.PAUSED) {
-                    currentState = VisualizerState.RUNNING
-                    sendControlCommand('R')
-                }
+    private suspend fun stopInternal() {
+        lifecycleMutex.withLock {
+            if (currentState == VisualizerState.STOPPED || currentState == VisualizerState.STOPPING) {
+                return@withLock
             }
+            currentState = VisualizerState.STOPPING
+            val gen = currentGeneration
+
+            supervisorJob?.cancel()
+            supervisorJob = null
+
+            cleanupDaemonLocked(gen)
+
+            withContext(Dispatchers.Default) {
+                currentLevels.fill(0f)
+                currentPeaks.fill(0f)
+                _frameFlow.value = VisualizerFrame()
+            }
+
+            currentState = VisualizerState.STOPPED
+        }
+    }
+
+    fun onLauncherResume(context: Context? = null) {
+        isLauncherForeground = true
+        if (context != null) appContext = context.applicationContext
+        scope.launch {
+            evaluateStateAndAct()
         }
     }
 
     fun onLauncherPause() {
+        isLauncherForeground = false
         scope.launch {
-            lifecycleMutex.withLock {
-                if (currentState == VisualizerState.RUNNING) {
-                    currentState = VisualizerState.PAUSED
-                    sendControlCommand('P')
-                }
-            }
+            evaluateStateAndAct()
+        }
+    }
+
+    fun killAnyOrphanDaemon() {
+        scope.launch(Dispatchers.IO) {
+            try {
+                Runtime.getRuntime().exec(arrayOf("su", "-c", "pkill -f dev.viagaralauncher.visualizer.AudioVisualizerDaemon || true")).waitFor()
+            } catch (_: Throwable) {}
         }
     }
 

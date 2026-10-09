@@ -198,16 +198,18 @@ fun ViagaraNavHost(
     val widgetIds by app.prefs.widgetIds.collectAsState(initial = emptyList())
     val widgetPosition by app.prefs.widgetPosition.collectAsState(initial = 0)
     val widgetHeightDp by app.prefs.widgetHeightDp.collectAsState(initial = 180)
+    val nowPlaying by dev.viagaralauncher.media.NowPlayingBus.state.collectAsState()
     val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = true)
     val audioVisualizerEnabled by app.prefs.audioVisualizerEnabled.collectAsState(initial = false)
     val audioVisualizerSpeed by app.prefs.audioVisualizerSpeed.collectAsState(initial = 0.50f)
 
-    LaunchedEffect(audioVisualizerEnabled) {
-        if (audioVisualizerEnabled) {
-            dev.viagaralauncher.visualizer.AudioVisualizerManager.start(context)
-        } else {
-            dev.viagaralauncher.visualizer.AudioVisualizerManager.stop()
-        }
+    LaunchedEffect(audioVisualizerEnabled, nowPlaying?.isPlaying, nowPlaying != null) {
+        dev.viagaralauncher.visualizer.AudioVisualizerManager.updatePlaybackState(
+            context = context,
+            enabled = audioVisualizerEnabled,
+            isPlaying = nowPlaying?.isPlaying == true,
+            hasSession = nowPlaying != null,
+        )
     }
     LaunchedEffect(audioVisualizerSpeed) {
         dev.viagaralauncher.visualizer.AudioVisualizerManager.setSpeed(audioVisualizerSpeed)

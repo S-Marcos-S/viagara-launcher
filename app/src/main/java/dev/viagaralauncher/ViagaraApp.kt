@@ -44,6 +44,7 @@ class ViagaraApp : Application() {
         })
         dev.viagaralauncher.update.UpdateManager.init(this)
         dev.viagaralauncher.update.UpdateManager.cleanupDownloadedApk(this)
+        dev.viagaralauncher.visualizer.AudioVisualizerManager.killAnyOrphanDaemon()
         prefs = Prefs(this)
         appRepository = AppRepository(this)
         iconPackRepository = IconPackRepository(this)

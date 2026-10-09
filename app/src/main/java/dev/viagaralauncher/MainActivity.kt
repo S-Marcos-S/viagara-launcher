@@ -123,7 +123,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.onLauncherResume()
-        dev.viagaralauncher.visualizer.AudioVisualizerManager.onLauncherResume()
+        dev.viagaralauncher.visualizer.AudioVisualizerManager.onLauncherResume(this)
     }
 
     override fun onPause() {
