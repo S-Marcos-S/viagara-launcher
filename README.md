@@ -25,7 +25,7 @@ Launcher minimalista para Android baseado em lista vertical, inspirado no [Niaga
 
 ---
 
-##   Recursos Avançados (Root Opcional)
+##   Recursos para Superusuário
 
 *(Ferramentas extras para usuários avançados; o launcher funciona 100% sem root)*
 
