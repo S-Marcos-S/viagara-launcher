@@ -78,7 +78,7 @@ object UpdateManager {
     private const val KEY_DOWNLOADED_VERSION_NAME = "downloaded_version_name"
     private const val KEY_DOWNLOADED_COMMIT_SHA = "downloaded_commit_sha"
 
-    private const val GITHUB_REPO = "S-Marcos-S/viagra-launcher"
+    private const val GITHUB_REPO = "S-Marcos-S/viagara-launcher"
     private const val RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=5"
     private const val FALLBACK_RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases/tags/latest"
 
@@ -106,10 +106,9 @@ object UpdateManager {
     }
 
     fun requestShowUpdateChangelog() {
-        if (_updateAvailable.value == null && lastKnownUpdate != null) {
-            _updateAvailable.value = lastKnownUpdate
+        if (_updateAvailable.value?.hasUpdate == true) {
+            _showChangelogRequested.value = true
         }
-        _showChangelogRequested.value = true
     }
 
     fun dismissChangelogRequest() {
@@ -267,10 +266,8 @@ object UpdateManager {
 
                     if (releasesList.isNotEmpty()) {
                         val currentVersion = BuildConfig.VERSION_NAME
-                        val currentSha = BuildConfig.GIT_SHA.trim()
-                        val currentBuildTime = BuildConfig.BUILD_TIME_MILLIS
 
-                        // 1. Procura primeiro uma release oficial com versão maior que a atual
+                        // Procura primeiro uma release oficial com versão maior que a atual
                         var higherVersionRelease: JSONObject? = null
                         var chosenVersion: String? = null
 
@@ -285,84 +282,44 @@ object UpdateManager {
                             }
                         }
 
-                        // 2. Se nenhuma versão for estritamente maior, escolhe a release que tiver o APK mais recente (ou "latest")
-                        val chosenRelease: JSONObject = higherVersionRelease ?: run {
-                            val latestRelease = releasesList.find { it.optString("tag_name").equals("latest", ignoreCase = true) }
-                            val newestAssetRelease = releasesList.maxByOrNull { rel ->
-                                val assets = rel.optJSONArray("assets") ?: return@maxByOrNull 0L
-                                var maxMs = 0L
+                        lastCheckTimeMs = now
+                        if (higherVersionRelease != null && chosenVersion != null) {
+                            val chosenRelease = higherVersionRelease
+                            val tagName = chosenRelease.optString("tag_name", "latest")
+                            val releaseName = chosenRelease.optString("name", "")
+                            val body = chosenRelease.optString("body", "")
+
+                            // Extrai commit SHA da descrição se presente: "Built automatically from commit `...`."
+                            val shaRegex = Regex("""commit [`']?([a-f0-9]{7,40})""", RegexOption.IGNORE_CASE)
+                            val remoteSha = shaRegex.find(body)?.groupValues?.get(1)?.trim()
+
+                            val assets = chosenRelease.optJSONArray("assets")
+                            var apkUrl: String? = null
+                            var apkSize: Long = 0L
+                            var updatedAtMs: Long = 0L
+
+                            if (assets != null) {
                                 for (i in 0 until assets.length()) {
-                                    val a = assets.optJSONObject(i) ?: continue
-                                    val name = a.optString("name", "")
+                                    val asset = assets.getJSONObject(i)
+                                    val name = asset.optString("name", "")
                                     if (name.contains("release") && name.endsWith(".apk")) {
-                                        val u = a.optString("updated_at", "")
-                                        if (u.isNotBlank()) {
+                                        apkUrl = asset.optString("browser_download_url")
+                                        apkSize = asset.optLong("size", 0L)
+                                        val updatedStr = asset.optString("updated_at", "")
+                                        if (updatedStr.isNotBlank()) {
                                             try {
-                                                val ms = Instant.parse(u).toEpochMilli()
-                                                if (ms > maxMs) maxMs = ms
+                                                updatedAtMs = Instant.parse(updatedStr).toEpochMilli()
                                             } catch (_: Exception) {}
                                         }
+                                        break
                                     }
                                 }
-                                maxMs
                             }
-                            newestAssetRelease ?: latestRelease ?: releasesList.first()
-                        }
 
-                        val tagName = chosenRelease.optString("tag_name", "latest")
-                        val releaseName = chosenRelease.optString("name", "")
-                        val body = chosenRelease.optString("body", "")
-
-                        // Extrai commit SHA da descrição se presente: "Built automatically from commit `...`."
-                        val shaRegex = Regex("""commit [`']?([a-f0-9]{7,40})""", RegexOption.IGNORE_CASE)
-                        val remoteSha = shaRegex.find(body)?.groupValues?.get(1)?.trim()
-
-                        val assets = chosenRelease.optJSONArray("assets")
-                        var apkUrl: String? = null
-                        var apkSize: Long = 0L
-                        var updatedAtMs: Long = 0L
-
-                        if (assets != null) {
-                            for (i in 0 until assets.length()) {
-                                val asset = assets.getJSONObject(i)
-                                val name = asset.optString("name", "")
-                                if (name.contains("release") && name.endsWith(".apk")) {
-                                    apkUrl = asset.optString("browser_download_url")
-                                    apkSize = asset.optLong("size", 0L)
-                                    val updatedStr = asset.optString("updated_at", "")
-                                    if (updatedStr.isNotBlank()) {
-                                        try {
-                                            updatedAtMs = Instant.parse(updatedStr).toEpochMilli()
-                                        } catch (_: Exception) {}
-                                    }
-                                    break
-                                }
+                            if (apkUrl.isNullOrBlank()) {
+                                apkUrl = "https://github.com/$GITHUB_REPO/releases/download/$tagName/viagara-launcher-release.apk"
                             }
-                        }
 
-                        if (apkUrl.isNullOrBlank()) {
-                            apkUrl = "https://github.com/$GITHUB_REPO/releases/download/latest/viagara-launcher-release.apk"
-                        }
-
-                        val isNewerVersion = chosenVersion != null && isVersionGreater(chosenVersion, currentVersion)
-
-                        val hasNewerBuild = when {
-                            isNewerVersion -> true
-                            // Se o commit SHA é conhecido nos dois lados, compara diretamente:
-                            !remoteSha.isNullOrBlank() && currentSha.isNotBlank() -> {
-                                val isSameSha = remoteSha.startsWith(currentSha, ignoreCase = true) ||
-                                        currentSha.startsWith(remoteSha, ignoreCase = true)
-                                !isSameSha
-                            }
-                            // Fallback para comparação por timestamp:
-                            updatedAtMs > 0L && currentBuildTime > 0L -> {
-                                updatedAtMs > currentBuildTime + 30_000L
-                            }
-                            else -> false
-                        }
-
-                        lastCheckTimeMs = now
-                        if (hasNewerBuild) {
                             var changelog = ""
                             if (body.isNotBlank()) {
                                 val lines = body.lines().filter {
@@ -402,8 +359,6 @@ object UpdateManager {
                             }
 
                             val displayVer = chosenVersion
-                                ?: extractVersion(tagName, releaseName)
-                                ?: BuildConfig.VERSION_NAME
 
                             val updateInfo = UpdateInfo(
                                 hasUpdate = true,
@@ -422,7 +377,10 @@ object UpdateManager {
                                 maybeNotifyUpdateAvailable(ctx, updateInfo)
                             }
                         } else {
+                            // Usuário já está na versão mais recente (ou mais nova): cancela notificações e zera estados
                             _updateAvailable.value = null
+                            _showChangelogRequested.value = false
+                            lastKnownUpdate = null
                             appContext?.let { ctx ->
                                 cancelUpdateNotification(ctx)
                             }

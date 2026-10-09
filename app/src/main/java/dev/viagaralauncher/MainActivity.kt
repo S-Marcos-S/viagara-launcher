@@ -153,6 +153,10 @@ class MainActivity : ComponentActivity() {
         if (intent.action == dev.viagaralauncher.update.UpdateManager.ACTION_OPEN_UPDATE_CHANGELOG ||
             intent.getBooleanExtra(dev.viagaralauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false)
         ) {
+            intent.removeExtra(dev.viagaralauncher.update.UpdateManager.EXTRA_OPEN_UPDATE)
+            if (intent.action == dev.viagaralauncher.update.UpdateManager.ACTION_OPEN_UPDATE_CHANGELOG) {
+                intent.action = null
+            }
             dev.viagaralauncher.update.UpdateManager.requestShowUpdateChangelog()
         }
     }
