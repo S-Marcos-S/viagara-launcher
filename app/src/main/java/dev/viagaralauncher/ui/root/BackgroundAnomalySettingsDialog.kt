@@ -421,10 +421,19 @@ private fun AnomalyItemCard(
                         color = colorScheme.error,
                     )
                 }
+                val subText = buildString {
+                    append(if (anomaly.screenWasOff) "Tela Apagada • $timeStr" else "Tela Ligada • $timeStr")
+                    if (!anomaly.probableCause.isNullOrBlank()) {
+                        append(" • ")
+                        append(anomaly.probableCause)
+                    }
+                }
                 Text(
-                    text = if (anomaly.screenWasOff) "Tela Apagada • $timeStr" else "Tela Ligada • $timeStr",
+                    text = subText,
                     fontSize = 11.sp,
                     color = colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

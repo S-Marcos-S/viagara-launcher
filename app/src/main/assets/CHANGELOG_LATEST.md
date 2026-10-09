@@ -1,3 +1,5 @@
-### 🚀 Novidades da Versão v0.59.99
+### 🚀 Novidades da Versão v0.60.00
 
-- **Otimização de Bateria e Logs:** O visualizador agora é encerrado automaticamente quando nenhuma música está tocando, eliminando o consumo em segundo plano e os loops de logs do sistema.
+- **Detecção Inteligente de Tráfego:** Identifica o serviço/processo em segundo plano e deduz a provável causa (backup, mídias, sincronização).
+- **Ações Simplificadas:** Botões diretos e compactos ("Parar", "Ver", "Silenciar") para evitar cortes na barra de notificações.
+- **Zero Impacto Energético:** Consulta sob demanda sem wake locks ou polling em repouso.

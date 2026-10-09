@@ -113,10 +113,16 @@ class BackgroundAnomalyNotificationManager private constructor(private val conte
 
         val largeBitmap = appIcon?.let { drawableToBitmap(it) }
 
+        val summaryLine = if (!anomaly.probableCause.isNullOrBlank()) {
+            "${anomaly.valueFormatted} • ${anomaly.probableCause}"
+        } else {
+            anomaly.description
+        }
+
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
-            .setContentText(anomaly.description)
+            .setContentText(summaryLine)
             .setStyle(NotificationCompat.BigTextStyle().bigText(anomaly.description))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)

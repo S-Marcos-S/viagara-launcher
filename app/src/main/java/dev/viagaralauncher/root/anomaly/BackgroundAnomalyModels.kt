@@ -51,6 +51,8 @@ data class AnomalyEvent(
     val timestamp: Long = System.currentTimeMillis(),
     val screenWasOff: Boolean = false,
     val pid: Int? = null,
+    val serviceOrProcess: String? = null,
+    val probableCause: String? = null,
 )
 
 data class AnomalyWatcherConfig(

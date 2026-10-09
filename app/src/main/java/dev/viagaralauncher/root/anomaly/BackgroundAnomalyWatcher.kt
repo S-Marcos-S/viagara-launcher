@@ -360,21 +360,40 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
                 val formattedVal = formatBytes(deltaTotal)
                 val durationMin = (sleepDurationMs / 60_000L).coerceAtLeast(1)
 
-                val desc = context.getString(
+                val baseDesc = context.getString(
                     dev.viagaralauncher.R.string.anomaly_desc_net_screen_off,
                     appName,
                     formattedVal,
                     durationMin.toString(),
                 )
 
+                val (detectedService, cause) = detectBackgroundServiceAndCause(pkgName, uid, startWindow, endWindow)
+                val simpleService = detectedService?.let { simplifyServiceOrProcessName(it, pkgName) }
+
+                val fullDesc = buildString {
+                    append(baseDesc)
+                    if (!simpleService.isNullOrBlank()) {
+                        append("\n")
+                        append("• ")
+                        append(context.getString(dev.viagaralauncher.R.string.anomaly_cause_service_active, simpleService))
+                    }
+                    if (!cause.isNullOrBlank() && cause != simpleService) {
+                        append("\n")
+                        append("• ")
+                        append(cause)
+                    }
+                }
+
                 val anomaly = AnomalyEvent(
                     packageName = pkgName,
                     appName = appName,
                     type = AnomalyType.NETWORK,
                     valueFormatted = formattedVal,
-                    description = desc,
+                    description = fullDesc,
                     timestamp = now,
                     screenWasOff = true,
+                    serviceOrProcess = simpleService,
+                    probableCause = cause,
                 )
 
                 recordAnomaly(anomaly)
@@ -573,21 +592,40 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
 
                         val icon = runCatching { pm.getApplicationIcon(pkgName) }.getOrNull()
                         val formatted = formatBytes(dBytes)
-                        val desc = context.getString(
+                        val baseDesc = context.getString(
                             dev.viagaralauncher.R.string.anomaly_desc_net_screen_on,
                             appLabel,
                             formatted,
                             "30",
                         )
 
+                        val (detectedService, cause) = detectBackgroundServiceAndCause(pkgName, uid, intervalStart, intervalEnd)
+                        val simpleService = detectedService?.let { simplifyServiceOrProcessName(it, pkgName) }
+
+                        val fullDesc = buildString {
+                            append(baseDesc)
+                            if (!simpleService.isNullOrBlank()) {
+                                append("\n")
+                                append("• ")
+                                append(context.getString(dev.viagaralauncher.R.string.anomaly_cause_service_active, simpleService))
+                            }
+                            if (!cause.isNullOrBlank() && cause != simpleService) {
+                                append("\n")
+                                append("• ")
+                                append(cause)
+                            }
+                        }
+
                         val anomaly = AnomalyEvent(
                             packageName = pkgName,
                             appName = appLabel,
                             type = AnomalyType.NETWORK,
                             valueFormatted = formatted,
-                            description = desc,
+                            description = fullDesc,
                             timestamp = nowWall,
                             screenWasOff = false,
+                            serviceOrProcess = simpleService,
+                            probableCause = cause,
                         )
 
                         recordAnomaly(anomaly)
@@ -811,6 +849,102 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
             gb >= 1.0 -> String.format(Locale.getDefault(), "%.2f GB", gb)
             mb >= 1.0 -> String.format(Locale.getDefault(), "%.1f MB", mb)
             else -> String.format(Locale.getDefault(), "%.0f KB", kb)
+        }
+    }
+
+    /**
+     * Detecta o serviço ou subprocesso em segundo plano que gerou tráfego de dados,
+     * e infere a causa provável (backup, download de mídia, sincronização, etc.).
+     * Executado sob demanda exclusivamente no disparo de alerta (overhead de bateria nulo em repouso).
+     */
+    private suspend fun detectBackgroundServiceAndCause(
+        pkgName: String,
+        uid: Int,
+        startTimeMs: Long,
+        endTimeMs: Long,
+    ): Pair<String?, String?> = withContext(Dispatchers.IO) {
+        var detectedServiceOrProcess: String? = null
+
+        // 1. Consulta histórica via UsageStatsManager (sem root, captura Foreground Services iniciados)
+        val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+        if (usm != null) {
+            runCatching {
+                val events = usm.queryEvents((startTimeMs - 5_000L).coerceAtLeast(0L), endTimeMs + 1_000L)
+                val event = UsageEvents.Event()
+                while (events.hasNextEvent()) {
+                    events.getNextEvent(event)
+                    if (event.packageName == pkgName) {
+                        if (event.eventType == UsageEvents.Event.FOREGROUND_SERVICE_START) {
+                            val cls = event.className
+                            if (!cls.isNullOrBlank()) {
+                                detectedServiceOrProcess = cls
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Se não encontrou, inspeciona serviços e processos ativos via Root se disponível
+        if (detectedServiceOrProcess == null && AppRootInspector.isRootAvailable()) {
+            val servicesOutput = AppRootInspector.runSuCommand("dumpsys activity services $pkgName 2>/dev/null").getOrNull() ?: ""
+            val serviceMatch = Regex("$pkgName/([a-zA-Z0-9_.]+)").find(servicesOutput)
+            if (serviceMatch != null) {
+                detectedServiceOrProcess = serviceMatch.groupValues[1].removePrefix(".")
+            }
+
+            if (detectedServiceOrProcess == null) {
+                val psOutput = AppRootInspector.runSuCommand("ps -A -o NAME,ARGS 2>/dev/null | grep $pkgName").getOrNull() ?: ""
+                val procMatch = Regex("($pkgName:[a-zA-Z0-9_]+)").find(psOutput)
+                if (procMatch != null) {
+                    detectedServiceOrProcess = procMatch.groupValues[1]
+                }
+            }
+        }
+
+        // 3. Fallback: ActivityManager running processes
+        if (detectedServiceOrProcess == null) {
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            val running = runCatching { am?.runningAppProcesses }.getOrNull()
+            val subProc = running?.firstOrNull { it.uid == uid && it.processName.startsWith("$pkgName:") }
+            if (subProc != null) {
+                detectedServiceOrProcess = subProc.processName
+            }
+        }
+
+        val cause = inferProbableCause(detectedServiceOrProcess, pkgName)
+        Pair(detectedServiceOrProcess, cause)
+    }
+
+    private fun simplifyServiceOrProcessName(name: String, pkgName: String): String {
+        return when {
+            name.startsWith("$pkgName:") -> name.substring(pkgName.length)
+            name.contains(".") -> name.substringAfterLast(".")
+            else -> name
+        }
+    }
+
+    private fun inferProbableCause(rawName: String?, pkgName: String): String {
+        val lower = (rawName ?: "").lowercase(Locale.ROOT)
+        return when {
+            lower.contains("backup") || lower.contains("gdrive") || lower.contains("cloud") || lower.contains("drive") ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_backup)
+            lower.contains("download") || lower.contains("fetch") || lower.contains("getmedia") || lower.contains("stream") ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_download)
+            lower.contains("upload") || lower.contains("send") || lower.contains("postmedia") || lower.contains("sender") ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_upload)
+            lower.contains("sync") || lower.contains("account") || lower.contains("contact") ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_sync)
+            lower.contains("voip") || lower.contains("call") || lower.contains("webrtc") ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_call)
+            lower.contains("push") || lower.contains("fcm") || lower.contains("message") || lower.contains("coro") || lower.contains("notification") ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_messages)
+            lower.contains("update") || lower.contains("ota") || lower.contains("patch") ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_update)
+            !rawName.isNullOrBlank() ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_service_active, simplifyServiceOrProcessName(rawName, pkgName))
+            else ->
+                context.getString(dev.viagaralauncher.R.string.anomaly_cause_general_bg)
         }
     }
 }
