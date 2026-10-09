@@ -3,10 +3,12 @@
 Launcher minimalista e ergonômico para Android baseado em lista vertical, inspirado no [Niagara Launcher](https://niagaralauncher.app).
 
 <p align="center">
-  <img src="docs/screenshots/screenshot_home.png" width="24%" alt="Tela Inicial" />
-  <img src="docs/screenshots/screenshot_search.png" width="24%" alt="Pesquisa Universal" />
-  <img src="docs/screenshots/screenshot_processes.png" width="24%" alt="Gerenciador de Processos" />
-  <img src="docs/screenshots/screenshot_performance.png" width="24%" alt="Monitor de Desempenho" />
+  <img src="docs/screenshots/screenshot_home.png" width="32%" alt="Tela Inicial" />
+  <img src="docs/screenshots/screenshot_search.png" width="32%" alt="Pesquisa Universal" />
+  <img src="docs/screenshots/screenshot_widgets.png" width="32%" alt="Widgets & Now Playing" />
+  <img src="docs/screenshots/screenshot_processes.png" width="32%" alt="Gerenciador de Processos" />
+  <img src="docs/screenshots/screenshot_performance.png" width="32%" alt="Monitor de Desempenho" />
+  <img src="docs/screenshots/screenshot_battery.png" width="32%" alt="Diagnóstico do Sistema" />
 </p>
 
 ---
