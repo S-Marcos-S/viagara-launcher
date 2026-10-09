@@ -310,11 +310,21 @@ fun NowPlayingWidget(
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val current = nowPlaying
 
+    val isExpanded = heightDp >= 80
+
     // Artwork size scales with card height, title and artist text scale with app label settings
-    val artSize = (heightDp * 0.52f).coerceIn(28f, iconSizeDp.toFloat()).dp
+    val artSize = if (isExpanded) {
+        (heightDp * 0.40f).coerceIn(36f, iconSizeDp.toFloat()).dp
+    } else {
+        (heightDp * 0.52f).coerceIn(28f, iconSizeDp.toFloat()).dp
+    }
     val titleSp = labelSizeSp.sp
     val artistSp = (labelSizeSp - 2).coerceAtLeast(10).sp
-    val controlSize = (heightDp * 0.38f).coerceIn(18f, 48f).dp
+    val controlSize = if (isExpanded) {
+        (heightDp * 0.28f).coerceIn(22f, 42f).dp
+    } else {
+        (heightDp * 0.38f).coerceIn(18f, 48f).dp
+    }
 
     if (current == null) {
         if (!editMode) return
@@ -331,90 +341,176 @@ fun NowPlayingWidget(
                     .padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.Center,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (alignRight) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            TransportButton(Icons.Filled.SkipPrevious, stringResource(R.string.now_playing_previous), controlSize, contentColor) {}
-                            TransportButton(Icons.Filled.PlayArrow, stringResource(R.string.now_playing_play_pause), controlSize, contentColor) {}
-                            TransportButton(Icons.Filled.SkipNext, stringResource(R.string.now_playing_next), controlSize, contentColor) {}
+                if (isExpanded) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (alignRight) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.End,
+                            ) {
+                                Text(
+                                    stringResource(R.string.settings_section_now_playing),
+                                    color = contentColor.copy(alpha = 0.65f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = titleSp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                )
+                                Text(
+                                    stringResource(R.string.settings_now_playing_show),
+                                    color = contentColor.copy(alpha = 0.45f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = artistSp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Box(
+                                modifier = Modifier.size(artSize),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    Icons.Filled.MusicNote,
+                                    contentDescription = null,
+                                    tint = contentColor.copy(alpha = 0.50f),
+                                    modifier = Modifier.size(artSize * 0.75f),
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier.size(artSize),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    Icons.Filled.MusicNote,
+                                    contentDescription = null,
+                                    tint = contentColor.copy(alpha = 0.50f),
+                                    modifier = Modifier.size(artSize * 0.75f),
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    stringResource(R.string.settings_section_now_playing),
+                                    color = contentColor.copy(alpha = 0.65f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = titleSp,
+                                )
+                                Text(
+                                    stringResource(R.string.settings_now_playing_show),
+                                    color = contentColor.copy(alpha = 0.45f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = artistSp,
+                                )
+                            }
                         }
-                        Spacer(Modifier.width(8.dp))
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.End,
-                        ) {
-                            Text(
-                                stringResource(R.string.settings_section_now_playing),
-                                color = contentColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontSize = titleSp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                            )
-                            Text(
-                                stringResource(R.string.settings_now_playing_show),
-                                color = contentColor.copy(alpha = 0.7f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontSize = artistSp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                            )
-                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TransportButton(Icons.Filled.SkipPrevious, stringResource(R.string.now_playing_previous), controlSize, contentColor) {}
                         Spacer(Modifier.width(16.dp))
-                        Box(
-                            modifier = Modifier.size(artSize),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Filled.MusicNote,
-                                contentDescription = null,
-                                tint = contentColor.copy(alpha = 0.7f),
-                                modifier = Modifier.size(artSize * 0.75f),
-                            )
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier.size(artSize),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Filled.MusicNote,
-                                contentDescription = null,
-                                tint = contentColor.copy(alpha = 0.7f),
-                                modifier = Modifier.size(artSize * 0.75f),
-                            )
-                        }
+                        TransportButton(Icons.Filled.PlayArrow, stringResource(R.string.now_playing_play_pause), controlSize, contentColor) {}
                         Spacer(Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(R.string.settings_section_now_playing),
-                                color = contentColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontSize = titleSp,
-                            )
-                            Text(
-                                stringResource(R.string.settings_now_playing_show),
-                                color = contentColor.copy(alpha = 0.7f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontSize = artistSp,
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            TransportButton(Icons.Filled.SkipPrevious, stringResource(R.string.now_playing_previous), controlSize, contentColor) {}
-                            TransportButton(Icons.Filled.PlayArrow, stringResource(R.string.now_playing_play_pause), controlSize, contentColor) {}
-                            TransportButton(Icons.Filled.SkipNext, stringResource(R.string.now_playing_next), controlSize, contentColor) {}
+                        TransportButton(Icons.Filled.SkipNext, stringResource(R.string.now_playing_next), controlSize, contentColor) {}
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (alignRight) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                TransportButton(Icons.Filled.SkipPrevious, stringResource(R.string.now_playing_previous), controlSize, contentColor) {}
+                                TransportButton(Icons.Filled.PlayArrow, stringResource(R.string.now_playing_play_pause), controlSize, contentColor) {}
+                                TransportButton(Icons.Filled.SkipNext, stringResource(R.string.now_playing_next), controlSize, contentColor) {}
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.End,
+                            ) {
+                                Text(
+                                    stringResource(R.string.settings_section_now_playing),
+                                    color = contentColor.copy(alpha = 0.65f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = titleSp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                )
+                                Text(
+                                    stringResource(R.string.settings_now_playing_show),
+                                    color = contentColor.copy(alpha = 0.45f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = artistSp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                )
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Box(
+                                modifier = Modifier.size(artSize),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    Icons.Filled.MusicNote,
+                                    contentDescription = null,
+                                    tint = contentColor.copy(alpha = 0.50f),
+                                    modifier = Modifier.size(artSize * 0.75f),
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier.size(artSize),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    Icons.Filled.MusicNote,
+                                    contentDescription = null,
+                                    tint = contentColor.copy(alpha = 0.50f),
+                                    modifier = Modifier.size(artSize * 0.75f),
+                                )
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    stringResource(R.string.settings_section_now_playing),
+                                    color = contentColor.copy(alpha = 0.65f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = titleSp,
+                                )
+                                Text(
+                                    stringResource(R.string.settings_now_playing_show),
+                                    color = contentColor.copy(alpha = 0.45f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = artistSp,
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                TransportButton(Icons.Filled.SkipPrevious, stringResource(R.string.now_playing_previous), controlSize, contentColor) {}
+                                TransportButton(Icons.Filled.PlayArrow, stringResource(R.string.now_playing_play_pause), controlSize, contentColor) {}
+                                TransportButton(Icons.Filled.SkipNext, stringResource(R.string.now_playing_next), controlSize, contentColor) {}
+                            }
                         }
                     }
                 }
@@ -484,17 +580,17 @@ fun NowPlayingWidget(
     val isVisualizerActive = audioVisualizerEnabled && !editMode && visualizerFrame.hasAudio
 
     val titleAlpha by animateFloatAsState(
-        targetValue = if (isVisualizerActive) 0.65f else 0.85f,
+        targetValue = if (isVisualizerActive) 0.38f else 0.65f,
         animationSpec = tween(durationMillis = 350),
         label = "nowPlayingTitleAlpha",
     )
     val artistAlpha by animateFloatAsState(
-        targetValue = if (isVisualizerActive) 0.45f else 0.65f,
+        targetValue = if (isVisualizerActive) 0.25f else 0.45f,
         animationSpec = tween(durationMillis = 350),
         label = "nowPlayingArtistAlpha",
     )
     val artAlpha by animateFloatAsState(
-        targetValue = if (isVisualizerActive) 0.55f else 0.80f,
+        targetValue = if (isVisualizerActive) 0.28f else 0.50f,
         animationSpec = tween(durationMillis = 350),
         label = "nowPlayingArtAlpha",
     )
@@ -600,7 +696,9 @@ fun NowPlayingWidget(
 
                 val controlsRow: @Composable () -> Unit = {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            if (isExpanded) 16.dp else (heightDp * 0.06f).coerceIn(4f, 16f).dp
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TransportButton(
@@ -634,22 +732,48 @@ fun NowPlayingWidget(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (alignRight) {
+                if (isExpanded) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (alignRight) {
+                            textColumn(Modifier.weight(1f))
+                            Spacer(Modifier.width(12.dp))
+                            artBox()
+                        } else {
+                            artBox()
+                            Spacer(Modifier.width(12.dp))
+                            textColumn(Modifier.weight(1f))
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         controlsRow()
-                        Spacer(Modifier.width(8.dp))
-                        textColumn(Modifier.weight(1f))
-                        Spacer(Modifier.width(16.dp))
-                        artBox()
-                    } else {
-                        artBox()
-                        Spacer(Modifier.width(16.dp))
-                        textColumn(Modifier.weight(1f))
-                        Spacer(Modifier.width(8.dp))
-                        controlsRow()
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (alignRight) {
+                            controlsRow()
+                            Spacer(Modifier.width(8.dp))
+                            textColumn(Modifier.weight(1f))
+                            Spacer(Modifier.width(16.dp))
+                            artBox()
+                        } else {
+                            artBox()
+                            Spacer(Modifier.width(16.dp))
+                            textColumn(Modifier.weight(1f))
+                            Spacer(Modifier.width(8.dp))
+                            controlsRow()
+                        }
                     }
                 }
 

@@ -97,9 +97,6 @@ object AudioVisualizerManager {
     private val currentPeaks = FloatArray(NUM_BANDS)
 
     @Volatile
-    private var isLauncherForeground: Boolean = true
-
-    @Volatile
     private var currentSpeed: Float = 0.50f
 
     fun setSpeed(speed: Float) {
@@ -150,7 +147,6 @@ object AudioVisualizerManager {
     fun onLauncherResume() {
         scope.launch {
             lifecycleMutex.withLock {
-                isLauncherForeground = true
                 if (currentState == VisualizerState.PAUSED) {
                     currentState = VisualizerState.RUNNING
                     sendControlCommand('R')
@@ -162,15 +158,9 @@ object AudioVisualizerManager {
     fun onLauncherPause() {
         scope.launch {
             lifecycleMutex.withLock {
-                isLauncherForeground = false
                 if (currentState == VisualizerState.RUNNING) {
                     currentState = VisualizerState.PAUSED
                     sendControlCommand('P')
-                }
-                withContext(Dispatchers.Default) {
-                    currentLevels.fill(0f)
-                    currentPeaks.fill(0f)
-                    _frameFlow.value = VisualizerFrame()
                 }
             }
         }
@@ -274,12 +264,7 @@ object AudioVisualizerManager {
                 }
                 clientSocket = client
                 clientOut = client.outputStream
-                if (!isLauncherForeground) {
-                    currentState = VisualizerState.PAUSED
-                    sendControlCommand('P')
-                } else {
-                    currentState = VisualizerState.RUNNING
-                }
+                currentState = VisualizerState.RUNNING
             }
 
             startReaderLoop(client.inputStream)
@@ -309,7 +294,12 @@ object AudioVisualizerManager {
             val incomingBands = FloatArray(NUM_BANDS)
 
             while (isActive && (currentState == VisualizerState.RUNNING || currentState == VisualizerState.PAUSED)) {
-                // Read full packet (blocking in kernel with 0 CPU wakeups when daemon is paused or idle)
+                if (currentState == VisualizerState.PAUSED) {
+                    delay(100)
+                    continue
+                }
+
+                // Read full packet
                 var totalRead = 0
                 while (totalRead < packetSize && isActive) {
                     val read = inputStream.read(rawBytes, totalRead, packetSize - totalRead)
@@ -319,11 +309,6 @@ object AudioVisualizerManager {
 
                 if (totalRead < packetSize) {
                     break
-                }
-
-                // If paused, drop any trailing frame from the pause transition and wait for next packet
-                if (currentState == VisualizerState.PAUSED) {
-                    continue
                 }
 
                 // Verify magic "VIZ1"

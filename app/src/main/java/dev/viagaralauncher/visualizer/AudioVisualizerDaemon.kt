@@ -66,7 +66,7 @@ object AudioVisualizerDaemon {
                 return
             }
 
-            socket.soTimeout = 0 // Infinite timeout: blocking read in kernel with zero CPU wakeups
+            socket.soTimeout = 500
 
             outStream = socket.outputStream
             inStream = socket.inputStream
@@ -125,12 +125,12 @@ object AudioVisualizerDaemon {
             }
 
             var isPaused = false
-            var silentFrameCount = 0
+            var sampleCounter = 0L
 
             logDiag("14 physical acoustic bands configured (25Hz - 18.5kHz)")
 
             while (true) {
-                // 1. Process control commands from launcher (non-blocking when streaming)
+                // 1. Process control commands from launcher
                 while (inStream.available() > 0) {
                     val cmd = inStream.read()
                     if (cmd == -1 || cmd == 'S'.code || cmd == 'Q'.code) {
@@ -148,20 +148,9 @@ object AudioVisualizerDaemon {
                     }
                 }
 
-                // If paused, suspend in kernel read with ZERO CPU wakeups and ZERO battery drain
+                // If paused, sleep and do not poll FFT or write to socket
                 if (isPaused) {
-                    val cmd = try {
-                        inStream.read()
-                    } catch (_: Throwable) {
-                        -1
-                    }
-                    if (cmd == -1 || cmd == 'S'.code || cmd == 'Q'.code) {
-                        return
-                    } else if (cmd == 'R'.code) {
-                        isPaused = false
-                        try { visualizer.enabled = true } catch (_: Throwable) {}
-                        silentFrameCount = 0
-                    }
+                    Thread.sleep(50)
                     continue
                 }
 
@@ -171,7 +160,6 @@ object AudioVisualizerDaemon {
                 val waveResult = visualizer.getWaveForm(waveBuffer)
 
                 var rms = 0f
-                var hasActiveBand = false
 
                 if (fftResult == Visualizer.SUCCESS) {
                     var totalLevelSum = 0f
@@ -185,9 +173,6 @@ object AudioVisualizerDaemon {
                         val level = min(1.0f, emaBands[b] * uniformGain)
                         magnitudes[b] = level
                         totalLevelSum += level
-                        if (level > 0.015f) {
-                            hasActiveBand = true
-                        }
                     }
 
                     // Waveform RMS
@@ -196,19 +181,28 @@ object AudioVisualizerDaemon {
                     } else {
                         (totalLevelSum / NUM_BANDS).coerceIn(0f, 1f)
                     }
+
+                    // Periodic diagnostic logging (~1s = every 60 frames)
+                    sampleCounter++
+                    if (sampleCounter % 60L == 0L) {
+                        logDiag(
+                            String.format(
+                                "14_BANDS:\n" +
+                                "B0=%.3f B1(Kick)=%.3f B2=%.3f B3(Bass)=%.3f B4=%.3f B5=%.3f B6=%.3f\n" +
+                                "B7=%.3f B8=%.3f B9=%.3f B10=%.3f B11=%.3f B12(HiHat)=%.3f B13=%.3f\n",
+                                magnitudes[0], magnitudes[1], magnitudes[2], magnitudes[3],
+                                magnitudes[4], magnitudes[5], magnitudes[6], magnitudes[7],
+                                magnitudes[8], magnitudes[9], magnitudes[10], magnitudes[11],
+                                magnitudes[12], magnitudes[13]
+                            )
+                        )
+                    }
                 } else {
                     magnitudes.fill(0f)
                     emaBands.fill(0f)
                     if (waveResult == Visualizer.SUCCESS) {
                         rms = computeWaveRms(waveBuffer)
                     }
-                }
-
-                // Adaptive idle silence throttle: after ~1.5s of complete silence, poll at ~25 FPS instead of 60 FPS
-                if (!hasActiveBand && rms < 0.005f) {
-                    if (silentFrameCount < 1000) silentFrameCount++
-                } else {
-                    silentFrameCount = 0
                 }
 
                 packetBuffer.clear()
@@ -225,9 +219,8 @@ object AudioVisualizerDaemon {
                 outStream.write(packetBuffer.array())
                 outStream.flush()
 
-                val frameInterval = if (silentFrameCount > 90) 40L else FRAME_INTERVAL_MS
                 val elapsed = System.currentTimeMillis() - loopStartTime
-                val sleepTime = frameInterval - elapsed
+                val sleepTime = FRAME_INTERVAL_MS - elapsed
                 if (sleepTime > 0) {
                     Thread.sleep(sleepTime)
                 }
