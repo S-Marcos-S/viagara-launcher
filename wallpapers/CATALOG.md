@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **198**
+Total de papéis de parede: **238**
 
 ### OLED (12)
 
@@ -19,7 +19,7 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_1kp1m9.webp" width="80" alt="Bloodborne" /> | `wallpaper_wh_1kp1m9` | **Bloodborne** | oled, Bloodborne, FromSoftware, Lady Maria |
 | <img src="thumbnails/wallpaper_wh_13l6xg.webp" width="80" alt="Resident Evil" /> | `wallpaper_wh_13l6xg` | **Resident Evil** | oled, Resident Evil, Resident Evil 2 Remake, Resident Evil 2 |
 
-### Abstrato (25)
+### Abstrato (30)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -48,8 +48,13 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_wqx15p.webp" width="80" alt="Glitch Art" /> | `wallpaper_wh_wqx15p` | **Glitch Art** | abstract, glitch art, 3D Abstract, cyberpunk |
 | <img src="thumbnails/wallpaper_wh_w8gvjx.webp" width="80" alt="Astronaut" /> | `wallpaper_wh_w8gvjx` | **Astronaut** | abstract, astronaut, Lost Planet |
 | <img src="thumbnails/wallpaper_wh_nml6qk.webp" width="80" alt="Lines" /> | `wallpaper_wh_nml6qk` | **Lines** | abstract, lines, texture |
+| <img src="thumbnails/wallpaper_wh_eovd3o.webp" width="80" alt="Glitch Art" /> | `wallpaper_wh_eovd3o` | **Glitch Art** | abstract, glitch art, cyberpunk |
+| <img src="thumbnails/wallpaper_wh_p885j3.webp" width="80" alt="Gradient" /> | `wallpaper_wh_p885j3` | **Gradient** | abstract, gradient, texture, blue |
+| <img src="thumbnails/wallpaper_wh_kwwrk1.webp" width="80" alt="Planet" /> | `wallpaper_wh_kwwrk1` | **Planet** | abstract, planet |
+| <img src="thumbnails/wallpaper_wh_gj233q.webp" width="80" alt="Glitch Art" /> | `wallpaper_wh_gj233q` | **Glitch Art** | abstract, glitch art, vaporwave, LSD |
+| <img src="thumbnails/wallpaper_wh_g88v9e.webp" width="80" alt="Google" /> | `wallpaper_wh_g88v9e` | **Google** | abstract, Google, black background |
 
-### Anime (32)
+### Anime (37)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -85,8 +90,13 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_jx86pp.webp" width="80" alt="City" /> | `wallpaper_wh_jx86pp` | **City** | anime, city, street, umbrella |
 | <img src="thumbnails/wallpaper_wh_rd1lem.webp" width="80" alt="Kitagawa Marin" /> | `wallpaper_wh_rd1lem` | **Kitagawa Marin** | anime, Kitagawa Marin, Sono Bisque Doll wa Koi wo Suru, fan art |
 | <img src="thumbnails/wallpaper_wh_exel8o.webp" width="80" alt="Honkai: Star Rail" /> | `wallpaper_wh_exel8o` | **Honkai: Star Rail** | anime, Honkai: Star Rail, Eternity (artist), Kafka (Honkai: Star Rail) |
+| <img src="thumbnails/wallpaper_wh_j3e56m.webp" width="80" alt="Lumine (genshin Impact)" /> | `wallpaper_wh_j3e56m` | **Lumine (genshin Impact)** | anime, Lumine (Genshin Impact), Genshin Impact, animal ears |
+| <img src="thumbnails/wallpaper_wh_p9pz89.webp" width="80" alt="Novelance" /> | `wallpaper_wh_p9pz89` | **Novelance** | anime, Novelance, original characters, messy |
+| <img src="thumbnails/wallpaper_wh_8ow83j.webp" width="80" alt="Chinese Dragon" /> | `wallpaper_wh_8ow83j` | **Chinese Dragon** | anime, Chinese dragon, farm, farmers |
+| <img src="thumbnails/wallpaper_wh_zyxvwj.webp" width="80" alt="Butterfly" /> | `wallpaper_wh_zyxvwj` | **Butterfly** | anime, butterfly, Kimetsu no Yaiba, Kochou Shinobu |
+| <img src="thumbnails/wallpaper_wh_o3q6p5.webp" width="80" alt="Genshin Impact" /> | `wallpaper_wh_o3q6p5` | **Genshin Impact** | anime, Genshin Impact, Keqing (Genshin Impact), Melailai |
 
-### Espaço (20)
+### Espaço (25)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -110,8 +120,13 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_p8rjg9.webp" width="80" alt="Arms" /> | `wallpaper_wh_p8rjg9` | **Arms** | space, arms, reaching, stars |
 | <img src="thumbnails/wallpaper_wh_q665gr.webp" width="80" alt="Moon" /> | `wallpaper_wh_q665gr` | **Moon** | space, Moon, monochrome, black background |
 | <img src="thumbnails/wallpaper_wh_6qljex.webp" width="80" alt="Nasa" /> | `wallpaper_wh_6qljex` | **Nasa** | space, NASA, Mars, spacesuit |
+| <img src="thumbnails/wallpaper_wh_lmv99r.webp" width="80" alt="Dark" /> | `wallpaper_wh_lmv99r` | **Dark** | space, dark, stars, colorful |
+| <img src="thumbnails/wallpaper_wh_966e88.webp" width="80" alt="Planet" /> | `wallpaper_wh_966e88` | **Planet** | space, planet, space art |
+| <img src="thumbnails/wallpaper_wh_763w6y.webp" width="80" alt="Space Art" /> | `wallpaper_wh_763w6y` | **Space Art** | space, space art, rocket, vehicle |
+| <img src="thumbnails/wallpaper_wh_3zdxdy.webp" width="80" alt="Black Background" /> | `wallpaper_wh_3zdxdy` | **Black Background** | space, black background, Moon |
+| <img src="thumbnails/wallpaper_wh_yjmeyk.webp" width="80" alt="Train" /> | `wallpaper_wh_yjmeyk` | **Train** | space, train, vehicle, planet |
 
-### Natureza (37)
+### Natureza (42)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -152,8 +167,13 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_6k79gl.webp" width="80" alt="Cliff" /> | `wallpaper_wh_6k79gl` | **Cliff** | nature, cliff, rocks, winter |
 | <img src="thumbnails/wallpaper_wh_49pmew.webp" width="80" alt="Landscape" /> | `wallpaper_wh_49pmew` | **Landscape** | nature, landscape, pine trees, winter |
 | <img src="thumbnails/wallpaper_wh_q6km3d.webp" width="80" alt="Earth" /> | `wallpaper_wh_q6km3d` | **Earth** | nature, Earth, satellite, landscape |
+| <img src="thumbnails/wallpaper_wh_eo38k8.webp" width="80" alt="Old" /> | `wallpaper_wh_eo38k8` | **Old** | nature, old, building, dark |
+| <img src="thumbnails/wallpaper_wh_4lr19p.webp" width="80" alt="Umbrella" /> | `wallpaper_wh_4lr19p` | **Umbrella** | nature, umbrella, dark, trees |
+| <img src="thumbnails/wallpaper_wh_4gr86l.webp" width="80" alt="Landscape" /> | `wallpaper_wh_4gr86l` | **Landscape** | nature, landscape, winter, snow |
+| <img src="thumbnails/wallpaper_wh_dgjok3.webp" width="80" alt="Earth" /> | `wallpaper_wh_dgjok3` | **Earth** | nature, Earth, satellite, aerial view |
+| <img src="thumbnails/wallpaper_wh_96v92d.webp" width="80" alt="Earth" /> | `wallpaper_wh_96v92d` | **Earth** | nature, Earth, satellite, aerial view |
 
-### Minimalista (20)
+### Minimalista (25)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -177,8 +197,13 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_nklgq7.webp" width="80" alt="Lines" /> | `wallpaper_wh_nklgq7` | **Lines** | minimal, lines, black background |
 | <img src="thumbnails/wallpaper_wh_r2ygom.webp" width="80" alt="Blue" /> | `wallpaper_wh_r2ygom` | **Blue** | minimal, blue, turquoise, gradient |
 | <img src="thumbnails/wallpaper_wh_r72o3j.webp" width="80" alt="Nintendo Game Boy" /> | `wallpaper_wh_r72o3j` | **Nintendo Game Boy** | minimal, Nintendo Game Boy, Nintendo, video games |
+| <img src="thumbnails/wallpaper_wh_m9ly5m.webp" width="80" alt="Statue" /> | `wallpaper_wh_m9ly5m` | **Statue** | minimal, statue, black background, typography |
+| <img src="thumbnails/wallpaper_wh_k9l9d1.webp" width="80" alt="White Background" /> | `wallpaper_wh_k9l9d1` | **White Background** | minimal, white background |
+| <img src="thumbnails/wallpaper_wh_v9w7w3.webp" width="80" alt="Black Background" /> | `wallpaper_wh_v9w7w3` | **Black Background** | minimal, black background, road, night |
+| <img src="thumbnails/wallpaper_wh_vgm66l.webp" width="80" alt="Spaceship" /> | `wallpaper_wh_vgm66l` | **Spaceship** | minimal, spaceship, monochrome, space shuttle |
+| <img src="thumbnails/wallpaper_wh_gj89ze.webp" width="80" alt="Pink Background" /> | `wallpaper_wh_gj89ze` | **Pink Background** | minimal, pink background, Asia |
 
-### Jogos (18)
+### Jogos (23)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -200,8 +225,13 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_je8qom.webp" width="80" alt="Wuthering Waves" /> | `wallpaper_wh_je8qom` | **Wuthering Waves** | games, Wuthering Waves, fan art, video game characters |
 | <img src="thumbnails/wallpaper_wh_qzw7z5.webp" width="80" alt="Wuthering Waves" /> | `wallpaper_wh_qzw7z5` | **Wuthering Waves** | games, Wuthering Waves, fan art, video game characters |
 | <img src="thumbnails/wallpaper_wh_qz1oy5.webp" width="80" alt="Miside" /> | `wallpaper_wh_qz1oy5` | **Miside** | games, MiSide, Mita (MiSide), void_0 |
+| <img src="thumbnails/wallpaper_wh_d6vzxo.webp" width="80" alt="Jason Liang" /> | `wallpaper_wh_d6vzxo` | **Jason Liang** | games, Jason Liang, drawing, Overwatch |
+| <img src="thumbnails/wallpaper_wh_x8ox5l.webp" width="80" alt="Genshin Impact" /> | `wallpaper_wh_x8ox5l` | **Genshin Impact** | games, Genshin Impact, Yae Miko (Genshin Impact), Atdan |
+| <img src="thumbnails/wallpaper_wh_w55w3r.webp" width="80" alt="Fan Art" /> | `wallpaper_wh_w55w3r` | **Fan Art** | games, fan art, Ria-neearts, umbrella |
+| <img src="thumbnails/wallpaper_wh_jxwx9m.webp" width="80" alt="Shenhe (genshin Impact)" /> | `wallpaper_wh_jxwx9m` | **Shenhe (genshin Impact)** | games, Shenhe (Genshin Impact), Genshin Impact, blue eyes |
+| <img src="thumbnails/wallpaper_wh_x8e9kd.webp" width="80" alt="Bianca (punishing: Gray Raven)" /> | `wallpaper_wh_x8e9kd` | **Bianca (punishing: Gray Raven)** | games, Bianca (Punishing: Gray Raven), Punishing: Gray Raven, video games |
 
-### Cyberpunk (6)
+### Cyberpunk (11)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -211,8 +241,13 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_6or967.webp" width="80" alt="Cyberpunk" /> | `wallpaper_wh_6or967` | **Cyberpunk** | cyberpunk, Cyberpunk 2077, video game characters |
 | <img src="thumbnails/wallpaper_wh_r21q37.webp" width="80" alt="Rafael Moco" /> | `wallpaper_wh_r21q37` | **Rafael Moco** | cyberpunk, Rafael Moco, portrait, jacket |
 | <img src="thumbnails/wallpaper_wh_vqxwj3.webp" width="80" alt="Anime Boys" /> | `wallpaper_wh_vqxwj3` | **Anime Boys** | cyberpunk, anime boys, Cyberpunk: Edgerunners, Lucyna Kushinada (Cyberpunk: Edgerunners) |
+| <img src="thumbnails/wallpaper_wh_725d7o.webp" width="80" alt="Legs" /> | `wallpaper_wh_725d7o` | **Legs** | cyberpunk, legs, legs crossed, feet |
+| <img src="thumbnails/wallpaper_wh_eygw8k.webp" width="80" alt="Cyberpunk 2077" /> | `wallpaper_wh_eygw8k` | **Cyberpunk 2077** | cyberpunk, Cyberpunk 2077, cyber, neon |
+| <img src="thumbnails/wallpaper_wh_z8lo6v.webp" width="80" alt="Cyberpunk" /> | `wallpaper_wh_z8lo6v` | **Cyberpunk** | cyberpunk, fantasy girl |
+| <img src="thumbnails/wallpaper_wh_yx6kxx.webp" width="80" alt="Gaako" /> | `wallpaper_wh_yx6kxx` | **Gaako** | cyberpunk, Gaako, signs |
+| <img src="thumbnails/wallpaper_wh_3l1p16.webp" width="80" alt="Pascal Blanche" /> | `wallpaper_wh_3l1p16` | **Pascal Blanche** | cyberpunk, Pascal Blanche, Akira |
 
-### Cidades (8)
+### Cidades (13)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -224,6 +259,11 @@ Total de papéis de parede: **198**
 | <img src="thumbnails/wallpaper_wh_6qk9qw.webp" width="80" alt="Aerial View" /> | `wallpaper_wh_6qk9qw` | **Aerial View** | city, aerial view, night, stars |
 | <img src="thumbnails/wallpaper_wh_6omrd6.webp" width="80" alt="Street" /> | `wallpaper_wh_6omrd6` | **Street** | city, street, New York City, reflection |
 | <img src="thumbnails/wallpaper_wh_wyjpqx.webp" width="80" alt="Architecture" /> | `wallpaper_wh_wyjpqx` | **Architecture** | city, architecture, sky, building |
+| <img src="thumbnails/wallpaper_wh_1jdqd9.webp" width="80" alt="Rain" /> | `wallpaper_wh_1jdqd9` | **Rain** | city, rain, road, night |
+| <img src="thumbnails/wallpaper_wh_8oglpo.webp" width="80" alt="Bomb City" /> | `wallpaper_wh_8oglpo` | **Bomb City** | city, Bomb City, dab, Bob-omb |
+| <img src="thumbnails/wallpaper_wh_k9mwq7.webp" width="80" alt="City" /> | `wallpaper_wh_k9mwq7` | **City** | city, tower, Kuala Lumpur |
+| <img src="thumbnails/wallpaper_wh_9536ld.webp" width="80" alt="City" /> | `wallpaper_wh_9536ld` | **City** | city, tower, Kuala Lumpur |
+| <img src="thumbnails/wallpaper_wh_wyqqr6.webp" width="80" alt="Water On Glass" /> | `wallpaper_wh_wyqqr6` | **Water On Glass** | city, water on glass, sunrise |
 
 ### Fantasia (3)
 
