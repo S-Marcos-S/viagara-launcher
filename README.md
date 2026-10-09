@@ -1,6 +1,6 @@
 # Viagara Launcher
 
-Launcher minimalista e ergonômico para Android baseado em lista vertical, inspirado no [Niagara Launcher](https://niagaralauncher.app).
+Launcher minimalista para Android baseado em lista vertical, inspirado no [Niagara Launcher](https://niagaralauncher.app).
 
 <p align="center">
   <img src="docs/screenshots/screenshot_home.png" width="32%" alt="Tela Inicial" />
@@ -13,7 +13,7 @@ Launcher minimalista e ergonômico para Android baseado em lista vertical, inspi
 
 ---
 
-## 📱 Destaques / Features
+##   Destaques / Features
 
 - **Ergonomia com Uma Mão:** Lista vertical rápida e scrubber alfabético com acesso instantâneo aos favoritos.
 - **Catálogo Oficial de Wallpapers:** Papéis de parede em alta definição (OLED, Espaço, Natureza, Abstrato e Minimalista) com aplicação direta e atualizações automáticas.
@@ -25,7 +25,7 @@ Launcher minimalista e ergonômico para Android baseado em lista vertical, inspi
 
 ---
 
-## ⚡ Recursos Avançados (Root Opcional)
+##   Recursos Avançados (Root Opcional)
 
 *(Ferramentas extras para usuários avançados; o launcher funciona 100% sem root)*
 
@@ -35,7 +35,7 @@ Launcher minimalista e ergonômico para Android baseado em lista vertical, inspi
 
 ---
 
-## 📥 Download
+##   Download
 
 Baixe o APK da versão mais recente na aba **[Releases](https://github.com/S-Marcos-S/viagra-launcher/releases)**.
 
@@ -43,7 +43,7 @@ Baixe o APK da versão mais recente na aba **[Releases](https://github.com/S-Mar
 
 ---
 
-## 🤝 Créditos / Credits
+##   Créditos / Credits
 
 - **[Niagara Launcher](https://niagaralauncher.app)** — Inspiração do conceito ergonômico em lista vertical.
 - **[Wallhaven](https://wallhaven.cc)** e seus artistas — Coleção oficial de papéis de parede.
@@ -52,6 +52,6 @@ Baixe o APK da versão mais recente na aba **[Releases](https://github.com/S-Mar
 
 ---
 
-## 📄 Licença / License
+##   Licença / License
 
 [GPL-3.0-or-later](LICENSE)
