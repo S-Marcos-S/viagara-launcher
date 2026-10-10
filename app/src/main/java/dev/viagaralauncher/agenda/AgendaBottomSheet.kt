@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Note
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -123,20 +124,24 @@ fun AgendaBottomSheet(
         }
     }
 
-    // Expand recurring instances for next 60 days
+    val hideRecurring by repository.hideRecurring.collectAsState(initial = false)
+
     val today = remember { LocalDate.now() }
     val futureLimit = remember { today.plusDays(60) }
 
-    val allOccurrences = remember(rawActivities, today) {
+    val allOccurrences = remember(rawActivities, today, hideRecurring) {
         val list = mutableListOf<AgendaActivity>()
         rawActivities.forEach { baseAct ->
-            if (recurrenceService.isRecurring(baseAct)) {
-                val instances = recurrenceService.generateRecurringInstances(baseAct, today, futureLimit)
-                list.addAll(instances)
+            val isRecurring = recurrenceService.isRecurring(baseAct)
+            if (isRecurring) {
+                if (!hideRecurring) {
+                    val instances = recurrenceService.generateRecurringInstances(baseAct, today, futureLimit)
+                    list.addAll(instances)
+                }
             } else {
                 try {
                     val actDate = LocalDate.parse(baseAct.date)
-                    if (!actDate.isBefore(today.minusDays(1))) {
+                    if (!actDate.isBefore(today)) {
                         list.add(baseAct)
                     }
                 } catch (_: Exception) {
@@ -155,12 +160,13 @@ fun AgendaBottomSheet(
         }
     }
 
-    // Group by date
-    val groupedByDate = remember(filteredList) {
+    // Group by date, starting from today
+    val groupedByDate = remember(filteredList, today) {
         filteredList
             .groupBy {
                 try { LocalDate.parse(it.date) } catch (_: Exception) { today }
             }
+            .filterKeys { !it.isBefore(today) }
             .toSortedMap(compareBy { it })
             .mapValues { (_, items) ->
                 items.sortedWith(
@@ -287,7 +293,42 @@ fun AgendaBottomSheet(
                                 )
                             }
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                // Minimalist Toggle for Recurring Activities
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (hideRecurring) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                    contentColor = if (hideRecurring) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            scope.launch {
+                                                repository.setHideRecurring(!hideRecurring)
+                                            }
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Repeat,
+                                            contentDescription = if (hideRecurring) "Exibindo apenas pontuais" else "Ocultar recorrentes",
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (hideRecurring) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                        )
+                                        Text(
+                                            text = if (hideRecurring) "Pontuais" else "Recorrentes",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = if (hideRecurring) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
+                                }
+
                                 IconButton(onClick = onDismiss) {
                                     Icon(
                                         imageVector = Icons.Default.Close,

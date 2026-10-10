@@ -3,7 +3,7 @@ package dev.viagaralauncher.agenda
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -21,10 +21,21 @@ class AgendaRepository(private val context: Context) {
     private object Keys {
         val ACTIVITIES_JSON = stringPreferencesKey("agenda_activities")
         val COMPLETED_JSON = stringPreferencesKey("agenda_completed_activities")
+        val HIDE_RECURRING = booleanPreferencesKey("agenda_hide_recurring")
     }
 
     private val recurrenceService = AgendaRecurrenceService()
     private val notificationService by lazy { AgendaNotificationService(context) }
+
+    val hideRecurring: Flow<Boolean> = context.agendaDataStore.data.map { prefs ->
+        prefs[Keys.HIDE_RECURRING] ?: false
+    }
+
+    suspend fun setHideRecurring(hide: Boolean) {
+        context.agendaDataStore.edit { prefs ->
+            prefs[Keys.HIDE_RECURRING] = hide
+        }
+    }
 
     val activities: Flow<List<AgendaActivity>> = context.agendaDataStore.data.map { prefs ->
         val jsonStr = prefs[Keys.ACTIVITIES_JSON] ?: "[]"
