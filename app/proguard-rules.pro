@@ -19,3 +19,17 @@
 # builds; keep the call site legible in crash reports.
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# MediaPipe Tasks GenAI & LLM Inference
+-keep class com.google.mediapipe.** { *; }
+-keep interface com.google.mediapipe.** { *; }
+-dontwarn com.google.mediapipe.**
+
+# TensorFlow Lite & LiteRT
+-keep class org.tensorflow.** { *; }
+-dontwarn org.tensorflow.**
+
+# Protobuf
+-keep class com.google.protobuf.** { *; }
+-dontwarn com.google.protobuf.**
+

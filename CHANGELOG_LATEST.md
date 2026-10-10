@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.15
+### 🚀 Novidades da Versão v0.60.16
 
-- **Correção da IA Local:** Ajuste nas definições de notificação de lembretes criados pelo assistente inteligente.
+- **Otimização de Build da IA Local:** Adicionadas regras de ProGuard/R8 e empacotamento para MediaPipe Tasks GenAI no build de release.
