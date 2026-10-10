@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,6 +43,9 @@ import java.util.Locale
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -56,7 +60,13 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.DpOffset
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.widget.Toast
@@ -104,6 +114,9 @@ fun NiagaraClockWidget(
     modifier: Modifier = Modifier,
     startPaddingDp: Int = sidePaddingDp,
     endPaddingDp: Int = sidePaddingDp,
+    widthScale: Float = 1.0f,
+    heightScale: Float = 1.0f,
+    onLongClick: ((DpOffset) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var currentTime by remember { mutableStateOf(Date()) }
@@ -172,17 +185,60 @@ fun NiagaraClockWidget(
     val effectiveStartPadding = symmetricPadding ?: startPaddingDp
     val effectiveEndPadding = symmetricPadding ?: endPaddingDp
 
+    val viewConfig = LocalViewConfiguration.current
+    val density = LocalDensity.current
+
+    val transformOrigin = remember(isCentered, alignRight) {
+        val xOrigin = if (isCentered) 0.5f else if (alignRight) 1.0f else 0.0f
+        TransformOrigin(xOrigin, 0.5f)
+    }
+
+    val gestureModifier = if (onLongClick != null) {
+        Modifier.pointerInput(onLongClick) {
+            awaitEachGesture {
+                val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
+                val downPos = down.position
+                var isLongPress = false
+                val timeout = viewConfig.longPressTimeoutMillis
+                val change = withTimeoutOrNull(timeout) {
+                    val upOrCancel = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                    upOrCancel
+                }
+                if (change == null) {
+                    // Timeout elapsed while touch is still held -> Long Press triggered!
+                    isLongPress = true
+                    with(density) {
+                        onLongClick(DpOffset(downPos.x.toDp(), downPos.y.toDp()))
+                    }
+                    // Consume current event to avoid unwanted clicks
+                    down.consume()
+                }
+            }
+        }
+    } else {
+        Modifier
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = effectiveStartPadding.dp, end = effectiveEndPadding.dp),
         horizontalAlignment = horizontalAlignment,
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val availableWidth = maxWidth
-            val widthFactor = (availableWidth / 340.dp).coerceIn(0.65f, 1.0f)
-            val isCompact = availableWidth < 315.dp
-            val isUltraCompact = availableWidth < 250.dp
+        Box(
+            modifier = Modifier
+                .graphicsLayer {
+                    scaleX = widthScale
+                    scaleY = heightScale
+                    this.transformOrigin = transformOrigin
+                }
+                .then(gestureModifier)
+        ) {
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val availableWidth = maxWidth
+                val widthFactor = (availableWidth / 340.dp).coerceIn(0.65f, 1.0f)
+                val isCompact = availableWidth < 315.dp
+                val isUltraCompact = availableWidth < 250.dp
 
             when (clockStyle) {
                 ClockStyle.CLASSIC -> {

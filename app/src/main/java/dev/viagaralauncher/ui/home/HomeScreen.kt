@@ -71,6 +71,9 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
@@ -232,6 +235,7 @@ fun HomeScreen(
     onChangeIcon: (AppInfo) -> Unit,
     onAppInfo: (AppInfo) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenClockStyle: () -> Unit = {},
     onOpenHomeOptions: () -> Unit = {},
     showAppNotifications: Boolean = false,
     folderWindowPopup: Boolean = true,
@@ -286,6 +290,23 @@ fun HomeScreen(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    val app = context.applicationContext as dev.viagaralauncher.ViagaraApp
+    val clockWidthScalePref by app.prefs.clockWidthScale.collectAsState(initial = 1.0f)
+    val clockHeightScalePref by app.prefs.clockHeightScale.collectAsState(initial = 1.0f)
+    val clockTopPaddingDpPref by app.prefs.clockTopPaddingDp.collectAsState(initial = 158)
+
+    var isResizingClock by remember { mutableStateOf(false) }
+    var liveClockWidthScale by remember(clockWidthScalePref) { mutableFloatStateOf(clockWidthScalePref) }
+    var liveClockHeightScale by remember(clockHeightScalePref) { mutableFloatStateOf(clockHeightScalePref) }
+    var liveClockTopPaddingDp by remember(clockTopPaddingDpPref) { mutableIntStateOf(clockTopPaddingDpPref) }
+
+    LaunchedEffect(clockWidthScalePref) { liveClockWidthScale = clockWidthScalePref }
+    LaunchedEffect(clockHeightScalePref) { liveClockHeightScale = clockHeightScalePref }
+    LaunchedEffect(clockTopPaddingDpPref) { liveClockTopPaddingDp = clockTopPaddingDpPref }
+
+    var clockMenuExpanded by remember { mutableStateOf(false) }
+    var clockMenuOffset by remember { mutableStateOf(DpOffset.Zero) }
 
     val view = LocalView.current
 
@@ -663,11 +684,11 @@ fun HomeScreen(
             }
 
             if (!editMode) {
-                // 2.5 cm from the top of the screen
+                val currentClockTopPadding = if (isResizingClock) liveClockTopPaddingDp.dp else clockTopPaddingDpPref.dp
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(CLOCK_TOP_PADDING_DP)
+                        .height(currentClockTopPadding)
                         .combinedClickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -680,14 +701,74 @@ fun HomeScreen(
                         )
                 )
 
-                NiagaraClockWidget(
-                    clockStyle = clockStyle,
-                    contentColor = contentColor,
-                    sidePaddingDp = sidePaddingDp,
-                    alignRight = alignRight,
-                    startPaddingDp = contentStart.value.toInt(),
-                    endPaddingDp = contentEnd.value.toInt(),
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    NiagaraClockWidget(
+                        clockStyle = clockStyle,
+                        contentColor = contentColor,
+                        sidePaddingDp = sidePaddingDp,
+                        alignRight = alignRight,
+                        startPaddingDp = contentStart.value.toInt(),
+                        endPaddingDp = contentEnd.value.toInt(),
+                        widthScale = if (isResizingClock) liveClockWidthScale else clockWidthScalePref,
+                        heightScale = if (isResizingClock) liveClockHeightScale else clockHeightScalePref,
+                        onLongClick = { offset ->
+                            HapticUtil.tick(view, hapticsEnabled)
+                            clockMenuOffset = offset
+                            clockMenuExpanded = true
+                        },
+                    )
+
+                    ClockContextMenu(
+                        expanded = clockMenuExpanded,
+                        offset = clockMenuOffset,
+                        onDismiss = { clockMenuExpanded = false },
+                        onStartResize = {
+                            clockMenuExpanded = false
+                            isResizingClock = true
+                        },
+                        onOpenClockStyle = {
+                            clockMenuExpanded = false
+                            onOpenClockStyle()
+                        },
+                        onOpenSettings = {
+                            clockMenuExpanded = false
+                            onOpenSettings()
+                        },
+                    )
+
+                    if (isResizingClock) {
+                        ClockResizeOverlay(
+                            widthScale = liveClockWidthScale,
+                            heightScale = liveClockHeightScale,
+                            topPaddingDp = liveClockTopPaddingDp,
+                            contentColor = contentColor,
+                            onUpdateSize = { newW, newH, newTop ->
+                                liveClockWidthScale = newW
+                                liveClockHeightScale = newH
+                                liveClockTopPaddingDp = newTop
+                            },
+                            onReset = {
+                                HapticUtil.tick(view, hapticsEnabled)
+                                liveClockWidthScale = 1.0f
+                                liveClockHeightScale = 1.0f
+                                liveClockTopPaddingDp = 158
+                                scope.launch { app.prefs.resetClockSize() }
+                            },
+                            onFinish = {
+                                HapticUtil.tick(view, hapticsEnabled)
+                                val finalW = liveClockWidthScale
+                                val finalH = liveClockHeightScale
+                                val finalTop = liveClockTopPaddingDp
+                                isResizingClock = false
+                                scope.launch {
+                                    app.prefs.setClockWidthScale(finalW)
+                                    app.prefs.setClockHeightScale(finalH)
+                                    app.prefs.setClockTopPaddingDp(finalTop)
+                                }
+                            },
+                        )
+                    }
+                }
 
                 // Widget slot placed between clock and favorites - only if a widget is added
                 if (hasWidget) {
@@ -2224,5 +2305,240 @@ private fun BottomDailyQuoteBlock(
                 )
                 .padding(vertical = 6.dp),
         )
+    }
+}
+
+/** Context menu shown on long-press on or above the clock widget. */
+@Composable
+private fun ClockContextMenu(
+    expanded: Boolean,
+    offset: DpOffset,
+    onDismiss: () -> Unit,
+    onStartResize: () -> Unit,
+    onOpenClockStyle: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        offset = offset,
+    ) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.action_resize_clock)) },
+            leadingIcon = { Icon(Icons.Filled.AspectRatio, contentDescription = null) },
+            onClick = onStartResize,
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.settings_clock_style)) },
+            leadingIcon = { Icon(Icons.Filled.Palette, contentDescription = null) },
+            onClick = onOpenClockStyle,
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.action_open_settings)) },
+            leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+            onClick = onOpenSettings,
+        )
+    }
+}
+
+/** Interactive resize overlay with draggable handles for expanding the clock upwards and sideways. */
+@Composable
+private fun ClockResizeOverlay(
+    widthScale: Float,
+    heightScale: Float,
+    topPaddingDp: Int,
+    contentColor: Color,
+    onUpdateSize: (newWidthScale: Float, newHeightScale: Float, newTopPaddingDp: Int) -> Unit,
+    onReset: () -> Unit,
+    onFinish: () -> Unit,
+) {
+    val density = LocalDensity.current
+    val colorScheme = MaterialTheme.colorScheme
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                BorderStroke(1.5.dp, colorScheme.primary.copy(alpha = 0.85f)),
+                RoundedCornerShape(18.dp)
+            )
+            .padding(vertical = 6.dp, horizontal = 4.dp)
+    ) {
+        // TOP HANDLE: Expands upwards towards top of screen
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = (-16).dp)
+                .size(width = 54.dp, height = 24.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(colorScheme.primary)
+                .draggable(
+                    orientation = Orientation.Vertical,
+                    state = rememberDraggableState { delta ->
+                        val deltaDp = with(density) { delta.toDp().value }
+                        // Dragging upwards (negative delta) moves the clock closer to the top and increases height scale
+                        val newTop = (topPaddingDp + deltaDp).coerceIn(30f, 240f).roundToInt()
+                        val newHeight = (heightScale - (deltaDp * 0.008f)).coerceIn(0.5f, 2.2f)
+                        onUpdateSize(widthScale, newHeight, newTop)
+                    }
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 20.dp, height = 3.dp)
+                    .background(colorScheme.onPrimary, RoundedCornerShape(2.dp))
+            )
+        }
+
+        // BOTTOM HANDLE: Expands downwards
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = 16.dp)
+                .size(width = 54.dp, height = 24.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(colorScheme.primary)
+                .draggable(
+                    orientation = Orientation.Vertical,
+                    state = rememberDraggableState { delta ->
+                        val deltaDp = with(density) { delta.toDp().value }
+                        val newHeight = (heightScale + (deltaDp * 0.008f)).coerceIn(0.5f, 2.2f)
+                        onUpdateSize(widthScale, newHeight, topPaddingDp)
+                    }
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 20.dp, height = 3.dp)
+                    .background(colorScheme.onPrimary, RoundedCornerShape(2.dp))
+            )
+        }
+
+        // LEFT HANDLE: Expands sideways horizontally
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .offset(x = (-14).dp)
+                .size(width = 24.dp, height = 54.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(colorScheme.primary)
+                .draggable(
+                    orientation = Orientation.Horizontal,
+                    state = rememberDraggableState { delta ->
+                        val deltaDp = with(density) { delta.toDp().value }
+                        // Dragging left (negative delta) expands sideways outward
+                        val newWidth = (widthScale - (deltaDp * 0.008f)).coerceIn(0.5f, 2.2f)
+                        onUpdateSize(newWidth, heightScale, topPaddingDp)
+                    }
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 3.dp, height = 20.dp)
+                    .background(colorScheme.onPrimary, RoundedCornerShape(2.dp))
+            )
+        }
+
+        // RIGHT HANDLE: Expands sideways horizontally
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .offset(x = 14.dp)
+                .size(width = 24.dp, height = 54.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(colorScheme.primary)
+                .draggable(
+                    orientation = Orientation.Horizontal,
+                    state = rememberDraggableState { delta ->
+                        val deltaDp = with(density) { delta.toDp().value }
+                        // Dragging right (positive delta) expands sideways outward
+                        val newWidth = (widthScale + (deltaDp * 0.008f)).coerceIn(0.5f, 2.2f)
+                        onUpdateSize(newWidth, heightScale, topPaddingDp)
+                    }
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 3.dp, height = 20.dp)
+                    .background(colorScheme.onPrimary, RoundedCornerShape(2.dp))
+            )
+        }
+
+        // FLOATING ACTION BAR: Scale percentage badge, Reset button and Done button
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(y = (-46).dp)
+                .background(colorScheme.surfaceContainer.copy(alpha = 0.95f), RoundedCornerShape(14.dp))
+                .border(BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.6f)), RoundedCornerShape(14.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val widthPercent = (widthScale * 100).roundToInt()
+            val heightPercent = (heightScale * 100).roundToInt()
+            Text(
+                text = "${widthPercent}% × ${heightPercent}%",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = colorScheme.onSurface,
+            )
+
+            // Reset button
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = colorScheme.surfaceVariant,
+                modifier = Modifier.clickable(onClick = onReset),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.RestartAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(13.dp),
+                        tint = colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        stringResource(R.string.action_reset_size),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Finish button
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = colorScheme.primary,
+                modifier = Modifier.clickable(onClick = onFinish),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Done,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = colorScheme.onPrimary
+                    )
+                    Text(
+                        stringResource(R.string.action_done),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onPrimary
+                    )
+                }
+            }
+        }
     }
 }

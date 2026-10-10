@@ -99,6 +99,9 @@ class Prefs(private val context: Context) {
         val FOLDER_WINDOW_POPUP = booleanPreferencesKey("folder_window_popup")
         val ACTIVE_THEME = stringPreferencesKey("active_theme_id")
         val CLOCK_STYLE = stringPreferencesKey("clock_style")
+        val CLOCK_WIDTH_SCALE = floatPreferencesKey("clock_width_scale")
+        val CLOCK_HEIGHT_SCALE = floatPreferencesKey("clock_height_scale")
+        val CLOCK_TOP_PADDING_DP = intPreferencesKey("clock_top_padding_dp")
         val WIDGET_ID = intPreferencesKey("widget_id")
         val WIDGET_IDS = stringPreferencesKey("widget_ids_csv")
         val WIDGET_POSITION = intPreferencesKey("widget_position")
@@ -232,6 +235,9 @@ class Prefs(private val context: Context) {
         runCatching { ClockStyle.valueOf(it[Keys.CLOCK_STYLE] ?: ClockStyle.CLASSIC.name) }
             .getOrDefault(ClockStyle.CLASSIC)
     }.distinctUntilChanged()
+    val clockWidthScale: Flow<Float> = data.map { it[Keys.CLOCK_WIDTH_SCALE] ?: 1.0f }.distinctUntilChanged()
+    val clockHeightScale: Flow<Float> = data.map { it[Keys.CLOCK_HEIGHT_SCALE] ?: 1.0f }.distinctUntilChanged()
+    val clockTopPaddingDp: Flow<Int> = data.map { it[Keys.CLOCK_TOP_PADDING_DP] ?: 158 }.distinctUntilChanged()
 
     val widgetId: Flow<Int> = data.map { it[Keys.WIDGET_ID] ?: -1 }.distinctUntilChanged()
     val widgetIds: Flow<List<Int>> = data.map { pref ->
@@ -617,6 +623,26 @@ class Prefs(private val context: Context) {
 
     suspend fun setClockStyle(v: ClockStyle) {
         context.dataStore.edit { it[Keys.CLOCK_STYLE] = v.name }
+    }
+
+    suspend fun setClockWidthScale(v: Float) {
+        context.dataStore.edit { it[Keys.CLOCK_WIDTH_SCALE] = v.coerceIn(0.5f, 2.2f) }
+    }
+
+    suspend fun setClockHeightScale(v: Float) {
+        context.dataStore.edit { it[Keys.CLOCK_HEIGHT_SCALE] = v.coerceIn(0.5f, 2.2f) }
+    }
+
+    suspend fun setClockTopPaddingDp(v: Int) {
+        context.dataStore.edit { it[Keys.CLOCK_TOP_PADDING_DP] = v.coerceIn(30, 240) }
+    }
+
+    suspend fun resetClockSize() {
+        context.dataStore.edit {
+            it[Keys.CLOCK_WIDTH_SCALE] = 1.0f
+            it[Keys.CLOCK_HEIGHT_SCALE] = 1.0f
+            it[Keys.CLOCK_TOP_PADDING_DP] = 158
+        }
     }
 
     suspend fun setWidgetPosition(v: Int) {

@@ -465,6 +465,7 @@ fun HomeRoute(
                 onChangeIcon = { appInfo -> onNavigate(iconPickerRoute(appInfo.key)) },
                 onAppInfo = { app.appRepository.openAppInfo(it.packageName, sourceView = view) },
                 onOpenSettings = { onNavigate("settings") },
+                onOpenClockStyle = { onNavigate("settings/clock") },
                 onOpenHomeOptions = { showHomeOptions = true },
                 showAppNotifications = settings.showAppNotifications,
                 folderWindowPopup = settings.folderWindowPopup,
