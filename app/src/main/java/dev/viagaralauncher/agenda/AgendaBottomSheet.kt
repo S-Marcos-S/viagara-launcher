@@ -3,12 +3,24 @@ package dev.viagaralauncher.agenda
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateEnterExit
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -50,8 +63,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,10 +75,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -72,17 +90,15 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 fun AgendaBottomSheet(
     isVisible: Boolean,
     onDismiss: () -> Unit,
+    topPaddingDp: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
-    if (!isVisible) return
-
-    BackHandler(onBack = onDismiss)
-
     val context = LocalContext.current
     val repository = remember { AgendaRepository(context) }
     val recurrenceService = remember { AgendaRecurrenceService() }
@@ -94,6 +110,16 @@ fun AgendaBottomSheet(
     var selectedFilter by remember { mutableStateOf<AgendaActivityType?>(null) }
     var editingActivity by remember { mutableStateOf<AgendaActivity?>(null) }
     var isCreatingNew by remember { mutableStateOf(false) }
+
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+
+    BackHandler(enabled = isVisible, onBack = onDismiss)
+
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            dragOffsetY = 0f
+        }
+    }
 
     // Expand recurring instances for next 60 days
     val today = remember { LocalDate.now() }
@@ -142,27 +168,67 @@ fun AgendaBottomSheet(
             }
     }
 
-    Box(
+    val colorScheme = MaterialTheme.colorScheme
+
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)),
+        exit = fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutLinearInEasing)),
         modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.65f))
-            .clickable(onClick = onDismiss)
     ) {
-        AnimatedVisibility(
-            visible = true,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .clickable(enabled = false, onClick = {})
+                .fillMaxSize()
+                .background(colorScheme.scrim.copy(alpha = 0.50f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss
+                )
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.85f),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
+                    .padding(top = maxOf(topPaddingDp, 8.dp))
+                    .padding(horizontal = 10.dp)
+                    .fillMaxHeight()
+                    .animateEnterExit(
+                        enter = expandVertically(
+                            expandFrom = Alignment.Top,
+                            animationSpec = spring(
+                                dampingRatio = 0.82f,
+                                stiffness = Spring.StiffnessMediumLow
+                            )
+                        ) + fadeIn(animationSpec = tween(durationMillis = 200)),
+                        exit = shrinkVertically(
+                            shrinkTowards = Alignment.Top,
+                            animationSpec = tween(durationMillis = 220, easing = FastOutLinearInEasing)
+                        ) + fadeOut(animationSpec = tween(durationMillis = 160))
+                    )
+                    .offset { IntOffset(0, dragOffsetY.coerceAtLeast(-300f).roundToInt()) }
+                    .draggable(
+                        state = rememberDraggableState { delta ->
+                            dragOffsetY = (dragOffsetY + delta).coerceAtMost(0f)
+                        },
+                        orientation = Orientation.Vertical,
+                        onDragStopped = { velocity ->
+                            if (velocity < -400f || dragOffsetY < -120f) {
+                                onDismiss()
+                            }
+                            dragOffsetY = 0f
+                        }
+                    )
+                    .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 20.dp, bottomEnd = 20.dp))
+                    .background(lerp(colorScheme.surfaceContainerLow, colorScheme.primary, 0.08f).copy(alpha = 0.92f))
+                    .border(
+                        BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.28f)),
+                        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    )
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Column(
@@ -175,11 +241,11 @@ fun AgendaBottomSheet(
                         Box(
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
-                                .padding(top = 12.dp, bottom = 8.dp)
+                                .padding(top = 10.dp, bottom = 6.dp)
                                 .width(36.dp)
                                 .height(4.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                                .background(colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
                         )
 
                         // Header

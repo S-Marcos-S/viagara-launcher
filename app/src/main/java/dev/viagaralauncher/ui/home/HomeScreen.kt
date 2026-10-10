@@ -245,6 +245,7 @@ fun HomeScreen(
     onDoubleTapLock: (Offset) -> Unit = {},
     edgeSide: EdgeSide = EdgeSide.RIGHT,
     alwaysShowAz: Boolean = true,
+    homeIntentTick: Int = 0,
 ) {
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
@@ -308,7 +309,14 @@ fun HomeScreen(
     var clockMenuExpanded by remember { mutableStateOf(false) }
     var clockMenuOffset by remember { mutableStateOf(DpOffset.Zero) }
 
+    var clockBottomPx by remember { mutableFloatStateOf(0f) }
     var showAgendaSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(homeIntentTick) {
+        if (homeIntentTick > 0 && showAgendaSheet) {
+            showAgendaSheet = false
+        }
+    }
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
@@ -717,7 +725,13 @@ fun HomeScreen(
                         )
                 )
 
-                Box(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coords ->
+                            clockBottomPx = coords.boundsInWindow().bottom
+                        }
+                ) {
                     NiagaraClockWidget(
                         clockStyle = clockStyle,
                         contentColor = contentColor,
@@ -734,7 +748,7 @@ fun HomeScreen(
                         },
                         onDateClick = {
                             HapticUtil.tick(view, hapticsEnabled)
-                            showAgendaSheet = true
+                            showAgendaSheet = !showAgendaSheet
                         },
                     )
 
@@ -1423,9 +1437,11 @@ fun HomeScreen(
         )
     }
 
+    val clockBottomDp = with(density) { clockBottomPx.toDp() }
     dev.viagaralauncher.agenda.AgendaBottomSheet(
         isVisible = showAgendaSheet,
-        onDismiss = { showAgendaSheet = false }
+        onDismiss = { showAgendaSheet = false },
+        topPaddingDp = clockBottomDp,
     )
 }
 

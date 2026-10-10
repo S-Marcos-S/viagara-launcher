@@ -475,6 +475,7 @@ fun HomeRoute(
                 onDoubleTapLock = handleDoubleTapLock,
                 edgeSide = settings.edgeSide,
                 alwaysShowAz = settings.alwaysShowAz,
+                homeIntentTick = homeIntentTick,
             )
         }
 
