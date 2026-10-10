@@ -12,11 +12,13 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.core.content.FileProvider
 import dev.viagaralauncher.BuildConfig
+import dev.viagaralauncher.agenda.AgendaRepository
 import dev.viagaralauncher.data.Prefs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -35,6 +37,7 @@ object BackupManager {
     private const val META_ENTRY = "meta.json"
     private const val PREFS_ENTRY = "preferences.json"
     private const val WALLPAPER_ENTRY = "wallpaper.png"
+    private const val AGENDA_ENTRY = "agenda.json"
 
     fun getBackupsDir(context: Context): File {
         val dir = File(context.filesDir, "backups")
@@ -108,7 +111,7 @@ object BackupManager {
     }
 
     /**
-     * Creates a full backup containing all preferences and optionally the wallpaper into the user-selected folder.
+     * Creates a full backup containing all preferences, agenda items, and optionally the wallpaper into the user-selected folder.
      */
     suspend fun createBackup(
         context: Context,
@@ -144,11 +147,15 @@ object BackupManager {
             // 1. Export DataStore preferences to JSON
             val preferencesJson = prefs.exportAllPreferencesJson()
 
-            // 2. Extract wallpaper if requested
+            // 2. Export Agenda activities to JSON
+            val agendaRepo = AgendaRepository(context)
+            val agendaJson = agendaRepo.exportAgendaJson()
+
+            // 3. Extract wallpaper if requested
             val wallpaperBitmap = if (includeWallpaper) extractWallpaperBitmap(context) else null
             val hasWallpaper = wallpaperBitmap != null
 
-            // 3. Build metadata
+            // 4. Build metadata
             val meta = BackupMeta(
                 versionCode = BuildConfig.VERSION_CODE,
                 versionName = BuildConfig.VERSION_NAME,
@@ -167,7 +174,7 @@ object BackupManager {
                 put("type", meta.type.name)
             }.toString()
 
-            // 4. Write zip archive to OutputStream
+            // 5. Write zip archive to OutputStream
             context.contentResolver.openOutputStream(docUri)?.use { os ->
                 ZipOutputStream(os).use { zos ->
                     // Entry 1: meta.json
@@ -180,7 +187,12 @@ object BackupManager {
                     zos.write(preferencesJson.toByteArray(Charsets.UTF_8))
                     zos.closeEntry()
 
-                    // Entry 3: wallpaper.png
+                    // Entry 3: agenda.json
+                    zos.putNextEntry(ZipEntry(AGENDA_ENTRY))
+                    zos.write(agendaJson.toByteArray(Charsets.UTF_8))
+                    zos.closeEntry()
+
+                    // Entry 4: wallpaper.png
                     if (wallpaperBitmap != null) {
                         zos.putNextEntry(ZipEntry(WALLPAPER_ENTRY))
                         val baos = ByteArrayOutputStream()
@@ -191,10 +203,10 @@ object BackupManager {
                 }
             } ?: throw IllegalStateException("Could not open output stream for created backup")
 
-            // 5. Prune backups in the tree folder
+            // 6. Prune backups in the tree folder
             pruneOldBackupsInTree(context, treeUri, maxKeep)
 
-            // 6. Query size
+            // 7. Query size
             val size = getDocumentSize(context, docUri)
 
             BackupItem(
@@ -209,7 +221,7 @@ object BackupManager {
     }
 
     /**
-     * Restores preferences and wallpaper from a backup file.
+     * Restores preferences, agenda and wallpaper from a backup file.
      */
     suspend fun restoreBackup(
         context: Context,
@@ -224,7 +236,7 @@ object BackupManager {
     }
 
     /**
-     * Restores preferences and wallpaper from a content URI.
+     * Restores preferences, agenda and wallpaper from a content URI.
      */
     suspend fun restoreBackupFromUri(
         context: Context,
@@ -243,11 +255,42 @@ object BackupManager {
         prefs: Prefs,
         inputStream: InputStream,
     ): BackupMeta {
+        val bytes = inputStream.readBytes()
+        if (bytes.size < 4) {
+            throw IllegalArgumentException("Arquivo de backup vazio ou inválido")
+        }
+
+        val isZip = bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte() && bytes[2] == 0x03.toByte() && bytes[3] == 0x04.toByte()
+
+        if (!isZip) {
+            // Check if plain JSON (e.g. BigCalendar backup)
+            val jsonText = bytes.toString(Charsets.UTF_8).trim()
+            if (jsonText.startsWith("{")) {
+                val rootJson = JSONObject(jsonText)
+                if (rootJson.has("activities") || rootJson.has("completedActivities")) {
+                    val agendaRepo = AgendaRepository(context)
+                    val importedCount = agendaRepo.importAgendaJson(jsonText)
+                    return BackupMeta(
+                        versionCode = 1,
+                        versionName = "BigCalendar",
+                        timestamp = System.currentTimeMillis(),
+                        formattedDate = rootJson.optString("createdAt", ""),
+                        hasWallpaper = false,
+                        type = BackupType.MANUAL,
+                        preferenceCount = 0,
+                        agendaCount = importedCount,
+                    )
+                }
+            }
+            throw IllegalArgumentException("Formato de backup não reconhecido")
+        }
+
         var meta: BackupMeta? = null
         var preferencesJson: String? = null
+        var agendaJson: String? = null
         var wallpaperBytes: ByteArray? = null
 
-        ZipInputStream(inputStream).use { zis ->
+        ZipInputStream(ByteArrayInputStream(bytes)).use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
                 when (entry.name) {
@@ -267,6 +310,9 @@ object BackupManager {
                     PREFS_ENTRY -> {
                         preferencesJson = zis.bufferedReader(Charsets.UTF_8).readText()
                     }
+                    AGENDA_ENTRY -> {
+                        agendaJson = zis.bufferedReader(Charsets.UTF_8).readText()
+                    }
                     WALLPAPER_ENTRY -> {
                         val baos = ByteArrayOutputStream()
                         val buffer = ByteArray(8192)
@@ -283,13 +329,22 @@ object BackupManager {
         }
 
         // Apply preferences
+        var prefCount = 0
         if (preferencesJson != null) {
-            val count = prefs.importPreferencesJson(preferencesJson)
-            if (meta != null) {
-                meta = meta.copy(preferenceCount = count)
-            }
+            prefCount = prefs.importPreferencesJson(preferencesJson)
         } else {
             throw IllegalArgumentException("No preferences.json found in backup archive")
+        }
+
+        // Apply agenda if present
+        var importedAgendaCount = 0
+        if (agendaJson != null) {
+            val agendaRepo = AgendaRepository(context)
+            importedAgendaCount = agendaRepo.importAgendaJson(agendaJson)
+        }
+
+        if (meta != null) {
+            meta = meta.copy(preferenceCount = prefCount, agendaCount = importedAgendaCount)
         }
 
         // Apply wallpaper if present
@@ -310,7 +365,8 @@ object BackupManager {
             formattedDate = "",
             hasWallpaper = wallpaperBytes != null,
             type = BackupType.MANUAL,
-            preferenceCount = 0,
+            preferenceCount = prefCount,
+            agendaCount = importedAgendaCount,
         )
     }
 
@@ -353,7 +409,7 @@ object BackupManager {
 
                 while (cursor.moveToNext()) {
                     val name = cursor.getString(nameCol) ?: continue
-                    if (name.endsWith(BACKUP_EXTENSION) || name.endsWith(LEGACY_BACKUP_EXTENSION) || name.endsWith(".zip")) {
+                    if (name.endsWith(BACKUP_EXTENSION) || name.endsWith(LEGACY_BACKUP_EXTENSION) || name.endsWith(".zip") || name.endsWith(".json")) {
                         val childDocId = cursor.getString(idCol)
                         val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocId)
                         val size = if (sizeCol != -1) cursor.getLong(sizeCol) else 0L
@@ -381,8 +437,12 @@ object BackupManager {
      */
     fun readMetaFromUri(context: Context, uri: Uri): BackupMeta? {
         return runCatching {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                ZipInputStream(stream).use { zis ->
+            val bytes = context.contentResolver.openInputStream(uri)?.use { stream ->
+                stream.readBytes()
+            } ?: return null
+
+            if (bytes.size >= 4 && bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte() && bytes[2] == 0x03.toByte() && bytes[3] == 0x04.toByte()) {
+                ZipInputStream(ByteArrayInputStream(bytes)).use { zis ->
                     var entry = zis.nextEntry
                     while (entry != null) {
                         if (entry.name == META_ENTRY) {
@@ -399,6 +459,25 @@ object BackupManager {
                             )
                         }
                         entry = zis.nextEntry
+                    }
+                }
+            } else {
+                val jsonText = bytes.toString(Charsets.UTF_8).trim()
+                if (jsonText.startsWith("{")) {
+                    val rootJson = JSONObject(jsonText)
+                    if (rootJson.has("activities") || rootJson.has("completedActivities")) {
+                        val activeCount = rootJson.optJSONArray("activities")?.length() ?: 0
+                        val compCount = rootJson.optJSONArray("completedActivities")?.length() ?: 0
+                        return BackupMeta(
+                            versionCode = 1,
+                            versionName = "BigCalendar",
+                            timestamp = System.currentTimeMillis(),
+                            formattedDate = rootJson.optString("createdAt", ""),
+                            hasWallpaper = false,
+                            type = BackupType.MANUAL,
+                            preferenceCount = 0,
+                            agendaCount = activeCount + compCount,
+                        )
                     }
                 }
             }

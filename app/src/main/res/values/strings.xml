@@ -399,6 +399,7 @@
     <string name="backup_action_delete">Delete</string>
     <string name="backup_confirm_restore_title">Restore this backup?</string>
     <string name="backup_confirm_restore_msg">Your current favorites, home screen layout, and settings will be replaced by the contents of this backup.</string>
+    <string name="backup_restore_agenda_success">%1$d agenda items imported successfully!</string>
     <string name="backup_confirm_delete_title">Delete backup?</string>
     <string name="backup_confirm_delete_msg">Are you sure you want to permanently delete this backup file?</string>
     <string name="backup_deleted_success">Backup deleted</string>

@@ -704,9 +704,15 @@ fun BackupSettingsScreen(
                             val res = BackupManager.restoreBackupFromUri(context, prefs, toRestore.uri)
                             isRestoring = false
                             if (res.isSuccess) {
+                                val meta = res.getOrNull()
+                                val message = if (meta?.versionName == "BigCalendar") {
+                                    context.getString(R.string.backup_restore_agenda_success, meta.agendaCount)
+                                } else {
+                                    context.getString(R.string.backup_restore_success)
+                                }
                                 Toast.makeText(
                                     context,
-                                    context.getString(R.string.backup_restore_success),
+                                    message,
                                     Toast.LENGTH_LONG,
                                 ).show()
                             } else {
@@ -749,9 +755,15 @@ fun BackupSettingsScreen(
                             val res = BackupManager.restoreBackupFromUri(context, prefs, uri)
                             isRestoring = false
                             if (res.isSuccess) {
+                                val meta = res.getOrNull()
+                                val message = if (meta?.versionName == "BigCalendar") {
+                                    context.getString(R.string.backup_restore_agenda_success, meta.agendaCount)
+                                } else {
+                                    context.getString(R.string.backup_restore_success)
+                                }
                                 Toast.makeText(
                                     context,
-                                    context.getString(R.string.backup_restore_success),
+                                    message,
                                     Toast.LENGTH_LONG,
                                 ).show()
                                 refreshList()

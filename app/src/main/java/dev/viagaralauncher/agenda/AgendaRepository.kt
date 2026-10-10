@@ -55,6 +55,81 @@ class AgendaRepository(private val context: Context) {
         return jsonArray.toString()
     }
 
+    suspend fun exportAgendaJson(): String {
+        val active = activities.first()
+        val completed = completedActivities.first()
+        val root = JSONObject().apply {
+            put("activities", JSONArray().apply { active.forEach { put(it.toJson()) } })
+            put("completedActivities", JSONArray().apply { completed.forEach { put(it.toJson()) } })
+        }
+        return root.toString()
+    }
+
+    suspend fun importAgendaJson(jsonStr: String): Int {
+        val root = JSONObject(jsonStr)
+        val activeArr = root.optJSONArray("activities") ?: JSONArray()
+        val compArr = root.optJSONArray("completedActivities") ?: JSONArray()
+
+        val parsedActive = mutableListOf<AgendaActivity>()
+        for (i in 0 until activeArr.length()) {
+            val obj = activeArr.getJSONObject(i)
+            runCatching { parseAgendaActivityFromAny(obj) }.getOrNull()?.let { parsedActive.add(it) }
+        }
+
+        val parsedComp = mutableListOf<AgendaActivity>()
+        for (i in 0 until compArr.length()) {
+            val obj = compArr.getJSONObject(i)
+            runCatching { parseAgendaActivityFromAny(obj) }.getOrNull()?.let { parsedComp.add(it) }
+        }
+
+        context.agendaDataStore.edit { prefs ->
+            val curActive = parseActivitiesJson(prefs[Keys.ACTIVITIES_JSON] ?: "[]").toMutableList()
+            parsedActive.forEach { item ->
+                val idx = curActive.indexOfFirst { it.id == item.id }
+                if (idx != -1) curActive[idx] = item else curActive.add(item)
+            }
+            prefs[Keys.ACTIVITIES_JSON] = activitiesToJson(curActive)
+
+            val curComp = parseActivitiesJson(prefs[Keys.COMPLETED_JSON] ?: "[]").toMutableList()
+            parsedComp.forEach { item ->
+                val idx = curComp.indexOfFirst { it.id == item.id }
+                if (idx != -1) curComp[idx] = item else curComp.add(item)
+            }
+            prefs[Keys.COMPLETED_JSON] = activitiesToJson(curComp)
+        }
+
+        // Reschedule notifications for active items
+        parsedActive.forEach { act ->
+            if (act.notificationSettings.isEnabled &&
+                act.notificationSettings.notificationType != AgendaNotificationType.NONE &&
+                !act.isCompleted
+            ) {
+                notificationService.scheduleNotification(act)
+            }
+        }
+
+        return parsedActive.size + parsedComp.size
+    }
+
+    private fun parseAgendaActivityFromAny(obj: JSONObject): AgendaActivity {
+        val rawColor = obj.optString("categoryColor", "1")
+        val normalizedColor = when {
+            rawColor in listOf("1", "2", "3", "4") -> rawColor
+            rawColor.startsWith("#") || rawColor.startsWith("0x") -> {
+                when (rawColor.uppercase()) {
+                    "#2196F3", "#3B82F6", "#42A5F5" -> "2"
+                    "#FFC107", "#F59E0B", "#FBBF24" -> "3"
+                    "#F44336", "#EF4444", "#E53935" -> "4"
+                    else -> "1"
+                }
+            }
+            else -> "1"
+        }
+
+        val activity = AgendaActivity.fromJson(obj)
+        return activity.copy(categoryColor = normalizedColor)
+    }
+
     suspend fun saveActivity(activity: AgendaActivity) {
         context.agendaDataStore.edit { prefs ->
             val current = parseActivitiesJson(prefs[Keys.ACTIVITIES_JSON] ?: "[]").toMutableList()

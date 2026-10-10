@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.60.08
+### 🚀 Novidades da Versão v0.60.09
 
-- **Animação Top-to-Bottom Aperfeiçoada:** A tela de agendamentos agora desdobra diretamente de cima para baixo com efeito elástico suave (`expandVertically`) logo abaixo do relógio.
-- **Camadas e Toques Isolados:** Corrigido vazamento de toques para a tela inicial durante a navegação na agenda (`pointerInput`).
-- **Botão Dinâmico Ocultado:** O botão de ação dinâmico e o alfabeto lateral agora são ocultados automaticamente quando a agenda está visível.
+- **Backup Completo da Agenda:** O backup da launcher agora inclui e preserva todos os agendamentos e tarefas do usuário (`agenda.json`).
+- **Compatibilidade com BigCalendar:** A restauração de backup agora aceita e importa arquivos `.json` exportados pelo BigCalendar.
+- **Restauração Inteligente:** Identificação automática do formato do backup e reagendamento automático dos alarmes e notificações importados.

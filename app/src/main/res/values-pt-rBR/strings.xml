@@ -352,6 +352,7 @@
     <string name="backup_action_delete">Excluir</string>
     <string name="backup_confirm_restore_title">Restaurar este backup?</string>
     <string name="backup_confirm_restore_msg">Seus favoritos, layout e configurações atuais serão substituídos pelo conteúdo deste backup.</string>
+    <string name="backup_restore_agenda_success">%1$d agendamentos importados com sucesso!</string>
     <string name="backup_confirm_delete_title">Excluir backup?</string>
     <string name="backup_confirm_delete_msg">Tem certeza de que deseja excluir permanentemente este arquivo de backup?</string>
     <string name="backup_deleted_success">Backup excluído</string>

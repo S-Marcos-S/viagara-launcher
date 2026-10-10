@@ -34,6 +34,7 @@ data class BackupMeta(
     val hasWallpaper: Boolean,
     val type: BackupType,
     val preferenceCount: Int,
+    val agendaCount: Int = 0,
 )
 
 data class BackupItem(
