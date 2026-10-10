@@ -191,6 +191,7 @@
     <string name="clock_style_calligraphy_minimal">Escrita Artística à Mão</string>
     <string name="clock_style_handwritten_canvas">Traço à Mão em Canvas</string>
     <string name="clock_style_handwritten_canvas_stats">Traço à Mão + Métricas</string>
+    <string name="clock_style_canvas_shimmer">Canvas Clássico com Brilho</string>
     <string name="action_resize_clock">Redimensionar relógio</string>
     <string name="action_reset_size">Redefinir tamanho</string>
     <string name="quote_of_the_day_tag">Reflexão do dia</string>
