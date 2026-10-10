@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -664,7 +665,7 @@ fun HomeRoute(
             )
         }
 
-        val clockBottomDp = with(density) { clockBottomPx.toDp() }
+        val clockBottomDp = with(density) { (clockBottomPx as Float).toDp() }
         dev.viagaralauncher.agenda.AgendaBottomSheet(
             isVisible = showAgendaSheet,
             onDismiss = { showAgendaSheet = false },
