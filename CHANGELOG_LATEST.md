@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.18
+### 🚀 Novidades da Versão v0.60.19
 
-- **Compatibilidade do Modelo de IA:** Atualizado o runtime MediaPipe GenAI para v0.10.35 para suporte total ao Gemma 3.
-- **Estabilidade:** Proteção contra falhas de inicialização do motor de inferência local.
+- **Otimização de Tamanho do APK:** Restrição para arquitetura 64-bit (arm64-v8a) e compressão das bibliotecas nativas de IA, reduzindo drasticamente o tamanho do app.
+- **Suporte Gemma 3:** Compatibilidade com Gemma 3 mantida com suporte a aceleração gráfica e NPU.
