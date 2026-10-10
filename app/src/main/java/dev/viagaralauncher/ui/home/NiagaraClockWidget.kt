@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.viagaralauncher.ui.home
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -105,6 +106,7 @@ fun isCenteredClockStyle(style: ClockStyle): Boolean = when (style) {
  * - Tapping the time launches the system Clock/Alarm app.
  * - Tapping the date launches the system Calendar app.
  */
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun NiagaraClockWidget(
     clockStyle: ClockStyle = ClockStyle.CLASSIC,
