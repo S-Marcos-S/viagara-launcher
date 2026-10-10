@@ -149,6 +149,8 @@ fun HomeRoute(
     var homeEditMode by remember { mutableStateOf(false) }
     var folderPickerFor by remember { mutableStateOf<AppInfo?>(null) }
     var showHomeOptions by remember { mutableStateOf(false) }
+    var showAgendaSheet by remember { mutableStateOf(false) }
+    var clockBottomPx by remember { mutableFloatStateOf(0f) }
     var lockTargetOffset by remember { mutableStateOf<Offset?>(null) }
 
     val hasPromptedDefaultLauncher by app.prefs.hasPromptedDefaultLauncher.collectAsState(initial = true)
@@ -279,14 +281,23 @@ fun HomeRoute(
 
     LaunchedEffect(settings.edgeSide) { scrub.syncRestingSide(settings.edgeSide) }
 
-    BackHandler(enabled = appListVisible) { closeAppList() }
+    BackHandler(enabled = appListVisible || showAgendaSheet) {
+        if (showAgendaSheet) {
+            showAgendaSheet = false
+        } else {
+            closeAppList()
+        }
+    }
 
     // Leaving the launcher (screen off, another app) should always drop us back to the home
     // screen rather than reopening onto the overlay.
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE) closeAppList(snap = true)
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                closeAppList(snap = true)
+                showAgendaSheet = false
+            }
             if (event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_RESUME) {
                 lockTargetOffset = null
             }
@@ -295,7 +306,10 @@ fun HomeRoute(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     LaunchedEffect(homeIntentTick) {
-        if (homeIntentTick > 0) closeAppList(snap = true)
+        if (homeIntentTick > 0) {
+            closeAppList(snap = true)
+            showAgendaSheet = false
+        }
     }
 
     LaunchedEffect(settings.edgeSide, view, band) {
@@ -476,6 +490,8 @@ fun HomeRoute(
                 edgeSide = settings.edgeSide,
                 alwaysShowAz = settings.alwaysShowAz,
                 homeIntentTick = homeIntentTick,
+                onOpenAgenda = { showAgendaSheet = !showAgendaSheet },
+                onClockBottomMeasured = { clockBottomPx = it },
             )
         }
 
@@ -545,7 +561,7 @@ fun HomeRoute(
             )
         }
 
-        if (settings.alwaysShowAz && !appListVisible && !showHomeOptions) {
+        if (settings.alwaysShowAz && !appListVisible && !showHomeOptions && !showAgendaSheet) {
             EdgeScrubber(
                 letters = listModel.letters,
                 scrubY = remember(scrub) { scrub::currentY },
@@ -587,7 +603,7 @@ fun HomeRoute(
 
         // Edge zones sit on top of everything, so one unbroken touch opens the list and then
         // scrubs it as the finger moves.
-        if (!homeEditMode && !showHomeOptions) {
+        if (!homeEditMode && !showHomeOptions && !showAgendaSheet) {
             val sides = remember(settings.edgeSide) {
                 when (settings.edgeSide) {
                     EdgeSide.LEFT -> listOf(EdgeSide.LEFT)
@@ -613,7 +629,7 @@ fun HomeRoute(
             }
         }
 
-        if (settings.dynamicButtonEnabled && !appListVisible && !homeEditMode && !showHomeOptions && lockTargetOffset == null) {
+        if (settings.dynamicButtonEnabled && !appListVisible && !homeEditMode && !showHomeOptions && !showAgendaSheet && lockTargetOffset == null) {
             val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             val dynamicButtonBottom = maxOf(80.dp, navBarBottom + 68.dp)
             val isLeft = scrub.side == EdgeSide.LEFT
@@ -647,6 +663,13 @@ fun HomeRoute(
                     .zIndex(2f),
             )
         }
+
+        val clockBottomDp = with(density) { clockBottomPx.toDp() }
+        dev.viagaralauncher.agenda.AgendaBottomSheet(
+            isVisible = showAgendaSheet,
+            onDismiss = { showAgendaSheet = false },
+            topPaddingDp = clockBottomDp,
+        )
 
         HomeOptionsBottomSheet(
             visible = showHomeOptions,

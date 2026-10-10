@@ -17,9 +17,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -171,64 +174,78 @@ fun AgendaBottomSheet(
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = fadeIn(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)),
+        enter = fadeIn(animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)),
         exit = fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutLinearInEasing)),
         modifier = modifier
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(colorScheme.scrim.copy(alpha = 0.50f))
+                .background(colorScheme.scrim.copy(alpha = 0.55f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onDismiss
                 )
         ) {
-            Column(
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = expandVertically(
+                    expandFrom = Alignment.Top,
+                    animationSpec = spring(
+                        dampingRatio = 0.82f,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeIn(animationSpec = tween(durationMillis = 200)),
+                exit = shrinkVertically(
+                    shrinkTowards = Alignment.Top,
+                    animationSpec = tween(durationMillis = 220, easing = FastOutLinearInEasing)
+                ) + fadeOut(animationSpec = tween(durationMillis = 160)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = maxOf(topPaddingDp, 8.dp))
                     .padding(horizontal = 10.dp)
                     .fillMaxHeight()
-                    .animateEnterExit(
-                        enter = expandVertically(
-                            expandFrom = Alignment.Top,
-                            animationSpec = spring(
-                                dampingRatio = 0.82f,
-                                stiffness = Spring.StiffnessMediumLow
-                            )
-                        ) + fadeIn(animationSpec = tween(durationMillis = 200)),
-                        exit = shrinkVertically(
-                            shrinkTowards = Alignment.Top,
-                            animationSpec = tween(durationMillis = 220, easing = FastOutLinearInEasing)
-                        ) + fadeOut(animationSpec = tween(durationMillis = 160))
-                    )
-                    .offset { IntOffset(0, dragOffsetY.coerceAtLeast(-300f).roundToInt()) }
-                    .draggable(
-                        state = rememberDraggableState { delta ->
-                            dragOffsetY = (dragOffsetY + delta).coerceAtMost(0f)
-                        },
-                        orientation = Orientation.Vertical,
-                        onDragStopped = { velocity ->
-                            if (velocity < -400f || dragOffsetY < -120f) {
-                                onDismiss()
-                            }
-                            dragOffsetY = 0f
-                        }
-                    )
-                    .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 20.dp, bottomEnd = 20.dp))
-                    .background(lerp(colorScheme.surfaceContainerLow, colorScheme.primary, 0.08f).copy(alpha = 0.92f))
-                    .border(
-                        BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.28f)),
-                        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
-                    )
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    )
+                    .align(Alignment.TopCenter)
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .offset { IntOffset(0, dragOffsetY.coerceAtLeast(-300f).roundToInt()) }
+                        .draggable(
+                            state = rememberDraggableState { delta ->
+                                dragOffsetY = (dragOffsetY + delta).coerceAtMost(0f)
+                            },
+                            orientation = Orientation.Vertical,
+                            onDragStopped = { velocity ->
+                                if (velocity < -400f || dragOffsetY < -120f) {
+                                    onDismiss()
+                                }
+                                dragOffsetY = 0f
+                            }
+                        )
+                        .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 20.dp, bottomEnd = 20.dp))
+                        .background(lerp(colorScheme.surfaceContainerLow, colorScheme.primary, 0.08f).copy(alpha = 0.95f))
+                        .border(
+                            BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.28f)),
+                            shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
+                        )
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                while (true) {
+                                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                                    // Let children handle their own clicks, but ensure gestures
+                                    // inside this sheet are never dispatched to underlying layers
+                                    if (event.changes.none { it.pressed }) break
+                                }
+                            }
+                        }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
+                        )
+                ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier
@@ -410,6 +427,7 @@ fun AgendaBottomSheet(
                 }
             }
         }
+    }
     }
 
     // Sheet for Creating or Editing

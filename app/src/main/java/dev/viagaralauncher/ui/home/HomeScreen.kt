@@ -246,6 +246,8 @@ fun HomeScreen(
     edgeSide: EdgeSide = EdgeSide.RIGHT,
     alwaysShowAz: Boolean = true,
     homeIntentTick: Int = 0,
+    onOpenAgenda: () -> Unit = {},
+    onClockBottomMeasured: (Float) -> Unit = {},
 ) {
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
@@ -309,21 +311,13 @@ fun HomeScreen(
     var clockMenuExpanded by remember { mutableStateOf(false) }
     var clockMenuOffset by remember { mutableStateOf(DpOffset.Zero) }
 
-    var clockBottomPx by remember { mutableFloatStateOf(0f) }
-    var showAgendaSheet by remember { mutableStateOf(false) }
-
-    LaunchedEffect(homeIntentTick) {
-        if (homeIntentTick > 0 && showAgendaSheet) {
-            showAgendaSheet = false
-        }
-    }
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
                 val activity = context as? androidx.activity.ComponentActivity
                 if (activity?.intent?.getBooleanExtra("open_agenda", false) == true) {
-                    showAgendaSheet = true
+                    onOpenAgenda()
                     activity.intent.removeExtra("open_agenda")
                 }
             }
@@ -729,7 +723,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .onGloballyPositioned { coords ->
-                            clockBottomPx = coords.boundsInWindow().bottom
+                            onClockBottomMeasured(coords.boundsInWindow().bottom)
                         }
                 ) {
                     NiagaraClockWidget(
@@ -748,7 +742,7 @@ fun HomeScreen(
                         },
                         onDateClick = {
                             HapticUtil.tick(view, hapticsEnabled)
-                            showAgendaSheet = !showAgendaSheet
+                            onOpenAgenda()
                         },
                     )
 
@@ -1436,13 +1430,6 @@ fun HomeScreen(
             },
         )
     }
-
-    val clockBottomDp = with(density) { clockBottomPx.toDp() }
-    dev.viagaralauncher.agenda.AgendaBottomSheet(
-        isVisible = showAgendaSheet,
-        onDismiss = { showAgendaSheet = false },
-        topPaddingDp = clockBottomDp,
-    )
 }
 
 /** One favorite: icon, optional name, press highlight and its context menu. */

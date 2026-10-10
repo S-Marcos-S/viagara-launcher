@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.60.07
+### 🚀 Novidades da Versão v0.60.08
 
-- **Abertura Fluida do Relógio:** A tela de agendamentos agora desdobra de cima para baixo iniciando logo abaixo do relógio até a base da tela com efeito suave de revelação.
-- **Fechamento Ágil:** Fechamento retrátil de baixo para cima ao tocar novamente no dia, pressionar Voltar, apertar o botão Home ou deslizar.
-- **Design Translúcido com Blur:** Superfície fosca translúcida com borda sutil e fundo escurecido.
+- **Animação Top-to-Bottom Aperfeiçoada:** A tela de agendamentos agora desdobra diretamente de cima para baixo com efeito elástico suave (`expandVertically`) logo abaixo do relógio.
+- **Camadas e Toques Isolados:** Corrigido vazamento de toques para a tela inicial durante a navegação na agenda (`pointerInput`).
+- **Botão Dinâmico Ocultado:** O botão de ação dinâmico e o alfabeto lateral agora são ocultados automaticamente quando a agenda está visível.
