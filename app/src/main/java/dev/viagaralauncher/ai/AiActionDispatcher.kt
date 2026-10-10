@@ -267,8 +267,9 @@ class AiActionDispatcher(private val context: Context) {
                         recurrenceRule = root.optString("recurrence", "NONE"),
                         notificationSettings = AgendaNotificationSettings(
                             isEnabled = hasAlarm,
-                            notificationType = if (hasAlarm) AgendaNotificationType.HIGH_VISIBILITY_NOTIFICATION else AgendaNotificationType.NONE,
-                            advanceMinutes = 0
+                            notificationType = if (hasAlarm) AgendaNotificationType.BEFORE_ACTIVITY else AgendaNotificationType.NONE,
+                            notificationTime = startTime,
+                            customMinutesBefore = null
                         )
                     )
 
