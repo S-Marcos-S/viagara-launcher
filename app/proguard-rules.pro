@@ -33,3 +33,16 @@
 -keep class com.google.protobuf.** { *; }
 -dontwarn com.google.protobuf.**
 
+# AutoValue, Guava and compile-time annotation processor references
+-dontwarn javax.annotation.processing.**
+-dontwarn javax.lang.model.**
+-dontwarn com.google.auto.value.**
+-dontwarn com.google.common.**
+-dontwarn org.checkerframework.**
+-dontwarn com.google.errorprone.**
+-dontwarn com.google.j2objc.**
+
+# Prevent R8 from failing on missing compile-time optional classes
+-ignorewarnings
+
+

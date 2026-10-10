@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.16
+### 🚀 Novidades da Versão v0.60.17
 
-- **Otimização de Build da IA Local:** Adicionadas regras de ProGuard/R8 e empacotamento para MediaPipe Tasks GenAI no build de release.
+- **Correção no Build de Release:** Adicionadas regras de ProGuard para classes de anotação em tempo de compilação do AutoValue no MediaPipe.
