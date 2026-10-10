@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.05
+### 🚀 Novidades da Versão v0.60.06
 
-- **Scroll Fluido no Alfabeto:** Carregamento e rasterização de ícones movidos para background coroutines, eliminando travamentos da UI thread no início da rolagem.
-- **Estabilidade do Pipeline:** Otimização de alocação de memória (4GB heap) e isolamento de testes para build estável no CI.
+- **Tela de Agendamentos Integrada:** Toque na data do widget de relógio para abrir a lista de compromissos estilo Niagara Launcher, organizada por dia da semana e mês.
+- **Criação e Gestão Completa:** Criação de tarefas, eventos, notas e aniversários com prioridades, repetições inteligentes, listas numeradas e checklists dinâmicos.
+- **Notificações e Lembretes:** Sistema nativo de lembretes e alarmes exatos com suporte a adiamento rápido e conclusão direta.

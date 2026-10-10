@@ -119,8 +119,10 @@ fun NiagaraClockWidget(
     widthScale: Float = 1.0f,
     heightScale: Float = 1.0f,
     onLongClick: ((DpOffset) -> Unit)? = null,
+    onDateClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val handleDateClick: () -> Unit = onDateClick ?: { launchCalendarApp(context) }
     var currentTime by remember { mutableStateOf(Date()) }
 
     // Listen for system time broadcast ticks to update the clock efficiently without polling loops
@@ -251,7 +253,7 @@ fun NiagaraClockWidget(
                         horizontalAlignment = horizontalAlignment,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.STACKED -> {
@@ -263,7 +265,7 @@ fun NiagaraClockWidget(
                         horizontalAlignment = horizontalAlignment,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.MINIMAL -> {
@@ -274,7 +276,7 @@ fun NiagaraClockWidget(
                         horizontalAlignment = horizontalAlignment,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.ANALOG -> {
@@ -286,7 +288,7 @@ fun NiagaraClockWidget(
                         horizontalAlignment = horizontalAlignment,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.DIGITAL_CARD -> {
@@ -297,7 +299,7 @@ fun NiagaraClockWidget(
                         horizontalAlignment = horizontalAlignment,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.DAY_FOCUS -> {
@@ -309,7 +311,7 @@ fun NiagaraClockWidget(
                         horizontalAlignment = horizontalAlignment,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.TECH_HUD -> {
@@ -322,7 +324,7 @@ fun NiagaraClockWidget(
                         widthFactor = widthFactor,
                         isCompact = isCompact,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onStatsClick = { launchBatterySettings(context) },
                     )
                 }
@@ -336,7 +338,7 @@ fun NiagaraClockWidget(
                         widthFactor = widthFactor,
                         isCompact = isCompact,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onBatteryStatsClick = { launchBatterySettings(context) },
                         onStorageClick = { launchStorageSettings(context) },
                     )
@@ -352,7 +354,7 @@ fun NiagaraClockWidget(
                         isCompact = isCompact,
                         isUltraCompact = isUltraCompact,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onStatsClick = { launchBatterySettings(context) },
                     )
                 }
@@ -366,7 +368,7 @@ fun NiagaraClockWidget(
                         widthFactor = widthFactor,
                         isCompact = isCompact,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onStatsClick = { launchBatterySettings(context) },
                     )
                 }
@@ -380,7 +382,7 @@ fun NiagaraClockWidget(
                         widthFactor = widthFactor,
                         isCompact = isCompact,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onStatsClick = { launchBatterySettings(context) },
                     )
                 }
@@ -407,7 +409,7 @@ fun NiagaraClockWidget(
                         availableWidth = availableWidth,
                         isCompact = isCompact,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onQuoteClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                             clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${dailyQuote.quote}\"\n— ${dailyQuote.author}"))
@@ -440,7 +442,7 @@ fun NiagaraClockWidget(
                         isCompact = isCompact,
                         isUltraCompact = isUltraCompact,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onQuoteClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                             clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${dailyQuote.quote}\"\n— ${dailyQuote.author}"))
@@ -460,7 +462,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onBatteryClick = { launchBatterySettings(context) },
                     )
                 }
@@ -472,7 +474,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onBatteryClick = { launchBatterySettings(context) },
                     )
                 }
@@ -484,7 +486,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.CALLIGRAPHY_LARGE -> {
@@ -494,7 +496,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.CALLIGRAPHY_STACKED -> {
@@ -505,7 +507,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.CALLIGRAPHY_MINIMAL -> {
@@ -515,7 +517,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.HANDWRITTEN_CANVAS -> {
@@ -526,7 +528,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                     )
                 }
                 ClockStyle.HANDWRITTEN_CANVAS_STATS -> {
@@ -538,7 +540,7 @@ fun NiagaraClockWidget(
                         contentColor = contentColor,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
-                        onDateClick = { launchCalendarApp(context) },
+                        onDateClick = handleDateClick,
                         onBatteryClick = { launchBatterySettings(context) },
                         onMemoryClick = { launchMemorySettings(context) },
                     )

@@ -95,8 +95,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         val isExplicitAction = intent.action == dev.viagaralauncher.update.UpdateManager.ACTION_OPEN_UPDATE_CHANGELOG ||
             intent.getBooleanExtra(dev.viagaralauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false) ||
+            intent.getBooleanExtra("open_agenda", false) ||
             intent.action == dev.viagaralauncher.wallpaper.WallpaperNotificationManager.ACTION_OPEN_WALLPAPERS ||
             intent.getBooleanExtra(dev.viagaralauncher.wallpaper.WallpaperNotificationManager.EXTRA_OPEN_WALLPAPERS, false) ||
             intent.action == dev.viagaralauncher.battery.DrainNotificationManager.ACTION_OPEN_BATTERY_STATS ||

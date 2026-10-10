@@ -29,6 +29,8 @@
     <uses-permission android:name="android.permission.READ_LOGS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application
         android:name=".ViagaraApp"
@@ -142,6 +144,20 @@
                 <action android:name="dev.viagaralauncher.action.ANOMALY_FORCE_STOP" />
                 <action android:name="dev.viagaralauncher.action.ANOMALY_MUTE_APP" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".agenda.AgendaNotificationReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="dev.viagaralauncher.agenda.ACTION_VIEW_ACTIVITY" />
+                <action android:name="dev.viagaralauncher.agenda.ACTION_SNOOZE" />
+                <action android:name="dev.viagaralauncher.agenda.ACTION_DISMISS" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_CHANGED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
 

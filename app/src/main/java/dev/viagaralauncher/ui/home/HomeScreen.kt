@@ -308,6 +308,22 @@ fun HomeScreen(
     var clockMenuExpanded by remember { mutableStateOf(false) }
     var clockMenuOffset by remember { mutableStateOf(DpOffset.Zero) }
 
+    var showAgendaSheet by remember { mutableStateOf(false) }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                val activity = context as? androidx.activity.ComponentActivity
+                if (activity?.intent?.getBooleanExtra("open_agenda", false) == true) {
+                    showAgendaSheet = true
+                    activity.intent.removeExtra("open_agenda")
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     val view = LocalView.current
 
     // While a padding handle is being dragged we track it locally so layout follows the
@@ -715,6 +731,10 @@ fun HomeScreen(
                             HapticUtil.tick(view, hapticsEnabled)
                             clockMenuOffset = offset
                             clockMenuExpanded = true
+                        },
+                        onDateClick = {
+                            HapticUtil.tick(view, hapticsEnabled)
+                            showAgendaSheet = true
                         },
                     )
 
@@ -1402,6 +1422,11 @@ fun HomeScreen(
             },
         )
     }
+
+    dev.viagaralauncher.agenda.AgendaBottomSheet(
+        isVisible = showAgendaSheet,
+        onDismiss = { showAgendaSheet = false }
+    )
 }
 
 /** One favorite: icon, optional name, press highlight and its context menu. */
