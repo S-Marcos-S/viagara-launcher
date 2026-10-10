@@ -23,7 +23,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -181,15 +185,24 @@ fun AppIcon(app: AppInfo, sizeDp: Int, modifier: Modifier = Modifier) {
         val px = with(LocalDensity.current) { sizeDp.dp.roundToPx() }.coerceAtLeast(1)
 
         val cacheKey = iconCacheKey(app, iconPackPackage, overrideValue, px)
-        val bitmap: ImageBitmap? = remember(cacheKey) {
-            IconCache.get(cacheKey) ?: runCatching {
-                val drawable = resolveDrawable(context, viagaraApp, app, iconPackPackage, overrideValue)
-                drawable.toBitmap(px, px).asImageBitmap().also { IconCache.put(cacheKey, it) }
-            }.getOrNull()
+        var bitmap by remember(cacheKey) { mutableStateOf(IconCache.get(cacheKey)) }
+
+        if (bitmap == null) {
+            LaunchedEffect(cacheKey) {
+                val loaded = withContext(Dispatchers.Default) {
+                    IconCache.get(cacheKey) ?: runCatching {
+                        val drawable = resolveDrawable(context, viagaraApp, app, iconPackPackage, overrideValue)
+                        drawable.toBitmap(px, px).asImageBitmap().also { IconCache.put(cacheKey, it) }
+                    }.getOrNull()
+                }
+                if (loaded != null) {
+                    bitmap = loaded
+                }
+            }
         }
 
         if (bitmap != null) {
-            Image(bitmap = bitmap, contentDescription = app.label, modifier = modifier.size(sizeDp.dp))
+            Image(bitmap = bitmap!!, contentDescription = app.label, modifier = modifier.size(sizeDp.dp))
         } else {
             Box(modifier = modifier.size(sizeDp.dp))
         }
@@ -218,11 +231,20 @@ fun ThemedAppIcon(
     val px = with(LocalDensity.current) { sizeDp.dp.roundToPx() }.coerceAtLeast(1)
 
     val cacheKey = themedIconCacheKey(app, iconPackPackage, overrideValue, px)
-    val bitmap: ImageBitmap? = remember(cacheKey) {
-        IconCache.get(cacheKey) ?: runCatching {
-            val drawable = resolveDrawable(context, viagaraApp, app, iconPackPackage, overrideValue)
-            generateMonochromeBitmap(drawable, px, app.label).asImageBitmap().also { IconCache.put(cacheKey, it) }
-        }.getOrNull()
+    var bitmap by remember(cacheKey) { mutableStateOf(IconCache.get(cacheKey)) }
+
+    if (bitmap == null) {
+        LaunchedEffect(cacheKey) {
+            val loaded = withContext(Dispatchers.Default) {
+                IconCache.get(cacheKey) ?: runCatching {
+                    val drawable = resolveDrawable(context, viagaraApp, app, iconPackPackage, overrideValue)
+                    generateMonochromeBitmap(drawable, px, app.label).asImageBitmap().also { IconCache.put(cacheKey, it) }
+                }.getOrNull()
+            }
+            if (loaded != null) {
+                bitmap = loaded
+            }
+        }
     }
 
     val effectiveTintColor = tintColor ?: MaterialTheme.colorScheme.primary
