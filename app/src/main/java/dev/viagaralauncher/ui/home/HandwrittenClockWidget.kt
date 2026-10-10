@@ -17,7 +17,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextOverflow
+import dev.viagaralauncher.service.SystemStats
+import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -543,3 +552,503 @@ fun HandwrittenCanvasClockPreview(
         )
     }
 }
+
+/**
+ * Miniature hand-drawn thermometer in Canvas.
+ */
+@Composable
+fun HanddrawnThermometerIcon(
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokePx = 1.3f * density
+        val centerX = w * 0.5f
+
+        val tubeW = w * 0.28f
+        val tubeTop = h * 0.12f
+        val bulbRadius = w * 0.28f
+        val bulbCenterY = h - bulbRadius - 1.5f * density
+
+        val path = Path().apply {
+            moveTo(centerX - tubeW * 0.5f, tubeTop + tubeW * 0.5f)
+            quadraticBezierTo(centerX - tubeW * 0.5f, tubeTop, centerX, tubeTop)
+            quadraticBezierTo(centerX + tubeW * 0.5f, tubeTop, centerX + tubeW * 0.5f, tubeTop + tubeW * 0.5f)
+            lineTo(centerX + tubeW * 0.5f, bulbCenterY - bulbRadius * 0.6f)
+            cubicTo(
+                centerX + bulbRadius, bulbCenterY - bulbRadius * 0.5f,
+                centerX + bulbRadius, bulbCenterY + bulbRadius,
+                centerX, bulbCenterY + bulbRadius
+            )
+            cubicTo(
+                centerX - bulbRadius, bulbCenterY + bulbRadius,
+                centerX - bulbRadius, bulbCenterY - bulbRadius * 0.5f,
+                centerX - tubeW * 0.5f, bulbCenterY - bulbRadius * 0.6f
+            )
+            close()
+        }
+
+        drawPath(path, color = color.copy(alpha = 0.85f), style = Stroke(strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // Inner mercury bulb & level
+        drawCircle(color = color, radius = bulbRadius * 0.60f, center = Offset(centerX, bulbCenterY))
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(centerX - tubeW * 0.22f, h * 0.38f),
+            size = androidx.compose.ui.geometry.Size(tubeW * 0.44f, (bulbCenterY - h * 0.38f).coerceAtLeast(1f)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(tubeW * 0.22f, tubeW * 0.22f)
+        )
+    }
+}
+
+/**
+ * Miniature hand-drawn battery in Canvas.
+ */
+@Composable
+fun HanddrawnBatteryIcon(
+    batteryPercent: Int,
+    isCharging: Boolean,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokePx = 1.3f * density
+
+        val bodyW = w * 0.76f
+        val bodyH = h * 0.54f
+        val bodyX = w * 0.06f
+        val bodyY = (h - bodyH) * 0.5f
+        val cr = 2.5f * density
+
+        drawRoundRect(
+            color = color.copy(alpha = 0.85f),
+            topLeft = Offset(bodyX, bodyY),
+            size = androidx.compose.ui.geometry.Size(bodyW, bodyH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(cr, cr),
+            style = Stroke(strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round),
+        )
+
+        // Terminal nub
+        val nubW = w * 0.08f
+        val nubH = bodyH * 0.38f
+        val nubX = bodyX + bodyW + 1f * density
+        val nubY = bodyY + (bodyH - nubH) * 0.5f
+        drawRoundRect(
+            color = color.copy(alpha = 0.85f),
+            topLeft = Offset(nubX, nubY),
+            size = androidx.compose.ui.geometry.Size(nubW, nubH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.2f * density, 1.2f * density),
+        )
+
+        // Fill bar
+        val pad = 2f * density
+        val maxFillW = (bodyW - pad * 2f).coerceAtLeast(0f)
+        val fillW = maxFillW * (batteryPercent / 100f).coerceIn(0.12f, 1f)
+        val fillH = (bodyH - pad * 2f).coerceAtLeast(0f)
+        drawRoundRect(
+            color = if (isCharging) color else color.copy(alpha = 0.75f),
+            topLeft = Offset(bodyX + pad, bodyY + pad),
+            size = androidx.compose.ui.geometry.Size(fillW, fillH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.2f * density, 1.2f * density),
+        )
+    }
+}
+
+/**
+ * Miniature hand-drawn chip/RAM in Canvas.
+ */
+@Composable
+fun HanddrawnChipIcon(
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokePx = 1.3f * density
+
+        val bodySize = min(w, h) * 0.65f
+        val bodyX = (w - bodySize) * 0.5f
+        val bodyY = (h - bodySize) * 0.5f
+        val cr = 2f * density
+
+        drawRoundRect(
+            color = color.copy(alpha = 0.85f),
+            topLeft = Offset(bodyX, bodyY),
+            size = androidx.compose.ui.geometry.Size(bodySize, bodySize),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(cr, cr),
+            style = Stroke(strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round),
+        )
+
+        val pinLen = 2.2f * density
+        for (i in 0..2) {
+            val py = bodyY + bodySize * (0.25f + i * 0.25f)
+            drawLine(color.copy(alpha = 0.8f), Offset(bodyX - pinLen, py), Offset(bodyX, py), strokeWidth = strokePx, cap = StrokeCap.Round)
+            drawLine(color.copy(alpha = 0.8f), Offset(bodyX + bodySize, py), Offset(bodyX + bodySize + pinLen, py), strokeWidth = strokePx, cap = StrokeCap.Round)
+        }
+
+        drawCircle(color = color.copy(alpha = 0.75f), radius = bodySize * 0.16f, center = Offset(w * 0.5f, h * 0.5f))
+    }
+}
+
+/**
+ * Interactive metric card for Temperature, Battery, and RAM.
+ */
+@Composable
+fun HandwrittenMetricCard(
+    icon: @Composable () -> Unit,
+    label: String,
+    value: String,
+    subtitle: String,
+    contentColor: Color,
+    delayMs: Int = 0,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val animProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        if (delayMs > 0) kotlinx.coroutines.delay(delayMs.toLong())
+        animProgress.animateTo(1f, tween(durationMillis = 400, easing = FastOutSlowInEasing))
+    }
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                alpha = animProgress.value
+                translationY = (1f - animProgress.value) * 12.dp.toPx()
+            }
+            .clip(RoundedCornerShape(14.dp))
+            .background(contentColor.copy(alpha = 0.08f))
+            .border(1.dp, contentColor.copy(alpha = 0.15f), RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 6.dp, vertical = 7.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                icon()
+                Spacer(Modifier.width(3.dp))
+                Text(
+                    text = label,
+                    color = contentColor.copy(alpha = 0.70f),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                )
+            }
+            Spacer(Modifier.height(3.dp))
+            Text(
+                text = value,
+                color = contentColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+            Spacer(Modifier.height(1.dp))
+            Text(
+                text = subtitle,
+                color = contentColor.copy(alpha = 0.55f),
+                fontSize = 8.5.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/**
+ * Handwritten Canvas Clock with integrated telemetry cards (Temperature, Battery, RAM).
+ */
+@Composable
+fun HandwrittenCanvasStatsClockContent(
+    hoursString: String,
+    minutesString: String,
+    dateString: String,
+    stats: SystemStats,
+    contentColor: Color,
+    widthFactor: Float,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+    onBatteryClick: () -> Unit,
+    onMemoryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val digitWidth = (44.dp * widthFactor).coerceIn(32.dp, 50.dp)
+    val digitHeight = (68.dp * widthFactor).coerceIn(50.dp, 78.dp)
+    val colonWidth = (16.dp * widthFactor).coerceIn(12.dp, 20.dp)
+    val strokeWidth = (3.0.dp * widthFactor).coerceIn(2.2.dp, 3.4.dp)
+
+    val hourChars = hoursString.toList()
+    val minuteChars = minutesString.toList()
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // Time row
+        Row(
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClockClick,
+                )
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            hourChars.forEachIndexed { idx, ch ->
+                HandwrittenAnimatedDigit(
+                    char = ch,
+                    staggerDelayMs = idx * 100,
+                    contentColor = contentColor,
+                    strokeWidthDp = strokeWidth,
+                    modifier = Modifier.size(digitWidth, digitHeight),
+                )
+            }
+
+            HandwrittenAnimatedDigit(
+                char = ':',
+                staggerDelayMs = hourChars.size * 100,
+                contentColor = contentColor.copy(alpha = 0.90f),
+                strokeWidthDp = strokeWidth * 0.9f,
+                modifier = Modifier.size(colonWidth, digitHeight),
+            )
+
+            minuteChars.forEachIndexed { idx, ch ->
+                HandwrittenAnimatedDigit(
+                    char = ch,
+                    staggerDelayMs = (hourChars.size + 1 + idx) * 100,
+                    contentColor = contentColor,
+                    strokeWidthDp = strokeWidth,
+                    modifier = Modifier.size(digitWidth, digitHeight),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(1.dp))
+
+        // Animated flourish squiggle
+        val squiggleWidth = (130.dp * widthFactor).coerceIn(90.dp, 150.dp)
+        HandwrittenSquiggle(
+            widthDp = squiggleWidth,
+            heightDp = 7.dp,
+            contentColor = contentColor.copy(alpha = 0.70f),
+            strokeWidthDp = (1.6.dp * widthFactor).coerceIn(1.2.dp, 2.0.dp),
+            delayMs = 420,
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        // Date text
+        Text(
+            text = dateString,
+            color = contentColor.copy(alpha = 0.80f),
+            fontSize = (12.5f * widthFactor).coerceAtLeast(10.5f).sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 0.4.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDateClick,
+                )
+                .padding(horizontal = 8.dp, vertical = 1.dp),
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // 3 Cards: Temperatura, Bateria, RAM
+        val tempSub = if (stats.batteryTempCelsius <= 37f) "Normal" else if (stats.batteryTempCelsius <= 42f) "Morno" else "Quente"
+        val batterySub = if (stats.isCharging) "⚡ Carregando" else "Disponível"
+        val ramSub = "${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G livres"
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = (4 * widthFactor).dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Card 1: Temperatura
+            HandwrittenMetricCard(
+                icon = { HanddrawnThermometerIcon(contentColor, modifier = Modifier.size(13.dp)) },
+                label = "TEMP",
+                value = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
+                subtitle = tempSub,
+                contentColor = contentColor,
+                delayMs = 520,
+                onClick = onBatteryClick,
+                modifier = Modifier.weight(1f),
+            )
+
+            // Card 2: Bateria
+            HandwrittenMetricCard(
+                icon = { HanddrawnBatteryIcon(stats.batteryPercent, stats.isCharging, contentColor, modifier = Modifier.size(16.dp, 12.dp)) },
+                label = "BATERIA",
+                value = "${stats.batteryPercent}%",
+                subtitle = batterySub,
+                contentColor = contentColor,
+                delayMs = 600,
+                onClick = onBatteryClick,
+                modifier = Modifier.weight(1f),
+            )
+
+            // Card 3: RAM
+            HandwrittenMetricCard(
+                icon = { HanddrawnChipIcon(contentColor, modifier = Modifier.size(13.dp)) },
+                label = "RAM",
+                value = "${stats.ramUsedPercent}%",
+                subtitle = ramSub,
+                contentColor = contentColor,
+                delayMs = 680,
+                onClick = onMemoryClick,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
+ * Compact preview for the ClockStylePickerScreen grid.
+ */
+@Composable
+fun HandwrittenCanvasStatsClockPreview(
+    hoursString: String,
+    minutesString: String,
+    shortDateString: String,
+    stats: SystemStats,
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    val digitWidth = 12.dp
+    val digitHeight = 18.dp
+    val colonWidth = 6.dp
+    val strokeWidth = 1.4.dp
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            hoursString.forEach { ch ->
+                HandwrittenAnimatedDigit(
+                    char = ch,
+                    staggerDelayMs = 0,
+                    contentColor = tint,
+                    strokeWidthDp = strokeWidth,
+                    showPenTip = false,
+                    modifier = Modifier.size(digitWidth, digitHeight),
+                )
+            }
+
+            HandwrittenAnimatedDigit(
+                char = ':',
+                staggerDelayMs = 0,
+                contentColor = tint.copy(alpha = 0.90f),
+                strokeWidthDp = strokeWidth,
+                showPenTip = false,
+                modifier = Modifier.size(colonWidth, digitHeight),
+            )
+
+            minutesString.forEach { ch ->
+                HandwrittenAnimatedDigit(
+                    char = ch,
+                    staggerDelayMs = 0,
+                    contentColor = tint,
+                    strokeWidthDp = strokeWidth,
+                    showPenTip = false,
+                    modifier = Modifier.size(digitWidth, digitHeight),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(1.dp))
+
+        Text(
+            text = shortDateString,
+            color = tint.copy(alpha = 0.75f),
+            fontSize = 7.5.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(tint.copy(alpha = 0.08f))
+                    .border(0.5.dp, tint.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                    .padding(vertical = 2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°",
+                    color = tint,
+                    fontSize = 7.5.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(tint.copy(alpha = 0.08f))
+                    .border(0.5.dp, tint.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                    .padding(vertical = 2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "${stats.batteryPercent}%",
+                    color = tint,
+                    fontSize = 7.5.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(tint.copy(alpha = 0.08f))
+                    .border(0.5.dp, tint.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                    .padding(vertical = 2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "${stats.ramUsedPercent}%",
+                    color = tint,
+                    fontSize = 7.5.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+

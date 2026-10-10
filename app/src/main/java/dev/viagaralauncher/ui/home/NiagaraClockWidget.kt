@@ -84,7 +84,8 @@ fun isCenteredClockStyle(style: ClockStyle): Boolean = when (style) {
     ClockStyle.CALLIGRAPHY_LARGE,
     ClockStyle.CALLIGRAPHY_STACKED,
     ClockStyle.CALLIGRAPHY_MINIMAL,
-    ClockStyle.HANDWRITTEN_CANVAS -> true
+    ClockStyle.HANDWRITTEN_CANVAS,
+    ClockStyle.HANDWRITTEN_CANVAS_STATS -> true
     else -> false
 }
 
@@ -468,6 +469,20 @@ fun NiagaraClockWidget(
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
                         onDateClick = { launchCalendarApp(context) },
+                    )
+                }
+                ClockStyle.HANDWRITTEN_CANVAS_STATS -> {
+                    HandwrittenCanvasStatsClockContent(
+                        hoursString = hoursString,
+                        minutesString = minutesString,
+                        dateString = dateString,
+                        stats = rememberSystemStats(currentTime),
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                        onBatteryClick = { launchBatterySettings(context) },
+                        onMemoryClick = { launchMemorySettings(context) },
                     )
                 }
             }
@@ -2723,6 +2738,15 @@ fun ClockStylePreview(
                     hoursString = hoursString,
                     minutesString = minutesString,
                     shortDateString = shortDateString,
+                    tint = tint,
+                )
+            }
+            ClockStyle.HANDWRITTEN_CANVAS_STATS -> {
+                HandwrittenCanvasStatsClockPreview(
+                    hoursString = hoursString,
+                    minutesString = minutesString,
+                    shortDateString = shortDateString,
+                    stats = stats,
                     tint = tint,
                 )
             }

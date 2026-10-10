@@ -59,6 +59,7 @@ fun ClockStyle.labelRes(): Int = when (this) {
     ClockStyle.CALLIGRAPHY_STACKED -> R.string.clock_style_calligraphy_stacked
     ClockStyle.CALLIGRAPHY_MINIMAL -> R.string.clock_style_calligraphy_minimal
     ClockStyle.HANDWRITTEN_CANVAS -> R.string.clock_style_handwritten_canvas
+    ClockStyle.HANDWRITTEN_CANVAS_STATS -> R.string.clock_style_handwritten_canvas_stats
 }
 
 @StringRes
