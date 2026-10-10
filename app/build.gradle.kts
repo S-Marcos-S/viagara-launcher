@@ -30,8 +30,8 @@ android {
     defaultConfig {
         applicationId = "dev.viagaralauncher"
         minSdk = 26
-        versionCode = 191
-        versionName = "0.60.17"
+        versionCode = 192
+        versionName = "0.60.18"
 
         buildConfigField("String", "GIT_SHA", "\"$gitCommitSha\"")
         buildConfigField("Long", "BUILD_TIME_MILLIS", "${buildTimeMillis}L")
@@ -127,8 +127,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    // Local LLM on-device inference via MediaPipe GenAI (Gemma, etc.)
-    implementation("com.google.mediapipe:tasks-genai:0.10.14")
+    // Local LLM on-device inference via MediaPipe GenAI (Gemma 3, etc.)
+    implementation("com.google.mediapipe:tasks-genai:0.10.35")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 

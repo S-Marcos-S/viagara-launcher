@@ -69,8 +69,8 @@ class LocalAiManager(private val context: Context) {
             Log.d(TAG, "Engine do MediaPipe LlmInference inicializada com sucesso!")
             isInitializing = false
             true
-        } catch (e: Exception) {
-            Log.e(TAG, "Falha ao inicializar MediaPipe LlmInference: ${e.message}", e)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Falha ao inicializar MediaPipe LlmInference: ${t.message}", t)
             isInitializing = false
             false
         }
@@ -87,7 +87,7 @@ class LocalAiManager(private val context: Context) {
         if (llmInference == null) {
             val initialized = initializeEngine()
             if (!initialized) {
-                return@withContext AiActionResult.Error("Modelo local não encontrado ou não carregado. Coloque o arquivo '$DEFAULT_MODEL_FILENAME' na pasta Downloads ou Documentos.")
+                return@withContext AiActionResult.Error("Modelo local não pôde ser carregado. Verifique se o arquivo '$DEFAULT_MODEL_FILENAME' é compatível com o hardware do aparelho.")
             }
         }
 
@@ -105,9 +105,9 @@ class LocalAiManager(private val context: Context) {
             } else {
                 AiActionResult.Answer(rawOutput.trim())
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Erro durante a execução do comando pela IA: ${e.message}", e)
-            AiActionResult.Error("Erro ao processar: ${e.message}")
+        } catch (t: Throwable) {
+            Log.e(TAG, "Erro durante a execução do comando pela IA: ${t.message}", t)
+            AiActionResult.Error("Erro ao processar: ${t.message}")
         }
     }
 
