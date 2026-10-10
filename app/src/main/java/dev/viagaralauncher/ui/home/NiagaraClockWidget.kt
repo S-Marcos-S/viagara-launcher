@@ -1685,7 +1685,7 @@ private fun DailyReflectionStatsClockContent(
             val chipHPadding = if (isUltraCompact) 1.5.dp else if (isCompact) 2.5.dp else 4.dp
 
             TechChip(
-                icon = "💾",
+                icon = "",
                 label = ramLabel,
                 contentColor = contentColor,
                 fontSize = 10.sp,
@@ -1697,7 +1697,7 @@ private fun DailyReflectionStatsClockContent(
                 onClick = onRamClick,
             )
             TechChip(
-                icon = "🌡️",
+                icon = "",
                 label = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
                 contentColor = contentColor,
                 fontSize = 10.sp,
@@ -1721,7 +1721,7 @@ private fun DailyReflectionStatsClockContent(
                 onClick = onBatteryClick,
             )
             TechChip(
-                icon = "💽",
+                icon = "",
                 label = romLabel,
                 contentColor = contentColor,
                 fontSize = 10.sp,
