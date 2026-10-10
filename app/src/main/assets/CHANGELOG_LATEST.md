@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.60.00
+### 🚀 Novidades da Versão v0.60.01
 
-- **Detecção Inteligente de Tráfego:** Identifica o serviço/processo em segundo plano e deduz a provável causa (backup, mídias, sincronização).
-- **Ações Simplificadas:** Botões diretos e compactos ("Parar", "Ver", "Silenciar") para evitar cortes na barra de notificações.
-- **Zero Impacto Energético:** Consulta sob demanda sem wake locks ou polling em repouso.
+- **Novo Relógio em Canvas:** Estilo de escrita à mão traçado puramente em Canvas vetorial.
+- **Animação Individual de Traço:** Cada dígito possui animação de escrita sequencial com revelação progressiva.

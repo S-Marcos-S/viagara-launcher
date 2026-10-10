@@ -189,6 +189,7 @@
     <string name="clock_style_calligraphy_large">Caligrafia Elegante</string>
     <string name="clock_style_calligraphy_stacked">Caligrafia Empilhada</string>
     <string name="clock_style_calligraphy_minimal">Escrita Artística à Mão</string>
+    <string name="clock_style_handwritten_canvas">Traço à Mão em Canvas</string>
     <string name="quote_of_the_day_tag">Reflexão do dia</string>
     <string name="quote_copied">Frase copiada para a área de transferência</string>
     <string name="settings_hide_status_bar">Ocultar barra de status</string>

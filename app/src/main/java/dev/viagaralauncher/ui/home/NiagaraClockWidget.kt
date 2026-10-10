@@ -83,7 +83,8 @@ fun isCenteredClockStyle(style: ClockStyle): Boolean = when (style) {
     ClockStyle.DUAL_TONE_STACK,
     ClockStyle.CALLIGRAPHY_LARGE,
     ClockStyle.CALLIGRAPHY_STACKED,
-    ClockStyle.CALLIGRAPHY_MINIMAL -> true
+    ClockStyle.CALLIGRAPHY_MINIMAL,
+    ClockStyle.HANDWRITTEN_CANVAS -> true
     else -> false
 }
 
@@ -451,6 +452,17 @@ fun NiagaraClockWidget(
                 ClockStyle.CALLIGRAPHY_MINIMAL -> {
                     CalligraphyMinimalClockContent(
                         timeString = timeString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = { launchCalendarApp(context) },
+                    )
+                }
+                ClockStyle.HANDWRITTEN_CANVAS -> {
+                    HandwrittenCanvasClockContent(
+                        hoursString = hoursString,
+                        minutesString = minutesString,
                         dateString = dateString,
                         contentColor = contentColor,
                         widthFactor = widthFactor,
@@ -2705,6 +2717,14 @@ fun ClockStylePreview(
                         textAlign = TextAlign.Center,
                     )
                 }
+            }
+            ClockStyle.HANDWRITTEN_CANVAS -> {
+                HandwrittenCanvasClockPreview(
+                    hoursString = hoursString,
+                    minutesString = minutesString,
+                    shortDateString = shortDateString,
+                    tint = tint,
+                )
             }
         }
     }

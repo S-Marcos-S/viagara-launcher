@@ -188,6 +188,7 @@
     <string name="clock_style_calligraphy_large">Calligraphy Signature</string>
     <string name="clock_style_calligraphy_stacked">Calligraphy Duo Stack</string>
     <string name="clock_style_calligraphy_minimal">Handwritten Script</string>
+    <string name="clock_style_handwritten_canvas">Handwritten Canvas</string>
     <string name="quote_of_the_day_tag">Reflection</string>
     <string name="quote_copied">Quote copied to clipboard</string>
     <string name="settings_hide_status_bar">Hide status bar</string>
