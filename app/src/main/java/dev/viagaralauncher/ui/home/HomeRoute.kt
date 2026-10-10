@@ -151,7 +151,6 @@ fun HomeRoute(
     var folderPickerFor by remember { mutableStateOf<AppInfo?>(null) }
     var showHomeOptions by remember { mutableStateOf(false) }
     var showAgendaSheet by remember { mutableStateOf(false) }
-    var showAiAssistantSheet by remember { mutableStateOf(false) }
     var clockBottomPx by remember { mutableFloatStateOf(0f) }
     var lockTargetOffset by remember { mutableStateOf<Offset?>(null) }
 
@@ -683,12 +682,6 @@ fun HomeRoute(
             onOpenClockStyle = { showHomeOptions = false; onNavigate("settings/clock") },
             onOpenThemes = { showHomeOptions = false; onNavigate("themes") },
             onOpenWallpaperPicker = { showHomeOptions = false; onNavigate("wallpapers") },
-            onOpenAiAssistant = { showHomeOptions = false; showAiAssistantSheet = true },
-        )
-
-        dev.viagaralauncher.ui.ai.AiAssistantBottomSheet(
-            isVisible = showAiAssistantSheet,
-            onDismiss = { showAiAssistantSheet = false },
         )
 
         val hideStatusBar by app.prefs.hideStatusBar.collectAsState(initial = false)

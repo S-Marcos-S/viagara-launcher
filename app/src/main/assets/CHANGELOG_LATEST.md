@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.19
+### 🚀 Novidades da Versão v0.60.20
 
-- **Otimização de Tamanho do APK:** Restrição para arquitetura 64-bit (arm64-v8a) e compressão das bibliotecas nativas de IA, reduzindo drasticamente o tamanho do app.
-- **Suporte Gemma 3:** Compatibilidade com Gemma 3 mantida com suporte a aceleração gráfica e NPU.
+- **Remoção de IA:** Revertidas todas as alterações e dependências do modelo de IA local, restaurando a leveza original do aplicativo (~3 MB).
+- **Estabilidade:** Retorno ao estado limpo e estável pré-IA.

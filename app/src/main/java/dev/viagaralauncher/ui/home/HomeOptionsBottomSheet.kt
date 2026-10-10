@@ -40,7 +40,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Download
@@ -95,7 +94,6 @@ fun HomeOptionsBottomSheet(
     onOpenClockStyle: () -> Unit = {},
     onOpenThemes: () -> Unit = {},
     onOpenWallpaperPicker: () -> Unit = {},
-    onOpenAiAssistant: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -381,12 +379,6 @@ fun HomeOptionsBottomSheet(
 
                     Spacer(Modifier.height(10.dp))
                 }
-
-                OptionItem(
-                    icon = Icons.Filled.AutoAwesome,
-                    label = "Assistente de IA",
-                    onClick = { onDismiss(); onOpenAiAssistant() },
-                )
 
                 OptionItem(
                     icon = Icons.Filled.Settings,
