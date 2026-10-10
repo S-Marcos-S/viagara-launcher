@@ -121,6 +121,9 @@ fun AgendaBottomSheet(
     LaunchedEffect(isVisible) {
         if (isVisible) {
             dragOffsetY = 0f
+            scope.launch {
+                AgendaSyncService(context).syncWithLocalFile()
+            }
         }
     }
 

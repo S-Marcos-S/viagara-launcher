@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.11
+### 🚀 Novidades da Versão v0.60.12
 
-- **Visualização a Partir do Dia Atual:** A lista de agendamentos agora filtra e inicia estritamente a partir do dia de hoje.
-- **Botão para Ocultar Recorrentes:** Adicionado controle minimalista no cabeçalho para alternar entre ver todas as tarefas ou apenas as pontuais/não recorrentes.
+- **Sincronização Local com BigCalendar:** Integração de sincronização bidirecional por arquivo compartilhado em JSON com o TheBigCalendar quando instalado.
+- **Prevenção de Duplicatas na Importação:** Algoritmo por assinatura única e verificação de timestamp na mesclagem de agendamentos.

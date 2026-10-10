@@ -1,7 +1,7 @@
 # Diretrizes e Regras do Projeto Viagara Launcher
 
 ## Regra Obrigatória: Bump de Versão/Release para Disparar Builds
-Sempre que for realizado um commit que gera uma mudança visual no aplicativo ou alguma correção finalizada, **DEVE-SE** incrementar o número de release/versão (`versionCode` e `versionName` no arquivo `app/build.gradle.kts`). Isso garante que o GitHub Actions inicie a build e gere o novo APK atualizado para distribuição.
+Sempre que for realizado um commit que gera uma mudança visual no aplicativo ou alguma correção finalizada, **DEVE-SE** incrementar o número de release/versão (`versionCode` e `versionName` no arquivo `app/build.gradle.kts`) e **OBRIGATORIAMENTE incluir o número da versão na mensagem/comentário do commit** (exemplo: `0.60.12` ou `v0.60.12`). O GitHub Actions inspeciona a mensagem do commit (`check-version`) e só inicia a build se encontrar o padrão de versão no texto do commit.
 
 ## Regra Obrigatória: Changelogs Resumidas e Compactas Pré-Build
 Sempre que forem realizadas novas implementações, correções ou modificações no código, o arquivo `CHANGELOG_LATEST.md` na raiz do projeto (e seu espelho em `app/src/main/assets/CHANGELOG_LATEST.md`) **DEVE** ser atualizado antes de efetuar o commit e disparar a build do GitHub Actions.
