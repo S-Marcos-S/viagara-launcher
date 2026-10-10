@@ -542,6 +542,7 @@ fun NiagaraClockWidget(
                     )
                 }
             }
+            }
         }
     }
 }
