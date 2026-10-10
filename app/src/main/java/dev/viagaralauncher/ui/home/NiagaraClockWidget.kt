@@ -996,13 +996,13 @@ private fun TechHudClockContent(
             val chipHPadding = if (isCompact) 4.dp else 8.dp
 
             TechChip(
-                icon = "💾",
+                icon = "",
                 label = ramLabel,
                 contentColor = contentColor,
                 horizontalPadding = chipHPadding,
             )
             TechChip(
-                icon = "🌡️",
+                icon = "",
                 label = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
                 contentColor = contentColor,
                 horizontalPadding = chipHPadding,
