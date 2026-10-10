@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.12
+### 🚀 Novidades da Versão v0.60.13
 
-- **Sincronização Local com BigCalendar:** Integração de sincronização bidirecional por arquivo compartilhado em JSON com o TheBigCalendar quando instalado.
-- **Prevenção de Duplicatas na Importação:** Algoritmo por assinatura única e verificação de timestamp na mesclagem de agendamentos.
+- **Correção da Sincronização Local:** Corrigida a sincronização bidirecional de agendamentos com o BigCalendar.
+- **Estabilidade dos Agendamentos:** Corrigido problema em que eventos sumiam do widget ou não sincronizavam após exclusões.

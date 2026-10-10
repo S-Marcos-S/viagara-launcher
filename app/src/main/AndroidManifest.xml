@@ -13,8 +13,14 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
+        tools:ignore="ScopedStorage" />
+    <queries>
+        <package android:name="com.mss.thebigcalendar" />
+    </queries>
     <!-- A launcher must be able to see every installed app, icon pack, and widget provider
          on the device; without this, PackageManager silently filters almost everything out
          on Android 11+. This is one of Google's own documented justified uses of the permission. -->

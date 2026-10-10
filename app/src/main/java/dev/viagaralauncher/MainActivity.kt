@@ -126,6 +126,11 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.onLauncherResume()
         dev.viagaralauncher.visualizer.AudioVisualizerManager.onLauncherResume(this)
+        if (dev.viagaralauncher.agenda.AgendaSyncService.isBigCalendarInstalled(this)) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                dev.viagaralauncher.agenda.AgendaSyncService(this@MainActivity).syncWithLocalFile()
+            }
+        }
     }
 
     override fun onPause() {

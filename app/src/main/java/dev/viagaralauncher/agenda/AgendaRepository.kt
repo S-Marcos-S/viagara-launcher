@@ -170,6 +170,8 @@ class AgendaRepository(private val context: Context) {
             val curDeleted = parseDeletedIds(prefs[Keys.DELETED_IDS_JSON] ?: "[]").toMutableSet()
 
             curDeleted.addAll(parsedDeletedIds)
+            // Se o item está explicitamente na lista de ativos, certificar que seu ID não esteja retido em curDeleted
+            parsedActive.forEach { act -> curDeleted.remove(act.id) }
 
             // Remove any items that are deleted
             curActive.removeAll { it.id in curDeleted || (it.id.contains("_") && it.id.split("_")[0] in curDeleted) }
@@ -498,6 +500,10 @@ class AgendaRepository(private val context: Context) {
     private suspend fun triggerSyncIfAvailable() {
         runCatching {
             AgendaSyncService(context).writeSyncFile()
+            val broadcastIntent = android.content.Intent("com.mss.thebigcalendar.SYNC_DATA_UPDATED").apply {
+                setPackage("com.mss.thebigcalendar")
+            }
+            context.sendBroadcast(broadcastIntent)
         }
     }
 }
