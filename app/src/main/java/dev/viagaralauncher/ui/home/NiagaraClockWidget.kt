@@ -557,20 +557,19 @@ private fun ClassicClockContent(
     onDateClick: () -> Unit,
 ) {
     Column(horizontalAlignment = horizontalAlignment) {
-        Text(
-            text = timeString,
-            color = contentColor,
-            fontSize = (58 * widthFactor).sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = (-1.5 * widthFactor).sp,
-            lineHeight = (58 * widthFactor).sp,
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.CLASSIC,
+            contentColor = contentColor,
+            digitWidth = (34 * widthFactor).dp.coerceAtLeast(20.dp),
+            digitHeight = (54 * widthFactor).dp.coerceAtLeast(32.dp),
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
         )
-        Spacer(modifier = Modifier.height((4 * widthFactor).dp.coerceAtLeast(2.dp)))
+        Spacer(modifier = Modifier.height((6 * widthFactor).dp.coerceAtLeast(3.dp)))
         Text(
             text = dateString,
             color = contentColor.copy(alpha = 0.85f),
@@ -598,29 +597,20 @@ private fun StackedClockContent(
     onDateClick: () -> Unit,
 ) {
     Column(horizontalAlignment = horizontalAlignment) {
-        Column(
-            horizontalAlignment = horizontalAlignment,
+        AnimatedCanvasStackedTime(
+            hoursString = hoursString,
+            minutesString = minutesString,
+            style = ClockStyle.STACKED,
+            contentColor = contentColor,
+            digitWidth = (32 * widthFactor).dp.coerceAtLeast(18.dp),
+            digitHeight = (48 * widthFactor).dp.coerceAtLeast(28.dp),
+            minutesAlpha = 0.85f,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
-        ) {
-            Text(
-                text = hoursString,
-                color = contentColor,
-                fontSize = (50 * widthFactor).sp,
-                fontWeight = FontWeight.ExtraBold,
-                lineHeight = (46 * widthFactor).sp,
-            )
-            Text(
-                text = minutesString,
-                color = contentColor.copy(alpha = 0.9f),
-                fontSize = (50 * widthFactor).sp,
-                fontWeight = FontWeight.Light,
-                lineHeight = (46 * widthFactor).sp,
-            )
-        }
+        )
         Spacer(modifier = Modifier.height((6 * widthFactor).dp.coerceAtLeast(3.dp)))
         Text(
             text = dateString,
@@ -647,20 +637,20 @@ private fun MinimalClockContent(
     onDateClick: () -> Unit,
 ) {
     Column(horizontalAlignment = horizontalAlignment) {
-        Text(
-            text = timeString,
-            color = contentColor,
-            fontSize = (46 * widthFactor).sp,
-            fontWeight = FontWeight.Light,
-            letterSpacing = 1.sp,
-            lineHeight = (46 * widthFactor).sp,
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.MINIMAL,
+            contentColor = contentColor,
+            digitWidth = (28 * widthFactor).dp.coerceAtLeast(16.dp),
+            digitHeight = (46 * widthFactor).dp.coerceAtLeast(26.dp),
+            strokeWidthDp = (2.2 * widthFactor).dp.coerceIn(1.6.dp, 3.0.dp),
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
         )
-        Spacer(modifier = Modifier.height((3 * widthFactor).dp.coerceAtLeast(2.dp)))
+        Spacer(modifier = Modifier.height((4 * widthFactor).dp.coerceAtLeast(2.dp)))
         Text(
             text = dateString,
             color = contentColor.copy(alpha = 0.75f),
@@ -750,20 +740,19 @@ private fun DigitalCardClockContent(
                 ),
         ) {
             Column(horizontalAlignment = horizontalAlignment) {
-                Text(
-                    text = timeString,
-                    color = contentColor,
-                    fontSize = (42 * widthFactor).sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp,
-                    lineHeight = (42 * widthFactor).sp,
+                AnimatedCanvasTimeRow(
+                    timeString = timeString,
+                    style = ClockStyle.DIGITAL_CARD,
+                    contentColor = contentColor,
+                    digitWidth = (26 * widthFactor).dp.coerceAtLeast(16.dp),
+                    digitHeight = (42 * widthFactor).dp.coerceAtLeast(24.dp),
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = onClockClick,
                     ),
                 )
-                Spacer(modifier = Modifier.height((4 * widthFactor).dp.coerceAtLeast(2.dp)))
+                Spacer(modifier = Modifier.height((6 * widthFactor).dp.coerceAtLeast(3.dp)))
                 Text(
                     text = dateString,
                     color = contentColor.copy(alpha = 0.85f),
@@ -804,14 +793,14 @@ private fun DayFocusClockContent(
                 onClick = onDateClick,
             ),
         )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = timeString,
-            color = contentColor,
-            fontSize = (54 * widthFactor).sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = (-1).sp,
-            lineHeight = (54 * widthFactor).sp,
+        Spacer(modifier = Modifier.height(4.dp))
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.DAY_FOCUS,
+            contentColor = contentColor,
+            digitWidth = (32 * widthFactor).dp.coerceAtLeast(18.dp),
+            digitHeight = (52 * widthFactor).dp.coerceAtLeast(30.dp),
+            strokeWidthDp = (2.4 * widthFactor).dp.coerceIn(1.8.dp, 3.2.dp),
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -956,13 +945,13 @@ private fun TechHudClockContent(
         Spacer(Modifier.height(4.dp))
 
         // Big HUD Time
-        Text(
-            text = timeString,
-            color = contentColor,
-            fontSize = (54 * widthFactor).sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = (-1).sp,
-            lineHeight = (54 * widthFactor).sp,
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.TECH_HUD,
+            contentColor = contentColor,
+            digitWidth = (32 * widthFactor).dp.coerceAtLeast(18.dp),
+            digitHeight = (52 * widthFactor).dp.coerceAtLeast(30.dp),
+            strokeWidthDp = (2.6 * widthFactor).dp.coerceIn(2.0.dp, 3.6.dp),
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -1117,13 +1106,13 @@ private fun TechHudProClockContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy((10 * widthFactor).dp.coerceAtLeast(6.dp)),
         ) {
-            Text(
-                text = timeString,
-                color = contentColor,
-                fontSize = (54 * widthFactor).sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-1).sp,
-                lineHeight = (54 * widthFactor).sp,
+            AnimatedCanvasTimeRow(
+                timeString = timeString,
+                style = ClockStyle.TECH_HUD_PRO,
+                contentColor = contentColor,
+                digitWidth = (32 * widthFactor).dp.coerceAtLeast(18.dp),
+                digitHeight = (52 * widthFactor).dp.coerceAtLeast(30.dp),
+                strokeWidthDp = (2.6 * widthFactor).dp.coerceIn(2.0.dp, 3.6.dp),
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -1252,12 +1241,12 @@ private fun SystemMonitorClockContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(
-                    text = timeString,
-                    color = contentColor,
-                    fontSize = (38 * widthFactor).sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp,
+                AnimatedCanvasTimeRow(
+                    timeString = timeString,
+                    style = ClockStyle.SYSTEM_MONITOR,
+                    contentColor = contentColor,
+                    digitWidth = (24 * widthFactor).dp.coerceAtLeast(14.dp),
+                    digitHeight = (38 * widthFactor).dp.coerceAtLeast(22.dp),
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -1353,20 +1342,20 @@ private fun MinimalSpecsClockContent(
     onStatsClick: () -> Unit,
 ) {
     Column(horizontalAlignment = horizontalAlignment) {
-        Text(
-            text = timeString,
-            color = contentColor,
-            fontSize = (54 * widthFactor).sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = (-1.5).sp,
-            lineHeight = (54 * widthFactor).sp,
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.MINIMAL_SPECS,
+            contentColor = contentColor,
+            digitWidth = (32 * widthFactor).dp.coerceAtLeast(18.dp),
+            digitHeight = (52 * widthFactor).dp.coerceAtLeast(30.dp),
+            strokeWidthDp = (2.4 * widthFactor).dp.coerceIn(1.8.dp, 3.2.dp),
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
         Text(
             text = dateString,
             color = contentColor.copy(alpha = 0.85f),
@@ -1437,18 +1426,31 @@ private fun RetroTerminalClockContent(
                 fontFamily = FontFamily.Monospace,
             )
             Spacer(Modifier.height(4.dp))
-            Text(
-                text = "TIME: $timeString",
-                color = contentColor,
-                fontSize = (28 * widthFactor).sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClockClick,
                 ),
-            )
+            ) {
+                Text(
+                    text = "TIME: ",
+                    color = contentColor.copy(alpha = 0.85f),
+                    fontSize = (14 * widthFactor).sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                )
+                AnimatedCanvasTimeRow(
+                    timeString = timeString,
+                    style = ClockStyle.RETRO_TERMINAL,
+                    contentColor = contentColor,
+                    digitWidth = (18 * widthFactor).dp.coerceAtLeast(12.dp),
+                    digitHeight = (28 * widthFactor).dp.coerceAtLeast(18.dp),
+                    strokeWidthDp = (2.2 * widthFactor).dp.coerceIn(1.5.dp, 3.0.dp),
+                )
+            }
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = "DATE: $dateString",
                 color = contentColor.copy(alpha = 0.8f),
@@ -1542,18 +1544,12 @@ private fun DailyReflectionClockContent(
 
             Spacer(Modifier.height(2.dp))
 
-            Text(
-                text = timeString,
-                color = contentColor,
-                fontSize = (54 * widthFactor).sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-1).sp,
-                lineHeight = (54 * widthFactor).sp,
-                style = androidx.compose.ui.text.TextStyle(
-                    fontFeatureSettings = "tnum",
-                ),
-                maxLines = 1,
-                softWrap = false,
+            AnimatedCanvasTimeRow(
+                timeString = timeString,
+                style = ClockStyle.DAILY_REFLECTION,
+                contentColor = contentColor,
+                digitWidth = (28 * widthFactor).dp.coerceAtLeast(16.dp),
+                digitHeight = (46 * widthFactor).dp.coerceAtLeast(26.dp),
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -1740,6 +1736,11 @@ private fun NothingDotsClockContent(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val hChars = hoursString.toList()
+        val mChars = minutesString.toList()
+        val digitW = (28 * widthFactor).dp.coerceAtLeast(18.dp)
+        val digitH = (44 * widthFactor).dp.coerceAtLeast(26.dp)
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
@@ -1749,14 +1750,16 @@ private fun NothingDotsClockContent(
                 onClick = onClockClick,
             ),
         ) {
-            Text(
-                text = hoursString,
-                color = contentColor,
-                fontSize = (50 * widthFactor).sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-                letterSpacing = 2.sp,
-            )
+            hChars.forEachIndexed { idx, ch ->
+                ThemedAnimatedCanvasDigit(
+                    char = ch,
+                    style = ClockStyle.NOTHING_DOTS,
+                    staggerDelayMs = idx * 90,
+                    contentColor = contentColor,
+                    modifier = Modifier.size(digitW, digitH),
+                )
+                if (idx < hChars.lastIndex) Spacer(Modifier.width(3.dp))
+            }
 
             Column(
                 modifier = Modifier.padding(horizontal = (6 * widthFactor).dp),
@@ -1775,14 +1778,16 @@ private fun NothingDotsClockContent(
                 )
             }
 
-            Text(
-                text = minutesString,
-                color = contentColor,
-                fontSize = (50 * widthFactor).sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-                letterSpacing = 2.sp,
-            )
+            mChars.forEachIndexed { idx, ch ->
+                ThemedAnimatedCanvasDigit(
+                    char = ch,
+                    style = ClockStyle.NOTHING_DOTS,
+                    staggerDelayMs = (hChars.size + idx) * 90,
+                    contentColor = contentColor,
+                    modifier = Modifier.size(digitW, digitH),
+                )
+                if (idx < mChars.lastIndex) Spacer(Modifier.width(3.dp))
+            }
         }
 
         Spacer(modifier = Modifier.height((8 * widthFactor).dp))
@@ -1876,13 +1881,12 @@ private fun CenteredPillClockContent(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = timeString,
-                    color = contentColor,
-                    fontSize = (46 * widthFactor).sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp,
-                    lineHeight = (46 * widthFactor).sp,
+                AnimatedCanvasTimeRow(
+                    timeString = timeString,
+                    style = ClockStyle.CENTERED_PILL,
+                    contentColor = contentColor,
+                    digitWidth = (28 * widthFactor).dp.coerceAtLeast(16.dp),
+                    digitHeight = (44 * widthFactor).dp.coerceAtLeast(26.dp),
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -1957,33 +1961,20 @@ private fun DualToneStackClockContent(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        AnimatedCanvasStackedTime(
+            hoursString = hoursString,
+            minutesString = minutesString,
+            style = ClockStyle.DUAL_TONE_STACK,
+            contentColor = contentColor,
+            digitWidth = (38 * widthFactor).dp.coerceAtLeast(22.dp),
+            digitHeight = (56 * widthFactor).dp.coerceAtLeast(32.dp),
+            minutesAlpha = 0.45f,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
-        ) {
-            Text(
-                text = hoursString,
-                color = contentColor,
-                fontSize = (60 * widthFactor).sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-1.5).sp,
-                lineHeight = (50 * widthFactor).sp,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = minutesString,
-                color = contentColor.copy(alpha = 0.45f),
-                fontSize = (60 * widthFactor).sp,
-                fontWeight = FontWeight.Light,
-                letterSpacing = (-1.5).sp,
-                lineHeight = (50 * widthFactor).sp,
-                textAlign = TextAlign.Center,
-            )
-        }
+        )
 
         Spacer(modifier = Modifier.height((10 * widthFactor).dp))
 
@@ -2024,15 +2015,13 @@ private fun CalligraphyLargeClockContent(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = timeString,
-            color = contentColor,
-            fontSize = (86 * widthFactor).sp,
-            fontFamily = FontFamily.Cursive,
-            fontStyle = FontStyle.Italic,
-            fontWeight = FontWeight.Bold,
-            lineHeight = (86 * widthFactor).sp,
-            textAlign = TextAlign.Center,
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.CALLIGRAPHY_LARGE,
+            contentColor = contentColor,
+            digitWidth = (44 * widthFactor).dp.coerceAtLeast(24.dp),
+            digitHeight = (72 * widthFactor).dp.coerceAtLeast(40.dp),
+            strokeWidthDp = (3.2 * widthFactor).dp.coerceIn(2.2.dp, 4.2.dp),
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -2077,43 +2066,21 @@ private fun CalligraphyStackedClockContent(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        AnimatedCanvasStackedTime(
+            hoursString = hoursString,
+            minutesString = minutesString,
+            style = ClockStyle.CALLIGRAPHY_STACKED,
+            contentColor = contentColor,
+            digitWidth = (40 * widthFactor).dp.coerceAtLeast(22.dp),
+            digitHeight = (64 * widthFactor).dp.coerceAtLeast(34.dp),
+            strokeWidthDp = (3.0 * widthFactor).dp.coerceIn(2.0.dp, 4.0.dp),
+            minutesAlpha = 0.78f,
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
-        ) {
-            Text(
-                text = hoursString,
-                color = contentColor,
-                fontSize = (76 * widthFactor).sp,
-                fontFamily = FontFamily.Cursive,
-                fontStyle = FontStyle.Italic,
-                fontWeight = FontWeight.Bold,
-                lineHeight = (68 * widthFactor).sp,
-                textAlign = TextAlign.Center,
-            )
-            Box(
-                modifier = Modifier
-                    .padding(vertical = (4 * widthFactor).dp.coerceAtLeast(2.dp))
-                    .width((52 * widthFactor).dp)
-                    .height(1.5.dp)
-                    .clip(CircleShape)
-                    .background(contentColor.copy(alpha = 0.30f)),
-            )
-            Text(
-                text = minutesString,
-                color = contentColor.copy(alpha = 0.78f),
-                fontSize = (76 * widthFactor).sp,
-                fontFamily = FontFamily.Cursive,
-                fontStyle = FontStyle.Italic,
-                fontWeight = FontWeight.Normal,
-                lineHeight = (68 * widthFactor).sp,
-                textAlign = TextAlign.Center,
-            )
-        }
+        )
         Spacer(modifier = Modifier.height((8 * widthFactor).dp.coerceAtLeast(4.dp)))
         Text(
             text = dateString,
@@ -2144,22 +2111,20 @@ private fun CalligraphyMinimalClockContent(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = timeString,
-            color = contentColor,
-            fontSize = (94 * widthFactor).sp,
-            fontFamily = FontFamily.Cursive,
-            fontStyle = FontStyle.Italic,
-            fontWeight = FontWeight.Normal,
-            lineHeight = (94 * widthFactor).sp,
-            textAlign = TextAlign.Center,
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.CALLIGRAPHY_MINIMAL,
+            contentColor = contentColor,
+            digitWidth = (42 * widthFactor).dp.coerceAtLeast(22.dp),
+            digitHeight = (68 * widthFactor).dp.coerceAtLeast(36.dp),
+            strokeWidthDp = (2.6 * widthFactor).dp.coerceIn(1.8.dp, 3.6.dp),
             modifier = Modifier.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClockClick,
             ),
         )
-        Spacer(modifier = Modifier.height((2 * widthFactor).dp.coerceAtLeast(1.dp)))
+        Spacer(modifier = Modifier.height((4 * widthFactor).dp.coerceAtLeast(2.dp)))
         Text(
             text = "—  $dateString  —",
             color = contentColor.copy(alpha = 0.80f),

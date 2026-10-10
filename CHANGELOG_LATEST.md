@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.60.03
+### 🚀 Novidades da Versão v0.60.04
 
-- **Redimensionar Relógio na Home:** Pressione e segure sobre o relógio para abrir o menu e redimensioná-lo livremente.
-- **Alças Interativas:** Expanda o relógio para cima e para os lados com feedback visual da escala em tempo real.
-- **Redefinição Rápida:** Botão para restaurar instantaneamente as dimensões originais (100%).
+- **Relógios em Canvas Vetorial:** Todos os relógios ganharam renderização vetorial direta em Canvas adaptada ao seu estilo geométrico (Geometric Sans, Cyber HUD, Hairline, 7-Segmentos, Nothing Matrix e Script Fluido).
+- **Animações Individuais por Dígito:** Cada número aparece com traçado progressivo independente e animação fluida ao transicionar o horário.
+- **Transparência e Harmonia Visual:** Otimização da nitidez e legibilidade dos mostradores em qualquer escala.
