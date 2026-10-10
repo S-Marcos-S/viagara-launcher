@@ -101,7 +101,7 @@ jobs:
           fi
 
       - name: Run Unit Tests
-        run: ./gradlew test
+        run: ./gradlew testDebugUnitTest
 
       - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
