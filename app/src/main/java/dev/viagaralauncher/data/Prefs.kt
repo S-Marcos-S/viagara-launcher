@@ -46,6 +46,7 @@ enum class ClockStyle {
     CALLIGRAPHY_MINIMAL,
     HANDWRITTEN_CANVAS,
     HANDWRITTEN_CANVAS_STATS,
+    CANVAS_SHIMMER,
 }
 
 /** AUTO picks light or dark text from the wallpaper's own colours. */

@@ -545,6 +545,16 @@ fun NiagaraClockWidget(
                         onMemoryClick = { launchMemorySettings(context) },
                     )
                 }
+                ClockStyle.CANVAS_SHIMMER -> {
+                    CanvasShimmerClockContent(
+                        timeString = timeString,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = handleDateClick,
+                    )
+                }
             }
             }
         }
@@ -2776,6 +2786,13 @@ fun ClockStylePreview(
                     tint = tint,
                 )
             }
+            ClockStyle.CANVAS_SHIMMER -> {
+                CanvasShimmerClockPreview(
+                    timeString = timeString,
+                    shortDateString = shortDateString,
+                    tint = tint,
+                )
+            }
         }
     }
 }
@@ -2862,5 +2879,141 @@ private fun launchCalendarApp(context: Context) {
             context.startActivity(intent)
             return
         } catch (_: Exception) {}
+    }
+}
+
+/**
+ * Clock style with individual animated digits rendered on Canvas with conventional geometric typography,
+ * aligned to the left of the screen, and a luminous light sweep (shimmer beam) across the date text
+ * whenever the time updates.
+ */
+@Composable
+private fun CanvasShimmerClockContent(
+    timeString: String,
+    dateString: String,
+    contentColor: Color,
+    widthFactor: Float = 1.0f,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+) {
+    // Shimmer sweep animation triggered whenever timeString updates
+    val shimmerAnim = remember { androidx.compose.animation.core.Animatable(0f) }
+
+    LaunchedEffect(timeString) {
+        shimmerAnim.snapTo(0f)
+        shimmerAnim.animateTo(
+            targetValue = 1f,
+            animationSpec = androidx.compose.animation.core.tween(
+                durationMillis = 1350,
+                easing = androidx.compose.animation.core.FastOutSlowInEasing,
+            ),
+        )
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.Start,
+    ) {
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.CLASSIC,
+            contentColor = contentColor,
+            digitWidth = (36 * widthFactor).dp.coerceAtLeast(22.dp),
+            digitHeight = (56 * widthFactor).dp.coerceAtLeast(34.dp),
+            strokeWidthDp = (3.4f * widthFactor).dp.coerceAtLeast(2.4.dp),
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClockClick,
+            ),
+        )
+
+        Spacer(modifier = Modifier.height((6 * widthFactor).dp.coerceAtLeast(3.dp)))
+
+        // Shimmering date text that sweeps light across each letter
+        val shimmerProgress = shimmerAnim.value
+        val fontSize = (17 * widthFactor).sp
+        val lineHeight = (22 * widthFactor).sp
+
+        Box(
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDateClick,
+                )
+        ) {
+            if (shimmerProgress in 0.001f..0.999f) {
+                // Moving light beam shader
+                val brush = remember(shimmerProgress, contentColor) {
+                    val bandWidth = 0.28f
+                    val center = shimmerProgress * (1f + bandWidth * 2) - bandWidth
+                    val start = (center - bandWidth).coerceIn(0f, 1f)
+                    val mid = center.coerceIn(0f, 1f)
+                    val end = (center + bandWidth).coerceIn(0f, 1f)
+
+                    val base = contentColor.copy(alpha = 0.78f)
+                    val glow = Color.White.copy(alpha = 0.98f)
+
+                    androidx.compose.ui.graphics.Brush.horizontalGradient(
+                        colorStops = arrayOf(
+                            0.0f to base,
+                            start to base,
+                            mid to glow,
+                            end to base,
+                            1.0f to base,
+                        )
+                    )
+                }
+
+                Text(
+                    text = dateString,
+                    style = androidx.compose.ui.text.TextStyle(
+                        brush = brush,
+                        fontSize = fontSize,
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = lineHeight,
+                    ),
+                )
+            } else {
+                Text(
+                    text = dateString,
+                    color = contentColor.copy(alpha = 0.85f),
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Normal,
+                    lineHeight = lineHeight,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CanvasShimmerClockPreview(
+    timeString: String,
+    shortDateString: String,
+    tint: Color,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.Start,
+    ) {
+        AnimatedCanvasTimeRow(
+            timeString = timeString,
+            style = ClockStyle.CLASSIC,
+            contentColor = tint,
+            digitWidth = 14.dp,
+            digitHeight = 22.dp,
+            colonWidth = 6.dp,
+            strokeWidthDp = 1.6.dp,
+            spacing = 2.dp,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = shortDateString,
+            color = tint.copy(alpha = 0.85f),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }

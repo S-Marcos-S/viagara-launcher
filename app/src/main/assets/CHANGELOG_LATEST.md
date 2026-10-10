@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.20
+### 🚀 Novidades da Versão v0.60.21
 
-- **Remoção de IA:** Revertidas todas as alterações e dependências do modelo de IA local, restaurando a leveza original do aplicativo (~3 MB).
-- **Estabilidade:** Retorno ao estado limpo e estável pré-IA.
+- **Novo Relógio Canvas com Brilho:** Adicionado estilo de relógio com números animados em Canvas geométrico convencional, alinhado à esquerda.
+- **Efeito de Luz na Data:** Animação de feixe de luz translúcido que percorre a data de ponta a ponta a cada atualização da hora.

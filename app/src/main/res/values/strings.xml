@@ -190,6 +190,7 @@
     <string name="clock_style_calligraphy_minimal">Handwritten Script</string>
     <string name="clock_style_handwritten_canvas">Handwritten Canvas</string>
     <string name="clock_style_handwritten_canvas_stats">Handwritten Canvas + Stats</string>
+    <string name="clock_style_canvas_shimmer">Canvas Glow &amp; Shimmer</string>
     <string name="action_resize_clock">Resize clock</string>
     <string name="action_reset_size">Reset size</string>
     <string name="quote_of_the_day_tag">Reflection</string>
