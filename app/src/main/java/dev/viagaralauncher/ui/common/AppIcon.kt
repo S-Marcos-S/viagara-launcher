@@ -201,8 +201,9 @@ fun AppIcon(app: AppInfo, sizeDp: Int, modifier: Modifier = Modifier) {
             }
         }
 
-        if (bitmap != null) {
-            Image(bitmap = bitmap!!, contentDescription = app.label, modifier = modifier.size(sizeDp.dp))
+        val currentBitmap = bitmap
+        if (currentBitmap != null) {
+            Image(bitmap = currentBitmap, contentDescription = app.label, modifier = modifier.size(sizeDp.dp))
         } else {
             Box(modifier = modifier.size(sizeDp.dp))
         }
@@ -249,6 +250,7 @@ fun ThemedAppIcon(
 
     val effectiveTintColor = tintColor ?: MaterialTheme.colorScheme.primary
     val effectiveContainerColor = containerColor ?: MaterialTheme.colorScheme.secondaryContainer
+    val currentBitmap = bitmap
 
     when (style) {
         ThemedIconStyle.MATERIAL_YOU -> {
@@ -260,9 +262,9 @@ fun ThemedAppIcon(
                     .background(effectiveContainerColor, squircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                if (bitmap != null) {
+                if (currentBitmap != null) {
                     Image(
-                        bitmap = bitmap,
+                        bitmap = currentBitmap,
                         contentDescription = app.label,
                         colorFilter = ColorFilter.tint(effectiveTintColor, BlendMode.SrcIn),
                         modifier = Modifier.size((sizeDp * 0.74f).dp),
@@ -275,9 +277,9 @@ fun ThemedAppIcon(
                 modifier = modifier.size(sizeDp.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                if (bitmap != null) {
+                if (currentBitmap != null) {
                     Image(
-                        bitmap = bitmap,
+                        bitmap = currentBitmap,
                         contentDescription = app.label,
                         colorFilter = ColorFilter.tint(effectiveTintColor, BlendMode.SrcIn),
                         modifier = Modifier.size(sizeDp.dp),
@@ -295,9 +297,9 @@ fun ThemedAppIcon(
                     .border(1.dp, Color(0xFF262626), squircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                if (bitmap != null) {
+                if (currentBitmap != null) {
                     Image(
-                        bitmap = bitmap,
+                        bitmap = currentBitmap,
                         contentDescription = app.label,
                         colorFilter = ColorFilter.tint(Color(0xFFEDEDED), BlendMode.SrcIn),
                         modifier = Modifier.size((sizeDp * 0.72f).dp),
