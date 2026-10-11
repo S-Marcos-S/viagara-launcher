@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **238**
+Total de papéis de parede: **250**
 
 ### OLED (12)
 
@@ -19,7 +19,7 @@ Total de papéis de parede: **238**
 | <img src="thumbnails/wallpaper_wh_1kp1m9.webp" width="80" alt="Bloodborne" /> | `wallpaper_wh_1kp1m9` | **Bloodborne** | oled, Bloodborne, FromSoftware, Lady Maria |
 | <img src="thumbnails/wallpaper_wh_13l6xg.webp" width="80" alt="Resident Evil" /> | `wallpaper_wh_13l6xg` | **Resident Evil** | oled, Resident Evil, Resident Evil 2 Remake, Resident Evil 2 |
 
-### Abstrato (30)
+### Abstrato (32)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -53,8 +53,10 @@ Total de papéis de parede: **238**
 | <img src="thumbnails/wallpaper_wh_kwwrk1.webp" width="80" alt="Planet" /> | `wallpaper_wh_kwwrk1` | **Planet** | abstract, planet |
 | <img src="thumbnails/wallpaper_wh_gj233q.webp" width="80" alt="Glitch Art" /> | `wallpaper_wh_gj233q` | **Glitch Art** | abstract, glitch art, vaporwave, LSD |
 | <img src="thumbnails/wallpaper_wh_g88v9e.webp" width="80" alt="Google" /> | `wallpaper_wh_g88v9e` | **Google** | abstract, Google, black background |
+| <img src="thumbnails/wallpaper_wh_9mo6ed.webp" width="80" alt="Glitch Art" /> | `wallpaper_wh_9mo6ed` | **Glitch Art** | abstract, glitch art, eyes, cover art |
+| <img src="thumbnails/wallpaper_wh_lmmrkl.webp" width="80" alt="Black Background" /> | `wallpaper_wh_lmmrkl` | **Black Background** | abstract, black background |
 
-### Anime (37)
+### Anime (39)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -95,8 +97,10 @@ Total de papéis de parede: **238**
 | <img src="thumbnails/wallpaper_wh_8ow83j.webp" width="80" alt="Chinese Dragon" /> | `wallpaper_wh_8ow83j` | **Chinese Dragon** | anime, Chinese dragon, farm, farmers |
 | <img src="thumbnails/wallpaper_wh_zyxvwj.webp" width="80" alt="Butterfly" /> | `wallpaper_wh_zyxvwj` | **Butterfly** | anime, butterfly, Kimetsu no Yaiba, Kochou Shinobu |
 | <img src="thumbnails/wallpaper_wh_o3q6p5.webp" width="80" alt="Genshin Impact" /> | `wallpaper_wh_o3q6p5` | **Genshin Impact** | anime, Genshin Impact, Keqing (Genshin Impact), Melailai |
+| <img src="thumbnails/wallpaper_wh_eyp66k.webp" width="80" alt="Blue Dress" /> | `wallpaper_wh_eyp66k` | **Blue Dress** | anime, blue dress, red bow, looking sideways |
+| <img src="thumbnails/wallpaper_wh_v9r5d5.webp" width="80" alt="Rellakinoko" /> | `wallpaper_wh_v9r5d5` | **Rellakinoko** | anime, rellakinoko, blue hair, Hatsune Miku |
 
-### Espaço (25)
+### Espaço (27)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -125,8 +129,10 @@ Total de papéis de parede: **238**
 | <img src="thumbnails/wallpaper_wh_763w6y.webp" width="80" alt="Space Art" /> | `wallpaper_wh_763w6y` | **Space Art** | space, space art, rocket, vehicle |
 | <img src="thumbnails/wallpaper_wh_3zdxdy.webp" width="80" alt="Black Background" /> | `wallpaper_wh_3zdxdy` | **Black Background** | space, black background, Moon |
 | <img src="thumbnails/wallpaper_wh_yjmeyk.webp" width="80" alt="Train" /> | `wallpaper_wh_yjmeyk` | **Train** | space, train, vehicle, planet |
+| <img src="thumbnails/wallpaper_wh_lq7jz2.webp" width="80" alt="Mountains" /> | `wallpaper_wh_lq7jz2` | **Mountains** | space, mountains, tiger |
+| <img src="thumbnails/wallpaper_wh_r72ykq.webp" width="80" alt="Space Art" /> | `wallpaper_wh_r72ykq` | **Space Art** | space, space art, white background, Moon |
 
-### Natureza (42)
+### Natureza (44)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -172,8 +178,10 @@ Total de papéis de parede: **238**
 | <img src="thumbnails/wallpaper_wh_4gr86l.webp" width="80" alt="Landscape" /> | `wallpaper_wh_4gr86l` | **Landscape** | nature, landscape, winter, snow |
 | <img src="thumbnails/wallpaper_wh_dgjok3.webp" width="80" alt="Earth" /> | `wallpaper_wh_dgjok3` | **Earth** | nature, Earth, satellite, aerial view |
 | <img src="thumbnails/wallpaper_wh_96v92d.webp" width="80" alt="Earth" /> | `wallpaper_wh_96v92d` | **Earth** | nature, Earth, satellite, aerial view |
+| <img src="thumbnails/wallpaper_wh_0j25py.webp" width="80" alt="Landscape" /> | `wallpaper_wh_0j25py` | **Landscape** | nature, landscape, cactus, sunset |
+| <img src="thumbnails/wallpaper_wh_gjlm5d.webp" width="80" alt="Colorful" /> | `wallpaper_wh_gjlm5d` | **Colorful** | nature, colorful, palm trees, logo |
 
-### Minimalista (25)
+### Minimalista (27)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -202,8 +210,10 @@ Total de papéis de parede: **238**
 | <img src="thumbnails/wallpaper_wh_v9w7w3.webp" width="80" alt="Black Background" /> | `wallpaper_wh_v9w7w3` | **Black Background** | minimal, black background, road, night |
 | <img src="thumbnails/wallpaper_wh_vgm66l.webp" width="80" alt="Spaceship" /> | `wallpaper_wh_vgm66l` | **Spaceship** | minimal, spaceship, monochrome, space shuttle |
 | <img src="thumbnails/wallpaper_wh_gj89ze.webp" width="80" alt="Pink Background" /> | `wallpaper_wh_gj89ze` | **Pink Background** | minimal, pink background, Asia |
+| <img src="thumbnails/wallpaper_wh_ne1x9o.webp" width="80" alt="Android L" /> | `wallpaper_wh_ne1x9o` | **Android L** | minimal, Android L, Android (operating system), 1976 |
+| <img src="thumbnails/wallpaper_wh_zm213v.webp" width="80" alt="Dragon" /> | `wallpaper_wh_zm213v` | **Dragon** | minimal, dragon, black background |
 
-### Jogos (23)
+### Jogos (25)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -230,6 +240,8 @@ Total de papéis de parede: **238**
 | <img src="thumbnails/wallpaper_wh_w55w3r.webp" width="80" alt="Fan Art" /> | `wallpaper_wh_w55w3r` | **Fan Art** | games, fan art, Ria-neearts, umbrella |
 | <img src="thumbnails/wallpaper_wh_jxwx9m.webp" width="80" alt="Shenhe (genshin Impact)" /> | `wallpaper_wh_jxwx9m` | **Shenhe (genshin Impact)** | games, Shenhe (Genshin Impact), Genshin Impact, blue eyes |
 | <img src="thumbnails/wallpaper_wh_x8e9kd.webp" width="80" alt="Bianca (punishing: Gray Raven)" /> | `wallpaper_wh_x8e9kd` | **Bianca (punishing: Gray Raven)** | games, Bianca (Punishing: Gray Raven), Punishing: Gray Raven, video games |
+| <img src="thumbnails/wallpaper_wh_gwjkql.webp" width="80" alt="Artelsia" /> | `wallpaper_wh_gwjkql` | **Artelsia** | games, artelsia, Nier: Automata, video game girls |
+| <img src="thumbnails/wallpaper_wh_qrr1j7.webp" width="80" alt="Fuann" /> | `wallpaper_wh_qrr1j7` | **Fuann** | games, Fuann, Wuthering Waves, illustration |
 
 ### Cyberpunk (11)
 
