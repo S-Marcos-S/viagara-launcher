@@ -74,7 +74,23 @@ object ClockRepository {
             }.getOrNull()
         } ?: return@withContext ClockCatalog(1, emptyList())
 
-        parseCatalogJson(jsonText)
+        val catalog = parseCatalogJson(jsonText)
+        ClockNotificationManager.checkAndNotifyNewClocks(context, catalog)
+        catalog
+    }
+
+    private var lastClockCheckTimeMs = 0L
+    private const val CLOCK_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L // 6 hours throttle (zero battery impact)
+
+    fun checkForNewClocks(context: Context, coroutineScope: kotlinx.coroutines.CoroutineScope, force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastClockCheckTimeMs < CLOCK_CHECK_INTERVAL_MS) {
+            return
+        }
+        lastClockCheckTimeMs = now
+        coroutineScope.launch(Dispatchers.IO) {
+            loadCatalog(context)
+        }
     }
 
     private fun parseCatalogJson(jsonText: String): ClockCatalog {

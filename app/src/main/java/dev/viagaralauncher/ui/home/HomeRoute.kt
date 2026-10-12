@@ -171,6 +171,7 @@ fun HomeRoute(
     LaunchedEffect(Unit) {
         dev.viagaralauncher.update.UpdateManager.checkForUpdates(this, context = context)
         dev.viagaralauncher.wallpaper.WallpaperRepository.checkForNewWallpapers(context, this)
+        dev.viagaralauncher.clock.ClockRepository.checkForNewClocks(context, this)
     }
 
     val updateInfo by dev.viagaralauncher.update.UpdateManager.updateAvailable.collectAsState()

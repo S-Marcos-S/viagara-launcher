@@ -92,7 +92,9 @@ fun ClockStylePickerScreen(
 
     LaunchedEffect(Unit) {
         isLoadingCatalog = true
-        remoteCatalog = ClockRepository.loadCatalog(context)
+        val cat = ClockRepository.loadCatalog(context)
+        remoteCatalog = cat
+        ClockNotificationManager.markAllAsSeen(context, cat)
         isLoadingCatalog = false
     }
 

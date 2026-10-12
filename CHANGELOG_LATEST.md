@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.60.23
+### 🚀 Novidades da Versão v0.60.24
 
-- **Relógios Remotos do Repositório:** Novo sistema de estilos dinâmicos sincronizados diretamente do GitHub sem necessidade de atualizar o aplicativo.
-- **Aba do Repositório no Seletor:** Tela de escolha de estilos agora conta com abas para relógios integrados e da comunidade.
-- **Animações Declarativas Nativas:** Suporte a efeitos de luz (shimmer), pulsação suave e escala fluida nos novos widgets remotos.
+- **Avisos de Novos Relógios:** Sistema de notificações para novos estilos de relógio adicionados ao repositório, com zero impacto na bateria (verificação inteligente compartilhada com atualizações).
+- **Acesso Rápido:** Ao tocar na notificação, a tela de seleção de estilos abre diretamente.

@@ -101,6 +101,8 @@ class MainActivity : ComponentActivity() {
             intent.getBooleanExtra("open_agenda", false) ||
             intent.action == dev.viagaralauncher.wallpaper.WallpaperNotificationManager.ACTION_OPEN_WALLPAPERS ||
             intent.getBooleanExtra(dev.viagaralauncher.wallpaper.WallpaperNotificationManager.EXTRA_OPEN_WALLPAPERS, false) ||
+            intent.action == dev.viagaralauncher.clock.ClockNotificationManager.ACTION_OPEN_CLOCKS ||
+            intent.getBooleanExtra(dev.viagaralauncher.clock.ClockNotificationManager.EXTRA_OPEN_CLOCKS, false) ||
             intent.action == dev.viagaralauncher.battery.DrainNotificationManager.ACTION_OPEN_BATTERY_STATS ||
             intent.getBooleanExtra(dev.viagaralauncher.battery.DrainNotificationManager.EXTRA_OPEN_BATTERY_STATS, false) ||
             intent.action == "dev.viagaralauncher.action.OPEN_NETWORK_STATS" ||
@@ -120,6 +122,7 @@ class MainActivity : ComponentActivity() {
         handleNetworkStatsIntent(intent)
         handleAnomalyInspectIntent(intent)
         handleWallpaperIntent(intent)
+        handleClockIntent(intent)
     }
 
     override fun onResume() {
@@ -144,6 +147,15 @@ class MainActivity : ComponentActivity() {
             intent.getBooleanExtra(dev.viagaralauncher.wallpaper.WallpaperNotificationManager.EXTRA_OPEN_WALLPAPERS, false)
         ) {
             dev.viagaralauncher.wallpaper.WallpaperEvents.open()
+        }
+    }
+
+    private fun handleClockIntent(intent: Intent?) {
+        if (intent == null) return
+        if (intent.action == dev.viagaralauncher.clock.ClockNotificationManager.ACTION_OPEN_CLOCKS ||
+            intent.getBooleanExtra(dev.viagaralauncher.clock.ClockNotificationManager.EXTRA_OPEN_CLOCKS, false)
+        ) {
+            dev.viagaralauncher.clock.ClockEvents.open()
         }
     }
 

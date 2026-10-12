@@ -136,6 +136,18 @@ fun ViagaraNavHost(
         }
     }
 
+    val openClocksRequested by dev.viagaralauncher.clock.ClockEvents.openRequested.collectAsState()
+    LaunchedEffect(openClocksRequested) {
+        if (openClocksRequested) {
+            dev.viagaralauncher.clock.ClockEvents.consume()
+            if (navController.currentDestination?.route != "settings/clock") {
+                navController.navigate("settings/clock") {
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
     val openTaskManagerRequested by dev.viagaralauncher.root.TaskManagerEvents.openRequested.collectAsState()
     LaunchedEffect(openTaskManagerRequested) {
         if (openTaskManagerRequested) {
