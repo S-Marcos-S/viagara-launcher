@@ -6,7 +6,7 @@
   "alignment": "start",
   "time": {
     "format": "'São' HH 'horas e' mm 'min'",
-    "fontSizeSp": 30,
+    "fontSizeSp": 35,
     "fontWeight": "medium",
     "fontStyle": "italic",
     "fontFamily": "serif",
