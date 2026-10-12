@@ -14,5 +14,9 @@ NUNCA faça build local nem execute comandos `./gradlew` (tais como `./gradlew a
 
 O ambiente local destina-se apenas a edição de arquivos, análises estáticas de código, git e commits.
 
+## Regra Obrigatória: Verificação Rigorosa e Estrita de Importações (Zero Tolerância para Imports Ausentes)
+Sempre que qualquer arquivo de código for criado ou editado e utilizar qualquer classe, objeto, função, extensão ou recurso externo (como `R.string`, `ClockNotificationManager`, componentes Compose, utilitários, etc.), **DEVE-SE OBRIGATORIAMENTE conferir a lista de imports do topo do arquivo** antes de salvar e commitar.
+- **Tolerância Zero:** Erros por falta de importação são inaceitáveis. Toda referência externa introduzida precisa ter seu respectivo `import` explicitamente verificado e confirmado no topo do arquivo.
+
 ## Regra Obrigatória: Acompanhamento de Builds do GitHub Actions
 Sempre que for realizado um commit/push que inicie uma build no GitHub Actions, a execução do workflow **DEVE OBRIGATORIAMENTE ser acompanhada até o final** (via API do GitHub ou logs de workflow runs) para verificar se a compilação, os testes unitários e a geração da Release/APK foram concluídos com sucesso (`completed` / `success`). Caso ocorra qualquer falha (`failure`), a causa do erro deve ser inspecionada e corrigida imediatamente.
