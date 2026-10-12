@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -175,6 +176,11 @@ fun RenderClockText(
         }.getOrDefault("12:00")
     }
 
+    val currentMinute = remember(currentTime) {
+        val cal = Calendar.getInstance().apply { time = currentTime }
+        cal.get(Calendar.MINUTE)
+    }
+
     val weight = when (element.fontWeight.lowercase()) {
         "thin" -> FontWeight.Thin
         "light" -> FontWeight.Light
@@ -207,9 +213,9 @@ fun RenderClockText(
     when (element.animation.lowercase()) {
         "shimmer" -> {
             val sweepOffset = if (isMinuteTrigger) {
-                // One-shot shimmer sweep triggered strictly when text / minute updates
+                // One-shot shimmer sweep triggered strictly when current minute updates
                 val anim = remember { Animatable(-1.2f) }
-                LaunchedEffect(text) {
+                LaunchedEffect(currentMinute) {
                     anim.snapTo(-1.2f)
                     anim.animateTo(
                         targetValue = 2.2f,
@@ -259,7 +265,7 @@ fun RenderClockText(
         "pulse" -> {
             if (isMinuteTrigger) {
                 val anim = remember { Animatable(1.0f) }
-                LaunchedEffect(text) {
+                LaunchedEffect(currentMinute) {
                     anim.snapTo(0.45f)
                     anim.animateTo(
                         targetValue = 1.0f,
@@ -287,7 +293,7 @@ fun RenderClockText(
         "flip" -> {
             if (isMinuteTrigger) {
                 val anim = remember { Animatable(1.0f) }
-                LaunchedEffect(text) {
+                LaunchedEffect(currentMinute) {
                     anim.snapTo(0.92f)
                     anim.animateTo(
                         targetValue = 1.0f,

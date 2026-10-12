@@ -131,16 +131,7 @@ object ClockRepository {
     suspend fun getStyleDefinition(context: Context, clockId: String): RemoteClockStyleDefinition? = withContext(Dispatchers.IO) {
         val styleFile = File(stylesDir(context), "$clockId.json")
 
-        // 1. Check local cached file
-        if (styleFile.exists()) {
-            val text = runCatching { styleFile.readText() }.getOrNull()
-            if (!text.isNullOrBlank()) {
-                val parsed = parseStyleJson(text)
-                if (parsed != null) return@withContext parsed
-            }
-        }
-
-        // 2. Try fetching from assets
+        // 1. Try fetching from updated assets first
         val assetJson = runCatching {
             context.assets.open("clocks/styles/$clockId.json").bufferedReader().use { it.readText() }
         }.getOrNull()
@@ -149,6 +140,15 @@ object ClockRepository {
             if (parsed != null) {
                 runCatching { styleFile.writeText(assetJson) }
                 return@withContext parsed
+            }
+        }
+
+        // 2. Check local cached file
+        if (styleFile.exists()) {
+            val text = runCatching { styleFile.readText() }.getOrNull()
+            if (!text.isNullOrBlank()) {
+                val parsed = parseStyleJson(text)
+                if (parsed != null) return@withContext parsed
             }
         }
 
