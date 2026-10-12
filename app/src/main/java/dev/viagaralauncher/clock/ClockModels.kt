@@ -30,6 +30,8 @@ data class ClockTextElement(
     val format: String = "HH:mm",
     val fontSizeSp: Int = 48,
     val fontWeight: String = "bold", // "normal", "medium", "bold", "extra_bold", "thin"
+    val fontStyle: String = "normal", // "normal", "italic"
+    val fontFamily: String = "default", // "default", "serif", "sans_serif", "monospace", "cursive"
     val fontUrl: String? = null,
     val fontFileName: String? = null,
     val colorHex: String? = null, // null means adapt to wallpaper/theme

@@ -202,6 +202,8 @@ object ClockRepository {
             format = obj.optString("format", "HH:mm"),
             fontSizeSp = obj.optInt("fontSizeSp", 48),
             fontWeight = obj.optString("fontWeight", "bold"),
+            fontStyle = obj.optString("fontStyle", "normal"),
+            fontFamily = obj.optString("fontFamily", "default"),
             fontUrl = obj.optString("fontUrl").takeIf { !it.isNullOrBlank() },
             fontFileName = obj.optString("fontFileName").takeIf { !it.isNullOrBlank() },
             colorHex = obj.optString("colorHex").takeIf { !it.isNullOrBlank() },

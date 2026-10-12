@@ -1,3 +1,4 @@
-### 🚀 Novidades da Versão v0.60.25
+### 🚀 Novidades da Versão v0.60.26
 
-- **Neon Sweep Suave:** O efeito de varredura shimmer do relógio Neon Sweep agora dispara de forma sutil apenas no momento em que os minutos viram, economizando renderização.
+- **Novos Estilos Editoriais:** Adicionados os estilos *Vogue Editorial*, *Kinfolk Minimal* e *Words & Serif* ao catálogo de relógios.
+- **Tipografia Serif e Itálico:** Suporte nativo do motor dinâmico para renderização de fontes serifadas elegantes e estilos em itálico.

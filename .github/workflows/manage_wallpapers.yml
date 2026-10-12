@@ -80,6 +80,7 @@ jobs:
           if [ -n "$(git status --porcelain wallpapers/ app/src/main/assets/wallpapers/)" ]; then
             git add wallpapers/ app/src/main/assets/wallpapers/
             git commit -m "chore(wallpapers): remove selected wallpapers [skip ci]"
+            git pull --rebase origin main
             git push origin main
             echo "Alterações salvas e enviadas com sucesso."
           else

@@ -1,0 +1,25 @@
+{
+  "id": "word_clock_editorial",
+  "name": "Words & Serif",
+  "author": "Viagara Team",
+  "layout": "column",
+  "alignment": "start",
+  "time": {
+    "format": "'São' HH 'horas e' mm 'min'",
+    "fontSizeSp": 22,
+    "fontWeight": "medium",
+    "fontStyle": "italic",
+    "fontFamily": "serif",
+    "letterSpacingSp": 1.2,
+    "animation": "none"
+  },
+  "date": {
+    "format": "EEEE, d 'de' MMMM",
+    "fontSizeSp": 13,
+    "fontWeight": "normal",
+    "fontStyle": "normal",
+    "fontFamily": "serif",
+    "letterSpacingSp": 2.0,
+    "animation": "none"
+  }
+}

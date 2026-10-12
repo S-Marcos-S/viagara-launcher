@@ -1,0 +1,25 @@
+{
+  "id": "vogue_editorial",
+  "name": "Vogue Editorial",
+  "author": "Viagara Team",
+  "layout": "column",
+  "alignment": "start",
+  "time": {
+    "format": "HH : mm",
+    "fontSizeSp": 52,
+    "fontWeight": "light",
+    "fontStyle": "italic",
+    "fontFamily": "serif",
+    "letterSpacingSp": 3.0,
+    "animation": "none"
+  },
+  "date": {
+    "format": "EEEE • d MMMM",
+    "fontSizeSp": 12,
+    "fontWeight": "medium",
+    "fontStyle": "normal",
+    "fontFamily": "serif",
+    "letterSpacingSp": 2.5,
+    "animation": "none"
+  }
+}

@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -312,11 +313,25 @@ fun RenderClockText(
         }
     }
 
+    val style = when (element.fontStyle.lowercase()) {
+        "italic" -> FontStyle.Italic
+        else -> FontStyle.Normal
+    }
+
+    val family = customFont ?: when (element.fontFamily.lowercase()) {
+        "serif" -> FontFamily.Serif
+        "monospace" -> FontFamily.Monospace
+        "sans_serif", "sans-serif" -> FontFamily.SansSerif
+        "cursive" -> FontFamily.Cursive
+        else -> FontFamily.Default
+    }
+
     Text(
         text = text,
         fontSize = element.fontSizeSp.sp,
         fontWeight = weight,
-        fontFamily = customFont ?: FontFamily.Default,
+        fontStyle = style,
+        fontFamily = family,
         color = primaryColor,
         letterSpacing = element.letterSpacingSp.sp,
         modifier = textModifier,

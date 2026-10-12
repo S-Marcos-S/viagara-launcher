@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "clocks": [
     {
       "id": "neon_sweep",
@@ -27,6 +27,33 @@
       "previewType": "dynamic",
       "layoutType": "column",
       "tags": ["minimal", "oled", "clean"]
+    },
+    {
+      "id": "vogue_editorial",
+      "name": "Vogue Editorial",
+      "author": "Viagara Team",
+      "description": "Tipografia editorial serifada em itálico de alto contraste inspirada em capas de revistas",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["editorial", "serif", "magazine", "luxury"]
+    },
+    {
+      "id": "kinfolk_minimal",
+      "name": "Kinfolk Minimal",
+      "author": "Viagara Team",
+      "description": "Design estético sofisticado com algarismos separados por ponto e tracking refinado",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["editorial", "serif", "minimal", "aesthetic"]
+    },
+    {
+      "id": "word_clock_editorial",
+      "name": "Words & Serif",
+      "author": "Viagara Team",
+      "description": "Composição literária elegante com horário por extenso e serifas clássicas",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["editorial", "word_clock", "serif", "literary"]
     }
   ]
 }
