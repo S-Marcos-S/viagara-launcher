@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.viagaralauncher.clock
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -192,65 +193,121 @@ fun RenderClockText(
         )
 
     // Handle animations
+    val trigger = element.animationTrigger.lowercase()
+    val isMinuteTrigger = (trigger == "minute_change" || trigger == "minute" || trigger == "on_minute")
+
     when (element.animation.lowercase()) {
         "shimmer" -> {
-            val shimmerTransition = rememberInfiniteTransition(label = "DynamicShimmer")
-            val sweepOffset by shimmerTransition.animateFloat(
-                initialValue = -1.2f,
-                targetValue = 2.2f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(element.animationDurationMs.coerceAtLeast(800), easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Restart,
-                ),
-                label = "SweepOffset",
-            )
+            val sweepOffset = if (isMinuteTrigger) {
+                // One-shot shimmer sweep triggered strictly when text / minute updates
+                val anim = remember { Animatable(-1.2f) }
+                LaunchedEffect(text) {
+                    anim.snapTo(-1.2f)
+                    anim.animateTo(
+                        targetValue = 2.2f,
+                        animationSpec = tween(
+                            durationMillis = element.animationDurationMs.coerceAtLeast(800),
+                            easing = FastOutSlowInEasing,
+                        ),
+                    )
+                }
+                anim.value
+            } else {
+                val shimmerTransition = rememberInfiniteTransition(label = "DynamicShimmer")
+                val offset by shimmerTransition.animateFloat(
+                    initialValue = -1.2f,
+                    targetValue = 2.2f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(element.animationDurationMs.coerceAtLeast(800), easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                    label = "SweepOffset",
+                )
+                offset
+            }
+
             val highlightColor = element.secondaryColorHex?.let { parseHexColor(it) } ?: Color.White.copy(alpha = 0.85f)
 
-            textModifier = textModifier.drawWithContent {
-                drawContent()
-                val width = size.width
-                val x = width * sweepOffset
-                val shimmerWidth = (width * 0.45f).coerceAtLeast(60f)
-                val brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        highlightColor,
-                        Color.Transparent,
-                    ),
-                    start = Offset(x, 0f),
-                    end = Offset(x + shimmerWidth, size.height),
-                )
-                drawRect(brush = brush, blendMode = BlendMode.SrcAtop)
+            // Only draw shimmer if actively in visible sweeping range
+            if (!isMinuteTrigger || sweepOffset in -1.19f..2.19f) {
+                textModifier = textModifier.drawWithContent {
+                    drawContent()
+                    val width = size.width
+                    val x = width * sweepOffset
+                    val shimmerWidth = (width * 0.45f).coerceAtLeast(60f)
+                    val brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            highlightColor,
+                            Color.Transparent,
+                        ),
+                        start = Offset(x, 0f),
+                        end = Offset(x + shimmerWidth, size.height),
+                    )
+                    drawRect(brush = brush, blendMode = BlendMode.SrcAtop)
+                }
             }
         }
         "pulse" -> {
-            val pulseTransition = rememberInfiniteTransition(label = "DynamicPulse")
-            val alpha by pulseTransition.animateFloat(
-                initialValue = 0.45f,
-                targetValue = 1.0f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(element.animationDurationMs.coerceAtLeast(600), easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "PulseAlpha",
-            )
-            textModifier = textModifier.alpha(alpha)
+            if (isMinuteTrigger) {
+                val anim = remember { Animatable(1.0f) }
+                LaunchedEffect(text) {
+                    anim.snapTo(0.45f)
+                    anim.animateTo(
+                        targetValue = 1.0f,
+                        animationSpec = tween(
+                            durationMillis = element.animationDurationMs.coerceAtLeast(600),
+                            easing = FastOutSlowInEasing,
+                        ),
+                    )
+                }
+                textModifier = textModifier.alpha(anim.value)
+            } else {
+                val pulseTransition = rememberInfiniteTransition(label = "DynamicPulse")
+                val alpha by pulseTransition.animateFloat(
+                    initialValue = 0.45f,
+                    targetValue = 1.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(element.animationDurationMs.coerceAtLeast(600), easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                    label = "PulseAlpha",
+                )
+                textModifier = textModifier.alpha(alpha)
+            }
         }
         "flip" -> {
-            // Subtle pop scale on update
-            val flipTransition = rememberInfiniteTransition(label = "DynamicFlip")
-            val scale by flipTransition.animateFloat(
-                initialValue = 0.96f,
-                targetValue = 1.0f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(element.animationDurationMs.coerceAtLeast(1000), easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "FlipScale",
-            )
-            textModifier = textModifier.graphicsLayer {
-                scaleX = scale
-                scaleY = scale
+            if (isMinuteTrigger) {
+                val anim = remember { Animatable(1.0f) }
+                LaunchedEffect(text) {
+                    anim.snapTo(0.92f)
+                    anim.animateTo(
+                        targetValue = 1.0f,
+                        animationSpec = tween(
+                            durationMillis = element.animationDurationMs.coerceAtLeast(600),
+                            easing = FastOutSlowInEasing,
+                        ),
+                    )
+                }
+                textModifier = textModifier.graphicsLayer {
+                    scaleX = anim.value
+                    scaleY = anim.value
+                }
+            } else {
+                val flipTransition = rememberInfiniteTransition(label = "DynamicFlip")
+                val scale by flipTransition.animateFloat(
+                    initialValue = 0.96f,
+                    targetValue = 1.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(element.animationDurationMs.coerceAtLeast(1000), easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                    label = "FlipScale",
+                )
+                textModifier = textModifier.graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
             }
         }
     }

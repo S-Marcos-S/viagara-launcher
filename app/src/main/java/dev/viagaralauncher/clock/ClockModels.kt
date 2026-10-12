@@ -36,6 +36,7 @@ data class ClockTextElement(
     val secondaryColorHex: String? = null,
     val animation: String = "none", // "none", "shimmer", "pulse", "flip", "slide"
     val animationDurationMs: Int = 2000,
+    val animationTrigger: String = "continuous", // "continuous", "minute_change"
     val letterSpacingSp: Float = 0f,
     val glowRadiusDp: Float = 0f,
     val glowColorHex: String? = null,

@@ -208,6 +208,7 @@ object ClockRepository {
             secondaryColorHex = obj.optString("secondaryColorHex").takeIf { !it.isNullOrBlank() },
             animation = obj.optString("animation", "none"),
             animationDurationMs = obj.optInt("animationDurationMs", 2000),
+            animationTrigger = obj.optString("animationTrigger", "continuous"),
             letterSpacingSp = obj.optDouble("letterSpacingSp", 0.0).toFloat(),
             glowRadiusDp = obj.optDouble("glowRadiusDp", 0.0).toFloat(),
             glowColorHex = obj.optString("glowColorHex").takeIf { !it.isNullOrBlank() },

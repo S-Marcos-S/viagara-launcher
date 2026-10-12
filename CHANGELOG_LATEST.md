@@ -1,4 +1,3 @@
-### 🚀 Novidades da Versão v0.60.24
+### 🚀 Novidades da Versão v0.60.25
 
-- **Avisos de Novos Relógios:** Sistema de notificações para novos estilos de relógio adicionados ao repositório, com zero impacto na bateria (verificação inteligente compartilhada com atualizações).
-- **Acesso Rápido:** Ao tocar na notificação, a tela de seleção de estilos abre diretamente.
+- **Neon Sweep Suave:** O efeito de varredura shimmer do relógio Neon Sweep agora dispara de forma sutil apenas no momento em que os minutos viram, economizando renderização.
