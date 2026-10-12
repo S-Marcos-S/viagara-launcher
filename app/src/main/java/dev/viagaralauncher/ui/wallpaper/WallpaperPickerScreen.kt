@@ -263,6 +263,7 @@ fun WallpaperPickerScreen(
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             // Minimalist Search Bar (no lugar do antigo card "Fotos e Galeria")
             item(span = { GridItemSpan(2) }) {
                 WallpaperSearchBar(
