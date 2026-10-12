@@ -56,6 +56,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -125,6 +131,7 @@ fun WallpaperPickerScreen(
 
     var catalog by remember { mutableStateOf<WallpaperCatalog?>(null) }
     var selectedCategoryId by remember { mutableStateOf("all") }
+    var searchQuery by remember { mutableStateOf("") }
     var isLoadingCatalog by remember { mutableStateOf(true) }
     var previewingWallpaper by remember { mutableStateOf<WallpaperItem?>(null) }
     var isApplying by remember { mutableStateOf(false) }
@@ -135,13 +142,29 @@ fun WallpaperPickerScreen(
         isLoadingCatalog = false
     }
 
-    val filteredWallpapers = remember(catalog, selectedCategoryId) {
+    val filteredWallpapers = remember(catalog, selectedCategoryId, searchQuery) {
         val all = catalog?.wallpapers ?: emptyList()
-        if (selectedCategoryId.equals("all", ignoreCase = true)) {
+        val query = searchQuery.trim().lowercase()
+
+        val baseList = if (selectedCategoryId.equals("all", ignoreCase = true)) {
             all
         } else {
             all.filter {
                 it.category.equals(selectedCategoryId, ignoreCase = true)
+            }
+        }
+
+        if (query.isEmpty()) {
+            baseList
+        } else {
+            baseList.filter { item ->
+                item.name.lowercase().contains(query) ||
+                item.id.lowercase().contains(query) ||
+                item.id.replace("tg_", "").contains(query) ||
+                item.searchTerms.any { it.lowercase().contains(query) } ||
+                item.tags.any { it.lowercase().contains(query) } ||
+                item.category.lowercase().contains(query) ||
+                item.author.lowercase().contains(query)
             }
         }
     }
@@ -240,33 +263,12 @@ fun WallpaperPickerScreen(
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            // Header card: Choose from System / Google Photos (shown in "Todos")
-            if (selectedCategoryId.equals("all", ignoreCase = true)) {
-                item(span = { GridItemSpan(2) }) {
-                    SystemWallpaperCard(
-                        onClick = {
-                            try {
-                                val intent = Intent(Intent.ACTION_SET_WALLPAPER)
-                                context.startActivity(Intent.createChooser(intent, "Escolher papel de parede"))
-                            } catch (_: Exception) {}
-                        }
-                    )
-                }
-
-                item(span = { GridItemSpan(2) }) {
-                    Row(
-                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.wallpaper_picker_curated),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
+            // Minimalist Search Bar (no lugar do antigo card "Fotos e Galeria")
+            item(span = { GridItemSpan(2) }) {
+                WallpaperSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                )
             }
 
             if (isLoadingCatalog && filteredWallpapers.isEmpty()) {
@@ -285,14 +287,31 @@ fun WallpaperPickerScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 32.dp),
+                            .padding(vertical = 40.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = stringResource(R.string.wallpaper_picker_empty),
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 24.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                                modifier = Modifier.size(36.dp),
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                text = if (searchQuery.isNotBlank()) {
+                                    stringResource(R.string.wallpaper_search_no_results, searchQuery)
+                                } else {
+                                    stringResource(R.string.wallpaper_picker_empty)
+                                },
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                 }
             } else {
@@ -366,58 +385,78 @@ fun WallpaperPickerScreen(
 }
 
 @Composable
-private fun SystemWallpaperCard(
-    onClick: () -> Unit,
+private fun WallpaperSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(16.dp)
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clip(shape)
-            .clickable(onClick = onClick),
+            .height(48.dp),
         shape = shape,
-        color = colorScheme.primaryContainer.copy(alpha = 0.35f),
-        border = BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.30f)),
+        color = colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        border = BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.30f)),
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+                .fillMaxSize()
+                .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null,
+                tint = colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+
+            Spacer(Modifier.width(10.dp))
+
             Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(colorScheme.primary.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center,
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart,
             ) {
-                Icon(
-                    imageVector = Icons.Filled.PhotoLibrary,
-                    contentDescription = null,
-                    tint = colorScheme.primary,
-                    modifier = Modifier.size(22.dp),
+                if (query.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.wallpaper_search_hint),
+                        fontSize = 14.sp,
+                        color = colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = colorScheme.onSurface,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                    ),
+                    cursorBrush = SolidColor(colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
-            Spacer(Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.wallpaper_picker_gallery),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = colorScheme.onSurface,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = stringResource(R.string.wallpaper_picker_gallery_desc),
-                    fontSize = 12.sp,
-                    color = colorScheme.onSurfaceVariant,
-                    lineHeight = 16.sp,
-                )
+            if (query.isNotEmpty()) {
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.wallpaper_search_clear),
+                        tint = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         }
     }

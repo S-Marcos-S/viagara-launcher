@@ -42,6 +42,9 @@
     <string name="wallpaper_picker_gallery_desc">Pick an image from your device or Google Photos</string>
     <string name="wallpaper_picker_curated">Official Collection</string>
     <string name="wallpaper_picker_empty">No wallpapers available right now.</string>
+    <string name="wallpaper_search_hint">Search by title, tags or ID…</string>
+    <string name="wallpaper_search_no_results">No wallpapers found for “%1$s”</string>
+    <string name="wallpaper_search_clear">Clear search</string>
     <string name="wallpaper_apply_title">Apply Wallpaper</string>
     <string name="wallpaper_apply_home">Home screen</string>
     <string name="wallpaper_apply_lock">Lock screen</string>

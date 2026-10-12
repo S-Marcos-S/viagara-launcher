@@ -1,6 +1,5 @@
-### 🚀 Novidades da Versão v0.60.39
+### 🚀 Novidades da Versão v0.60.40
 
-- **Enquadramento Interativo de Wallpapers:** Suporte a gestos de pinça para zoom (até 3.5x) e arrastar para enquadrar a imagem antes de aplicar.
-- **Aplicação Precisa:** O corte personalizado pelo usuário é preservado e aplicado fielmente na tela inicial e bloqueio.
-- **Botão de Redefinir Enquadramento:** Opção rápida no topo para restaurar o zoom original ao enquadrar.
-- **Live Wallpapers em Alta Resolução:** Sincronizador atualizado para filtrar vídeos de baixa taxa de bits e evitar entradas duplicadas.
+- **Pesquisa Minimalista de Wallpapers:** Novo campo de busca integrado no topo da grade para localizar papéis de parede instantaneamente.
+- **Busca por Tags e Metadados:** Pesquisa inteligente por tags de IA, termos descritivos, títulos e IDs de imagem.
+- **Interface Mais Limpa:** Removido card redundante de fotos e galeria no feed, mantendo o atalho no cabeçalho.

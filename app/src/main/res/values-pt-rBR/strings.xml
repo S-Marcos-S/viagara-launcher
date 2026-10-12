@@ -43,6 +43,9 @@
     <string name="wallpaper_picker_gallery_desc">Escolha uma imagem do seu aparelho ou Google Fotos</string>
     <string name="wallpaper_picker_curated">Coleção Oficial</string>
     <string name="wallpaper_picker_empty">Nenhum papel de parede disponível no momento.</string>
+    <string name="wallpaper_search_hint">Pesquisar por título, tags ou ID…</string>
+    <string name="wallpaper_search_no_results">Nenhum papel de parede encontrado para \"%1$s\"</string>
+    <string name="wallpaper_search_clear">Limpar pesquisa</string>
     <string name="wallpaper_apply_title">Aplicar Papel de Parede</string>
     <string name="wallpaper_apply_home">Tela inicial</string>
     <string name="wallpaper_apply_lock">Bloqueio</string>
