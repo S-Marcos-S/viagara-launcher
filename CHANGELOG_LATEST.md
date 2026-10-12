@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.37
+### 🚀 Novidades da Versão v0.60.38
 
-- **Filtro Curado de Wallpapers:** Remoção de tags genéricas de técnica artística (`digital art`, `illustration`), permitindo a inclusão de belas paisagens e wallpapers de natureza curados.
-- **Indicador de Resolução e Qualidade:** Exibição da qualidade (4K UHD, 2K QHD, FHD, HD) e dimensões exatas da imagem na tela de pré-visualização de papéis de parede.
+- **Integração com Novo Repositório de Wallpapers:** Catálogo conectado à nova nuvem dedicada (`viagara-wallpapers`) com papéis de parede em qualidade máxima 4K e Live Wallpapers.
+- **Suporte a Live Wallpapers (Vídeo MP4):** Reprodução em loop de Live Wallpapers no preview e aplicação nativa no Android via `VideoLiveWallpaperService`.
+- **Crédito Interativo:** Link direto e clicável para o canal oficial da Amanda Wallpaper no Telegram.

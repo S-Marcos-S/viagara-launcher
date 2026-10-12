@@ -165,7 +165,18 @@
                 <action android:name="android.intent.action.TIME_CHANGED" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
-        </receiver>
+        <service
+            android:name=".wallpaper.VideoLiveWallpaperService"
+            android:label="@string/wallpaper_picker_title"
+            android:permission="android.permission.BIND_WALLPAPER"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/live_wallpaper" />
+        </service>
 
     </application>
 </manifest>

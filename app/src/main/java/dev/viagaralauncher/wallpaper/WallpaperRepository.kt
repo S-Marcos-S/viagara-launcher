@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.viagaralauncher.wallpaper
 
+import android.annotation.SuppressLint
 import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
@@ -31,17 +32,21 @@ data class WallpaperItem(
     val id: String,
     val name: String,
     val author: String,
+    val authorUrl: String? = null,
     val thumbnailUrl: String,
     val fullUrl: String,
     val primaryColorHex: String = "#1E1E1E",
-    val category: String = "oled",
+    val category: String = "images",
+    val type: String = "image",
+    val isLive: Boolean = false,
     val tags: List<String> = emptyList(),
+    val searchTerms: List<String> = emptyList(),
 )
 
 object WallpaperRepository {
 
     private const val REMOTE_CATALOG_URL =
-        "https://raw.githubusercontent.com/S-Marcos-S/viagara-launcher/main/wallpapers/catalog.json"
+        "https://raw.githubusercontent.com/S-Marcos-S/viagara-wallpapers/main/wallpapers/catalog.json"
 
     private val _wallpaperUpdateTick = kotlinx.coroutines.flow.MutableStateFlow(0L)
     val wallpaperUpdateTick: kotlinx.coroutines.flow.StateFlow<Long> = _wallpaperUpdateTick
@@ -161,16 +166,32 @@ object WallpaperRepository {
                         tags.add(tagsArray.getString(t))
                     }
                 }
+
+                val searchTermsArray = obj.optJSONArray("search_terms")
+                val searchTerms = mutableListOf<String>()
+                if (searchTermsArray != null) {
+                    for (t in 0 until searchTermsArray.length()) {
+                        searchTerms.add(searchTermsArray.getString(t))
+                    }
+                }
+
+                val itemType = obj.optString("type", if (obj.optBoolean("is_live", false)) "video" else "image")
+                val isLive = obj.optBoolean("is_live", itemType == "video")
+
                 list.add(
                     WallpaperItem(
                         id = obj.getString("id"),
                         name = obj.getString("name"),
-                        author = obj.optString("author", "Viagara Launcher"),
+                        author = obj.optString("author", "Wallpaper HD/4K (Amanda)"),
+                        authorUrl = obj.optString("author_url", "https://t.me/amandinhawallpaper").takeIf { it.isNotBlank() },
                         thumbnailUrl = obj.getString("thumbnail_url"),
                         fullUrl = obj.getString("full_url"),
                         primaryColorHex = obj.optString("primary_color", "#1E1E1E"),
-                        category = obj.optString("category", if (tags.isNotEmpty()) tags[0] else "oled"),
+                        category = obj.optString("category", if (isLive) "live" else "images"),
+                        type = itemType,
+                        isLive = isLive,
                         tags = tags,
+                        searchTerms = searchTerms,
                     )
                 )
             }
@@ -178,19 +199,18 @@ object WallpaperRepository {
         }.getOrDefault(WallpaperCatalog(DEFAULT_CATEGORIES, emptyList()))
     }
 
-    suspend fun getCachedOrDownloadBitmap(context: Context, url: String): Bitmap? = withContext(Dispatchers.IO) {
+    suspend fun getCachedOrDownloadFile(context: Context, url: String): File? = withContext(Dispatchers.IO) {
         val hash = urlHash(url)
         val file = File(cacheDir(context), hash)
 
         if (file.exists() && file.length() > 0) {
-            val bmp = BitmapFactory.decodeFile(file.absolutePath)
-            if (bmp != null) return@withContext bmp
+            return@withContext file
         }
 
         runCatching {
             val conn = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 10000
-                readTimeout = 15000
+                readTimeout = 25000
                 requestMethod = "GET"
             }
             if (conn.responseCode == 200) {
@@ -202,12 +222,18 @@ object WallpaperRepository {
                 }
                 if (tempFile.exists() && tempFile.length() > 0) {
                     tempFile.renameTo(file)
-                    BitmapFactory.decodeFile(file.absolutePath)
+                    file
                 } else null
             } else null
         }.getOrNull()
     }
 
+    suspend fun getCachedOrDownloadBitmap(context: Context, url: String): Bitmap? = withContext(Dispatchers.IO) {
+        val file = getCachedOrDownloadFile(context, url) ?: return@withContext null
+        runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+    }
+
+    @SuppressLint("MissingPermission")
     suspend fun applyWallpaper(
         context: Context,
         item: WallpaperItem,
@@ -242,6 +268,7 @@ object WallpaperRepository {
         }
     }
 
+    @SuppressLint("MissingPermission")
     suspend fun applyWallpaper(context: Context, fullUrl: String, flags: Int): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val bitmap = getCachedOrDownloadBitmap(context, fullUrl)

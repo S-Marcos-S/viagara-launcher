@@ -2,13 +2,18 @@
 package dev.viagaralauncher.ui.wallpaper
 
 import android.app.WallpaperManager
+import android.content.ComponentName
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.Toast
+import android.widget.VideoView
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -94,6 +99,8 @@ import dev.viagaralauncher.wallpaper.WallpaperCatalog
 import dev.viagaralauncher.wallpaper.WallpaperCategory
 import dev.viagaralauncher.wallpaper.WallpaperItem
 import dev.viagaralauncher.wallpaper.WallpaperRepository
+import dev.viagaralauncher.wallpaper.VideoLiveWallpaperService
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -304,14 +311,37 @@ fun WallpaperPickerScreen(
                 onApply = { flags ->
                     isApplying = true
                     coroutineScope.launch {
-                        val result = WallpaperRepository.applyWallpaper(context, item, flags)
-                        isApplying = false
-                        if (result.isSuccess) {
-                            Toast.makeText(context, R.string.wallpaper_applied_success, Toast.LENGTH_SHORT).show()
-                            previewingWallpaper = null
-                            onBack()
+                        if (flags == -1) {
+                            // Live Wallpaper application
+                            val videoFile = WallpaperRepository.getCachedOrDownloadFile(context, item.fullUrl)
+                            isApplying = false
+                            if (videoFile != null && VideoLiveWallpaperService.setVideoFile(context, videoFile)) {
+                                runCatching {
+                                    val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
+                                        putExtra(
+                                            WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                                            ComponentName(context, VideoLiveWallpaperService::class.java)
+                                        )
+                                    }
+                                    context.startActivity(intent)
+                                    previewingWallpaper = null
+                                    onBack()
+                                }.onFailure {
+                                    Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
+                            }
                         } else {
-                            Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
+                            val result = WallpaperRepository.applyWallpaper(context, item, flags)
+                            isApplying = false
+                            if (result.isSuccess) {
+                                Toast.makeText(context, R.string.wallpaper_applied_success, Toast.LENGTH_SHORT).show()
+                                previewingWallpaper = null
+                                onBack()
+                            } else {
+                                Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 }
@@ -425,6 +455,25 @@ private fun WallpaperGridItem(
             }
         }
 
+        // Live Wallpaper indicator tag for video items
+        if (item.isLive || item.type == "video") {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.Black.copy(alpha = 0.65f))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    text = "▶ LIVE",
+                    color = Color.White,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
         // Gradient overlay at the bottom with title
         Box(
             modifier = Modifier
@@ -468,8 +517,18 @@ private fun WallpaperPreviewOverlay(
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
 
+    val isVideo = item.isLive || item.type == "video"
+
     val fullBitmap by produceState<Bitmap?>(initialValue = null, item.fullUrl) {
-        value = WallpaperRepository.getCachedOrDownloadBitmap(context, item.fullUrl)
+        if (!isVideo) {
+            value = WallpaperRepository.getCachedOrDownloadBitmap(context, item.fullUrl)
+        }
+    }
+
+    val videoFile by produceState<java.io.File?>(initialValue = null, item.fullUrl) {
+        if (isVideo) {
+            value = WallpaperRepository.getCachedOrDownloadFile(context, item.fullUrl)
+        }
     }
 
     Box(
@@ -477,8 +536,43 @@ private fun WallpaperPreviewOverlay(
             .fillMaxSize()
             .background(Color.Black),
     ) {
-        // High-res preview background
-        if (fullBitmap != null) {
+        // High-res preview background (Image or Video)
+        if (isVideo) {
+            if (videoFile != null) {
+                AndroidView(
+                    factory = { ctx ->
+                        VideoView(ctx).apply {
+                            layoutParams = FrameLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT
+                            )
+                            setOnPreparedListener { mp ->
+                                mp.isLooping = true
+                                mp.setVolume(0f, 0f)
+                                mp.start()
+                            }
+                            setVideoPath(videoFile!!.absolutePath)
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color.White)
+                        Spacer(Modifier.height(14.dp))
+                        Text(
+                            text = stringResource(R.string.wallpaper_loading),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                        )
+                    }
+                }
+            }
+        } else if (fullBitmap != null) {
             Image(
                 bitmap = fullBitmap!!.asImageBitmap(),
                 contentDescription = item.name,
@@ -546,11 +640,40 @@ private fun WallpaperPreviewOverlay(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                 )
-                Text(
-                    text = item.author,
-                    color = Color.White.copy(alpha = 0.70f),
-                    fontSize = 13.sp,
-                )
+                val authorUrl = item.authorUrl
+                if (!authorUrl.isNullOrBlank()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable {
+                                runCatching {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(authorUrl))
+                                    context.startActivity(intent)
+                                }
+                            }
+                            .padding(vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = item.author,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "↗",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 12.sp,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = item.author,
+                        color = Color.White.copy(alpha = 0.70f),
+                        fontSize = 13.sp,
+                    )
+                }
 
                 Spacer(Modifier.height(8.dp))
                 Row(
@@ -631,77 +754,97 @@ private fun WallpaperPreviewOverlay(
                         )
                     }
                 } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
+                    if (isVideo) {
                         Button(
-                            onClick = {
-                                val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                    WallpaperManager.FLAG_SYSTEM
-                                } else 0
-                                onApply(flag)
-                            },
-                            modifier = Modifier.weight(1f),
+                            onClick = { onApply(-1) },
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorScheme.primary,
                                 contentColor = colorScheme.onPrimary,
                             ),
                         ) {
                             Text(
-                                text = stringResource(R.string.wallpaper_apply_home),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
+                                text = stringResource(R.string.wallpaper_apply_live),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center,
-                                maxLines = 1,
                             )
                         }
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
                             Button(
-                                onClick = { onApply(WallpaperManager.FLAG_LOCK) },
+                                onClick = {
+                                    val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                        WallpaperManager.FLAG_SYSTEM
+                                    } else 0
+                                    onApply(flag)
+                                },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorScheme.surfaceContainerHigh,
-                                    contentColor = colorScheme.onSurface,
+                                    containerColor = colorScheme.primary,
+                                    contentColor = colorScheme.onPrimary,
                                 ),
                             ) {
                                 Text(
-                                    text = stringResource(R.string.wallpaper_apply_lock),
+                                    text = stringResource(R.string.wallpaper_apply_home),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1,
                                 )
                             }
-                        }
 
-                        Button(
-                            onClick = {
-                                val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                    WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
-                                } else 0
-                                onApply(flag)
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorScheme.secondaryContainer,
-                                contentColor = colorScheme.onSecondaryContainer,
-                            ),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.wallpaper_apply_both),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                                maxLines = 1,
-                            )
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                Button(
+                                    onClick = { onApply(WallpaperManager.FLAG_LOCK) },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = colorScheme.surfaceContainerHigh,
+                                        contentColor = colorScheme.onSurface,
+                                    ),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.wallpaper_apply_lock),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = {
+                                    val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                        WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
+                                    } else 0
+                                    onApply(flag)
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = colorScheme.secondaryContainer,
+                                    contentColor = colorScheme.onSecondaryContainer,
+                                ),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.wallpaper_apply_both),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                )
+                            }
                         }
                     }
                 }
