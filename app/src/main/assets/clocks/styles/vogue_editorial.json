@@ -6,7 +6,7 @@
   "alignment": "start",
   "time": {
     "format": "HH : mm",
-    "fontSizeSp": 52,
+    "fontSizeSp": 65,
     "fontWeight": "light",
     "fontStyle": "italic",
     "fontFamily": "serif",

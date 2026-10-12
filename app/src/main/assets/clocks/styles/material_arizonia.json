@@ -6,7 +6,7 @@
   "alignment": "start",
   "time": {
     "format": "HH:mm",
-    "fontSizeSp": 54,
+    "fontSizeSp": 65,
     "fontWeight": "normal",
     "fontFileName": "arizonia.ttf",
     "letterSpacingSp": 2.0,

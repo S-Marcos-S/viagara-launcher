@@ -6,7 +6,7 @@
   "alignment": "start",
   "time": {
     "format": "HH:mm",
-    "fontSizeSp": 52,
+    "fontSizeSp": 65,
     "fontWeight": "bold",
     "fontFileName": "bungee_shade.ttf",
     "letterSpacingSp": 2.0,

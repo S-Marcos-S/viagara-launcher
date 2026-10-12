@@ -6,7 +6,7 @@
   "alignment": "start",
   "time": {
     "format": "HH:mm",
-    "fontSizeSp": 52,
+    "fontSizeSp": 65,
     "fontWeight": "black",
     "fontFileName": "archivo_black.ttf",
     "letterSpacingSp": 1.0,
