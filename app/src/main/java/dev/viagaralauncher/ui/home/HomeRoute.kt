@@ -683,6 +683,7 @@ fun HomeRoute(
             onOpenClockStyle = { showHomeOptions = false; onNavigate("settings/clock") },
             onOpenThemes = { showHomeOptions = false; onNavigate("themes") },
             onOpenWallpaperPicker = { showHomeOptions = false; onNavigate("wallpapers") },
+            onEditLayout = { showHomeOptions = false; homeEditMode = true },
         )
 
         val hideStatusBar by app.prefs.hideStatusBar.collectAsState(initial = false)

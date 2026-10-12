@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Widgets
 import dev.viagaralauncher.root.AppUninstallManager
 import androidx.compose.material3.Button
@@ -94,6 +95,7 @@ fun HomeOptionsBottomSheet(
     onOpenClockStyle: () -> Unit = {},
     onOpenThemes: () -> Unit = {},
     onOpenWallpaperPicker: () -> Unit = {},
+    onEditLayout: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -417,6 +419,12 @@ fun HomeOptionsBottomSheet(
                     icon = Icons.Filled.Widgets,
                     label = stringResource(R.string.widget_add),
                     onClick = { onDismiss(); onAddWidget() },
+                )
+
+                OptionItem(
+                    icon = Icons.Filled.Tune,
+                    label = stringResource(R.string.action_edit_layout),
+                    onClick = { onDismiss(); onEditLayout() },
                 )
 
                 OptionItem(
