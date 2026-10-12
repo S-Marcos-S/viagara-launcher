@@ -15,8 +15,8 @@ Launcher minimalista para Android baseado em lista vertical, inspirado no [Niaga
 
 ##   Destaques / Features
 
-- **Ergonomia com Uma Mão:** Lista vertical rápida e scrubber alfabético com acesso instantâneo aos favoritos.
-- **Catálogo Oficial de Wallpapers:** Papéis de parede em alta definição (OLED, Espaço, Natureza, Abstrato e Minimalista) com aplicação direta e atualizações automáticas.
+- **Ergonomia com Uma Mão:** Lista vertical rápida e scrubber alfabético.
+- **Catálogo Oficial de Wallpapers:** Papéis de parede em alta definição com aplicação direta e atualizações automáticas.
 - **Temas & Cores Dinâmicas:** Material You integrado, OLED Preto Puro e adaptação imediata às cores do wallpaper.
 - **Notificações Integradas:** Prévias sob os apps e pop-up expansível translúcido com histórico de mensagens.
 - **Widgets & Now Playing:** Suporte a widgets do Android e controle multimídia na tela inicial.
