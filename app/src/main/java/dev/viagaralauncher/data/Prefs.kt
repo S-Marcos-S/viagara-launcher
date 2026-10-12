@@ -423,7 +423,7 @@ class Prefs(private val context: Context) {
 
     suspend fun resetHomePaddingsAndSidePadding() {
         context.dataStore.edit {
-            it[Keys.SIDE_PADDING_DP] = 20
+            it[Keys.SIDE_PADDING_DP] = 45
             it[Keys.ALPHABET_SIDE_PADDING_DP] = 20
             it[Keys.NOW_PLAYING_PAD_TOP] = HomePaddings.Default.nowPlayingTop
             it[Keys.NOW_PLAYING_PAD_BOTTOM] = HomePaddings.Default.nowPlayingBottom

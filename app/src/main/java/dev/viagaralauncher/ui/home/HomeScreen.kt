@@ -329,7 +329,7 @@ fun HomeScreen(
     val colorScheme = MaterialTheme.colorScheme
     val handleResetAlignments = {
         HapticUtil.tick(view, hapticsEnabled)
-        onSetSidePadding(20)
+        onSetSidePadding(45)
         onSetAlphabetSidePadding(20)
         onCommitPadding(PaddingSlot.NOW_PLAYING_TOP, dev.viagaralauncher.data.HomePaddings.Default.nowPlayingTop)
         onCommitPadding(PaddingSlot.NOW_PLAYING_BOTTOM, dev.viagaralauncher.data.HomePaddings.Default.nowPlayingBottom)

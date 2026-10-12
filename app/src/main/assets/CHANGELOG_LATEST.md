@@ -1,4 +1,3 @@
-### 🚀 Novidades da Versão v0.60.34
+### 🚀 Novidades da Versão v0.60.35
 
-- **Contraste Dinâmico no Alfabeto:** As letras do alfabeto que estiverem posicionadas sobre partes brancas ou muito claras do papel de parede agora adaptam-se automaticamente para a cor preta, mantendo legibilidade total sem impacto em bateria.
-- **Editar Layout:** Opção de edição de layout facilmente acessível no menu flutuante da tela inicial.
+- **Alinhar Elementos Aprimorado:** O botão de alinhar elementos no editor de layout da tela inicial agora define o espaçamento lateral automaticamente para 45dp.
