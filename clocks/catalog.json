@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "clocks": [
+    {
+      "id": "neon_sweep",
+      "name": "Neon Sweep",
+      "author": "Viagara Team",
+      "description": "Relógio neon com efeito shimmer vibrante e tipografia futurista",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["neon", "shimmer", "futuristic"]
+    },
+    {
+      "id": "cyber_pulse",
+      "name": "Cyber Pulse",
+      "author": "Viagara Team",
+      "description": "Design cyberpunk com efeito de respiração suave e contraste dinâmico",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["cyberpunk", "pulse", "glow"]
+    },
+    {
+      "id": "minimal_space",
+      "name": "Minimal Space",
+      "author": "Viagara Team",
+      "description": "Tipografia espaçada elegante com linhas limpas para telas OLED",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["minimal", "oled", "clean"]
+    }
+  ]
+}

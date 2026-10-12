@@ -298,6 +298,7 @@ fun HomeScreen(
     val clockWidthScalePref by app.prefs.clockWidthScale.collectAsState(initial = 1.0f)
     val clockHeightScalePref by app.prefs.clockHeightScale.collectAsState(initial = 1.0f)
     val clockTopPaddingDpPref by app.prefs.clockTopPaddingDp.collectAsState(initial = 158)
+    val remoteClockIdPref by app.prefs.remoteClockId.collectAsState(initial = null)
 
     var clockMenuExpanded by remember { mutableStateOf(false) }
     var clockMenuOffset by remember { mutableStateOf(DpOffset.Zero) }
@@ -718,6 +719,7 @@ fun HomeScreen(
                 ) {
                     NiagaraClockWidget(
                         clockStyle = clockStyle,
+                        remoteClockId = remoteClockIdPref,
                         contentColor = contentColor,
                         sidePaddingDp = sidePaddingDp,
                         alignRight = alignRight,

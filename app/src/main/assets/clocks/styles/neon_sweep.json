@@ -1,0 +1,23 @@
+{
+  "id": "neon_sweep",
+  "name": "Neon Sweep",
+  "author": "Viagara Team",
+  "layout": "column",
+  "alignment": "start",
+  "time": {
+    "format": "HH:mm",
+    "fontSizeSp": 54,
+    "fontWeight": "bold",
+    "colorHex": "#00F0FF",
+    "animation": "none"
+  },
+  "date": {
+    "format": "EEEE, d 'de' MMMM",
+    "fontSizeSp": 14,
+    "fontWeight": "medium",
+    "colorHex": "#E0E0E0",
+    "secondaryColorHex": "#00F0FF",
+    "animation": "shimmer",
+    "animationDurationMs": 2400
+  }
+}

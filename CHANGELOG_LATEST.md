@@ -1,6 +1,5 @@
-### 🚀 Novidades da Versão v0.60.22
+### 🚀 Novidades da Versão v0.60.23
 
-- **Organização de Wallpapers:** Categorias corrigidas — papéis de parede de jogos (Genshin, Honkai, Resident Evil, etc.) movidos para "Jogos" e pasta "OLED" higienizada exclusivamente para preto profundo (#000000).
-- **Curadoria Automática:** Workflow aprimorado para sincronizar até 36 wallpapers por semana com validação de pretos OLED e filtro de jogos.
-- **Menu do Relógio Limpo:** Removida a opção de redimensionamento ao pressionar sobre o relógio.
-- **Relógio Canvas Shimmer:** Aperfeiçoamento do efeito de varredura de luz na data.
+- **Relógios Remotos do Repositório:** Novo sistema de estilos dinâmicos sincronizados diretamente do GitHub sem necessidade de atualizar o aplicativo.
+- **Aba do Repositório no Seletor:** Tela de escolha de estilos agora conta com abas para relógios integrados e da comunidade.
+- **Animações Declarativas Nativas:** Suporte a efeitos de luz (shimmer), pulsação suave e escala fluida nos novos widgets remotos.

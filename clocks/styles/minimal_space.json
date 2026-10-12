@@ -1,0 +1,21 @@
+{
+  "id": "minimal_space",
+  "name": "Minimal Space",
+  "author": "Viagara Team",
+  "layout": "column",
+  "alignment": "start",
+  "time": {
+    "format": "HH : mm",
+    "fontSizeSp": 50,
+    "fontWeight": "light",
+    "letterSpacingSp": 3.0,
+    "animation": "none"
+  },
+  "date": {
+    "format": "EEEE, d 'de' MMMM",
+    "fontSizeSp": 12,
+    "fontWeight": "normal",
+    "letterSpacingSp": 1.2,
+    "animation": "none"
+  }
+}

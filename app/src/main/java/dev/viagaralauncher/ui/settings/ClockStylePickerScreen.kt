@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -27,7 +29,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +45,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,6 +62,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.viagaralauncher.R
+import dev.viagaralauncher.clock.ClockCatalog
+import dev.viagaralauncher.clock.ClockRepository
+import dev.viagaralauncher.clock.DynamicClockContent
+import dev.viagaralauncher.clock.RemoteClockItem
+import dev.viagaralauncher.clock.RemoteClockStyleDefinition
 import dev.viagaralauncher.data.ClockStyle
 import dev.viagaralauncher.service.HapticUtil
 import dev.viagaralauncher.ui.home.ClockStylePreview
@@ -62,13 +76,25 @@ import java.util.Date
 @Composable
 fun ClockStylePickerScreen(
     currentStyle: ClockStyle,
+    currentRemoteId: String? = null,
     hapticsEnabled: Boolean,
     onSelectStyle: (ClockStyle) -> Unit,
+    onSelectRemoteStyle: (String) -> Unit = {},
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
     val view = LocalView.current
     var currentTime by remember { mutableStateOf(Date()) }
+    var selectedTab by remember { mutableIntStateOf(if (currentRemoteId != null) 1 else 0) }
+
+    var remoteCatalog by remember { mutableStateOf<ClockCatalog?>(null) }
+    var isLoadingCatalog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isLoadingCatalog = true
+        remoteCatalog = ClockRepository.loadCatalog(context)
+        isLoadingCatalog = false
+    }
 
     DisposableEffect(context) {
         val receiver = object : BroadcastReceiver() {
@@ -115,101 +141,286 @@ fun ClockStylePickerScreen(
             )
         },
     ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(surface),
         ) {
-            items(ClockStyle.entries.toTypedArray()) { style ->
-                val isSelected = style == currentStyle
+            // Category Selector (Nativos / Comunidade Repositório)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = selectedTab == 0,
+                    onClick = {
+                        HapticUtil.tick(view, hapticsEnabled)
+                        selectedTab = 0
+                    },
+                    label = { Text("Integrados") },
+                    leadingIcon = {
+                        Icon(Icons.Filled.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                )
 
-                val borderColor = if (isSelected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                }
-
-                val cardBg = if (isSelected) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = cardBg,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .border(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = borderColor,
-                            shape = RoundedCornerShape(20.dp),
+                FilterChip(
+                    selected = selectedTab == 1,
+                    onClick = {
+                        HapticUtil.tick(view, hapticsEnabled)
+                        selectedTab = 1
+                    },
+                    label = {
+                        Text(
+                            if (remoteCatalog != null && remoteCatalog!!.clocks.isNotEmpty()) {
+                                "Repositório (${remoteCatalog!!.clocks.size})"
+                            } else "Repositório"
                         )
-                        .clickable {
-                            HapticUtil.tick(view, hapticsEnabled)
-                            onSelectStyle(style)
-                        },
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                )
+            }
+
+            if (selectedTab == 0) {
+                // Built-in Native Clock Styles
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxSize(),
                 ) {
-                    Box(modifier = Modifier.padding(12.dp)) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            // Clock Preview Container
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(116.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                                    .padding(8.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                ClockStylePreview(
-                                    style = style,
-                                    currentTime = currentTime,
-                                    is24Hour = is24Hour,
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
+                    items(ClockStyle.entries.toTypedArray()) { style ->
+                        val isSelected = (currentRemoteId == null && style == currentStyle)
 
-                            Spacer(Modifier.height(12.dp))
-
-                            // Style Name
-                            Text(
-                                text = stringResource(style.labelRes()),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center,
-                                maxLines = 1,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                            )
+                        val borderColor = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                         }
 
-                        // Selected indicator check badge at top-right corner
-                        if (isSelected) {
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .align(Alignment.TopEnd)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(16.dp),
+                        val cardBg = if (isSelected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = cardBg,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = borderColor,
+                                    shape = RoundedCornerShape(20.dp),
                                 )
+                                .clickable {
+                                    HapticUtil.tick(view, hapticsEnabled)
+                                    onSelectStyle(style)
+                                },
+                        ) {
+                            Box(modifier = Modifier.padding(12.dp)) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    // Clock Preview Container
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(116.dp)
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                                            .padding(8.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        ClockStylePreview(
+                                            style = style,
+                                            currentTime = currentTime,
+                                            is24Hour = is24Hour,
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.fillMaxSize(),
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(12.dp))
+
+                                    // Style Name
+                                    Text(
+                                        text = stringResource(style.labelRes()),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                    )
+                                }
+
+                                if (isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .align(Alignment.TopEnd)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primary),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Remote / Repository Clock Styles
+                val clocks = remoteCatalog?.clocks ?: emptyList()
+
+                if (isLoadingCatalog && clocks.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(36.dp))
+                    }
+                } else if (clocks.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "Nenhum estilo remoto encontrado no momento.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(clocks) { item ->
+                            val isSelected = (currentRemoteId == item.id)
+
+                            val borderColor = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                            }
+
+                            val cardBg = if (isSelected) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = cardBg,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = borderColor,
+                                        shape = RoundedCornerShape(20.dp),
+                                    )
+                                    .clickable {
+                                        HapticUtil.tick(view, hapticsEnabled)
+                                        onSelectRemoteStyle(item.id)
+                                    },
+                            ) {
+                                Box(modifier = Modifier.padding(12.dp)) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        // Live Preview of Remote Style
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(116.dp)
+                                                .clip(RoundedCornerShape(14.dp))
+                                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                                                .padding(8.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            var previewDef by remember(item.id) { mutableStateOf<RemoteClockStyleDefinition?>(null) }
+                                            LaunchedEffect(item.id) {
+                                                previewDef = ClockRepository.getStyleDefinition(context, item.id)
+                                            }
+
+                                            if (previewDef != null) {
+                                                DynamicClockContent(
+                                                    definition = previewDef!!,
+                                                    currentTime = currentTime,
+                                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                )
+                                            } else {
+                                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                            }
+                                        }
+
+                                        Spacer(Modifier.height(12.dp))
+
+                                        Text(
+                                            text = item.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                            textAlign = TextAlign.Center,
+                                            maxLines = 1,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                        )
+
+                                        if (item.author.isNotBlank()) {
+                                            Text(
+                                                text = "por ${item.author}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                                maxLines = 1,
+                                            )
+                                        }
+                                    }
+
+                                    if (isSelected) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .align(Alignment.TopEnd)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.primary),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onPrimary,
+                                                modifier = Modifier.size(16.dp),
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

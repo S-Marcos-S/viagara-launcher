@@ -112,6 +112,7 @@ fun isCenteredClockStyle(style: ClockStyle): Boolean = when (style) {
 @Composable
 fun NiagaraClockWidget(
     clockStyle: ClockStyle = ClockStyle.CLASSIC,
+    remoteClockId: String? = null,
     contentColor: Color,
     sidePaddingDp: Int,
     alignRight: Boolean,
@@ -246,18 +247,37 @@ fun NiagaraClockWidget(
                 val isCompact = availableWidth < 315.dp
                 val isUltraCompact = availableWidth < 250.dp
 
-            when (clockStyle) {
-                ClockStyle.CLASSIC -> {
-                    ClassicClockContent(
-                        timeString = timeString,
-                        dateString = dateString,
-                        contentColor = contentColor,
-                        horizontalAlignment = horizontalAlignment,
-                        widthFactor = widthFactor,
-                        onClockClick = { launchClockApp(context) },
-                        onDateClick = handleDateClick,
-                    )
+            var remoteDefinition by remember(remoteClockId) { mutableStateOf<dev.viagaralauncher.clock.RemoteClockStyleDefinition?>(null) }
+            LaunchedEffect(remoteClockId) {
+                if (!remoteClockId.isNullOrBlank()) {
+                    remoteDefinition = dev.viagaralauncher.clock.ClockRepository.getStyleDefinition(context, remoteClockId)
+                } else {
+                    remoteDefinition = null
                 }
+            }
+
+            if (remoteDefinition != null) {
+                dev.viagaralauncher.clock.DynamicClockContent(
+                    definition = remoteDefinition!!,
+                    currentTime = currentTime,
+                    contentColor = contentColor,
+                    horizontalAlignment = horizontalAlignment,
+                    onClockClick = { launchClockApp(context) },
+                    onDateClick = handleDateClick,
+                )
+            } else {
+                when (clockStyle) {
+                    ClockStyle.CLASSIC -> {
+                        ClassicClockContent(
+                            timeString = timeString,
+                            dateString = dateString,
+                            contentColor = contentColor,
+                            horizontalAlignment = horizontalAlignment,
+                            widthFactor = widthFactor,
+                            onClockClick = { launchClockApp(context) },
+                            onDateClick = handleDateClick,
+                        )
+                    }
                 ClockStyle.STACKED -> {
                     StackedClockContent(
                         hoursString = hoursString,
@@ -557,6 +577,7 @@ fun NiagaraClockWidget(
                         onDateClick = handleDateClick,
                     )
                 }
+            }
             }
             }
         }

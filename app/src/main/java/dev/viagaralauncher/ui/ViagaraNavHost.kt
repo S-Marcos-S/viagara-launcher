@@ -217,6 +217,7 @@ fun ViagaraNavHost(
     val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
     val folderWindowPopup by app.prefs.folderWindowPopup.collectAsState(initial = true)
     val clockStyle by app.prefs.clockStyle.collectAsState(initial = ClockStyle.CLASSIC)
+    val remoteClockId by app.prefs.remoteClockId.collectAsState(initial = null)
     val folders by app.prefs.folders.collectAsState(initial = emptyList())
     val contentColor = rememberContentColor(textColorMode)
 
@@ -600,9 +601,13 @@ fun ViagaraNavHost(
         composable("settings/clock") {
             ClockStylePickerScreen(
                 currentStyle = clockStyle,
+                currentRemoteId = remoteClockId,
                 hapticsEnabled = hapticsEnabled,
                 onSelectStyle = { selected ->
                     scope.launch { app.prefs.setClockStyle(selected) }
+                },
+                onSelectRemoteStyle = { remoteId ->
+                    scope.launch { app.prefs.setRemoteClockId(remoteId) }
                 },
                 onBack = { navController.popBackStack() },
             )

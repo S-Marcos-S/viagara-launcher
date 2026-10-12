@@ -100,6 +100,7 @@ class Prefs(private val context: Context) {
         val FOLDER_WINDOW_POPUP = booleanPreferencesKey("folder_window_popup")
         val ACTIVE_THEME = stringPreferencesKey("active_theme_id")
         val CLOCK_STYLE = stringPreferencesKey("clock_style")
+        val REMOTE_CLOCK_ID = stringPreferencesKey("remote_clock_id")
         val CLOCK_WIDTH_SCALE = floatPreferencesKey("clock_width_scale")
         val CLOCK_HEIGHT_SCALE = floatPreferencesKey("clock_height_scale")
         val CLOCK_TOP_PADDING_DP = intPreferencesKey("clock_top_padding_dp")
@@ -236,6 +237,7 @@ class Prefs(private val context: Context) {
         runCatching { ClockStyle.valueOf(it[Keys.CLOCK_STYLE] ?: ClockStyle.CLASSIC.name) }
             .getOrDefault(ClockStyle.CLASSIC)
     }.distinctUntilChanged()
+    val remoteClockId: Flow<String?> = data.map { it[Keys.REMOTE_CLOCK_ID] }.distinctUntilChanged()
     val clockWidthScale: Flow<Float> = data.map { it[Keys.CLOCK_WIDTH_SCALE] ?: 1.0f }.distinctUntilChanged()
     val clockHeightScale: Flow<Float> = data.map { it[Keys.CLOCK_HEIGHT_SCALE] ?: 1.0f }.distinctUntilChanged()
     val clockTopPaddingDp: Flow<Int> = data.map { it[Keys.CLOCK_TOP_PADDING_DP] ?: 158 }.distinctUntilChanged()
@@ -623,7 +625,22 @@ class Prefs(private val context: Context) {
     }
 
     suspend fun setClockStyle(v: ClockStyle) {
-        context.dataStore.edit { it[Keys.CLOCK_STYLE] = v.name }
+        context.dataStore.edit {
+            it[Keys.CLOCK_STYLE] = v.name
+            it.remove(Keys.REMOTE_CLOCK_ID)
+        }
+    }
+
+    suspend fun setRemoteClockId(id: String) {
+        context.dataStore.edit {
+            it[Keys.REMOTE_CLOCK_ID] = id
+        }
+    }
+
+    suspend fun clearRemoteClockId() {
+        context.dataStore.edit {
+            it.remove(Keys.REMOTE_CLOCK_ID)
+        }
     }
 
     suspend fun setClockWidthScale(v: Float) {

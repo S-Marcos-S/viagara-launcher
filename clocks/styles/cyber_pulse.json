@@ -1,0 +1,22 @@
+{
+  "id": "cyber_pulse",
+  "name": "Cyber Pulse",
+  "author": "Viagara Team",
+  "layout": "column",
+  "alignment": "start",
+  "time": {
+    "format": "HH:mm",
+    "fontSizeSp": 56,
+    "fontWeight": "extra_bold",
+    "colorHex": "#FF0055",
+    "animation": "pulse",
+    "animationDurationMs": 1800
+  },
+  "date": {
+    "format": "EEEE, d 'de' MMMM",
+    "fontSizeSp": 14,
+    "fontWeight": "medium",
+    "colorHex": "#FFFFFF",
+    "animation": "none"
+  }
+}
