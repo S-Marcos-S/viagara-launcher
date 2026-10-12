@@ -122,7 +122,13 @@ jobs:
           if-no-files-found: ignore
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew assembleRelease --stacktrace 2>&1 | tee assemble-output.log || {
+            echo "==================== ASSEMBLE RELEASE ERROR SUMMARY ===================="
+            tail -n 120 assemble-output.log || true
+            exit 1
+          }
 
       - name: Clean up temporary keystore
         if: always()
