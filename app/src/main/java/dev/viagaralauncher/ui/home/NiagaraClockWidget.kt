@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.runtime.remember
@@ -2935,6 +2936,7 @@ private fun CanvasShimmerClockContent(
         val shimmerProgress = shimmerAnim.value
         val fontSize = (17 * widthFactor).sp
         val lineHeight = (22 * widthFactor).sp
+        var textWidthPx by remember { mutableFloatStateOf(0f) }
 
         Box(
             modifier = Modifier
@@ -2944,29 +2946,27 @@ private fun CanvasShimmerClockContent(
                     onClick = onDateClick,
                 )
         ) {
-            if (shimmerProgress in 0.001f..0.999f) {
-                // Moving light beam shader
-                val brush = remember(shimmerProgress, contentColor) {
-                    val bandWidth = 0.28f
-                    val center = shimmerProgress * (1f + bandWidth * 2) - bandWidth
-                    val start = (center - bandWidth).coerceIn(0f, 1f)
-                    val mid = center.coerceIn(0f, 1f)
-                    val end = (center + bandWidth).coerceIn(0f, 1f)
+            val brush = if (shimmerProgress in 0.001f..0.999f && textWidthPx > 0f) {
+                val beamWidth = textWidthPx * 0.45f
+                val totalTravel = textWidthPx + beamWidth * 2f
+                val beamCenter = -beamWidth + (totalTravel * shimmerProgress)
+                val startX = beamCenter - beamWidth
+                val endX = beamCenter + beamWidth
 
-                    val base = contentColor.copy(alpha = 0.78f)
-                    val glow = Color.White.copy(alpha = 0.98f)
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    colors = listOf(
+                        contentColor.copy(alpha = 0.85f),
+                        Color.White.copy(alpha = 1.0f),
+                        contentColor.copy(alpha = 0.85f),
+                    ),
+                    start = Offset(startX, 0f),
+                    end = Offset(endX, 0f),
+                )
+            } else {
+                null
+            }
 
-                    androidx.compose.ui.graphics.Brush.horizontalGradient(
-                        colorStops = arrayOf(
-                            0.0f to base,
-                            start to base,
-                            mid to glow,
-                            end to base,
-                            1.0f to base,
-                        )
-                    )
-                }
-
+            if (brush != null) {
                 Text(
                     text = dateString,
                     style = androidx.compose.ui.text.TextStyle(
@@ -2975,6 +2975,9 @@ private fun CanvasShimmerClockContent(
                         fontWeight = FontWeight.Medium,
                         lineHeight = lineHeight,
                     ),
+                    onTextLayout = { layoutResult ->
+                        textWidthPx = layoutResult.size.width.toFloat()
+                    },
                 )
             } else {
                 Text(
@@ -2983,6 +2986,9 @@ private fun CanvasShimmerClockContent(
                     fontSize = fontSize,
                     fontWeight = FontWeight.Normal,
                     lineHeight = lineHeight,
+                    onTextLayout = { layoutResult ->
+                        textWidthPx = layoutResult.size.width.toFloat()
+                    },
                 )
             }
         }

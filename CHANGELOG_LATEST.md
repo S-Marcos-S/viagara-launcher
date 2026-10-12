@@ -1,4 +1,6 @@
-### 🚀 Novidades da Versão v0.60.21
+### 🚀 Novidades da Versão v0.60.22
 
-- **Novo Relógio Canvas com Brilho:** Adicionado estilo de relógio com números animados em Canvas geométrico convencional, alinhado à esquerda.
-- **Efeito de Luz na Data:** Animação de feixe de luz translúcido que percorre a data de ponta a ponta a cada atualização da hora.
+- **Organização de Wallpapers:** Categorias corrigidas — papéis de parede de jogos (Genshin, Honkai, Resident Evil, etc.) movidos para "Jogos" e pasta "OLED" higienizada exclusivamente para preto profundo (#000000).
+- **Curadoria Automática:** Workflow aprimorado para sincronizar até 36 wallpapers por semana com validação de pretos OLED e filtro de jogos.
+- **Menu do Relógio Limpo:** Removida a opção de redimensionamento ao pressionar sobre o relógio.
+- **Relógio Canvas Shimmer:** Aperfeiçoamento do efeito de varredura de luz na data.

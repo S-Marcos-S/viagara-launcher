@@ -18,7 +18,7 @@ import sys
 import time
 import urllib.request
 import urllib.error
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 
 try:
     from PIL import Image
@@ -65,11 +65,62 @@ STRICT_NON_CHARACTER_CATEGORIES = {
 ANIME_CHARACTER_TAGS = {
     "anime", "anime girls", "anime boy", "manga", "pixiv", "girl", "girls", "women",
     "men", "boy", "female", "male", "maid", "maid outfit", "pantyhose", "heels", "high heels",
-    "bikini", "cosplay", "cgi", "character", "character design", "genshin", "genshin impact",
-    "honkai", "honkai star rail", "zenless zone zero", "blue archive", "game art", "comic", "comics",
+    "bikini", "cosplay", "cgi", "character", "character design", "comic", "comics",
     "illustration", "fantasy girl", "fantasy art", "waifu", "vtuber", "digital art", "drawing",
     "model", "actress", "celebrity", "portrait display", "portrait", "crossfire", "ghostblade",
 }
+
+# Tags or words indicating a video game title/character/franchise
+GAME_INDICATORS = {
+    "game", "video game", "video games", "game art", "gaming", "genshin", "genshin impact",
+    "honkai", "honkai star rail", "zenless zone zero", "blue archive", "resident evil",
+    "cyberpunk 2077", "witcher", "the witcher", "bloodborne", "dark souls", "elden ring",
+    "sekiro", "hollow knight", "overwatch", "valorant", "league of legends", "dota", "dota 2",
+    "world of warcraft", "warcraft", "starcraft", "zelda", "legend of zelda", "mario",
+    "pokemon", "final fantasy", "persona", "nier", "nier automata", "halo", "destiny",
+    "destiny 2", "god of war", "assassin's creed", "assassins creed", "tomb raider",
+    "metal gear", "death stranding", "skyrim", "fallout", "mass effect", "apex legends",
+    "fortnite", "pubg", "minecraft", "terraria", "portal", "half-life", "bioshock",
+    "horizon zero dawn", "ghost of tsushima", "red dead redemption", "gta", "grand theft auto",
+    "monster hunter", "devil may cry", "street fighter", "tekken", "guilty gear", "mortal kombat",
+    "starfield", "subnautica", "silksong", "palworld", "wuthering waves", "arknights"
+}
+
+
+def is_game_content(name: str, tags: List[str], wh_category: str) -> bool:
+    """Check if the wallpaper belongs to a video game franchise."""
+    if wh_category.lower() == "anime":
+        # Check if it's explicitly a game anime character
+        pass
+    low_name = name.lower()
+    for kw in GAME_INDICATORS:
+        if kw in low_name:
+            return True
+    for tag in tags:
+        low_tag = tag.lower()
+        if low_tag in GAME_INDICATORS:
+            return True
+        for kw in GAME_INDICATORS:
+            if kw == low_tag or f" {kw} " in f" {low_tag} ":
+                return True
+    return False
+
+
+def calculate_deep_black_ratio(img: Image.Image, threshold: int = 15) -> float:
+    """
+    Calculate the proportion of pixels that are near-pitch black (RGB <= threshold).
+    True OLED wallpapers must have a substantial portion of pure/deep black pixels.
+    """
+    try:
+        small = img.copy().resize((100, 100), Image.Resampling.BOX)
+        pixels = small.getdata()
+        total = len(pixels)
+        if total == 0:
+            return 0.0
+        black_count = sum(1 for p in pixels if p[0] <= threshold and p[1] <= threshold and p[2] <= threshold)
+        return black_count / float(total)
+    except Exception:
+        return 0.0
 
 
 def fetch_json(url: str, timeout: int = 15, retries: int = 2) -> Optional[Dict[str, Any]]:
@@ -118,10 +169,18 @@ def process_and_save_wallpaper(
     image_bytes: bytes,
     full_path: str,
     thumb_path: str,
-) -> bool:
+    target_category: str = "",
+) -> Tuple[bool, float]:
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         w, h = img.size
+
+        black_ratio = calculate_deep_black_ratio(img, threshold=16)
+
+        # OLED strict validation: at least 35% of the pixels must be pure / deep black (RGB <= 16)
+        if target_category == "oled" and black_ratio < 0.35:
+            print(f"Candidate {item_id} rejected for OLED: deep black ratio is only {black_ratio:.1%} (< 35%).")
+            return False, black_ratio
 
         # Resize full image if excessively large to keep storage efficient
         max_h = 2560
@@ -139,16 +198,16 @@ def process_and_save_wallpaper(
         thumb_img = img.resize((thumb_w, thumb_h), Image.Resampling.LANCZOS)
         thumb_img.save(thumb_path, format="WEBP", quality=75, method=4)
 
-        return True
+        return True, black_ratio
     except Exception as e:
         print(f"Failed to process image for {item_id}: {e}")
-        return False
+        return False, 0.0
 
 
 def main():
     parser = argparse.ArgumentParser(description="Sync curated wallpapers into repository.")
-    parser.add_argument("--max-per-category", type=int, default=2, help="Max new items per category per run")
-    parser.add_argument("--max-total", type=int, default=12, help="Max total new items added per run")
+    parser.add_argument("--max-per-category", type=int, default=3, help="Max new items per category per run")
+    parser.add_argument("--max-total", type=int, default=36, help="Max total new items added per run")
     parser.add_argument("--categories", type=str, default=",".join(ALL_CATEGORIES_LIST), help="Comma-separated categories")
     parser.add_argument("--dry-run", action="store_true", help="Inspect without modifying files")
     args = parser.parse_args()
@@ -285,6 +344,17 @@ def main():
                 if not title:
                     title = f"{cat.capitalize()} #{wh_id.upper()}"
 
+                # Game content detection:
+                # If wallpaper is a video game franchise/character, it MUST belong to 'games'
+                assigned_category = cat
+                if cat != "games" and is_game_content(title, d_tags if detail and "data" in detail else [], wh_cat if detail and "data" in detail else ""):
+                    if cat in ["oled", "minimal", "abstract", "nature", "space", "city", "cars", "animals"]:
+                        print(f"Skipping candidate {wh_id} for '{cat}' because it is game-related ('{title}').")
+                        continue
+                    else:
+                        print(f"Re-routing candidate {wh_id} ('{title}') from '{cat}' to 'games'.")
+                        assigned_category = "games"
+
                 colors = item.get("colors", [])
                 primary_color = colors[0] if colors else "#000000"
 
@@ -294,19 +364,19 @@ def main():
                 thumb_dest = os.path.join(THUMB_DIR, thumb_filename)
 
                 if args.dry_run:
-                    print(f"[DRY-RUN] Would download {image_url} -> {full_dest} ({title} by {author})")
+                    print(f"[DRY-RUN] Would download {image_url} -> {full_dest} ({title} by {author} -> {assigned_category})")
                     cat_added += 1
                     added_count += 1
                     continue
 
-                print(f"Downloading {image_url} ({title} for '{cat}')...")
+                print(f"Downloading {image_url} ({title} for '{assigned_category}')...")
                 img_bytes = fetch_bytes(image_url)
                 if not img_bytes:
                     print(f"Failed to download image for {wh_id}, skipping.")
                     continue
 
                 print(f"Processing and converting to WebP...")
-                success = process_and_save_wallpaper(wallpaper_id, img_bytes, full_dest, thumb_dest)
+                success, black_ratio = process_and_save_wallpaper(wallpaper_id, img_bytes, full_dest, thumb_dest, target_category=assigned_category)
                 if not success:
                     continue
 
@@ -317,7 +387,7 @@ def main():
                     "thumbnail_url": f"{GITHUB_RAW_BASE}/thumbnails/{thumb_filename}",
                     "full_url": f"{GITHUB_RAW_BASE}/full/{full_filename}",
                     "primary_color": primary_color,
-                    "category": cat,
+                    "category": assigned_category,
                     "tags": list(dict.fromkeys(tags)),
                 }
 

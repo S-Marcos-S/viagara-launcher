@@ -33,11 +33,11 @@ on:
       max_total:
         description: 'Total máximo de wallpapers para adicionar'
         required: false
-        default: '12'
+        default: '36'
       max_per_category:
         description: 'Máximo por categoria (0 para distribuir automaticamente)'
         required: false
-        default: '2'
+        default: '3'
 
 permissions:
   contents: write
@@ -67,8 +67,8 @@ jobs:
         env:
           PRESET: ${{ github.event.inputs.category_preset || 'all' }}
           CUSTOM: ${{ github.event.inputs.custom_categories || '' }}
-          MAX_TOTAL: ${{ github.event.inputs.max_total || '12' }}
-          MAX_PER_CAT: ${{ github.event.inputs.max_per_category || '2' }}
+          MAX_TOTAL: ${{ github.event.inputs.max_total || '36' }}
+          MAX_PER_CAT: ${{ github.event.inputs.max_per_category || '3' }}
         run: |
           ALL_CATS="oled,anime,games,minimal,abstract,nature,space,cyberpunk,city,cars,animals,fantasy"
           
