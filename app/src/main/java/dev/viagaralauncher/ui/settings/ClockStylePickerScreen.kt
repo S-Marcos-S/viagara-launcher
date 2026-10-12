@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.viagaralauncher.R
 import dev.viagaralauncher.clock.ClockCatalog
+import dev.viagaralauncher.clock.ClockNotificationManager
 import dev.viagaralauncher.clock.ClockRepository
 import dev.viagaralauncher.clock.DynamicClockContent
 import dev.viagaralauncher.clock.RemoteClockItem
