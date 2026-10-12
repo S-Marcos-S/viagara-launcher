@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.30
+### 🚀 Novidades da Versão v0.60.31
 
-- **Visualizador de Áudio Blindado:** Ciclo de pausa e retomada instantânea sem recriar o processo root, eliminando travamento de áudio e processos zumbis.
-- **Sincronização de Wallpapers:** Rebase automático antes do envio de novos wallpapers no GitHub Actions.
+- **Tela Inicial Mais Limpa:** Redução do espaço vazio excessivo abaixo da frase do dia e dos favoritos.
+- **APK Mais Leve:** Remoção de fontes embutidas desnecessárias (redução de ~1 MB no tamanho do app), baixadas sob demanda apenas se usadas.

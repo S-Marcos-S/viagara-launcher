@@ -1101,11 +1101,13 @@ fun HomeScreen(
                     hapticsEnabled = hapticsEnabled,
                 )
 
+                val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
                 // Bottom breathing space for smooth drag up and spring bounce
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(160.dp)
+                        .height(maxOf(32.dp, navBarBottom + 24.dp))
                         .combinedClickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -1118,11 +1120,12 @@ fun HomeScreen(
                         )
                 )
             } else {
+                val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 // Empty space below favorites when quote is displayed in clock widget
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp)
+                        .height(maxOf(64.dp, navBarBottom + 48.dp))
                         .combinedClickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
