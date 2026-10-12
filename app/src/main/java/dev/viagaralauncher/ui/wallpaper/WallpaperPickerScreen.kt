@@ -47,17 +47,25 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -590,6 +598,7 @@ private fun WallpaperPreviewOverlay(
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var viewportSize by remember { mutableStateOf(IntSize.Zero) }
+    var showClassifyDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -804,6 +813,9 @@ private fun WallpaperPreviewOverlay(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -857,6 +869,31 @@ private fun WallpaperPreviewOverlay(
                             )
                         }
                     }
+
+                    // Botão minimalista de classificação manual ao lado da informação de resolução
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White.copy(alpha = 0.12f))
+                            .clickable { showClassifyDialog = true }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = stringResource(R.string.wallpaper_action_classify),
+                            tint = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.size(13.dp),
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            text = stringResource(R.string.wallpaper_action_classify),
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                        )
+                    }
+
                     if (!isVideo) {
                         Text(
                             text = stringResource(R.string.wallpaper_hint_pinch_pan),
@@ -1015,6 +1052,326 @@ private fun WallpaperPreviewOverlay(
                                     maxLines = 1,
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showClassifyDialog) {
+            WallpaperClassificationDialog(
+                item = item,
+                onDismiss = { showClassifyDialog = false },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun WallpaperClassificationDialog(
+    item: WallpaperItem,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val colorScheme = MaterialTheme.colorScheme
+
+    var titleText by remember { mutableStateOf(item.name) }
+    var newTagInput by remember { mutableStateOf("") }
+    var tagsList by remember {
+        mutableStateOf(
+            (item.tags + item.searchTerms).filter { it.isNotBlank() }.distinct()
+        )
+    }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    fun addTag() {
+        val trimmed = newTagInput.trim()
+        if (trimmed.isNotEmpty() && !tagsList.any { it.equals(trimmed, ignoreCase = true) }) {
+            tagsList = tagsList + trimmed
+            newTagInput = ""
+        }
+    }
+
+    Dialog(
+        onDismissRequest = { if (!isSubmitting) onDismiss() },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .clip(RoundedCornerShape(24.dp)),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFF1E1E1E),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.wallpaper_classify_dialog_title),
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "ID: ${item.id} • " + stringResource(R.string.wallpaper_classify_dialog_desc),
+                            color = Color.White.copy(alpha = 0.65f),
+                            fontSize = 12.sp,
+                        )
+                    }
+                    IconButton(
+                        onClick = onDismiss,
+                        enabled = !isSubmitting,
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.action_close),
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Campo: Título da Imagem
+                Text(
+                    text = stringResource(R.string.wallpaper_classify_title_label),
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(6.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        BasicTextField(
+                            value = titleText,
+                            onValueChange = { titleText = it },
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                color = Color.White,
+                                fontSize = 14.sp,
+                            ),
+                            cursorBrush = SolidColor(colorScheme.primary),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Campo: Adicionar Tag
+                Text(
+                    text = stringResource(R.string.wallpaper_classify_tag_label),
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 12.dp),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            if (newTagInput.isEmpty()) {
+                                Text(
+                                    text = stringResource(R.string.wallpaper_classify_tag_hint),
+                                    color = Color.White.copy(alpha = 0.40f),
+                                    fontSize = 14.sp,
+                                )
+                            }
+                            BasicTextField(
+                                value = newTagInput,
+                                onValueChange = { newTagInput = it },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                ),
+                                cursorBrush = SolidColor(colorScheme.primary),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(
+                                    onDone = { addTag() }
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+
+                    // Botão Adicionar Tag
+                    Surface(
+                        onClick = { addTag() },
+                        shape = RoundedCornerShape(12.dp),
+                        color = colorScheme.primary,
+                        modifier = Modifier.height(46.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = null,
+                                tint = colorScheme.onPrimary,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.wallpaper_classify_tag_add),
+                                color = colorScheme.onPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Lista de Tags Adicionadas
+                Text(
+                    text = stringResource(R.string.wallpaper_classify_tags_added, tagsList.size),
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(8.dp))
+
+                if (tagsList.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.wallpaper_classify_no_tags),
+                        color = Color.White.copy(alpha = 0.45f),
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                } else {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        tagsList.forEach { tag ->
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.White.copy(alpha = 0.12f),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(start = 8.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = tag,
+                                        color = Color.White.copy(alpha = 0.90f),
+                                        fontSize = 12.sp,
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    IconButton(
+                                        onClick = { tagsList = tagsList - tag },
+                                        modifier = Modifier.size(20.dp),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Remover tag",
+                                            tint = Color.White.copy(alpha = 0.70f),
+                                            modifier = Modifier.size(13.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // Botões de Ação
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        enabled = !isSubmitting,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text(text = stringResource(R.string.action_cancel))
+                    }
+
+                    Button(
+                        onClick = {
+                            if (titleText.isNotBlank()) {
+                                isSubmitting = true
+                                coroutineScope.launch {
+                                    WallpaperRepository.submitClassification(
+                                        context = context,
+                                        item = item,
+                                        newTitle = titleText.trim(),
+                                        newTags = tagsList,
+                                    )
+                                    Toast.makeText(
+                                        context,
+                                        R.string.wallpaper_classify_saved_locally,
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                    isSubmitting = false
+                                    onDismiss()
+                                }
+                            }
+                        },
+                        enabled = !isSubmitting && titleText.isNotBlank(),
+                        modifier = Modifier.weight(1.4f),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = colorScheme.onPrimary,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Text(text = stringResource(R.string.wallpaper_classify_save))
                         }
                     }
                 }

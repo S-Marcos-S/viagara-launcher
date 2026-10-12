@@ -7,15 +7,19 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.content.Intent
+import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 import java.security.MessageDigest
 
 data class WallpaperCategory(
@@ -300,6 +304,111 @@ object WallpaperRepository {
 
             notifyWallpaperChanged()
             Unit
+        }
+    }
+
+    suspend fun updateLocalCatalogItem(
+        context: Context,
+        itemId: String,
+        newTitle: String,
+        newTags: List<String>,
+    ) = withContext(Dispatchers.IO) {
+        val file = File(cacheDir(context), "wallpaper_catalog.json")
+        if (!file.exists()) return@withContext
+
+        runCatching {
+            val jsonText = file.readText()
+            val root = JSONObject(jsonText)
+            val wallpapers = root.optJSONArray("wallpapers") ?: return@withContext
+
+            for (i in 0 until wallpapers.length()) {
+                val itemObj = wallpapers.getJSONObject(i)
+                if (itemObj.optString("id") == itemId) {
+                    if (newTitle.isNotBlank()) {
+                        itemObj.put("name", newTitle.trim())
+                    }
+                    val existingTags = mutableListOf<String>()
+                    val tagsArr = itemObj.optJSONArray("tags")
+                    if (tagsArr != null) {
+                        for (t in 0 until tagsArr.length()) {
+                            existingTags.add(tagsArr.getString(t))
+                        }
+                    }
+                    val existingSearch = mutableListOf<String>()
+                    val searchArr = itemObj.optJSONArray("search_terms")
+                    if (searchArr != null) {
+                        for (s in 0 until searchArr.length()) {
+                            existingSearch.add(searchArr.getString(s))
+                        }
+                    }
+
+                    for (tag in newTags) {
+                        val cleaned = tag.trim()
+                        if (cleaned.isNotBlank()) {
+                            if (existingTags.none { it.equals(cleaned, ignoreCase = true) }) {
+                                existingTags.add(cleaned)
+                            }
+                            if (existingSearch.none { it.equals(cleaned, ignoreCase = true) }) {
+                                existingSearch.add(cleaned)
+                            }
+                        }
+                    }
+
+                    itemObj.put("tags", JSONArray(existingTags))
+                    itemObj.put("search_terms", JSONArray(existingSearch))
+                    break
+                }
+            }
+
+            file.writeText(root.toString(2))
+            notifyWallpaperChanged()
+        }
+    }
+
+    suspend fun submitClassification(
+        context: Context,
+        item: WallpaperItem,
+        newTitle: String,
+        newTags: List<String>,
+    ): Result<Boolean> = withContext(Dispatchers.IO) {
+        runCatching {
+            // 1. Atualizar o item localmente no cache do app
+            updateLocalCatalogItem(context, item.id, newTitle, newTags)
+
+            // 2. Montar Issue estruturada para moderação no GitHub
+            val title = "[Sugestão] ${item.id}: $newTitle"
+            val body = buildString {
+                appendLine("### 🏷️ Sugestão de Classificação Manual de Wallpaper")
+                appendLine()
+                appendLine("- **ID:** `${item.id}`")
+                appendLine("- **Novo Título:** `$newTitle`")
+                appendLine("- **Tags Propostas:** ${newTags.joinToString(", ") { "`$it`" }}")
+                appendLine()
+                appendLine("![Preview](${item.thumbnailUrl})")
+                appendLine()
+                appendLine("---")
+                appendLine("```json")
+                appendLine(JSONObject().apply {
+                    put("id", item.id)
+                    put("name", newTitle)
+                    put("tags", JSONArray(newTags))
+                }.toString(2))
+                appendLine("```")
+                appendLine()
+                appendLine("> *Para aprovar esta sugestão e atualizar automaticamente o catálogo oficial do repositório, responda com o comentário `/approve` ou adicione a label `approved`.*")
+            }
+
+            // 3. Abrir página de nova Issue pré-preenchida no GitHub para confirmação do usuário
+            withContext(Dispatchers.Main) {
+                val encodedTitle = URLEncoder.encode(title, "UTF-8")
+                val encodedBody = URLEncoder.encode(body, "UTF-8")
+                val issueUrl = "https://github.com/S-Marcos-S/viagara-wallpapers/issues/new?title=$encodedTitle&body=$encodedBody&labels=wallpaper-suggestion"
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(issueUrl)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
+            true
         }
     }
 }

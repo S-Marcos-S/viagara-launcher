@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.60.41
+### 🚀 Novidades da Versão v0.60.42
 
-- **Pesquisa Minimalista de Wallpapers:** Novo campo de busca integrado no topo da grade para localizar papéis de parede instantaneamente.
-- **Busca por Tags e Metadados:** Pesquisa inteligente por tags de IA, termos descritivos, títulos e IDs de imagem.
-- **Interface Mais Limpa:** Removido card redundante de fotos e galeria no feed, mantendo o atalho no cabeçalho.
+- **Classificação Manual de Wallpapers:** Novo botão minimalista ao lado da resolução para propor títulos e tags personalizadas.
+- **Janela Flutuante de Tags:** Interface para adicionar, visualizar e remover tags que alimentam o mecanismo de busca.
+- **Moderação Aberta no GitHub:** Sugestões enviadas como propostas auditáveis com aprovação simples por comando no repositório.
