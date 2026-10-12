@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -88,6 +89,18 @@ fun EdgeScrubber(
         }
     }
 
+    // Dynamic contrast state sampled from wallpaper edge luminance
+    val screenHeightPx = with(LocalDensity.current) { androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val topRatio = if (screenHeightPx > 0f) (band.topPx / screenHeightPx).coerceIn(0f, 1f) else 0.1f
+    val bottomRatio = if (screenHeightPx > 0f) ((band.topPx + band.heightPx) / screenHeightPx).coerceIn(0f, 1f) else 0.9f
+
+    val isBrightFlags by ScrubberContrastManager.rememberEdgeContrast(
+        side = side,
+        lettersCount = letters.size,
+        bandTopRatio = topRatio,
+        bandBottomRatio = bottomRatio,
+    )
+
     Canvas(
         modifier = modifier
             .width(132.dp)
@@ -119,13 +132,26 @@ fun EdgeScrubber(
             val outward = bellPx * gain + pull * gain
             val glyphX = if (isLeft) baseX + outward else baseX - outward
             val alpha = 0.60f + 0.40f * gain
+            val isOverBrightBg = if (index < isBrightFlags.size) isBrightFlags[index] else false
 
             if (c == SCRUBBER_STAR) {
+                val starColor = if (isOverBrightBg) {
+                    Color.Black.copy(alpha = alpha.coerceAtLeast(0.85f))
+                } else {
+                    Color.White.copy(alpha = alpha)
+                }
                 translate(left = glyphX, top = centerY) {
-                    drawPath(starPath, color = Color.White.copy(alpha = alpha))
+                    drawPath(starPath, color = starColor)
                 }
             } else {
-                textPaint.alpha = (alpha * 255f).roundToInt().coerceIn(0, 255)
+                val targetColor = if (isOverBrightBg) {
+                    val a = (alpha.coerceAtLeast(0.85f) * 255f).roundToInt().coerceIn(0, 255)
+                    android.graphics.Color.argb(a, 16, 22, 28)
+                } else {
+                    val a = (alpha * 255f).roundToInt().coerceIn(0, 255)
+                    android.graphics.Color.argb(a, 255, 255, 255)
+                }
+                textPaint.color = targetColor
                 drawContext.canvas.nativeCanvas.drawText(
                     c.toString(),
                     glyphX,
