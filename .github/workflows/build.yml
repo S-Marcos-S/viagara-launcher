@@ -101,7 +101,13 @@ jobs:
           fi
 
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: |
+          ./gradlew testDebugUnitTest --stacktrace || {
+            echo "=== UNIT TESTS FAILED: PRINTING SUMMARY ==="
+            find app/build/reports/tests/ -name "*.html" -exec head -n 50 {} + || true
+            find app/build/test-results/ -name "*.xml" -exec cat {} + || true
+            exit 1
+          }
 
       - name: Upload Test Reports on Failure
         if: failure()
