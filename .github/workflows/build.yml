@@ -130,6 +130,14 @@ jobs:
             exit 1
           }
 
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-log
+          path: assemble-output.log
+          if-no-files-found: ignore
+
       - name: Clean up temporary keystore
         if: always()
         run: rm -f release.keystore keystore.properties
