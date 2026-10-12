@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **257**
+Total de papéis de parede: **270**
 
 ### OLED (17)
 
@@ -118,7 +118,7 @@ Total de papéis de parede: **257**
 | <img src="thumbnails/wallpaper_wh_763w6y.webp" width="80" alt="Space Art" /> | `wallpaper_wh_763w6y` | **Space Art** | space, space art, rocket, vehicle |
 | <img src="thumbnails/wallpaper_wh_yjmeyk.webp" width="80" alt="Train" /> | `wallpaper_wh_yjmeyk` | **Train** | space, train, vehicle, planet |
 
-### Natureza (42)
+### Natureza (55)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -164,6 +164,19 @@ Total de papéis de parede: **257**
 | <img src="thumbnails/wallpaper_wh_4gr86l.webp" width="80" alt="Landscape" /> | `wallpaper_wh_4gr86l` | **Landscape** | nature, landscape, winter, snow |
 | <img src="thumbnails/wallpaper_wh_dgjok3.webp" width="80" alt="Earth" /> | `wallpaper_wh_dgjok3` | **Earth** | nature, Earth, satellite, aerial view |
 | <img src="thumbnails/wallpaper_wh_96v92d.webp" width="80" alt="Earth" /> | `wallpaper_wh_96v92d` | **Earth** | nature, Earth, satellite, aerial view |
+| <img src="thumbnails/wallpaper_wh_0j25py.webp" width="80" alt="Landscape" /> | `wallpaper_wh_0j25py` | **Landscape** | nature, landscape, cactus, sunset |
+| <img src="thumbnails/wallpaper_wh_gjlm5d.webp" width="80" alt="Colorful" /> | `wallpaper_wh_gjlm5d` | **Colorful** | nature, colorful, palm trees, logo |
+| <img src="thumbnails/wallpaper_wh_6dk7o6.webp" width="80" alt="Seasons" /> | `wallpaper_wh_6dk7o6` | **Seasons** | nature, seasons, snow, landscape |
+| <img src="thumbnails/wallpaper_wh_mpexgy.webp" width="80" alt="Landscape" /> | `wallpaper_wh_mpexgy` | **Landscape** | nature, landscape, architecture, cathedral |
+| <img src="thumbnails/wallpaper_wh_eyg63k.webp" width="80" alt="Earth" /> | `wallpaper_wh_eyg63k` | **Earth** | nature, Earth, satellite, aerial view |
+| <img src="thumbnails/wallpaper_wh_3kxgl6.webp" width="80" alt="Water" /> | `wallpaper_wh_3kxgl6` | **Water** | nature, water, sea, coast |
+| <img src="thumbnails/wallpaper_wh_0qq255.webp" width="80" alt="Pivot" /> | `wallpaper_wh_0qq255` | **Pivot** | nature, pivot, sky, clouds |
+| <img src="thumbnails/wallpaper_wh_zm7dqg.webp" width="80" alt="Earth" /> | `wallpaper_wh_zm7dqg` | **Earth** | nature, Earth, satellite, landscape |
+| <img src="thumbnails/wallpaper_wh_eolj2r.webp" width="80" alt="Landscape" /> | `wallpaper_wh_eolj2r` | **Landscape** | nature, landscape, monochrome, path |
+| <img src="thumbnails/wallpaper_wh_gj89je.webp" width="80" alt="Island" /> | `wallpaper_wh_gj89je` | **Island** | nature, island, sea |
+| <img src="thumbnails/wallpaper_wh_zmxd7j.webp" width="80" alt="Sea" /> | `wallpaper_wh_zmxd7j` | **Sea** | nature, sea, lake, water |
+| <img src="thumbnails/wallpaper_wh_lmxjzr.webp" width="80" alt="Earth" /> | `wallpaper_wh_lmxjzr` | **Earth** | nature, Earth, satellite, aerial view |
+| <img src="thumbnails/wallpaper_wh_wygd66.webp" width="80" alt="Earth" /> | `wallpaper_wh_wygd66` | **Earth** | nature, Earth, satellite, aerial view |
 
 ### Minimalista (34)
 
