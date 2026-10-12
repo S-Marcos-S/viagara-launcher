@@ -69,6 +69,11 @@
     <string name="wallpaper_new_notification_title">Novos papéis de parede disponíveis!</string>
     <string name="wallpaper_new_notification_single">1 novo papel de parede foi adicionado ao catálogo.</string>
     <string name="wallpaper_new_notification_multiple">%1$d novos papéis de parede foram adicionados ao catálogo.</string>
+    <string name="clock_notification_channel_name">Estilos de Relógio</string>
+    <string name="clock_notification_channel_desc">Notificações sobre novos widgets de relógio adicionados ao repositório</string>
+    <string name="clock_new_notification_title">Novos estilos de relógio disponíveis!</string>
+    <string name="clock_new_notification_single">1 novo estilo de relógio foi adicionado ao repositório.</string>
+    <string name="clock_new_notification_multiple">%1$d novos estilos de relógio foram adicionados ao repositório.</string>
     <string name="home_option_themes">Temas</string>
     <string name="themes_title">Temas</string>
     <string name="themes_subtitle">Personalize a aparência e cores do seu launcher</string>

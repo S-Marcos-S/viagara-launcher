@@ -102,10 +102,10 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          ./gradlew testDebugUnitTest --stacktrace || {
+          ./gradlew testDebugUnitTest --info --stacktrace || {
             echo "=== UNIT TESTS FAILED: PRINTING SUMMARY ==="
-            find app/build/reports/tests/ -name "*.html" -exec head -n 50 {} + || true
-            find app/build/test-results/ -name "*.xml" -exec cat {} + || true
+            find app/build/reports/tests/ -type f -exec cat {} + || true
+            find app/build/test-results/ -type f -name "*.xml" -exec cat {} + || true
             exit 1
           }
 
