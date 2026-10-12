@@ -165,6 +165,8 @@
                 <action android:name="android.intent.action.TIME_CHANGED" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
+        </receiver>
+
         <service
             android:name=".wallpaper.VideoLiveWallpaperService"
             android:label="@string/wallpaper_picker_title"
