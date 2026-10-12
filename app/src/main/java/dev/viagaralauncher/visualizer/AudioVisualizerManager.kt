@@ -133,21 +133,54 @@ object AudioVisualizerManager {
         if (shouldBeRunning) {
             stopJob?.cancel()
             stopJob = null
-            appContext?.let { startInternal(it) }
+            if (currentState == VisualizerState.PAUSED) {
+                resumeInternal()
+            } else if (currentState == VisualizerState.STOPPED) {
+                appContext?.let { startInternal(it) }
+            }
         } else if (isPausedSession) {
-            // Se a música pausou, aguarda tolerância de 4 segundos antes de encerrar o processo (transição de faixas)
+            // Pausa a captura do visualizador imediatamente com zero CPU, aguardando até 30s antes de encerrar o daemon
+            if (currentState == VisualizerState.RUNNING) {
+                pauseInternal()
+            }
             if (currentState != VisualizerState.STOPPED && stopJob == null) {
                 stopJob = scope.launch {
-                    delay(4000L)
+                    delay(30_000L)
                     stopInternal()
                     stopJob = null
                 }
             }
         } else {
-            // Sem reprodução de música, launcher em segundo plano ou desativado: encerra imediatamente
             stopJob?.cancel()
             stopJob = null
-            stopInternal()
+            if (!isLauncherForeground && currentState == VisualizerState.RUNNING) {
+                pauseInternal()
+            } else if (!lastEnabledSetting || !lastHasSession) {
+                stopInternal()
+            }
+        }
+    }
+
+    private suspend fun pauseInternal() {
+        lifecycleMutex.withLock {
+            if (currentState == VisualizerState.RUNNING) {
+                currentState = VisualizerState.PAUSED
+                sendControlCommand('P')
+                withContext(Dispatchers.Default) {
+                    currentLevels.fill(0f)
+                    currentPeaks.fill(0f)
+                    _frameFlow.value = VisualizerFrame()
+                }
+            }
+        }
+    }
+
+    private suspend fun resumeInternal() {
+        lifecycleMutex.withLock {
+            if (currentState == VisualizerState.PAUSED) {
+                currentState = VisualizerState.RUNNING
+                sendControlCommand('R')
+            }
         }
     }
 
@@ -277,12 +310,16 @@ object AudioVisualizerManager {
             // Read the PID line emitted by the shell script
             val reader = process.inputStream.bufferedReader()
             var extractedPid = -1
-            val timeoutMillis = System.currentTimeMillis() + 1500L
-            while (System.currentTimeMillis() < timeoutMillis && reader.ready()) {
-                val line = reader.readLine() ?: break
-                if (line.startsWith("PID:")) {
-                    extractedPid = line.substring(4).trim().toIntOrNull() ?: -1
-                    break
+            val timeoutMillis = System.currentTimeMillis() + 2000L
+            while (System.currentTimeMillis() < timeoutMillis) {
+                if (reader.ready()) {
+                    val line = reader.readLine() ?: break
+                    if (line.startsWith("PID:")) {
+                        extractedPid = line.substring(4).trim().toIntOrNull() ?: -1
+                        break
+                    }
+                } else {
+                    delay(40)
                 }
             }
             localDaemonPid = extractedPid
@@ -487,6 +524,11 @@ object AudioVisualizerManager {
         if (pid > 0) {
             killSpecificPid(pid)
         }
+
+        // Defensiva anti-zumbi: garante que nenhum processo orfao continue segurando a Sessao 0
+        try {
+            Runtime.getRuntime().exec(arrayOf("su", "-c", "pkill -f dev.viagaralauncher.visualizer.AudioVisualizerDaemon || true")).waitFor()
+        } catch (_: Throwable) {}
     }
 
     private fun killSpecificPid(pid: Int) {

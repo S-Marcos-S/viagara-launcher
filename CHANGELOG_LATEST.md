@@ -1,3 +1,4 @@
-### 🚀 Novidades da Versão v0.60.29
+### 🚀 Novidades da Versão v0.60.30
 
-- **Cards do Repositório Otimizados:** Os relógios remotos agora contam com escalonamento dinâmico harmônico (`scaleFactor`), ajustando-se com perfeição ao tamanho dos cards da tela de seleção sem estourar as margens.
+- **Visualizador de Áudio Blindado:** Ciclo de pausa e retomada instantânea sem recriar o processo root, eliminando travamento de áudio e processos zumbis.
+- **Sincronização de Wallpapers:** Rebase automático antes do envio de novos wallpapers no GitHub Actions.
