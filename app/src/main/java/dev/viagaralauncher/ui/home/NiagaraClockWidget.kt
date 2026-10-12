@@ -219,6 +219,13 @@ fun NiagaraClockWidget(
                     }
                     // Consume current event to avoid unwanted clicks
                     down.consume()
+                    // Keep consuming all subsequent move/up pointer changes for this gesture
+                    // so child components (like the clock Text/Row) never see an unconsumed UP event
+                    while (true) {
+                        val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                        event.changes.forEach { it.consume() }
+                        if (event.changes.all { !it.pressed }) break
+                    }
                 }
             }
         }

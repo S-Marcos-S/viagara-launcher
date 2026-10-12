@@ -2291,7 +2291,7 @@ private fun BottomDailyQuoteBlock(
     }
 }
 
-/** Context menu shown on long-press on or above the clock widget. */
+/** Context dialog shown on long-press on or above the clock widget. */
 @Composable
 private fun ClockContextMenu(
     expanded: Boolean,
@@ -2300,21 +2300,175 @@ private fun ClockContextMenu(
     onOpenClockStyle: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    DropdownMenu(
-        expanded = expanded,
+    if (!expanded) return
+
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dialogWindow != null) {
+            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = dialogWindow.attributes
+            params.blurBehindRadius = 32
+            dialogWindow.attributes = params
+        }
+        onDispose {}
+    }
+
+    val colorScheme = MaterialTheme.colorScheme
+
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        offset = offset,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false,
+        ),
     ) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.settings_clock_style)) },
-            leadingIcon = { Icon(Icons.Filled.Palette, contentDescription = null) },
-            onClick = onOpenClockStyle,
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.action_open_settings)) },
-            leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-            onClick = onOpenSettings,
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colorScheme.scrim.copy(alpha = 0.45f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.86f)
+                    .clip(RoundedCornerShape(28.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                    ),
+                color = dynamicSurfaceColor(),
+                border = BorderStroke(1.dp, dynamicBorderColor()),
+                shape = RoundedCornerShape(28.dp),
+                tonalElevation = 6.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                ) {
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(colorScheme.primary.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Palette,
+                                contentDescription = null,
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_clock_style),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colorScheme.onSurface,
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_clock_style_detail),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                                maxLines = 1,
+                                fontSize = 11.sp,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(color = colorScheme.primary.copy(alpha = 0.20f))
+                    Spacer(Modifier.height(10.dp))
+
+                    // Option: Estilos de relógio
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable {
+                                onOpenClockStyle()
+                            }
+                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(colorScheme.primary.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Palette,
+                                contentDescription = null,
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Text(
+                            text = stringResource(R.string.settings_clock_style),
+                            color = colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp,
+                        )
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    // Option: Configurações do Viagara Launcher
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable {
+                                onOpenSettings()
+                            }
+                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(colorScheme.primary.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = null,
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Text(
+                            text = stringResource(R.string.action_open_settings),
+                            color = colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

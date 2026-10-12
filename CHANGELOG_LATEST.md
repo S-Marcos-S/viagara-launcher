@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.26
+### 🚀 Novidades da Versão v0.60.27
 
-- **Novos Estilos Editoriais:** Adicionados os estilos *Vogue Editorial*, *Kinfolk Minimal* e *Words & Serif* ao catálogo de relógios.
-- **Tipografia Serif e Itálico:** Suporte nativo do motor dinâmico para renderização de fontes serifadas elegantes e estilos em itálico.
+- **Novo Menu do Relógio:** A janela de opções ao manter o relógio pressionado agora utiliza o design translúcido com efeito blur e cantos arredondados, no mesmo padrão visual do launcher.
+- **Correção de Toque Longo:** O aplicativo de relógio do sistema não é mais disparado indevidamente durante o clique longo.
