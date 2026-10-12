@@ -356,6 +356,8 @@ object WallpaperRepository {
 
                     itemObj.put("tags", JSONArray(existingTags))
                     itemObj.put("search_terms", JSONArray(existingSearch))
+                    itemObj.put("classified_by", "manual")
+                    itemObj.put("custom_classified", true)
                     break
                 }
             }
@@ -392,6 +394,8 @@ object WallpaperRepository {
                     put("id", item.id)
                     put("name", newTitle)
                     put("tags", JSONArray(newTags))
+                    put("classified_by", "manual")
+                    put("custom_classified", true)
                 }.toString(2))
                 appendLine("```")
                 appendLine()
