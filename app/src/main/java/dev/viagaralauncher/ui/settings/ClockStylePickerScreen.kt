@@ -377,6 +377,7 @@ fun ClockStylePickerScreen(
                                                     currentTime = currentTime,
                                                     contentColor = MaterialTheme.colorScheme.onSurface,
                                                     horizontalAlignment = Alignment.CenterHorizontally,
+                                                    scaleFactor = 0.52f,
                                                 )
                                             } else {
                                                 CircularProgressIndicator(modifier = Modifier.size(24.dp))

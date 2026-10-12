@@ -51,6 +51,7 @@ fun DynamicClockContent(
     contentColor: Color,
     horizontalAlignment: Alignment.Horizontal,
     modifier: Modifier = Modifier,
+    scaleFactor: Float = 1.0f,
     onClockClick: () -> Unit = {},
     onDateClick: () -> Unit = {},
 ) {
@@ -95,15 +96,17 @@ fun DynamicClockContent(
                     currentTime = currentTime,
                     defaultColor = contentColor,
                     customFont = customTimeFont,
+                    scaleFactor = scaleFactor,
                     onClick = onClockClick,
                 )
                 if (definition.dateElement != null) {
-                    Spacer(Modifier.padding(horizontal = 8.dp))
+                    Spacer(Modifier.padding(horizontal = (8 * scaleFactor).dp.coerceAtLeast(3.dp)))
                     RenderClockText(
                         element = definition.dateElement,
                         currentTime = currentTime,
                         defaultColor = contentColor.copy(alpha = 0.85f),
                         customFont = customDateFont,
+                        scaleFactor = scaleFactor,
                         onClick = onDateClick,
                     )
                 }
@@ -120,27 +123,30 @@ fun DynamicClockContent(
                     currentTime = currentTime,
                     defaultColor = contentColor,
                     customFont = customTimeFont,
+                    scaleFactor = scaleFactor,
                     onClick = onClockClick,
                 )
 
                 if (definition.dateElement != null) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height((4 * scaleFactor).dp.coerceAtLeast(2.dp)))
                     RenderClockText(
                         element = definition.dateElement,
                         currentTime = currentTime,
                         defaultColor = contentColor.copy(alpha = 0.82f),
                         customFont = customDateFont,
+                        scaleFactor = scaleFactor,
                         onClick = onDateClick,
                     )
                 }
 
                 if (definition.secondaryElement != null) {
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height((2 * scaleFactor).dp.coerceAtLeast(1.dp)))
                     RenderClockText(
                         element = definition.secondaryElement,
                         currentTime = currentTime,
                         defaultColor = contentColor.copy(alpha = 0.65f),
                         customFont = null,
+                        scaleFactor = scaleFactor,
                         onClick = onDateClick,
                     )
                 }
@@ -156,6 +162,7 @@ fun RenderClockText(
     defaultColor: Color,
     customFont: FontFamily?,
     modifier: Modifier = Modifier,
+    scaleFactor: Float = 1.0f,
     onClick: () -> Unit = {},
 ) {
     val text = remember(currentTime, element.format) {
@@ -328,12 +335,12 @@ fun RenderClockText(
 
     Text(
         text = text,
-        fontSize = element.fontSizeSp.sp,
+        fontSize = ((element.fontSizeSp * scaleFactor).coerceAtLeast(8f)).sp,
         fontWeight = weight,
         fontStyle = style,
         fontFamily = family,
         color = primaryColor,
-        letterSpacing = element.letterSpacingSp.sp,
+        letterSpacing = (element.letterSpacingSp * scaleFactor).sp,
         modifier = textModifier,
     )
 }

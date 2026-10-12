@@ -1,4 +1,3 @@
-### 🚀 Novidades da Versão v0.60.28
+### 🚀 Novidades da Versão v0.60.29
 
-- **Novos Estilos de Relógio (MaterialClockWidget):** Integração de 5 novos estilos tipográficos do projeto open-source MaterialClockWidget (*Bungee Shade*, *Warnes Neon*, *Archivo Black*, *Arizonia Script* e *Handlee Minimal*).
-- **Fontes Pré-Carregadas:** Suporte a carregamento instantâneo de fontes locais embutidas diretamente nos assets sem necessidade de download externo.
+- **Cards do Repositório Otimizados:** Os relógios remotos agora contam com escalonamento dinâmico harmônico (`scaleFactor`), ajustando-se com perfeição ao tamanho dos cards da tela de seleção sem estourar as margens.
