@@ -25,7 +25,7 @@ def load_catalog() -> Dict[str, Any]:
     if not os.path.exists(CATALOG_PATH):
         print(f"Error: {CATALOG_PATH} not found.")
         sys.exit(1)
-    with open(CATALOG_PATH, "r", encoding="utf-8") as f:
+    with open(CATALOG_PATH, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 

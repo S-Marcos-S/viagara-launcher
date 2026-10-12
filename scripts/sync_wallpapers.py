@@ -239,7 +239,7 @@ def main():
             "wallpapers": [],
         }
     else:
-        with open(CATALOG_PATH, "r", encoding="utf-8") as f:
+        with open(CATALOG_PATH, "r", encoding="utf-8-sig") as f:
             catalog = json.load(f)
 
     catalog["categories"] = default_categories_data
