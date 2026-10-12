@@ -6,7 +6,7 @@
   "alignment": "start",
   "time": {
     "format": "HH:mm",
-    "fontSizeSp": 54,
+    "fontSizeSp": 60,
     "fontWeight": "normal",
     "fontFileName": "warnes.ttf",
     "letterSpacingSp": 2.5,
