@@ -4,7 +4,9 @@ package dev.viagaralauncher.clock
 import android.content.Context
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
