@@ -8,6 +8,11 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
 import android.view.ViewGroup
@@ -101,6 +106,12 @@ import dev.viagaralauncher.wallpaper.WallpaperItem
 import dev.viagaralauncher.wallpaper.WallpaperRepository
 import dev.viagaralauncher.wallpaper.VideoLiveWallpaperService
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.material.icons.filled.RestartAlt
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -308,7 +319,7 @@ fun WallpaperPickerScreen(
                 onDismiss = {
                     if (!isApplying) previewingWallpaper = null
                 },
-                onApply = { flags ->
+                onApply = { flags, customBitmap ->
                     isApplying = true
                     coroutineScope.launch {
                         if (flags == -1) {
@@ -333,7 +344,11 @@ fun WallpaperPickerScreen(
                                 Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
                             }
                         } else {
-                            val result = WallpaperRepository.applyWallpaper(context, item, flags)
+                            val result = if (customBitmap != null) {
+                                WallpaperRepository.applyWallpaper(context, item, customBitmap, flags)
+                            } else {
+                                WallpaperRepository.applyWallpaper(context, item, flags)
+                            }
                             isApplying = false
                             if (result.isSuccess) {
                                 Toast.makeText(context, R.string.wallpaper_applied_success, Toast.LENGTH_SHORT).show()
@@ -512,7 +527,7 @@ private fun WallpaperPreviewOverlay(
     item: WallpaperItem,
     isApplying: Boolean,
     onDismiss: () -> Unit,
-    onApply: (Int) -> Unit,
+    onApply: (Int, Bitmap?) -> Unit,
 ) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
@@ -531,10 +546,16 @@ private fun WallpaperPreviewOverlay(
         }
     }
 
+    var scale by remember { mutableStateOf(1f) }
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
+    var viewportSize by remember { mutableStateOf(IntSize.Zero) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(Color.Black)
+            .onSizeChanged { viewportSize = it },
     ) {
         // High-res preview background (Image or Video)
         if (isVideo) {
@@ -573,12 +594,41 @@ private fun WallpaperPreviewOverlay(
                 }
             }
         } else if (fullBitmap != null) {
-            Image(
-                bitmap = fullBitmap!!.asImageBitmap(),
-                contentDescription = item.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            val newScale = (scale * zoom).coerceIn(1f, 3.5f)
+                            scale = newScale
+
+                            if (viewportSize.width > 0 && viewportSize.height > 0) {
+                                val maxOffsetX = (viewportSize.width * (newScale - 1f)) / 2f
+                                val maxOffsetY = (viewportSize.height * (newScale - 1f)) / 2f
+                                offsetX = (offsetX + pan.x).coerceIn(-maxOffsetX, maxOffsetX)
+                                offsetY = (offsetY + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
+                            } else {
+                                offsetX += pan.x
+                                offsetY += pan.y
+                            }
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    bitmap = fullBitmap!!.asImageBitmap(),
+                    contentDescription = item.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            translationX = offsetX
+                            translationY = offsetY
+                        },
+                )
+            }
         } else {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -596,14 +646,49 @@ private fun WallpaperPreviewOverlay(
             }
         }
 
-        // Top Close Button
+        // Top Navigation & Reset Zoom Button
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (!isVideo && (scale > 1.05f || kotlin.math.abs(offsetX) > 5f || kotlin.math.abs(offsetY) > 5f)) {
+                Surface(
+                    onClick = {
+                        scale = 1f
+                        offsetX = 0f
+                        offsetY = 0f
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.Black.copy(alpha = 0.65f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.20f)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.RestartAlt,
+                            contentDescription = stringResource(R.string.wallpaper_action_reset_crop),
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.wallpaper_action_reset_crop),
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+            } else {
+                Spacer(Modifier.size(1.dp))
+            }
+
             IconButton(
                 onClick = onDismiss,
                 enabled = !isApplying,
@@ -732,6 +817,15 @@ private fun WallpaperPreviewOverlay(
                             )
                         }
                     }
+                    if (!isVideo) {
+                        Text(
+                            text = stringResource(R.string.wallpaper_hint_pinch_pan),
+                            color = Color.White.copy(alpha = 0.65f),
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -754,9 +848,43 @@ private fun WallpaperPreviewOverlay(
                         )
                     }
                 } else {
+                    val getFinalFramedBitmap: () -> Bitmap? = {
+                        val src = fullBitmap
+                        if (src != null && viewportSize.width > 0 && viewportSize.height > 0) {
+                            val viewW = viewportSize.width.toFloat()
+                            val viewH = viewportSize.height.toFloat()
+                            val bmpW = src.width.toFloat()
+                            val bmpH = src.height.toFloat()
+
+                            val baseScale = maxOf(viewW / bmpW, viewH / bmpH)
+                            val totalScale = baseScale * scale
+
+                            val cx = viewW / 2f + offsetX
+                            val cy = viewH / 2f + offsetY
+
+                            val targetH = maxOf(1920, src.height)
+                            val targetW = ((targetH.toFloat() / viewH) * viewW).toInt()
+
+                            val resultBmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+                            val canvas = Canvas(resultBmp)
+                            val matrix = Matrix()
+
+                            val normFactor = targetH.toFloat() / viewH
+                            matrix.postTranslate(-bmpW / 2f, -bmpH / 2f)
+                            matrix.postScale(totalScale * normFactor, totalScale * normFactor)
+                            matrix.postTranslate(cx * normFactor, cy * normFactor)
+
+                            val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+                            canvas.drawBitmap(src, matrix, paint)
+                            resultBmp
+                        } else {
+                            src
+                        }
+                    }
+
                     if (isVideo) {
                         Button(
-                            onClick = { onApply(-1) },
+                            onClick = { onApply(-1, null) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -782,7 +910,7 @@ private fun WallpaperPreviewOverlay(
                                     val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                         WallpaperManager.FLAG_SYSTEM
                                     } else 0
-                                    onApply(flag)
+                                    onApply(flag, getFinalFramedBitmap())
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
@@ -803,7 +931,9 @@ private fun WallpaperPreviewOverlay(
 
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                 Button(
-                                    onClick = { onApply(WallpaperManager.FLAG_LOCK) },
+                                    onClick = {
+                                        onApply(WallpaperManager.FLAG_LOCK, getFinalFramedBitmap())
+                                    },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp),
                                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
@@ -827,7 +957,7 @@ private fun WallpaperPreviewOverlay(
                                     val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                         WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
                                     } else 0
-                                    onApply(flag)
+                                    onApply(flag, getFinalFramedBitmap())
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),

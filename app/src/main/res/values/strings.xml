@@ -51,6 +51,8 @@
     <string name="wallpaper_apply_error">Failed to apply wallpaper.</string>
     <string name="wallpaper_applying">Applying wallpaper…</string>
     <string name="wallpaper_loading">Loading wallpaper…</string>
+    <string name="wallpaper_hint_pinch_pan">Pinch to zoom • Drag to frame</string>
+    <string name="wallpaper_action_reset_crop">Reset</string>
     <string name="wallpaper_category_all">All</string>
     <string name="wallpaper_category_oled">OLED</string>
     <string name="wallpaper_category_minimal">Minimal</string>

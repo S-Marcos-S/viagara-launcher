@@ -1,5 +1,6 @@
-### 🚀 Novidades da Versão v0.60.38
+### 🚀 Novidades da Versão v0.60.39
 
-- **Integração com Novo Repositório de Wallpapers:** Catálogo conectado à nova nuvem dedicada (`viagara-wallpapers`) com papéis de parede em qualidade máxima 4K e Live Wallpapers.
-- **Suporte a Live Wallpapers (Vídeo MP4):** Reprodução em loop de Live Wallpapers no preview e aplicação nativa no Android via `VideoLiveWallpaperService`.
-- **Crédito Interativo:** Link direto e clicável para o canal oficial da Amanda Wallpaper no Telegram.
+- **Enquadramento Interativo de Wallpapers:** Suporte a gestos de pinça para zoom (até 3.5x) e arrastar para enquadrar a imagem antes de aplicar.
+- **Aplicação Precisa:** O corte personalizado pelo usuário é preservado e aplicado fielmente na tela inicial e bloqueio.
+- **Botão de Redefinir Enquadramento:** Opção rápida no topo para restaurar o zoom original ao enquadrar.
+- **Live Wallpapers em Alta Resolução:** Sincronizador atualizado para filtrar vídeos de baixa taxa de bits e evitar entradas duplicadas.

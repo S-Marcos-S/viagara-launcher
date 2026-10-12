@@ -239,10 +239,19 @@ object WallpaperRepository {
         item: WallpaperItem,
         flags: Int,
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
-            val bitmap = getCachedOrDownloadBitmap(context, item.fullUrl)
-                ?: throw IllegalStateException("Could not download wallpaper bitmap")
+        val bitmap = getCachedOrDownloadBitmap(context, item.fullUrl)
+            ?: return@withContext Result.failure(IllegalStateException("Could not download wallpaper bitmap"))
+        applyWallpaper(context, item, bitmap, flags)
+    }
 
+    @SuppressLint("MissingPermission")
+    suspend fun applyWallpaper(
+        context: Context,
+        item: WallpaperItem,
+        bitmap: Bitmap,
+        flags: Int,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
             val wm = WallpaperManager.getInstance(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 wm.setBitmap(bitmap, null, true, flags)

@@ -52,6 +52,8 @@
     <string name="wallpaper_apply_error">Erro ao aplicar papel de parede.</string>
     <string name="wallpaper_applying">Aplicando papel de parede…</string>
     <string name="wallpaper_loading">Carregando papel de parede…</string>
+    <string name="wallpaper_hint_pinch_pan">Pinça para zoom • Arraste para enquadrar</string>
+    <string name="wallpaper_action_reset_crop">Redefinir</string>
     <string name="wallpaper_category_all">Todos</string>
     <string name="wallpaper_category_oled">OLED</string>
     <string name="wallpaper_category_minimal">Minimalista</string>
