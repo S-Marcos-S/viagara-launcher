@@ -237,7 +237,7 @@ object AudioVisualizerDaemon {
     }
 
     /**
-     * Spectral RMS calculation for an acoustic band [startBin..endBin]:
+     * Spectral RMS calculation for an acoustic band:
      *
      * In Android Visualizer FFT:
      * - fft[0] = DC real component (imaginary is 0)
