@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "clocks": [
     {
       "id": "neon_sweep",
@@ -54,6 +54,51 @@
       "previewType": "dynamic",
       "layoutType": "column",
       "tags": ["editorial", "word_clock", "serif", "literary"]
+    },
+    {
+      "id": "material_bungee",
+      "name": "Bungee Shade",
+      "author": "MaterialClockWidget",
+      "description": "Estilo retrô arrojado com sombras tridimensionais da fonte Bungee Shade",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["material", "bungee", "3d", "retro"]
+    },
+    {
+      "id": "material_warnes",
+      "name": "Warnes Neon",
+      "author": "MaterialClockWidget",
+      "description": "Tipografia fluida geométrica inspirada em letreiros luminosos",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["material", "warnes", "neon", "display"]
+    },
+    {
+      "id": "material_archivo",
+      "name": "Archivo Black",
+      "author": "MaterialClockWidget",
+      "description": "Tipografia brutalista ultra-pesada de alto impacto visual",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["material", "archivo", "bold", "heavy"]
+    },
+    {
+      "id": "material_arizonia",
+      "name": "Arizonia Script",
+      "author": "MaterialClockWidget",
+      "description": "Escrita cursiva elegante e fluida em caligrafia refinada",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["material", "arizonia", "script", "calligraphy"]
+    },
+    {
+      "id": "material_handlee",
+      "name": "Handlee Minimal",
+      "author": "MaterialClockWidget",
+      "description": "Tipografia manuscrita descontraída com traços orgânicos suaves",
+      "previewType": "dynamic",
+      "layoutType": "column",
+      "tags": ["material", "handlee", "handwritten", "casual"]
     }
   ]
 }

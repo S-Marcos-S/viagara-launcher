@@ -1,0 +1,22 @@
+{
+  "id": "material_warnes",
+  "name": "Warnes Neon",
+  "author": "Yoav Zichrony (MaterialClockWidget)",
+  "layout": "column",
+  "alignment": "start",
+  "time": {
+    "format": "HH:mm",
+    "fontSizeSp": 54,
+    "fontWeight": "normal",
+    "fontFileName": "warnes.ttf",
+    "letterSpacingSp": 2.5,
+    "animation": "none"
+  },
+  "date": {
+    "format": "EEEE, d 'de' MMMM",
+    "fontSizeSp": 12,
+    "fontWeight": "normal",
+    "letterSpacingSp": 1.5,
+    "animation": "none"
+  }
+}

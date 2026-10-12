@@ -1,0 +1,22 @@
+{
+  "id": "material_bungee",
+  "name": "Bungee Shade",
+  "author": "Yoav Zichrony (MaterialClockWidget)",
+  "layout": "column",
+  "alignment": "start",
+  "time": {
+    "format": "HH:mm",
+    "fontSizeSp": 52,
+    "fontWeight": "bold",
+    "fontFileName": "bungee_shade.ttf",
+    "letterSpacingSp": 2.0,
+    "animation": "none"
+  },
+  "date": {
+    "format": "EEEE, d 'de' MMMM",
+    "fontSizeSp": 12,
+    "fontWeight": "normal",
+    "letterSpacingSp": 1.2,
+    "animation": "none"
+  }
+}

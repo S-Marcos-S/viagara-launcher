@@ -1,0 +1,22 @@
+{
+  "id": "material_archivo",
+  "name": "Archivo Black",
+  "author": "Yoav Zichrony (MaterialClockWidget)",
+  "layout": "column",
+  "alignment": "start",
+  "time": {
+    "format": "HH:mm",
+    "fontSizeSp": 52,
+    "fontWeight": "black",
+    "fontFileName": "archivo_black.ttf",
+    "letterSpacingSp": 1.0,
+    "animation": "none"
+  },
+  "date": {
+    "format": "EEEE, d 'de' MMMM",
+    "fontSizeSp": 12,
+    "fontWeight": "medium",
+    "letterSpacingSp": 1.5,
+    "animation": "none"
+  }
+}

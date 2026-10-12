@@ -239,6 +239,20 @@ object ClockRepository {
             return@withContext runCatching { FontFamily(Font(localFontFile)) }.getOrNull()
         }
 
+        // Try extracting from assets first
+        val assetCopied = runCatching {
+            context.assets.open("clocks/fonts/$fileName").use { input ->
+                FileOutputStream(localFontFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            true
+        }.getOrDefault(false)
+
+        if (assetCopied && localFontFile.exists() && localFontFile.length() > 0) {
+            return@withContext runCatching { FontFamily(Font(localFontFile)) }.getOrNull()
+        }
+
         // If fontUrl provided, attempt download
         val url = element.fontUrl ?: "$GITHUB_RAW_BASE/fonts/$fileName"
         val downloaded = downloadFont(url, localFontFile)
