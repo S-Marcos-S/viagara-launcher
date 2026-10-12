@@ -1,3 +1,4 @@
-### 🚀 Novidades da Versão v0.60.36
+### 🚀 Novidades da Versão v0.60.37
 
-- **Precisão do Contraste Dinâmico:** Amostragem de luminância do papel de parede ampliada para matriz de área (kernel multiponto), garantindo detecção fiel e consistente de contraste em todas as letras do alfabeto (incluindo a letra A e adjacentes).
+- **Filtro Curado de Wallpapers:** Remoção de tags genéricas de técnica artística (`digital art`, `illustration`), permitindo a inclusão de belas paisagens e wallpapers de natureza curados.
+- **Indicador de Resolução e Qualidade:** Exibição da qualidade (4K UHD, 2K QHD, FHD, HD) e dimensões exatas da imagem na tela de pré-visualização de papéis de parede.

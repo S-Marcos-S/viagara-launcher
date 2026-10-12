@@ -555,30 +555,60 @@ private fun WallpaperPreviewOverlay(
                 Spacer(Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White.copy(alpha = 0.12f))
-                        .clickable {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                            val clip = ClipData.newPlainText("Wallpaper ID", item.id)
-                            clipboard?.setPrimaryClip(clip)
-                            Toast.makeText(context, "ID copiado: ${item.id}", Toast.LENGTH_SHORT).show()
-                        }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = "ID: ${item.id}",
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Icon(
-                        imageVector = Icons.Filled.ContentCopy,
-                        contentDescription = "Copiar ID",
-                        tint = Color.White.copy(alpha = 0.85f),
-                        modifier = Modifier.size(13.dp),
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White.copy(alpha = 0.12f))
+                            .clickable {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                val clip = ClipData.newPlainText("Wallpaper ID", item.id)
+                                clipboard?.setPrimaryClip(clip)
+                                Toast.makeText(context, "ID copiado: ${item.id}", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = "ID: ${item.id}",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.Filled.ContentCopy,
+                            contentDescription = "Copiar ID",
+                            tint = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.size(13.dp),
+                        )
+                    }
+
+                    if (fullBitmap != null) {
+                        val w = fullBitmap!!.width
+                        val h = fullBitmap!!.height
+                        val label = when {
+                            w >= 3840 || h >= 3840 -> "4K UHD"
+                            w >= 2560 || h >= 2560 -> "2K QHD"
+                            w >= 1920 || h >= 1920 -> "FHD"
+                            w >= 1280 || h >= 1280 -> "HD"
+                            else -> "SD"
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White.copy(alpha = 0.12f))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Text(
+                                text = "$label • ${w}x${h}",
+                                color = Color.White.copy(alpha = 0.85f),
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))

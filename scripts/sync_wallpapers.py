@@ -66,7 +66,7 @@ ANIME_CHARACTER_TAGS = {
     "anime", "anime girls", "anime boy", "manga", "pixiv", "girl", "girls", "women",
     "men", "boy", "female", "male", "maid", "maid outfit", "pantyhose", "heels", "high heels",
     "bikini", "cosplay", "cgi", "character", "character design", "comic", "comics",
-    "illustration", "fantasy girl", "fantasy art", "waifu", "vtuber", "digital art", "drawing",
+    "fantasy girl", "waifu", "vtuber",
     "model", "actress", "celebrity", "portrait display", "portrait", "crossfire", "ghostblade",
 }
 
