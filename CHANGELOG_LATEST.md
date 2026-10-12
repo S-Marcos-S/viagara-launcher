@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.35
+### 🚀 Novidades da Versão v0.60.36
 
-- **Alinhar Elementos Aprimorado:** O botão de alinhar elementos no editor de layout da tela inicial agora define o espaçamento lateral automaticamente para 45dp.
+- **Precisão do Contraste Dinâmico:** Amostragem de luminância do papel de parede ampliada para matriz de área (kernel multiponto), garantindo detecção fiel e consistente de contraste em todas as letras do alfabeto (incluindo a letra A e adjacentes).

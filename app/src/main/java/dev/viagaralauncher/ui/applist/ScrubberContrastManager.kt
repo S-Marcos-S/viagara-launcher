@@ -32,7 +32,7 @@ import kotlinx.coroutines.withContext
  */
 object ScrubberContrastManager {
 
-    private const val BRIGHTNESS_THRESHOLD = 0.72f // Only trigger black text on very bright/white backgrounds
+    private const val BRIGHTNESS_THRESHOLD = 0.65f // High contrast threshold for light backgrounds
     private val scope = CoroutineScope(Dispatchers.IO + Job())
 
     @Composable
@@ -121,29 +121,40 @@ object ScrubberContrastManager {
         val bh = bitmap.height
         if (bw <= 0 || bh <= 0) return@withContext result
 
-        // Sample near the edge (about 4% from the edge, within the scrubber strip)
-        val sampleX = if (side == EdgeSide.LEFT) {
-            (bw * 0.04f).toInt().coerceIn(0, bw - 1)
-        } else {
-            (bw * 0.96f).toInt().coerceIn(0, bw - 1)
-        }
-
         val safeTopRatio = topRatio.coerceIn(0f, 1f)
         val safeBottomRatio = bottomRatio.coerceIn(safeTopRatio + 0.01f, 1f)
         val heightRatioSpan = safeBottomRatio - safeTopRatio
 
+        // Horizontal sample offsets across the entire letter width margin (2% to 6% from edge)
+        val xOffsets = if (side == EdgeSide.LEFT) {
+            floatArrayOf(0.02f, 0.04f, 0.06f)
+        } else {
+            floatArrayOf(0.94f, 0.96f, 0.98f)
+        }
+
         for (i in 0 until count) {
             val normY = safeTopRatio + ((i + 0.5f) / count) * heightRatioSpan
-            val sampleY = (normY * bh).toInt().coerceIn(0, bh - 1)
+            val centerY = (normY * bh).toInt().coerceIn(0, bh - 1)
+            val ySpread = (bh * 0.008f).toInt().coerceAtLeast(1) // Sample +/- spread around letter vertical center
 
-            val pixel = runCatching { bitmap.getPixel(sampleX, sampleY) }.getOrDefault(0)
-            val r = (pixel shr 16 and 0xFF) / 255.0f
-            val g = (pixel shr 8 and 0xFF) / 255.0f
-            val b = (pixel and 0xFF) / 255.0f
+            var totalLuminance = 0f
+            var sampleCount = 0
 
-            // Relative luminance formula (ITU-R BT.709)
-            val luminance = 0.2126f * r + 0.7152f * g + 0.0722f * b
-            if (luminance >= BRIGHTNESS_THRESHOLD) {
+            for (xFrac in xOffsets) {
+                val sx = (bw * xFrac).toInt().coerceIn(0, bw - 1)
+                for (dy in -ySpread..ySpread step ySpread) {
+                    val sy = (centerY + dy).coerceIn(0, bh - 1)
+                    val pixel = runCatching { bitmap.getPixel(sx, sy) }.getOrDefault(0)
+                    val r = (pixel shr 16 and 0xFF) / 255.0f
+                    val g = (pixel shr 8 and 0xFF) / 255.0f
+                    val b = (pixel and 0xFF) / 255.0f
+                    totalLuminance += (0.2126f * r + 0.7152f * g + 0.0722f * b)
+                    sampleCount++
+                }
+            }
+
+            val avgLuminance = if (sampleCount > 0) totalLuminance / sampleCount else 0f
+            if (avgLuminance >= BRIGHTNESS_THRESHOLD) {
                 result[i] = true
             }
         }
