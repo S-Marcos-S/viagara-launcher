@@ -313,10 +313,11 @@ fun NowPlayingWidget(
     val isExpanded = heightDp >= 80
 
     // Artwork size scales with card height, title and artist text scale with app label settings
+    val maxArtSize = iconSizeDp.toFloat().coerceAtLeast(24f)
     val artSize = if (isExpanded) {
-        (heightDp * 0.40f).coerceIn(36f, iconSizeDp.toFloat()).dp
+        (heightDp * 0.40f).coerceIn(24f, maxArtSize).dp
     } else {
-        (heightDp * 0.52f).coerceIn(28f, iconSizeDp.toFloat()).dp
+        (heightDp * 0.52f).coerceIn(20f, maxArtSize).dp
     }
     val titleSp = labelSizeSp.sp
     val artistSp = (labelSizeSp - 2).coerceAtLeast(10).sp
@@ -900,7 +901,7 @@ fun MaterialExpressiveWavyProgressIndicator(
         val midY = height / 2f
         val stroke = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round)
 
-        val progressX = if (isIndeterminate) width else (width * effectiveFraction).coerceIn(0f, width)
+        val progressX = if (isIndeterminate) width else (width * effectiveFraction).coerceIn(0f, width.coerceAtLeast(0f))
 
         // 1. Unplayed background track (dimmed straight line)
         if (!isIndeterminate && progressX < width) {

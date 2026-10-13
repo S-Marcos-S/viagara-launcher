@@ -376,7 +376,7 @@ private fun MultiWidgetContainer(
                                             val wholePages = absOffset.toInt()
                                             val frac = absOffset - wholePages
                                             val extra = if (frac >= 0.25f) 1 else 0
-                                            (startPage + sign * (wholePages + extra)).coerceIn(0, totalPages - 1)
+                                            (startPage + sign * (wholePages + extra)).coerceIn(0, (totalPages - 1).coerceAtLeast(0))
                                         }
                                     }
                                     scope.launch {

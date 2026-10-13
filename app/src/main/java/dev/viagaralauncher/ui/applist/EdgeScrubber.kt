@@ -92,7 +92,7 @@ fun EdgeScrubber(
     // Dynamic contrast state sampled from wallpaper edge luminance
     val screenHeightPx = with(LocalDensity.current) { androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val topRatio = if (screenHeightPx > 0f) (band.topPx / screenHeightPx).coerceIn(0f, 1f) else 0.1f
-    val bottomRatio = if (screenHeightPx > 0f) ((band.topPx + band.heightPx) / screenHeightPx).coerceIn(0f, 1f) else 0.9f
+    val bottomRatio = if (screenHeightPx > 0f) (band.bottomPx / screenHeightPx).coerceIn(topRatio, 1f) else 0.9f
 
     val isBrightFlags by ScrubberContrastManager.rememberEdgeContrast(
         side = side,

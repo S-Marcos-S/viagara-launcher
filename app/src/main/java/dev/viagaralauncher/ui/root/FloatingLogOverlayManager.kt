@@ -271,8 +271,8 @@ object FloatingLogOverlayManager {
         val view = overlayView ?: return
         val params = layoutParams ?: return
 
-        bubbleX = (bubbleX + dx.roundToInt()).coerceIn(0, maxX)
-        bubbleY = (bubbleY + dy.roundToInt()).coerceIn(0, maxY)
+        bubbleX = (bubbleX + dx.roundToInt()).coerceIn(0, maxX.coerceAtLeast(0))
+        bubbleY = (bubbleY + dy.roundToInt()).coerceIn(0, maxY.coerceAtLeast(0))
         params.x = bubbleX
         params.y = bubbleY
 

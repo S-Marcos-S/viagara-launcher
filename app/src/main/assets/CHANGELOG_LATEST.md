@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.43
+### 🚀 Novidades da Versão v0.60.44
 
-- **Proteção Estrita de Metadados Manuais:** Tags e títulos definidos pelo usuário são blindados contra qualquer sobrescrita pela IA.
-- **Sincronização Aperfeiçoada:** Envio de sugestões manuais integrado ao workflow de aprovação e etiquetagem inteligente.
+- **Correção na Inicialização:** Corrigido encerramento inesperado ao calcular contraste do alfabeto em telas específicas.
+- **Estabilidade Aprimorada:** Proteção contra intervalos inválidos no widget multimídia e elementos de interface.

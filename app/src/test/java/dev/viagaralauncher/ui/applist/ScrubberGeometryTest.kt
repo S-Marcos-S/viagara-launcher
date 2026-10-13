@@ -2,6 +2,7 @@
 package dev.viagaralauncher.ui.applist
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ScrubberGeometryTest {
@@ -66,5 +67,23 @@ class ScrubberGeometryTest {
         assertEquals(100f, band.topPx, 0.01f)
         assertEquals(800f, band.heightPx, 0.01f)
         assertEquals(900f, band.bottomPx, 0.01f)
+    }
+
+    @Test
+    fun `computeBand with zero or negative viewport returns zero band`() {
+        val bandZero = ScrubberGeometry.computeBand(viewportHeightPx = 0f, density = 2f, letterCount = 26)
+        assertEquals(0f, bandZero.topPx, 0.001f)
+        assertEquals(0f, bandZero.heightPx, 0.001f)
+
+        val bandNegative = ScrubberGeometry.computeBand(viewportHeightPx = -100f, density = 2f, letterCount = 26)
+        assertEquals(0f, bandNegative.topPx, 0.001f)
+        assertEquals(0f, bandNegative.heightPx, 0.001f)
+    }
+
+    @Test
+    fun `computeBand with tiny viewport never produces negative height`() {
+        val bandTiny = ScrubberGeometry.computeBand(viewportHeightPx = 20f, density = 3f, letterCount = 26)
+        assertTrue(bandTiny.heightPx >= 0f)
+        assertTrue(bandTiny.topPx >= 0f)
     }
 }
