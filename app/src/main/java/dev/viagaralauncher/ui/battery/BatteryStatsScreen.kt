@@ -1050,7 +1050,7 @@ private fun EnforceDozeCard(
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
-                        imageVector = if (isEnabled) Icons.Filled.Bedtime else Icons.Outlined.Bedtime,
+                        imageVector = if (isEnabled) Icons.Filled.PowerSettingsNew else Icons.Outlined.PowerSettingsNew,
                         contentDescription = null,
                         tint = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)

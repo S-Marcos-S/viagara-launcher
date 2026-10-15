@@ -120,7 +120,9 @@ class EnforceDozeController private constructor(
         } else {
             unregisterReceiver()
             cancelPendingDoze()
-            unforceDoze()
+            scope.launch {
+                unforceDoze()
+            }
         }
     }
 
@@ -274,7 +276,7 @@ class EnforceDozeController private constructor(
         )
 
         val notif = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(
