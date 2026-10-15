@@ -981,4 +981,21 @@
     <string name="battery_anomaly_card_title">Alertas de Consumo em Segundo Plano</string>
     <string name="battery_anomaly_card_desc">Alertas quando aplicativos em segundo plano consumirem internet, processador ou memória em excesso.</string>
     <string name="battery_anomaly_configure">Configurar</string>
+
+    <!-- Enforce Doze strings -->
+    <string name="enforce_doze_title">Enforce Doze (Sono Profundo)</string>
+    <string name="enforce_doze_desc">Força o modo Doze do Android imediatamente ao desligar a tela para maximizar a economia de bateria.</string>
+    <string name="enforce_doze_status_active">Ativo</string>
+    <string name="enforce_doze_status_inactive">Inativo</string>
+    <string name="enforce_doze_disable_motion_title">Desativar Sensores de Movimento</string>
+    <string name="enforce_doze_disable_motion_desc">Mantém o sono profundo mesmo com o aparelho em movimento (no bolso ou caminhando).</string>
+    <string name="enforce_doze_delay_title">Atraso para Ativação</string>
+    <string name="enforce_doze_delay_desc">Aguardar %1$d segundos após desligar a tela antes de forçar o Doze.</string>
+    <string name="enforce_doze_notif_title_pref">Notificações de Eficiência</string>
+    <string name="enforce_doze_notif_desc_pref">Exibe um resumo discreto ao ligar a tela com o tempo em sono profundo e taxa de dreno.</string>
+    <string name="enforce_doze_channel_name">Eficiência do Enforce Doze</string>
+    <string name="enforce_doze_channel_desc">Mostra relatórios de sono profundo e economia ao religar o aparelho</string>
+    <string name="enforce_doze_notif_title">Eficiência do Enforce Doze</string>
+    <string name="enforce_doze_notif_content">Standby: %1$s | Dreno: -%2$d%% (%3$s%%/h)</string>
+    <string name="enforce_doze_notif_big_text">Período de tela apagada: %1$s\nBateria consumida: %2$d%% (Taxa: %3$s%%/h)\nO sono profundo forçado manteve processos e conexões contidos.</string>
 </resources>

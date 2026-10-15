@@ -36,6 +36,13 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     private val anomalyWatcher = dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(context)
     val anomalyConfig: StateFlow<dev.viagaralauncher.root.anomaly.AnomalyWatcherConfig> = anomalyWatcher.config
 
+    private val enforceDozeController = EnforceDozeController.getInstance(context)
+    val isEnforceDozeEnabled: StateFlow<Boolean> = enforceDozeController.isEnabled
+    val enforceDozeDisableMotion: StateFlow<Boolean> = enforceDozeController.disableMotion
+    val enforceDozeDelaySeconds: StateFlow<Int> = enforceDozeController.delaySeconds
+    val enforceDozeNotifOnWake: StateFlow<Boolean> = enforceDozeController.notifOnWake
+    val isEnforcingDoze: StateFlow<Boolean> = enforceDozeController.isEnforcing
+
     private val _hasRoot = MutableStateFlow(false)
     val hasRoot: StateFlow<Boolean> = _hasRoot.asStateFlow()
 
@@ -205,5 +212,21 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
         prefs.edit().putBoolean("notif_show_network", show).apply()
         _notifShowNetwork.value = show
         DrainNotificationManager.getInstance(context).updateNow()
+    }
+
+    fun setEnforceDozeEnabled(enabled: Boolean) {
+        enforceDozeController.setEnabled(enabled)
+    }
+
+    fun setEnforceDozeDisableMotion(disable: Boolean) {
+        enforceDozeController.setDisableMotion(disable)
+    }
+
+    fun setEnforceDozeDelaySeconds(seconds: Int) {
+        enforceDozeController.setDelaySeconds(seconds)
+    }
+
+    fun setEnforceDozeNotifOnWake(enabled: Boolean) {
+        enforceDozeController.setNotifOnWake(enabled)
     }
 }

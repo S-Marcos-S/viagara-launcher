@@ -95,6 +95,8 @@ fun BatteryStatsScreen(
     val advMode by vm.advMode.collectAsStateWithLifecycle()
     val kernelBattery by vm.kernelBattery.collectAsStateWithLifecycle()
     val kernelWakelocksFlow by vm.kernelWakelocks.collectAsStateWithLifecycle()
+    val isEnforceDozeEnabled by vm.isEnforceDozeEnabled.collectAsStateWithLifecycle()
+    val isEnforcingDoze by vm.isEnforcingDoze.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -321,6 +323,10 @@ fun BatteryStatsScreen(
                                 anomalyConfig = anomalyConfig,
                                 onToggleAnomalyNotification = { vm.toggleAnomalyNotification(it) },
                                 onOpenAnomalySettings = { showAnomalySettingsDialog = true },
+                                isEnforceDozeEnabled = isEnforceDozeEnabled,
+                                isEnforcingDoze = isEnforcingDoze,
+                                onToggleEnforceDoze = { vm.setEnforceDozeEnabled(it) },
+                                onConfigureEnforceDoze = { scope.launch { pagerState.animateScrollToPage(7) } },
                             )
                             1 -> AppsTab(
                                 apps = snapshot?.apps ?: emptyList(),
@@ -705,6 +711,10 @@ private fun OverviewTab(
     anomalyConfig: dev.viagaralauncher.root.anomaly.AnomalyWatcherConfig,
     onToggleAnomalyNotification: (Boolean) -> Unit,
     onOpenAnomalySettings: () -> Unit,
+    isEnforceDozeEnabled: Boolean,
+    isEnforcingDoze: Boolean,
+    onToggleEnforceDoze: (Boolean) -> Unit,
+    onConfigureEnforceDoze: () -> Unit,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -729,6 +739,14 @@ private fun OverviewTab(
                 config = anomalyConfig,
                 onToggle = onToggleAnomalyNotification,
                 onOpenSettings = onOpenAnomalySettings,
+            )
+        }
+        item {
+            EnforceDozeCard(
+                isEnabled = isEnforceDozeEnabled,
+                isEnforcing = isEnforcingDoze,
+                onToggle = onToggleEnforceDoze,
+                onConfigure = onConfigureEnforceDoze,
             )
         }
         item { SummaryCard(snapshot) }
@@ -1003,6 +1021,101 @@ private fun BackgroundAnomalyCard(
                 lineHeight = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun EnforceDozeCard(
+    isEnabled: Boolean,
+    isEnforcing: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onConfigure: () -> Unit,
+) {
+    FrostedCard(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(2.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = if (isEnabled) Icons.Filled.Bedtime else Icons.Outlined.Bedtime,
+                        contentDescription = null,
+                        tint = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.enforce_doze_title),
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    IconButton(
+                        onClick = onConfigure,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Tune,
+                            contentDescription = stringResource(R.string.battery_anomaly_configure),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Switch(
+                        checked = isEnabled,
+                        onCheckedChange = onToggle,
+                        modifier = Modifier.scale(0.80f)
+                    )
+                }
+            }
+
+            Text(
+                text = stringResource(R.string.enforce_doze_desc),
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (isEnabled) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isEnforcing) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                            )
+                    )
+                    Text(
+                        text = if (isEnforcing) "Forçando Sono Profundo (Ativo)" else "Pronto (Aguardando tela desligar)",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
@@ -2759,6 +2872,75 @@ fun BatterySettingsTab(vm: BatteryStatsViewModel) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Uso de Rede", style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = notifShowNetwork, onCheckedChange = { vm.setNotifShowNetwork(it) }, modifier = Modifier.scale(0.80f))
+                    }
+
+                    HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
+
+                    Text(stringResource(R.string.enforce_doze_title), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+
+                    val isEnforceDozeEnabled by vm.isEnforceDozeEnabled.collectAsStateWithLifecycle()
+                    val disableMotion by vm.enforceDozeDisableMotion.collectAsStateWithLifecycle()
+                    val delaySeconds by vm.enforceDozeDelaySeconds.collectAsStateWithLifecycle()
+                    val notifOnWake by vm.enforceDozeNotifOnWake.collectAsStateWithLifecycle()
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Ativar Enforce Doze", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.enforce_doze_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = isEnforceDozeEnabled,
+                            onCheckedChange = { vm.setEnforceDozeEnabled(it) },
+                            modifier = Modifier.scale(0.80f)
+                        )
+                    }
+
+                    if (isEnforceDozeEnabled) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.enforce_doze_disable_motion_title), style = MaterialTheme.typography.bodyMedium)
+                                Text(stringResource(R.string.enforce_doze_disable_motion_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = disableMotion,
+                                onCheckedChange = { vm.setEnforceDozeDisableMotion(it) },
+                                modifier = Modifier.scale(0.80f)
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.enforce_doze_notif_title_pref), style = MaterialTheme.typography.bodyMedium)
+                                Text(stringResource(R.string.enforce_doze_notif_desc_pref), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = notifOnWake,
+                                onCheckedChange = { vm.setEnforceDozeNotifOnWake(it) },
+                                modifier = Modifier.scale(0.80f)
+                            )
+                        }
+
+                        Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                            Text(stringResource(R.string.enforce_doze_delay_desc, delaySeconds), style = MaterialTheme.typography.bodySmall)
+                            Slider(
+                                value = delaySeconds.toFloat(),
+                                onValueChange = { vm.setEnforceDozeDelaySeconds(it.toInt()) },
+                                valueRange = 0f..300f,
+                                steps = 29
+                            )
+                        }
                     }
                 }
             }

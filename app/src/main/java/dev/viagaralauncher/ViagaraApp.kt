@@ -57,6 +57,10 @@ class ViagaraApp : Application() {
         if (anomalyWatcher.config.value.isEnabled) {
             anomalyWatcher.start()
         }
+        val enforceDoze = dev.viagaralauncher.battery.EnforceDozeController.getInstance(this)
+        if (enforceDoze.isEnabled.value) {
+            // Already automatically registered receiver in controller init
+        }
     }
 
     override fun onTrimMemory(level: Int) {

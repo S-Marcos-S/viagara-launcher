@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.44
+### 🚀 Novidades da Versão v0.60.45
 
-- **Correção na Inicialização:** Corrigido encerramento inesperado ao calcular contraste do alfabeto em telas específicas.
-- **Estabilidade Aprimorada:** Proteção contra intervalos inválidos no widget multimídia e elementos de interface.
+- **Enforce Doze (Sono Profundo):** Economia de bateria com tela apagada inspirada no EnforceDoze, forçando sono profundo imediato.
+- **Detecção de Movimento Inteligente:** Opção para manter sono profundo mesmo com aparelho em movimento e delay configurável.
+- **Relatório de Eficiência ao Despertar:** Notificações opcionais e discretas de economia e dreno após períodos de tela desligada.
