@@ -421,25 +421,18 @@ fun ClockStylePickerScreen(
                                                 .padding(8.dp),
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            var loadedDef by remember(item.id) {
-                                                mutableStateOf(ClockRepository.getCachedDefinition(item.id))
-                                            }
-
+                                            var previewDef by remember(item.id) { mutableStateOf<RemoteClockStyleDefinition?>(null) }
                                             LaunchedEffect(item.id) {
-                                                if (loadedDef == null) {
-                                                    loadedDef = ClockRepository.loadDefinition(context, item.id)
-                                                }
+                                                previewDef = ClockRepository.getStyleDefinition(context, item.id)
                                             }
 
-                                            if (loadedDef != null) {
+                                            if (previewDef != null) {
                                                 DynamicClockContent(
-                                                    definition = loadedDef!!,
+                                                    definition = previewDef!!,
                                                     currentTime = currentTime,
                                                     contentColor = MaterialTheme.colorScheme.onSurface,
                                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                                    onClockClick = {},
-                                                    onDateClick = {},
-                                                    modifier = Modifier.fillMaxSize(),
+                                                    scaleFactor = 0.52f,
                                                 )
                                             } else {
                                                 CircularProgressIndicator(modifier = Modifier.size(24.dp))
@@ -458,13 +451,15 @@ fun ClockStylePickerScreen(
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                         )
 
-                                        Text(
-                                            text = item.author,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textAlign = TextAlign.Center,
-                                            maxLines = 1,
-                                        )
+                                        if (item.author.isNotBlank()) {
+                                            Text(
+                                                text = "por ${item.author}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                                maxLines = 1,
+                                            )
+                                        }
                                     }
 
                                     if (isSelected) {
