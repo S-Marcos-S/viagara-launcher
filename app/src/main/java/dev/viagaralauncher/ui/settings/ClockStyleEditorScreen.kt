@@ -250,6 +250,7 @@ fun ClockStyleEditorScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp),
+        ) {
             headerContent()
 
             // Live Preview at top

@@ -62,8 +62,38 @@ object WallpaperRepository {
         _wallpaperUpdateTick.value = System.currentTimeMillis()
     }
 
+    private const val PREFS_WALLPAPERS = "wallpaper_prefs"
+    private const val KEY_FAVORITE_WALLPAPER_IDS = "favorite_wallpaper_ids"
+
+    private val _favoriteIds = kotlinx.coroutines.flow.MutableStateFlow<Set<String>>(emptySet())
+    val favoriteIds: kotlinx.coroutines.flow.StateFlow<Set<String>> = _favoriteIds
+
+    fun initFavorites(context: Context) {
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
+        val saved = prefs.getStringSet(KEY_FAVORITE_WALLPAPER_IDS, emptySet()) ?: emptySet()
+        _favoriteIds.value = saved
+    }
+
+    fun isFavorite(id: String): Boolean = _favoriteIds.value.contains(id)
+
+    fun toggleFavorite(context: Context, id: String): Boolean {
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
+        val current = _favoriteIds.value.toMutableSet()
+        val nowFavorite = if (current.contains(id)) {
+            current.remove(id)
+            false
+        } else {
+            current.add(id)
+            true
+        }
+        prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, current).apply()
+        _favoriteIds.value = current.toSet()
+        return nowFavorite
+    }
+
     val DEFAULT_CATEGORIES = listOf(
         WallpaperCategory("all", "Todos"),
+        WallpaperCategory("favorites", "Favoritos"),
         WallpaperCategory("oled", "OLED"),
         WallpaperCategory("anime", "Anime"),
         WallpaperCategory("games", "Jogos"),
