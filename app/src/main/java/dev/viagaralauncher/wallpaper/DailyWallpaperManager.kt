@@ -22,6 +22,9 @@ object DailyWallpaperManager {
     private val _isChangingWallpaper = MutableStateFlow(false)
     val isChangingWallpaper: StateFlow<Boolean> = _isChangingWallpaper.asStateFlow()
 
+    private val _currentWallpaperId = MutableStateFlow("")
+    val currentWallpaperId: StateFlow<String> = _currentWallpaperId.asStateFlow()
+
     private val advanceMutex = Mutex()
 
     fun isDifferentDay(lastMs: Long, nowMs: Long): Boolean {
@@ -34,14 +37,26 @@ object DailyWallpaperManager {
                calLast.get(Calendar.DAY_OF_YEAR) != calNow.get(Calendar.DAY_OF_YEAR)
     }
 
+    suspend fun syncCurrentWallpaper(context: Context) = withContext(Dispatchers.IO) {
+        val prefs = Prefs(context)
+        val id = prefs.dailyWallpaperCurrentId.first().trim()
+        if (id.isNotBlank()) {
+            _currentWallpaperId.value = id
+        }
+    }
+
     fun checkAndAdvanceIfNewDay(context: Context, coroutineScope: CoroutineScope) {
         coroutineScope.launch(Dispatchers.IO) {
             val prefs = Prefs(context)
+            val currentId = prefs.dailyWallpaperCurrentId.first().trim()
+            if (currentId.isNotBlank()) {
+                _currentWallpaperId.value = currentId
+            }
+
             val isEnabled = prefs.autoDailyWallpaperEnabled.first()
             if (!isEnabled) return@launch
 
             val lastTimestamp = prefs.dailyWallpaperLastTimestamp.first()
-            val currentId = prefs.dailyWallpaperCurrentId.first()
             val now = System.currentTimeMillis()
 
             if (lastTimestamp <= 0L || currentId.isBlank() || isDifferentDay(lastTimestamp, now)) {
@@ -55,7 +70,10 @@ object DailyWallpaperManager {
         prefs.setAutoDailyWallpaperEnabled(enabled)
         if (enabled) {
             val lastTimestamp = prefs.dailyWallpaperLastTimestamp.first()
-            val currentId = prefs.dailyWallpaperCurrentId.first()
+            val currentId = prefs.dailyWallpaperCurrentId.first().trim()
+            if (currentId.isNotBlank()) {
+                _currentWallpaperId.value = currentId
+            }
             val now = System.currentTimeMillis()
             if (lastTimestamp <= 0L || currentId.isBlank() || isDifferentDay(lastTimestamp, now)) {
                 advanceToNextWallpaper(context, isUserDislike = false)
@@ -64,9 +82,11 @@ object DailyWallpaperManager {
     }
 
     suspend fun onWallpaperApplied(context: Context, wallpaperId: String) = withContext(Dispatchers.IO) {
-        if (wallpaperId.isNotBlank()) {
+        val trimmed = wallpaperId.trim()
+        if (trimmed.isNotBlank()) {
+            _currentWallpaperId.value = trimmed
             val prefs = Prefs(context)
-            prefs.setDailyWallpaperCurrentId(wallpaperId)
+            prefs.setDailyWallpaperCurrentId(trimmed)
             prefs.setDailyWallpaperLastTimestamp(System.currentTimeMillis())
         }
     }
@@ -118,6 +138,7 @@ object DailyWallpaperManager {
                 val candidate = eligible[targetIndex]
                 val applyResult = WallpaperRepository.applyWallpaper(context, candidate, flags)
                 if (applyResult.isSuccess) {
+                    _currentWallpaperId.value = candidate.id
                     prefs.setDailyWallpaperCurrentId(candidate.id)
                     prefs.setDailyWallpaperIndex(targetIndex)
                     prefs.setDailyWallpaperLastTimestamp(System.currentTimeMillis())
@@ -136,18 +157,25 @@ object DailyWallpaperManager {
 
     suspend fun handleLike(context: Context): Boolean = withContext(Dispatchers.IO) {
         val prefs = Prefs(context)
-        var currentId = prefs.dailyWallpaperCurrentId.first()
+        var currentId = _currentWallpaperId.value.ifBlank { prefs.dailyWallpaperCurrentId.first() }.trim()
         if (currentId.isBlank()) {
             val catalog = WallpaperRepository.loadCatalog(context)
             val eligible = catalog.wallpapers.filter { !it.isLive && it.type != "video" }
                 .ifEmpty { catalog.wallpapers }
-            currentId = eligible.firstOrNull()?.id ?: ""
+            val savedIndex = prefs.dailyWallpaperIndex.first()
+            currentId = if (savedIndex in eligible.indices) {
+                eligible[savedIndex].id
+            } else {
+                eligible.firstOrNull()?.id ?: ""
+            }.trim()
             if (currentId.isNotBlank()) {
+                _currentWallpaperId.value = currentId
                 prefs.setDailyWallpaperCurrentId(currentId)
                 prefs.setDailyWallpaperLastTimestamp(System.currentTimeMillis())
             }
         }
         if (currentId.isNotBlank()) {
+            _currentWallpaperId.value = currentId
             WallpaperRepository.addFavorite(context, currentId)
             true
         } else {

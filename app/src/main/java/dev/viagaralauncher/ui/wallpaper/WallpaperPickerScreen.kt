@@ -387,6 +387,7 @@ fun WallpaperPickerScreen(
                             val videoFile = WallpaperRepository.getCachedOrDownloadFile(context, item.fullUrl)
                             isApplying = false
                             if (videoFile != null && VideoLiveWallpaperService.setVideoFile(context, videoFile)) {
+                                DailyWallpaperManager.onWallpaperApplied(context, item.id)
                                 runCatching {
                                     val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
                                         putExtra(

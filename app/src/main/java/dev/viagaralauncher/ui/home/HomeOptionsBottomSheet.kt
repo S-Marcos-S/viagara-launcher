@@ -80,7 +80,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -114,8 +116,11 @@ fun HomeOptionsBottomSheet(
     var showChangelogDialog by remember { mutableStateOf(false) }
 
     val prefs = remember { Prefs(context) }
+    val haptic = LocalHapticFeedback.current
     val isAutoDailyEnabled by prefs.autoDailyWallpaperEnabled.collectAsState(initial = false)
-    val dailyWallpaperId by prefs.dailyWallpaperCurrentId.collectAsState(initial = "")
+    val dailyWallpaperIdFlow by prefs.dailyWallpaperCurrentId.collectAsState(initial = "")
+    val dailyWallpaperIdMem by DailyWallpaperManager.currentWallpaperId.collectAsState()
+    val dailyWallpaperId = dailyWallpaperIdMem.ifBlank { dailyWallpaperIdFlow }
     val isChangingWallpaper by DailyWallpaperManager.isChangingWallpaper.collectAsState()
     val favoriteIds by WallpaperRepository.favoriteIds.collectAsState()
     val isCurrentFavorite = remember(dailyWallpaperId, favoriteIds) {
@@ -132,6 +137,7 @@ fun HomeOptionsBottomSheet(
             showChangelogDialog = false
             UpdateManager.checkForUpdates(coroutineScope, force = true)
             WallpaperRepository.initFavorites(context)
+            DailyWallpaperManager.syncCurrentWallpaper(context)
             DailyWallpaperManager.checkAndAdvanceIfNewDay(context, coroutineScope)
         }
     }
@@ -257,6 +263,7 @@ fun HomeOptionsBottomSheet(
                             isFavorite = isCurrentFavorite,
                             isChanging = isChangingWallpaper,
                             onLike = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 coroutineScope.launch {
                                     val success = DailyWallpaperManager.handleLike(context)
                                     if (success) {
@@ -265,6 +272,7 @@ fun HomeOptionsBottomSheet(
                                 }
                             },
                             onDislike = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 coroutineScope.launch {
                                     val changed = DailyWallpaperManager.advanceToNextWallpaper(context, isUserDislike = true)
                                     if (!changed) {

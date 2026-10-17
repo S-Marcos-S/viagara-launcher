@@ -71,39 +71,46 @@ object WallpaperRepository {
     fun initFavorites(context: Context) {
         val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
         val saved = prefs.getStringSet(KEY_FAVORITE_WALLPAPER_IDS, emptySet()) ?: emptySet()
-        _favoriteIds.value = saved
+        val merged = HashSet<String>(_favoriteIds.value).apply {
+            addAll(saved)
+        }
+        _favoriteIds.value = merged.toSet()
     }
 
-    fun isFavorite(id: String): Boolean = _favoriteIds.value.contains(id)
+    fun isFavorite(id: String): Boolean = _favoriteIds.value.contains(id.trim())
 
     fun toggleFavorite(context: Context, id: String): Boolean {
-        if (id.isBlank()) return false
+        val targetId = id.trim()
+        if (targetId.isBlank()) return false
         val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
         val saved = prefs.getStringSet(KEY_FAVORITE_WALLPAPER_IDS, emptySet()) ?: emptySet()
-        val current = (_favoriteIds.value + saved).toMutableSet()
-        val nowFavorite = if (current.contains(id)) {
-            current.remove(id)
+        val newSet = HashSet<String>(_favoriteIds.value).apply {
+            addAll(saved)
+        }
+        val nowFavorite = if (newSet.contains(targetId)) {
+            newSet.remove(targetId)
             false
         } else {
-            current.add(id)
+            newSet.add(targetId)
             true
         }
-        prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, current).apply()
-        _favoriteIds.value = current.toSet()
+        prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, HashSet(newSet)).commit()
+        _favoriteIds.value = newSet.toSet()
         return nowFavorite
     }
 
     fun addFavorite(context: Context, id: String): Boolean {
-        if (id.isBlank()) return false
+        val targetId = id.trim()
+        if (targetId.isBlank()) return false
         val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
         val saved = prefs.getStringSet(KEY_FAVORITE_WALLPAPER_IDS, emptySet()) ?: emptySet()
-        val current = (_favoriteIds.value + saved).toMutableSet()
-        val added = current.add(id)
-        if (added || _favoriteIds.value != current) {
-            prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, current).apply()
-            _favoriteIds.value = current.toSet()
+        val newSet = HashSet<String>(_favoriteIds.value).apply {
+            addAll(saved)
+            add(targetId)
         }
-        return true
+        val success = prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, HashSet(newSet)).commit()
+        _favoriteIds.value = newSet.toSet()
+        return success
     }
 
     val DEFAULT_CATEGORIES = listOf(
@@ -333,6 +340,7 @@ object WallpaperRepository {
                 _currentPrimaryColor.value = extractedColor
             }
 
+            DailyWallpaperManager.onWallpaperApplied(context, item.id)
             notifyWallpaperChanged()
             Unit
         }
