@@ -77,12 +77,17 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import dev.viagaralauncher.data.Prefs
+import dev.viagaralauncher.wallpaper.DailyWallpaperManager
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -148,6 +153,8 @@ fun WallpaperPickerScreen(
     var isApplying by remember { mutableStateOf(false) }
 
     val favoriteIds by WallpaperRepository.favoriteIds.collectAsState()
+    val prefs = remember { Prefs(context) }
+    val isAutoDailyEnabled by prefs.autoDailyWallpaperEnabled.collectAsState(initial = false)
 
     LaunchedEffect(Unit) {
         WallpaperRepository.initFavorites(context)
@@ -286,6 +293,17 @@ fun WallpaperPickerScreen(
                 )
             }
 
+            item(span = { GridItemSpan(2) }) {
+                DailyWallpaperToggleCard(
+                    enabled = isAutoDailyEnabled,
+                    onToggle = { enabled ->
+                        coroutineScope.launch {
+                            DailyWallpaperManager.setEnabled(context, enabled)
+                        }
+                    },
+                )
+            }
+
             if (isLoadingCatalog && filteredWallpapers.isEmpty()) {
                 item(span = { GridItemSpan(2) }) {
                     Box(
@@ -402,6 +420,77 @@ fun WallpaperPickerScreen(
                         }
                     }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+private fun DailyWallpaperToggleCard(
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onToggle(!enabled) },
+        color = if (enabled) colorScheme.primaryContainer.copy(alpha = 0.35f) else colorScheme.surfaceVariant.copy(alpha = 0.40f),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (enabled) colorScheme.primary.copy(alpha = 0.50f) else colorScheme.outlineVariant.copy(alpha = 0.30f),
+        ),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(if (enabled) colorScheme.primary else colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.AutoAwesome,
+                    contentDescription = null,
+                    tint = if (enabled) colorScheme.onPrimary else colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.daily_wallpaper_title),
+                    color = colorScheme.onSurface,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = stringResource(R.string.daily_wallpaper_desc),
+                    color = colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    lineHeight = 15.sp,
+                )
+            }
+
+            Spacer(Modifier.width(10.dp))
+
+            Switch(
+                checked = enabled,
+                onCheckedChange = onToggle,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = colorScheme.onPrimary,
+                    checkedTrackColor = colorScheme.primary,
+                ),
             )
         }
     }

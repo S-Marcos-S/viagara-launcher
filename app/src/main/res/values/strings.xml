@@ -87,6 +87,12 @@
     <string name="wallpaper_new_notification_title">New wallpapers available!</string>
     <string name="wallpaper_new_notification_single">1 new wallpaper has been added to the catalog.</string>
     <string name="wallpaper_new_notification_multiple">%1$d new wallpapers have been added to the catalog.</string>
+    <string name="daily_wallpaper_title">Daily Wallpaper</string>
+    <string name="daily_wallpaper_desc">Automatically change wallpaper every day</string>
+    <string name="daily_wallpaper_prompt">Liked the wallpaper?</string>
+    <string name="daily_wallpaper_like">Like (add to favorites)</string>
+    <string name="daily_wallpaper_dislike">Dislike (next wallpaper)</string>
+    <string name="daily_wallpaper_liked_feedback">Saved to favorites</string>
     <string name="clock_notification_channel_name">Clock Styles</string>
     <string name="clock_notification_channel_desc">Notifications about new clock widgets added to the repository</string>
     <string name="clock_new_notification_title">New clock styles available!</string>

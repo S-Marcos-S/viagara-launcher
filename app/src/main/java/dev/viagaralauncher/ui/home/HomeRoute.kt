@@ -173,6 +173,7 @@ fun HomeRoute(
         dev.viagaralauncher.update.UpdateManager.checkForUpdates(this, context = context)
         dev.viagaralauncher.wallpaper.WallpaperRepository.checkForNewWallpapers(context, this)
         dev.viagaralauncher.clock.ClockRepository.checkForNewClocks(context, this)
+        dev.viagaralauncher.wallpaper.DailyWallpaperManager.checkAndAdvanceIfNewDay(context, this)
     }
 
     val updateInfo by dev.viagaralauncher.update.UpdateManager.updateAvailable.collectAsState()
@@ -312,6 +313,7 @@ fun HomeRoute(
         if (homeIntentTick > 0) {
             closeAppList(snap = true)
             showAgendaSheet = false
+            dev.viagaralauncher.wallpaper.DailyWallpaperManager.checkAndAdvanceIfNewDay(context, this)
         }
     }
 

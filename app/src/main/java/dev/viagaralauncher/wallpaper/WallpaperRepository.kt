@@ -91,6 +91,19 @@ object WallpaperRepository {
         return nowFavorite
     }
 
+    fun addFavorite(context: Context, id: String): Boolean {
+        if (id.isBlank()) return false
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
+        val current = _favoriteIds.value.toMutableSet()
+        if (!current.contains(id)) {
+            current.add(id)
+            prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, current).apply()
+            _favoriteIds.value = current.toSet()
+            return true
+        }
+        return false
+    }
+
     val DEFAULT_CATEGORIES = listOf(
         WallpaperCategory("all", "Todos"),
         WallpaperCategory("favorites", "Favoritos"),

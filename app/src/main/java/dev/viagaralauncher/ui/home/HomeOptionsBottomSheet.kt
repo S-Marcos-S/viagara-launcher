@@ -52,10 +52,17 @@ import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Widgets
+import android.widget.Toast
 import dev.viagaralauncher.root.AppUninstallManager
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import dev.viagaralauncher.update.DownloadStatus
+import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.material.icons.filled.ThumbUp
+import dev.viagaralauncher.data.Prefs
+import dev.viagaralauncher.wallpaper.DailyWallpaperManager
+import dev.viagaralauncher.wallpaper.WallpaperRepository
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -105,6 +112,15 @@ fun HomeOptionsBottomSheet(
     val downloadStatus by UpdateManager.downloadStatus.collectAsState()
     var showChangelogDialog by remember { mutableStateOf(false) }
 
+    val prefs = remember { Prefs(context) }
+    val isAutoDailyEnabled by prefs.autoDailyWallpaperEnabled.collectAsState(initial = false)
+    val dailyWallpaperId by prefs.dailyWallpaperCurrentId.collectAsState(initial = "")
+    val isChangingWallpaper by DailyWallpaperManager.isChangingWallpaper.collectAsState()
+    val favoriteIds by WallpaperRepository.favoriteIds.collectAsState()
+    val isCurrentFavorite = remember(dailyWallpaperId, favoriteIds) {
+        dailyWallpaperId.isNotBlank() && favoriteIds.contains(dailyWallpaperId)
+    }
+
     BackHandler(enabled = visible) {
         onDismiss()
     }
@@ -114,6 +130,8 @@ fun HomeOptionsBottomSheet(
             dragOffsetY.snapTo(0f)
             showChangelogDialog = false
             UpdateManager.checkForUpdates(coroutineScope, force = true)
+            WallpaperRepository.initFavorites(context)
+            DailyWallpaperManager.checkAndAdvanceIfNewDay(context, coroutineScope)
         }
     }
 
@@ -219,13 +237,40 @@ fun HomeOptionsBottomSheet(
 
                 Spacer(Modifier.height(16.dp))
 
-                Text(
-                    text = stringResource(R.string.options_title),
-                    color = colorScheme.onSurface,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = stringResource(R.string.options_title),
+                        color = colorScheme.onSurface,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+
+                    if (isAutoDailyEnabled) {
+                        DailyWallpaperFeedbackRow(
+                            isFavorite = isCurrentFavorite,
+                            isChanging = isChangingWallpaper,
+                            onLike = {
+                                coroutineScope.launch {
+                                    val success = DailyWallpaperManager.handleLike(context)
+                                    if (success) {
+                                        Toast.makeText(context, R.string.daily_wallpaper_liked_feedback, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            onDislike = {
+                                coroutineScope.launch {
+                                    DailyWallpaperManager.advanceToNextWallpaper(context, isUserDislike = true)
+                                }
+                            },
+                        )
+                    }
+                }
 
                 Spacer(Modifier.height(8.dp))
 
@@ -515,3 +560,80 @@ private fun launchWallpaperPicker(context: Context) {
         context.startActivity(Intent.createChooser(intent, "Escolher papel de parede"))
     } catch (_: Exception) {}
 }
+
+@Composable
+private fun DailyWallpaperFeedbackRow(
+    isFavorite: Boolean,
+    isChanging: Boolean,
+    onLike: () -> Unit,
+    onDislike: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.daily_wallpaper_prompt),
+            color = colorScheme.onSurfaceVariant,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Normal,
+            maxLines = 1,
+        )
+
+        if (isChanging) {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .padding(2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(13.dp),
+                    strokeWidth = 2.dp,
+                    color = colorScheme.primary,
+                )
+            }
+        } else {
+            // Like Button
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isFavorite) colorScheme.primary.copy(alpha = 0.20f)
+                        else colorScheme.onSurface.copy(alpha = 0.08f)
+                    )
+                    .clickable(onClick = onLike),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ThumbUp,
+                    contentDescription = stringResource(R.string.daily_wallpaper_like),
+                    tint = if (isFavorite) colorScheme.primary else colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(13.dp),
+                )
+            }
+
+            // Dislike Button
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(colorScheme.onSurface.copy(alpha = 0.08f))
+                    .clickable(onClick = onDislike),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ThumbDown,
+                    contentDescription = stringResource(R.string.daily_wallpaper_dislike),
+                    tint = colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(13.dp),
+                )
+            }
+        }
+    }
+}
+

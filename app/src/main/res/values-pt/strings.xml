@@ -69,6 +69,12 @@
     <string name="wallpaper_new_notification_title">Novos papéis de parede disponíveis!</string>
     <string name="wallpaper_new_notification_single">1 novo papel de parede foi adicionado ao catálogo.</string>
     <string name="wallpaper_new_notification_multiple">%1$d novos papéis de parede foram adicionados ao catálogo.</string>
+    <string name="daily_wallpaper_title">Papel de parede diário</string>
+    <string name="daily_wallpaper_desc">Mudar o wallpaper automaticamente todo dia</string>
+    <string name="daily_wallpaper_prompt">Gostou do papel de parede?</string>
+    <string name="daily_wallpaper_like">Gostei (favoritar)</string>
+    <string name="daily_wallpaper_dislike">Não gostei (próximo)</string>
+    <string name="daily_wallpaper_liked_feedback">Salvo nos favoritos</string>
     <string name="clock_notification_channel_name">Estilos de Relógio</string>
     <string name="clock_notification_channel_desc">Notificações sobre novos widgets de relógio adicionados ao repositório</string>
     <string name="clock_new_notification_title">Novos estilos de relógio disponíveis!</string>

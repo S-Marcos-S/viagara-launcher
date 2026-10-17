@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.52
+### 🚀 Novidades da Versão v0.60.53
 
-- **Animação Wave do Alfabeto:** Implementada física de onda fluida no canvas baseada no GraceLauncher com spring e curva gaussiana suave.
-- **Arrasto Horizontal Refinado:** Expansão dinâmica e retração elástica ao deslizar pelo alfabeto.
+- **Papel de Parede Diário:** Troca automática diária de wallpaper pelo catálogo oficial.
+- **Avaliação em Opções:** Pergunta discreta na barra de opções com botões para favoritar (like) ou trocar imediatamente (dislike).
+- **Ativação Fácil:** Interruptor de troca diária no seletor de papéis de parede.

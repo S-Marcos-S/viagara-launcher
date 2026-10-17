@@ -130,6 +130,10 @@ class Prefs(private val context: Context) {
         val BACKUP_LAST_AUTO_TIMESTAMP = longPreferencesKey("backup_last_auto_timestamp")
         val BACKUP_FOLDER_URI = stringPreferencesKey("backup_folder_uri")
         val BACKUP_FOLDER_NAME = stringPreferencesKey("backup_folder_name")
+        val AUTO_DAILY_WALLPAPER_ENABLED = booleanPreferencesKey("auto_daily_wallpaper_enabled")
+        val DAILY_WALLPAPER_LAST_TIMESTAMP = longPreferencesKey("daily_wallpaper_last_timestamp")
+        val DAILY_WALLPAPER_CURRENT_ID = stringPreferencesKey("daily_wallpaper_current_id")
+        val DAILY_WALLPAPER_INDEX = intPreferencesKey("daily_wallpaper_index")
     }
 
     private val data get() = context.dataStore.data
@@ -285,6 +289,10 @@ class Prefs(private val context: Context) {
     val lastAutoBackupTimestamp: Flow<Long> = data.map { it[Keys.BACKUP_LAST_AUTO_TIMESTAMP] ?: 0L }.distinctUntilChanged()
     val backupFolderUri: Flow<String?> = data.map { it[Keys.BACKUP_FOLDER_URI] }.distinctUntilChanged()
     val backupFolderName: Flow<String?> = data.map { it[Keys.BACKUP_FOLDER_NAME] }.distinctUntilChanged()
+    val autoDailyWallpaperEnabled: Flow<Boolean> = data.map { it[Keys.AUTO_DAILY_WALLPAPER_ENABLED] ?: false }.distinctUntilChanged()
+    val dailyWallpaperLastTimestamp: Flow<Long> = data.map { it[Keys.DAILY_WALLPAPER_LAST_TIMESTAMP] ?: 0L }.distinctUntilChanged()
+    val dailyWallpaperCurrentId: Flow<String> = data.map { it[Keys.DAILY_WALLPAPER_CURRENT_ID] ?: "" }.distinctUntilChanged()
+    val dailyWallpaperIndex: Flow<Int> = data.map { it[Keys.DAILY_WALLPAPER_INDEX] ?: 0 }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->
@@ -775,6 +783,22 @@ class Prefs(private val context: Context) {
                 pref.remove(Keys.BACKUP_FOLDER_NAME)
             }
         }
+    }
+
+    suspend fun setAutoDailyWallpaperEnabled(v: Boolean) {
+        context.dataStore.edit { it[Keys.AUTO_DAILY_WALLPAPER_ENABLED] = v }
+    }
+
+    suspend fun setDailyWallpaperLastTimestamp(v: Long) {
+        context.dataStore.edit { it[Keys.DAILY_WALLPAPER_LAST_TIMESTAMP] = v }
+    }
+
+    suspend fun setDailyWallpaperCurrentId(v: String) {
+        context.dataStore.edit { it[Keys.DAILY_WALLPAPER_CURRENT_ID] = v }
+    }
+
+    suspend fun setDailyWallpaperIndex(v: Int) {
+        context.dataStore.edit { it[Keys.DAILY_WALLPAPER_INDEX] = v }
     }
 
     private val EXCLUDED_BACKUP_KEYS = setOf(
