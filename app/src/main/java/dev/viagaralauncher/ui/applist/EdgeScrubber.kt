@@ -106,9 +106,8 @@ fun EdgeScrubber(
     val topRatio = if (screenHeightPx > 0f) (band.topPx / screenHeightPx).coerceIn(0f, 1f) else 0.1f
     val bottomRatio = if (screenHeightPx > 0f) (band.bottomPx / screenHeightPx).coerceIn(topRatio, 1f) else 0.9f
 
-    val isBrightFlags by ScrubberContrastManager.rememberEdgeContrast(
+    val isWallpaperBright by ScrubberContrastManager.rememberEdgeIsBright(
         side = side,
-        lettersCount = letters.size,
         bandTopRatio = topRatio,
         bandBottomRatio = bottomRatio,
     )
@@ -149,11 +148,10 @@ fun EdgeScrubber(
             val outward = (basePullPx + extraPull) * gaussian * wave
             val glyphX = if (isLeft) baseX + outward else baseX - outward
             val alpha = 0.60f + 0.40f * gaussian * wave
-            val isOverBrightBg = if (index < isBrightFlags.size) isBrightFlags[index] else false
 
             if (c == SCRUBBER_STAR) {
-                val starColor = if (isOverBrightBg) {
-                    Color.Black.copy(alpha = alpha.coerceAtLeast(0.85f))
+                val starColor = if (isWallpaperBright) {
+                    Color(0xFF10161C).copy(alpha = alpha.coerceAtLeast(0.85f))
                 } else {
                     Color.White.copy(alpha = alpha)
                 }
@@ -161,11 +159,14 @@ fun EdgeScrubber(
                     drawPath(starPath, color = starColor)
                 }
             } else {
-                val targetColor = if (isOverBrightBg) {
-                    val a = (alpha.coerceAtLeast(0.85f) * 255f).roundToInt().coerceIn(0, 255)
+                val a = if (isWallpaperBright) {
+                    (alpha.coerceAtLeast(0.85f) * 255f).roundToInt().coerceIn(0, 255)
+                } else {
+                    (alpha * 255f).roundToInt().coerceIn(0, 255)
+                }
+                val targetColor = if (isWallpaperBright) {
                     android.graphics.Color.argb(a, 16, 22, 28)
                 } else {
-                    val a = (alpha * 255f).roundToInt().coerceIn(0, 255)
                     android.graphics.Color.argb(a, 255, 255, 255)
                 }
                 textPaint.color = targetColor

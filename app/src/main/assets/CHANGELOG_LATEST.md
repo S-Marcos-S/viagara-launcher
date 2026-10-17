@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.60.53
+### 🚀 Novidades da Versão v0.60.54
 
-- **Papel de Parede Diário:** Troca automática diária de wallpaper pelo catálogo oficial.
-- **Avaliação em Opções:** Pergunta discreta na barra de opções com botões para favoritar (like) ou trocar imediatamente (dislike).
-- **Ativação Fácil:** Interruptor de troca diária no seletor de papéis de parede.
+- **Cor Unificada do Alfabeto:** No modo automático, o alfabeto adota cor sólida preta sobre papéis de parede claros e branca sobre escuros.
+- **Harmonia Visual:** Eliminado o contraste fragmentado por letra para manter visual consistente e limpo.

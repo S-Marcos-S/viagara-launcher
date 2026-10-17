@@ -28,14 +28,14 @@ import kotlinx.coroutines.withContext
  * High-performance, battery-friendly manager that samples background luminance along the
  * vertical edge strip where EdgeScrubber is placed.
  *
- * If a letter sits above a very bright/white part of the wallpaper, its entry in
- * the returned boolean array is true (signaling that it should be rendered in dark/black for contrast).
- * For dark, colored, or medium backgrounds, it remains false (rendering in normal style).
+ * In automatic font color mode, if the wallpaper edge strip has light tones, the entire
+ * alphabet is rendered in solid black. For dark or medium backgrounds, it is rendered in solid white.
+ * Per-letter individual color contrast calculation is completely eliminated.
  */
 object ScrubberContrastManager {
 
     private const val TAG = "ScrubberContrastManager"
-    private const val BRIGHTNESS_THRESHOLD = 0.65f // High contrast threshold for light backgrounds
+    private const val BRIGHTNESS_THRESHOLD = 0.55f // Threshold for detecting light tones
 
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         Log.w(TAG, "Uncaught error in scrubber contrast coroutine", throwable)
@@ -44,32 +44,30 @@ object ScrubberContrastManager {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + exceptionHandler)
 
     @Composable
-    fun rememberEdgeContrast(
+    fun rememberEdgeIsBright(
         side: EdgeSide,
-        lettersCount: Int,
         bandTopRatio: Float,
         bandBottomRatio: Float,
-    ): State<BooleanArray> {
+    ): State<Boolean> {
         val context = LocalContext.current
-        val contrastState = remember(side, lettersCount) {
-            mutableStateOf(BooleanArray(lettersCount) { false })
+        val isBrightState = remember(side, bandTopRatio, bandBottomRatio) {
+            mutableStateOf(false)
         }
 
-        DisposableEffect(side, lettersCount, bandTopRatio, bandBottomRatio) {
+        DisposableEffect(side, bandTopRatio, bandBottomRatio) {
             val wm = WallpaperManager.getInstance(context)
 
             fun computeContrast() {
                 scope.launch {
                     runCatching {
-                        val flags = sampleEdgeLuminance(
+                        val isBright = sampleEdgeLuminance(
                             context = context,
                             side = side,
-                            count = lettersCount,
                             topRatio = bandTopRatio,
                             bottomRatio = bandBottomRatio,
                         )
                         withContext(Dispatchers.Main) {
-                            contrastState.value = flags
+                            isBrightState.value = isBright
                         }
                     }.onFailure { e ->
                         Log.w(TAG, "Failed to compute edge contrast", e)
@@ -110,19 +108,28 @@ object ScrubberContrastManager {
             }
         }
 
-        return contrastState
+        return isBrightState
+    }
+
+    @Composable
+    fun rememberEdgeContrast(
+        side: EdgeSide,
+        lettersCount: Int,
+        bandTopRatio: Float,
+        bandBottomRatio: Float,
+    ): State<BooleanArray> {
+        val isBrightState = rememberEdgeIsBright(side, bandTopRatio, bandBottomRatio)
+        return remember(isBrightState.value, lettersCount) {
+            mutableStateOf(BooleanArray(lettersCount) { isBrightState.value })
+        }
     }
 
     private suspend fun sampleEdgeLuminance(
         context: Context,
         side: EdgeSide,
-        count: Int,
         topRatio: Float,
         bottomRatio: Float,
-    ): BooleanArray = withContext(Dispatchers.IO) {
-        val result = BooleanArray(count) { false }
-        if (count <= 0) return@withContext result
-
+    ): Boolean = withContext(Dispatchers.IO) {
         runCatching {
             val bitmap = runCatching {
                 val wm = WallpaperManager.getInstance(context)
@@ -132,16 +139,16 @@ object ScrubberContrastManager {
                 } else {
                     null
                 }
-            }.getOrNull() ?: return@withContext result
+            }.getOrNull() ?: return@withContext false
 
             val bw = bitmap.width
             val bh = bitmap.height
-            if (bw <= 0 || bh <= 0) return@withContext result
+            if (bw <= 0 || bh <= 0) return@withContext false
 
             val minRatio = minOf(topRatio, bottomRatio).coerceIn(0f, 1f)
             val maxRatio = maxOf(topRatio, bottomRatio).coerceIn(0f, 1f)
             val heightRatioSpan = maxRatio - minRatio
-            if (heightRatioSpan < 0.005f) return@withContext result
+            if (heightRatioSpan < 0.005f) return@withContext false
 
             // Horizontal sample offsets across the entire letter width margin (2% to 6% from edge)
             val xOffsets = if (side == EdgeSide.LEFT) {
@@ -150,36 +157,27 @@ object ScrubberContrastManager {
                 floatArrayOf(0.94f, 0.96f, 0.98f)
             }
 
-            for (i in 0 until count) {
-                val normY = (minRatio + ((i + 0.5f) / count) * heightRatioSpan).coerceIn(0f, 1f)
-                val centerY = (normY * bh).toInt().coerceIn(0, bh - 1)
-                val ySpread = (bh * 0.008f).toInt().coerceAtLeast(1) // Sample +/- spread around letter vertical center
+            val sampleStepsY = 24
+            var totalLuminance = 0f
+            var sampleCount = 0
 
-                var totalLuminance = 0f
-                var sampleCount = 0
+            for (i in 0 until sampleStepsY) {
+                val normY = (minRatio + ((i + 0.5f) / sampleStepsY) * heightRatioSpan).coerceIn(0f, 1f)
+                val centerY = (normY * bh).toInt().coerceIn(0, bh - 1)
 
                 for (xFrac in xOffsets) {
                     val sx = (bw * xFrac).toInt().coerceIn(0, bw - 1)
-                    for (dy in -ySpread..ySpread step ySpread) {
-                        val sy = (centerY + dy).coerceIn(0, bh - 1)
-                        val pixel = runCatching { bitmap.getPixel(sx, sy) }.getOrDefault(0)
-                        val r = (pixel shr 16 and 0xFF) / 255.0f
-                        val g = (pixel shr 8 and 0xFF) / 255.0f
-                        val b = (pixel and 0xFF) / 255.0f
-                        totalLuminance += (0.2126f * r + 0.7152f * g + 0.0722f * b)
-                        sampleCount++
-                    }
-                }
-
-                val avgLuminance = if (sampleCount > 0) totalLuminance / sampleCount else 0f
-                if (avgLuminance >= BRIGHTNESS_THRESHOLD) {
-                    result[i] = true
+                    val pixel = runCatching { bitmap.getPixel(sx, centerY) }.getOrDefault(0)
+                    val r = (pixel shr 16 and 0xFF) / 255.0f
+                    val g = (pixel shr 8 and 0xFF) / 255.0f
+                    val b = (pixel and 0xFF) / 255.0f
+                    totalLuminance += (0.2126f * r + 0.7152f * g + 0.0722f * b)
+                    sampleCount++
                 }
             }
-        }.onFailure { e ->
-            Log.w(TAG, "Error sampling edge luminance", e)
-        }
 
-        result
+            val avgLuminance = if (sampleCount > 0) totalLuminance / sampleCount else 0f
+            avgLuminance >= BRIGHTNESS_THRESHOLD
+        }.getOrDefault(false)
     }
 }
