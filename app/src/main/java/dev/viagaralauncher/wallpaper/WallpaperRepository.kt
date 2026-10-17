@@ -188,6 +188,10 @@ object WallpaperRepository {
             if (categories.isEmpty() || categories.none { it.id.equals("all", ignoreCase = true) }) {
                 categories.add(0, WallpaperCategory("all", "Todos"))
             }
+            if (categories.none { it.id.equals("favorites", ignoreCase = true) }) {
+                val allIdx = categories.indexOfFirst { it.id.equals("all", ignoreCase = true) }
+                categories.add(if (allIdx != -1) allIdx + 1 else 0, WallpaperCategory("favorites", "Favoritos"))
+            }
 
             val array = root.optJSONArray("wallpapers") ?: return WallpaperCatalog(categories, emptyList())
             val list = mutableListOf<WallpaperItem>()

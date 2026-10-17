@@ -59,6 +59,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
@@ -86,6 +88,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -144,20 +147,23 @@ fun WallpaperPickerScreen(
     var previewingWallpaper by remember { mutableStateOf<WallpaperItem?>(null) }
     var isApplying by remember { mutableStateOf(false) }
 
+    val favoriteIds by WallpaperRepository.favoriteIds.collectAsState()
+
     LaunchedEffect(Unit) {
+        WallpaperRepository.initFavorites(context)
         dev.viagaralauncher.wallpaper.WallpaperNotificationManager.cancelNotification(context)
         catalog = WallpaperRepository.loadCatalog(context)
         isLoadingCatalog = false
     }
 
-    val filteredWallpapers = remember(catalog, selectedCategoryId, searchQuery) {
+    val filteredWallpapers = remember(catalog, selectedCategoryId, searchQuery, favoriteIds) {
         val all = catalog?.wallpapers ?: emptyList()
         val query = searchQuery.trim().lowercase()
 
-        val baseList = if (selectedCategoryId.equals("all", ignoreCase = true)) {
-            all
-        } else {
-            all.filter {
+        val baseList = when {
+            selectedCategoryId.equals("all", ignoreCase = true) -> all
+            selectedCategoryId.equals("favorites", ignoreCase = true) -> all.filter { favoriteIds.contains(it.id) }
+            else -> all.filter {
                 it.category.equals(selectedCategoryId, ignoreCase = true)
             }
         }
@@ -313,6 +319,8 @@ fun WallpaperPickerScreen(
                             Text(
                                 text = if (searchQuery.isNotBlank()) {
                                     stringResource(R.string.wallpaper_search_no_results, searchQuery)
+                                } else if (selectedCategoryId.equals("favorites", ignoreCase = true)) {
+                                    "Nenhum papel de parede favorito ainda.\nToque no coração de qualquer papel de parede para favoritá-lo."
                                 } else {
                                     stringResource(R.string.wallpaper_picker_empty)
                                 },
@@ -327,6 +335,10 @@ fun WallpaperPickerScreen(
                 items(filteredWallpapers, key = { it.id }) { item ->
                     WallpaperGridItem(
                         item = item,
+                        isFavorite = favoriteIds.contains(item.id),
+                        onToggleFavorite = {
+                            WallpaperRepository.toggleFavorite(context, item.id)
+                        },
                         onClick = { previewingWallpaper = item }
                     )
                 }
@@ -343,6 +355,8 @@ fun WallpaperPickerScreen(
         previewingWallpaper?.let { item ->
             WallpaperPreviewOverlay(
                 item = item,
+                isFavorite = favoriteIds.contains(item.id),
+                onToggleFavorite = { WallpaperRepository.toggleFavorite(context, item.id) },
                 isApplying = isApplying,
                 onDismiss = {
                     if (!isApplying) previewingWallpaper = null
@@ -474,6 +488,8 @@ private fun WallpaperSearchBar(
 @Composable
 private fun WallpaperGridItem(
     item: WallpaperItem,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -522,7 +538,7 @@ private fun WallpaperGridItem(
         if (item.isLive || item.type == "video") {
             Box(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
+                    .align(Alignment.TopStart)
                     .padding(8.dp)
                     .clip(RoundedCornerShape(6.dp))
                     .background(Color.Black.copy(alpha = 0.65f))
@@ -533,6 +549,34 @@ private fun WallpaperGridItem(
                     color = Color.White,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        // Heart favorite button above each wallpaper (top right)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp)
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.35f))
+                .clickable { onToggleFavorite() },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (isFavorite) {
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = "Favorito",
+                    tint = Color(0xFFE53935),
+                    modifier = Modifier.size(18.dp),
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.FavoriteBorder,
+                    contentDescription = "Favoritar",
+                    tint = Color.White.copy(alpha = 0.90f),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
@@ -573,6 +617,8 @@ private fun WallpaperGridItem(
 @Composable
 private fun WallpaperPreviewOverlay(
     item: WallpaperItem,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
     isApplying: Boolean,
     onDismiss: () -> Unit,
     onApply: (Int, Bitmap?) -> Unit,
@@ -738,18 +784,38 @@ private fun WallpaperPreviewOverlay(
                 Spacer(Modifier.size(1.dp))
             }
 
-            IconButton(
-                onClick = onDismiss,
-                enabled = !isApplying,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.55f)),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = stringResource(R.string.action_close),
-                    tint = Color.White,
-                )
+                IconButton(
+                    onClick = onToggleFavorite,
+                    enabled = !isApplying,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.55f)),
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = if (isFavorite) "Favorito" else "Favoritar",
+                        tint = if (isFavorite) Color(0xFFE53935) else Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+
+                IconButton(
+                    onClick = onDismiss,
+                    enabled = !isApplying,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.55f)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.action_close),
+                        tint = Color.White,
+                    )
+                }
             }
         }
 
@@ -1444,6 +1510,7 @@ private fun WallpaperCategoriesRow(
 private fun getCategoryDisplayName(category: WallpaperCategory): String {
     return when (category.id.lowercase()) {
         "all" -> stringResource(R.string.wallpaper_category_all)
+        "favorites" -> "Favoritos"
         "oled" -> stringResource(R.string.wallpaper_category_oled)
         "minimal" -> stringResource(R.string.wallpaper_category_minimal)
         "abstract" -> stringResource(R.string.wallpaper_category_abstract)
