@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,6 +70,7 @@ import dev.viagaralauncher.clock.DynamicClockContent
 import dev.viagaralauncher.clock.RemoteClockItem
 import dev.viagaralauncher.clock.RemoteClockStyleDefinition
 import dev.viagaralauncher.data.ClockStyle
+import dev.viagaralauncher.data.CustomClockStyle
 import dev.viagaralauncher.service.HapticUtil
 import dev.viagaralauncher.ui.home.ClockStylePreview
 import java.util.Date
@@ -78,15 +80,27 @@ import java.util.Date
 fun ClockStylePickerScreen(
     currentStyle: ClockStyle,
     currentRemoteId: String? = null,
+    currentCustomStyle: CustomClockStyle = CustomClockStyle(),
     hapticsEnabled: Boolean,
     onSelectStyle: (ClockStyle) -> Unit,
     onSelectRemoteStyle: (String) -> Unit = {},
+    onApplyCustomStyle: (CustomClockStyle) -> Unit = {},
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
     val view = LocalView.current
     var currentTime by remember { mutableStateOf(Date()) }
-    var selectedTab by remember { mutableIntStateOf(if (currentRemoteId != null) 1 else 0) }
+
+    // 0: Editor Personalizado (GraceLauncher style), 1: Integrados (Presets), 2: Repositório
+    var selectedTab by remember {
+        mutableIntStateOf(
+            when {
+                currentRemoteId != null -> 2
+                currentStyle == ClockStyle.CUSTOM -> 0
+                else -> 0
+            }
+        )
+    }
 
     var remoteCatalog by remember { mutableStateOf<ClockCatalog?>(null) }
     var isLoadingCatalog by remember { mutableStateOf(false) }
@@ -97,6 +111,33 @@ fun ClockStylePickerScreen(
         remoteCatalog = cat
         ClockNotificationManager.markAllAsSeen(context, cat)
         isLoadingCatalog = false
+    }
+
+    if (selectedTab == 0) {
+        ClockStyleEditorScreen(
+            initialStyle = currentCustomStyle,
+            hapticsEnabled = hapticsEnabled,
+            onApply = { custom ->
+                onApplyCustomStyle(custom)
+                onBack()
+            },
+            onBack = onBack,
+            topBarActions = {
+                FilterChip(
+                    selected = false,
+                    onClick = {
+                        HapticUtil.tick(view, hapticsEnabled)
+                        selectedTab = 1
+                    },
+                    label = { Text(stringResource(R.string.clock_editor_tab_presets)) },
+                    leadingIcon = {
+                        Icon(Icons.Filled.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
+                    },
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+            },
+        )
+        return
     }
 
     DisposableEffect(context) {
@@ -150,7 +191,7 @@ fun ClockStylePickerScreen(
                 .padding(padding)
                 .background(surface),
         ) {
-            // Category Selector (Nativos / Comunidade Repositório)
+            // Category Selector (Personalizar / Nativos / Comunidade Repositório)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,9 +204,9 @@ fun ClockStylePickerScreen(
                         HapticUtil.tick(view, hapticsEnabled)
                         selectedTab = 0
                     },
-                    label = { Text("Integrados") },
+                    label = { Text(stringResource(R.string.clock_editor_tab_custom)) },
                     leadingIcon = {
-                        Icon(Icons.Filled.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
                     },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -179,11 +220,27 @@ fun ClockStylePickerScreen(
                         HapticUtil.tick(view, hapticsEnabled)
                         selectedTab = 1
                     },
+                    label = { Text(stringResource(R.string.clock_editor_tab_presets)) },
+                    leadingIcon = {
+                        Icon(Icons.Filled.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                )
+
+                FilterChip(
+                    selected = selectedTab == 2,
+                    onClick = {
+                        HapticUtil.tick(view, hapticsEnabled)
+                        selectedTab = 2
+                    },
                     label = {
                         Text(
                             if (remoteCatalog != null && remoteCatalog!!.clocks.isNotEmpty()) {
-                                "Repositório (${remoteCatalog!!.clocks.size})"
-                            } else "Repositório"
+                                "${stringResource(R.string.clock_editor_tab_catalog)} (${remoteCatalog!!.clocks.size})"
+                            } else stringResource(R.string.clock_editor_tab_catalog)
                         )
                     },
                     leadingIcon = {
@@ -196,8 +253,9 @@ fun ClockStylePickerScreen(
                 )
             }
 
-            if (selectedTab == 0) {
+            if (selectedTab == 1) {
                 // Built-in Native Clock Styles
+                val builtInEntries = remember { ClockStyle.entries.filter { it != ClockStyle.CUSTOM } }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -205,7 +263,7 @@ fun ClockStylePickerScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    items(ClockStyle.entries.toTypedArray()) { style ->
+                    items(builtInEntries.toTypedArray()) { style ->
                         val isSelected = (currentRemoteId == null && style == currentStyle)
 
                         val borderColor = if (isSelected) {
@@ -241,7 +299,6 @@ fun ClockStylePickerScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
-                                    // Clock Preview Container
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -262,7 +319,6 @@ fun ClockStylePickerScreen(
 
                                     Spacer(Modifier.height(12.dp))
 
-                                    // Style Name
                                     Text(
                                         text = stringResource(style.labelRes()),
                                         style = MaterialTheme.typography.bodyMedium,
@@ -356,7 +412,6 @@ fun ClockStylePickerScreen(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
-                                        // Live Preview of Remote Style
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -366,18 +421,25 @@ fun ClockStylePickerScreen(
                                                 .padding(8.dp),
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            var previewDef by remember(item.id) { mutableStateOf<RemoteClockStyleDefinition?>(null) }
-                                            LaunchedEffect(item.id) {
-                                                previewDef = ClockRepository.getStyleDefinition(context, item.id)
+                                            var loadedDef by remember(item.id) {
+                                                mutableStateOf(ClockRepository.getCachedDefinition(item.id))
                                             }
 
-                                            if (previewDef != null) {
+                                            LaunchedEffect(item.id) {
+                                                if (loadedDef == null) {
+                                                    loadedDef = ClockRepository.loadDefinition(context, item.id)
+                                                }
+                                            }
+
+                                            if (loadedDef != null) {
                                                 DynamicClockContent(
-                                                    definition = previewDef!!,
+                                                    definition = loadedDef!!,
                                                     currentTime = currentTime,
                                                     contentColor = MaterialTheme.colorScheme.onSurface,
                                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                                    scaleFactor = 0.52f,
+                                                    onClockClick = {},
+                                                    onDateClick = {},
+                                                    modifier = Modifier.fillMaxSize(),
                                                 )
                                             } else {
                                                 CircularProgressIndicator(modifier = Modifier.size(24.dp))
@@ -396,15 +458,13 @@ fun ClockStylePickerScreen(
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                         )
 
-                                        if (item.author.isNotBlank()) {
-                                            Text(
-                                                text = "por ${item.author}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                textAlign = TextAlign.Center,
-                                                maxLines = 1,
-                                            )
-                                        }
+                                        Text(
+                                            text = item.author,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center,
+                                            maxLines = 1,
+                                        )
                                     }
 
                                     if (isSelected) {

@@ -47,6 +47,7 @@ import dev.viagaralauncher.data.AppFont
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.ClockStyle
 import dev.viagaralauncher.data.EdgeSide
+import dev.viagaralauncher.data.CustomClockStyle
 import dev.viagaralauncher.data.HomePaddings
 import dev.viagaralauncher.data.ThemedIconStyle
 import dev.viagaralauncher.data.TextColorMode
@@ -229,6 +230,7 @@ fun ViagaraNavHost(
     val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
     val folderWindowPopup by app.prefs.folderWindowPopup.collectAsState(initial = true)
     val clockStyle by app.prefs.clockStyle.collectAsState(initial = ClockStyle.CLASSIC)
+    val customClockStyle by app.prefs.customClockStyle.collectAsState(initial = CustomClockStyle())
     val remoteClockId by app.prefs.remoteClockId.collectAsState(initial = null)
     val folders by app.prefs.folders.collectAsState(initial = emptyList())
     val contentColor = rememberContentColor(textColorMode)
@@ -325,6 +327,7 @@ fun ViagaraNavHost(
         doubleTapToLock = doubleTapToLock,
         contentColor = contentColor,
         clockStyle = clockStyle,
+        customClockStyle = customClockStyle,
         showAppNotifications = showAppNotifications,
         folderWindowPopup = folderWindowPopup,
         dynamicButtonEnabled = dynamicButtonEnabled,
@@ -614,12 +617,16 @@ fun ViagaraNavHost(
             ClockStylePickerScreen(
                 currentStyle = clockStyle,
                 currentRemoteId = remoteClockId,
+                currentCustomStyle = customClockStyle,
                 hapticsEnabled = hapticsEnabled,
                 onSelectStyle = { selected ->
                     scope.launch { app.prefs.setClockStyle(selected) }
                 },
                 onSelectRemoteStyle = { remoteId ->
                     scope.launch { app.prefs.setRemoteClockId(remoteId) }
+                },
+                onApplyCustomStyle = { custom ->
+                    scope.launch { app.prefs.setCustomClockStyle(custom) }
                 },
                 onBack = { navController.popBackStack() },
             )

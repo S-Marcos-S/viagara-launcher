@@ -61,6 +61,7 @@ fun ClockStyle.labelRes(): Int = when (this) {
     ClockStyle.HANDWRITTEN_CANVAS -> R.string.clock_style_handwritten_canvas
     ClockStyle.HANDWRITTEN_CANVAS_STATS -> R.string.clock_style_handwritten_canvas_stats
     ClockStyle.CANVAS_SHIMMER -> R.string.clock_style_canvas_shimmer
+    ClockStyle.CUSTOM -> R.string.clock_style_custom
 }
 
 @StringRes

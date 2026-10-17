@@ -77,11 +77,15 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import dev.viagaralauncher.R
+import dev.viagaralauncher.clock.ClockFace
+import dev.viagaralauncher.clock.ClockTimeLabel
 import dev.viagaralauncher.data.ClockStyle
+import dev.viagaralauncher.data.CustomClockStyle
 import dev.viagaralauncher.data.DailyQuote
 import dev.viagaralauncher.data.DailyQuoteManager
 import dev.viagaralauncher.service.SystemStats
 import dev.viagaralauncher.service.rememberSystemStats
+import androidx.compose.material3.MaterialTheme
 import java.util.Calendar
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -113,6 +117,7 @@ fun isCenteredClockStyle(style: ClockStyle): Boolean = when (style) {
 fun NiagaraClockWidget(
     clockStyle: ClockStyle = ClockStyle.CLASSIC,
     remoteClockId: String? = null,
+    customClockStyle: CustomClockStyle = CustomClockStyle(),
     contentColor: Color,
     sidePaddingDp: Int,
     alignRight: Boolean,
@@ -579,6 +584,18 @@ fun NiagaraClockWidget(
                         timeString = timeString,
                         dateString = dateString,
                         contentColor = contentColor,
+                        widthFactor = widthFactor,
+                        onClockClick = { launchClockApp(context) },
+                        onDateClick = handleDateClick,
+                    )
+                }
+                ClockStyle.CUSTOM -> {
+                    CustomGraceClockContent(
+                        style = customClockStyle,
+                        currentTime = currentTime,
+                        dateString = dateString,
+                        contentColor = contentColor,
+                        horizontalAlignment = horizontalAlignment,
                         widthFactor = widthFactor,
                         onClockClick = { launchClockApp(context) },
                         onDateClick = handleDateClick,
@@ -2823,6 +2840,21 @@ fun ClockStylePreview(
                     tint = tint,
                 )
             }
+            ClockStyle.CUSTOM -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = timeString,
+                        color = tint,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = shortDateString,
+                        color = tint.copy(alpha = 0.8f),
+                        fontSize = 10.sp,
+                    )
+                }
+            }
         }
     }
 }
@@ -3050,5 +3082,90 @@ private fun CanvasShimmerClockPreview(
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
         )
+    }
+}
+
+@Composable
+private fun CustomGraceClockContent(
+    style: CustomClockStyle,
+    currentTime: Date,
+    dateString: String,
+    contentColor: Color,
+    horizontalAlignment: Alignment.Horizontal,
+    widthFactor: Float = 1.0f,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+) {
+    val context = LocalContext.current
+    val is24Hour = DateFormat.is24HourFormat(context)
+    val timeFormat = SimpleDateFormat(if (is24Hour) "HH:mm" else "h:mm", Locale.getDefault())
+    val weekdayFormat = SimpleDateFormat("EEE", Locale.getDefault())
+
+    val timeString = remember(currentTime, is24Hour) { timeFormat.format(currentTime) }
+    val weekdayString = remember(currentTime) { weekdayFormat.format(currentTime).replaceFirstChar { it.uppercase() } }
+
+    Column(horizontalAlignment = horizontalAlignment) {
+        if (style.layout.week) {
+            ClockFace(
+                time = weekdayString,
+                style = style,
+                color = contentColor,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDateClick,
+                ),
+            )
+            Spacer(modifier = Modifier.height((6 * widthFactor).dp.coerceAtLeast(3.dp)))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClockClick,
+                ),
+            ) {
+                ClockTimeLabel(
+                    time = timeString,
+                    style = style,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = contentColor,
+                )
+                Text(
+                    text = " · $dateString",
+                    color = contentColor.copy(alpha = 0.85f),
+                    fontSize = (15 * widthFactor).sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDateClick,
+                    ),
+                )
+            }
+        } else {
+            ClockFace(
+                time = timeString,
+                style = style,
+                color = contentColor,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClockClick,
+                ),
+            )
+            Spacer(modifier = Modifier.height((6 * widthFactor).dp.coerceAtLeast(3.dp)))
+            Text(
+                text = dateString,
+                color = contentColor.copy(alpha = 0.85f),
+                fontSize = (15 * widthFactor).sp,
+                fontWeight = FontWeight.Normal,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDateClick,
+                ),
+            )
+        }
     }
 }

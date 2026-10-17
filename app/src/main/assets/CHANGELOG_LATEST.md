@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.60.46
+### 🚀 Novidades da Versão v0.60.47
 
-- **Enforce Doze (Sono Profundo):** Economia de bateria com tela apagada inspirada no EnforceDoze, forçando sono profundo imediato.
-- **Detecção de Movimento Inteligente:** Opção para manter sono profundo mesmo com aparelho em movimento e delay configurável.
-- **Relatório de Eficiência ao Despertar:** Notificações opcionais e discretas de economia e dreno após períodos de tela desligada.
+- **Novo Editor de Relógio Completo:** Tela de edição inspirada no GraceLauncher com pré-visualização ao vivo em tempo real.
+- **Layouts e Tipografias Únicas:** 10 formatos de relógio com suporte a fontes embutidas (Sacramento, Bokor, Plaster, Monoton, Lucky) e importação personalizada (TTF/OTF).
+- **Controles Avançados de Design:** Ajustes finos de peso, tamanho, espaçamento de caracteres e horas, sombra e efeito exclusivo de separação por contorno transparente de dígitos.

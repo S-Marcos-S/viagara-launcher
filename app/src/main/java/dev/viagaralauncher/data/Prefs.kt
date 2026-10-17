@@ -47,6 +47,7 @@ enum class ClockStyle {
     HANDWRITTEN_CANVAS,
     HANDWRITTEN_CANVAS_STATS,
     CANVAS_SHIMMER,
+    CUSTOM,
 }
 
 /** AUTO picks light or dark text from the wallpaper's own colours. */
@@ -101,6 +102,7 @@ class Prefs(private val context: Context) {
         val ACTIVE_THEME = stringPreferencesKey("active_theme_id")
         val CLOCK_STYLE = stringPreferencesKey("clock_style")
         val REMOTE_CLOCK_ID = stringPreferencesKey("remote_clock_id")
+        val CUSTOM_CLOCK_STYLE = stringPreferencesKey("custom_clock_style_json")
         val CLOCK_WIDTH_SCALE = floatPreferencesKey("clock_width_scale")
         val CLOCK_HEIGHT_SCALE = floatPreferencesKey("clock_height_scale")
         val CLOCK_TOP_PADDING_DP = intPreferencesKey("clock_top_padding_dp")
@@ -236,6 +238,9 @@ class Prefs(private val context: Context) {
     val clockStyle: Flow<ClockStyle> = data.map {
         runCatching { ClockStyle.valueOf(it[Keys.CLOCK_STYLE] ?: ClockStyle.CLASSIC.name) }
             .getOrDefault(ClockStyle.CLASSIC)
+    }.distinctUntilChanged()
+    val customClockStyle: Flow<CustomClockStyle> = data.map {
+        CustomClockStyle.decode(it[Keys.CUSTOM_CLOCK_STYLE])
     }.distinctUntilChanged()
     val remoteClockId: Flow<String?> = data.map { it[Keys.REMOTE_CLOCK_ID] }.distinctUntilChanged()
     val clockWidthScale: Flow<Float> = data.map { it[Keys.CLOCK_WIDTH_SCALE] ?: 1.0f }.distinctUntilChanged()
@@ -627,6 +632,14 @@ class Prefs(private val context: Context) {
     suspend fun setClockStyle(v: ClockStyle) {
         context.dataStore.edit {
             it[Keys.CLOCK_STYLE] = v.name
+            it.remove(Keys.REMOTE_CLOCK_ID)
+        }
+    }
+
+    suspend fun setCustomClockStyle(style: CustomClockStyle) {
+        context.dataStore.edit {
+            it[Keys.CUSTOM_CLOCK_STYLE] = style.encode()
+            it[Keys.CLOCK_STYLE] = ClockStyle.CUSTOM.name
             it.remove(Keys.REMOTE_CLOCK_ID)
         }
     }

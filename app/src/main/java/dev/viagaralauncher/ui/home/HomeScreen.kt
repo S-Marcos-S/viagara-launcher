@@ -58,6 +58,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import dev.viagaralauncher.data.EdgeSide
+import dev.viagaralauncher.data.CustomClockStyle
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.material.icons.Icons
@@ -241,6 +242,7 @@ fun HomeScreen(
     folderWindowPopup: Boolean = true,
     notificationsByPackage: Map<String, List<dev.viagaralauncher.notification.AppNotificationItem>> = emptyMap(),
     clockStyle: ClockStyle = ClockStyle.CLASSIC,
+    customClockStyle: CustomClockStyle = CustomClockStyle(),
     doubleTapToLock: Boolean = false,
     onDoubleTapLock: (Offset) -> Unit = {},
     edgeSide: EdgeSide = EdgeSide.RIGHT,
@@ -720,6 +722,7 @@ fun HomeScreen(
                     NiagaraClockWidget(
                         clockStyle = clockStyle,
                         remoteClockId = remoteClockIdPref,
+                        customClockStyle = customClockStyle,
                         contentColor = contentColor,
                         sidePaddingDp = sidePaddingDp,
                         alignRight = alignRight,

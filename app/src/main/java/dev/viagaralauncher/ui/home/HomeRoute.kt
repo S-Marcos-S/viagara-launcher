@@ -57,6 +57,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import dev.viagaralauncher.ViagaraApp
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.ClockStyle
+import dev.viagaralauncher.data.CustomClockStyle
 import dev.viagaralauncher.data.EdgeSide
 import dev.viagaralauncher.data.Folder
 import dev.viagaralauncher.data.HomePaddings
@@ -487,6 +488,7 @@ fun HomeRoute(
                 folderWindowPopup = settings.folderWindowPopup,
                 notificationsByPackage = notificationsByPackage,
                 clockStyle = settings.clockStyle,
+                customClockStyle = settings.customClockStyle,
                 doubleTapToLock = settings.doubleTapToLock,
                 onDoubleTapLock = handleDoubleTapLock,
                 edgeSide = settings.edgeSide,
@@ -788,6 +790,7 @@ data class HomeSettings(
     val doubleTapToLock: Boolean,
     val contentColor: Color,
     val clockStyle: ClockStyle = ClockStyle.CLASSIC,
+    val customClockStyle: CustomClockStyle = CustomClockStyle(),
     val showAppNotifications: Boolean = false,
     val folderWindowPopup: Boolean = true,
     val dynamicButtonEnabled: Boolean = true,
