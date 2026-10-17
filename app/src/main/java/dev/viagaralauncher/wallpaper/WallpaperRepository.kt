@@ -77,8 +77,10 @@ object WallpaperRepository {
     fun isFavorite(id: String): Boolean = _favoriteIds.value.contains(id)
 
     fun toggleFavorite(context: Context, id: String): Boolean {
+        if (id.isBlank()) return false
         val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
-        val current = _favoriteIds.value.toMutableSet()
+        val saved = prefs.getStringSet(KEY_FAVORITE_WALLPAPER_IDS, emptySet()) ?: emptySet()
+        val current = (_favoriteIds.value + saved).toMutableSet()
         val nowFavorite = if (current.contains(id)) {
             current.remove(id)
             false
@@ -94,14 +96,14 @@ object WallpaperRepository {
     fun addFavorite(context: Context, id: String): Boolean {
         if (id.isBlank()) return false
         val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
-        val current = _favoriteIds.value.toMutableSet()
-        if (!current.contains(id)) {
-            current.add(id)
+        val saved = prefs.getStringSet(KEY_FAVORITE_WALLPAPER_IDS, emptySet()) ?: emptySet()
+        val current = (_favoriteIds.value + saved).toMutableSet()
+        val added = current.add(id)
+        if (added || _favoriteIds.value != current) {
             prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, current).apply()
             _favoriteIds.value = current.toSet()
-            return true
         }
-        return false
+        return true
     }
 
     val DEFAULT_CATEGORIES = listOf(
@@ -305,7 +307,15 @@ object WallpaperRepository {
         runCatching {
             val wm = WallpaperManager.getInstance(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                wm.setBitmap(bitmap, null, true, flags)
+                try {
+                    wm.setBitmap(bitmap, null, true, flags)
+                } catch (e: Exception) {
+                    if (flags != WallpaperManager.FLAG_SYSTEM) {
+                        wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                    } else {
+                        throw e
+                    }
+                }
             } else {
                 wm.setBitmap(bitmap)
             }
@@ -336,7 +346,15 @@ object WallpaperRepository {
 
             val wm = WallpaperManager.getInstance(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                wm.setBitmap(bitmap, null, true, flags)
+                try {
+                    wm.setBitmap(bitmap, null, true, flags)
+                } catch (e: Exception) {
+                    if (flags != WallpaperManager.FLAG_SYSTEM) {
+                        wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                    } else {
+                        throw e
+                    }
+                }
             } else {
                 wm.setBitmap(bitmap)
             }

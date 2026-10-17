@@ -411,6 +411,7 @@ fun WallpaperPickerScreen(
                             }
                             isApplying = false
                             if (result.isSuccess) {
+                                DailyWallpaperManager.onWallpaperApplied(context, item.id)
                                 Toast.makeText(context, R.string.wallpaper_applied_success, Toast.LENGTH_SHORT).show()
                                 previewingWallpaper = null
                                 onBack()

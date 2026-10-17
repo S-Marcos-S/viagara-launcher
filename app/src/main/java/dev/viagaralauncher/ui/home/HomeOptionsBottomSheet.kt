@@ -83,6 +83,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -242,7 +243,6 @@ fun HomeOptionsBottomSheet(
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
                         text = stringResource(R.string.options_title),
@@ -252,6 +252,7 @@ fun HomeOptionsBottomSheet(
                     )
 
                     if (isAutoDailyEnabled) {
+                        Spacer(Modifier.width(8.dp))
                         DailyWallpaperFeedbackRow(
                             isFavorite = isCurrentFavorite,
                             isChanging = isChangingWallpaper,
@@ -265,9 +266,13 @@ fun HomeOptionsBottomSheet(
                             },
                             onDislike = {
                                 coroutineScope.launch {
-                                    DailyWallpaperManager.advanceToNextWallpaper(context, isUserDislike = true)
+                                    val changed = DailyWallpaperManager.advanceToNextWallpaper(context, isUserDislike = true)
+                                    if (!changed) {
+                                        Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             },
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -573,25 +578,29 @@ private fun DailyWallpaperFeedbackRow(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.End,
     ) {
         Text(
             text = stringResource(R.string.daily_wallpaper_prompt),
             color = colorScheme.onSurfaceVariant,
-            fontSize = 10.5.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.Normal,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .padding(end = 6.dp),
         )
 
         if (isChanging) {
             Box(
                 modifier = Modifier
-                    .size(26.dp)
+                    .size(24.dp)
                     .padding(2.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(13.dp),
+                    modifier = Modifier.size(12.dp),
                     strokeWidth = 2.dp,
                     color = colorScheme.primary,
                 )
@@ -600,7 +609,7 @@ private fun DailyWallpaperFeedbackRow(
             // Like Button
             Box(
                 modifier = Modifier
-                    .size(26.dp)
+                    .size(24.dp)
                     .clip(CircleShape)
                     .background(
                         if (isFavorite) colorScheme.primary.copy(alpha = 0.20f)
@@ -613,14 +622,16 @@ private fun DailyWallpaperFeedbackRow(
                     imageVector = Icons.Filled.ThumbUp,
                     contentDescription = stringResource(R.string.daily_wallpaper_like),
                     tint = if (isFavorite) colorScheme.primary else colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(13.dp),
+                    modifier = Modifier.size(12.dp),
                 )
             }
+
+            Spacer(Modifier.width(4.dp))
 
             // Dislike Button
             Box(
                 modifier = Modifier
-                    .size(26.dp)
+                    .size(24.dp)
                     .clip(CircleShape)
                     .background(colorScheme.onSurface.copy(alpha = 0.08f))
                     .clickable(onClick = onDislike),
@@ -630,7 +641,7 @@ private fun DailyWallpaperFeedbackRow(
                     imageVector = Icons.Filled.ThumbDown,
                     contentDescription = stringResource(R.string.daily_wallpaper_dislike),
                     tint = colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(13.dp),
+                    modifier = Modifier.size(12.dp),
                 )
             }
         }

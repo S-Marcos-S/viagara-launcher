@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.54
+### 🚀 Novidades da Versão v0.60.55
 
-- **Cor Unificada do Alfabeto:** No modo automático, o alfabeto adota cor sólida preta sobre papéis de parede claros e branca sobre escuros.
-- **Harmonia Visual:** Eliminado o contraste fragmentado por letra para manter visual consistente e limpo.
+- **Papel de Parede Diário:** Troca automática diária do catálogo com controle de like e dislike na barra de opções.
+- **Favoritos e Próximo:** Wallpapers curtidos vão direto para os favoritos e dislike avança instantaneamente para o próximo item.
+- **Ajustes e Concorrência:** Proteção contra concorrência e layout responsivo garantindo visibilidade dos botões.
