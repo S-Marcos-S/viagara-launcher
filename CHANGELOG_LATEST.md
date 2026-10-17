@@ -1,6 +1,4 @@
-### 🚀 Novidades da Versão v0.60.48
+### 🚀 Novidades da Versão v0.60.49
 
-- **Novo Editor de Relógio Completo:** Tela de edição inspirada no GraceLauncher com pré-visualização ao vivo em tempo real.
-- **Layouts e Tipografias Únicas:** 10 formatos de relógio com suporte a fontes embutidas (Sacramento, Bokor, Plaster, Monoton, Lucky) e importação personalizada (TTF/OTF).
-- **Controles Avançados de Design:** Ajustes finos de peso, tamanho, espaçamento de caracteres e horas, sombra e efeito exclusivo de separação por contorno transparente de dígitos.
-- **Ajuste de Previews do Repositório:** Correção na renderização dos modelos dinâmicos do catálogo remoto.
+- **Layout do Cabeçalho de Relógios:** Botões de categorias com rolagem horizontal e texto em linha única sem quebras.
+- **Navegação Integrada:** Abas padronizadas entre as seções Personalizar, Integrados e Repositório.

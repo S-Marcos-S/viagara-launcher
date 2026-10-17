@@ -9,6 +9,8 @@ import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -122,18 +124,13 @@ fun ClockStylePickerScreen(
                 onBack()
             },
             onBack = onBack,
-            topBarActions = {
-                FilterChip(
-                    selected = false,
-                    onClick = {
-                        HapticUtil.tick(view, hapticsEnabled)
-                        selectedTab = 1
-                    },
-                    label = { Text(stringResource(R.string.clock_editor_tab_presets)) },
-                    leadingIcon = {
-                        Icon(Icons.Filled.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
-                    },
-                    modifier = Modifier.padding(end = 4.dp),
+            headerContent = {
+                ClockCategorySelectorRow(
+                    selectedTab = selectedTab,
+                    catalogCount = remoteCatalog?.clocks?.size ?: 0,
+                    hapticsEnabled = hapticsEnabled,
+                    onSelectTab = { selectedTab = it },
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
             },
         )
@@ -192,66 +189,13 @@ fun ClockStylePickerScreen(
                 .background(surface),
         ) {
             // Category Selector (Personalizar / Nativos / Comunidade Repositório)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    selected = selectedTab == 0,
-                    onClick = {
-                        HapticUtil.tick(view, hapticsEnabled)
-                        selectedTab = 0
-                    },
-                    label = { Text(stringResource(R.string.clock_editor_tab_custom)) },
-                    leadingIcon = {
-                        Icon(Icons.Filled.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                )
-
-                FilterChip(
-                    selected = selectedTab == 1,
-                    onClick = {
-                        HapticUtil.tick(view, hapticsEnabled)
-                        selectedTab = 1
-                    },
-                    label = { Text(stringResource(R.string.clock_editor_tab_presets)) },
-                    leadingIcon = {
-                        Icon(Icons.Filled.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                )
-
-                FilterChip(
-                    selected = selectedTab == 2,
-                    onClick = {
-                        HapticUtil.tick(view, hapticsEnabled)
-                        selectedTab = 2
-                    },
-                    label = {
-                        Text(
-                            if (remoteCatalog != null && remoteCatalog!!.clocks.isNotEmpty()) {
-                                "${stringResource(R.string.clock_editor_tab_catalog)} (${remoteCatalog!!.clocks.size})"
-                            } else stringResource(R.string.clock_editor_tab_catalog)
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                )
-            }
+            ClockCategorySelectorRow(
+                selectedTab = selectedTab,
+                catalogCount = remoteCatalog?.clocks?.size ?: 0,
+                hapticsEnabled = hapticsEnabled,
+                onSelectTab = { selectedTab = it },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+            )
 
             if (selectedTab == 1) {
                 // Built-in Native Clock Styles
@@ -486,5 +430,91 @@ fun ClockStylePickerScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ClockCategorySelectorRow(
+    selectedTab: Int,
+    catalogCount: Int,
+    hapticsEnabled: Boolean,
+    onSelectTab: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val view = LocalView.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        FilterChip(
+            selected = selectedTab == 0,
+            onClick = {
+                HapticUtil.tick(view, hapticsEnabled)
+                onSelectTab(0)
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.clock_editor_tab_custom),
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            },
+            leadingIcon = {
+                Icon(Icons.Filled.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ),
+        )
+
+        FilterChip(
+            selected = selectedTab == 1,
+            onClick = {
+                HapticUtil.tick(view, hapticsEnabled)
+                onSelectTab(1)
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.clock_editor_tab_presets),
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            },
+            leadingIcon = {
+                Icon(Icons.Filled.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ),
+        )
+
+        FilterChip(
+            selected = selectedTab == 2,
+            onClick = {
+                HapticUtil.tick(view, hapticsEnabled)
+                onSelectTab(2)
+            },
+            label = {
+                Text(
+                    text = if (catalogCount > 0) {
+                        "${stringResource(R.string.clock_editor_tab_catalog)} ($catalogCount)"
+                    } else stringResource(R.string.clock_editor_tab_catalog),
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            },
+            leadingIcon = {
+                Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ),
+        )
     }
 }

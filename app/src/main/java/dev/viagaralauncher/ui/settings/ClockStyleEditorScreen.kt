@@ -126,6 +126,7 @@ fun ClockStyleEditorScreen(
     onApply: (CustomClockStyle) -> Unit,
     onBack: () -> Unit,
     topBarActions: @Composable () -> Unit = {},
+    headerContent: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
     val view = LocalView.current
@@ -249,7 +250,8 @@ fun ClockStyleEditorScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp),
-        ) {
+            headerContent()
+
             // Live Preview at top
             ClockStylePreviewBox(
                 style = draft,
