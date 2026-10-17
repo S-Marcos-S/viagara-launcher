@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.51
+### 🚀 Novidades da Versão v0.60.52
 
-- **Redesign da Agenda:** Novo visual baseado no GraceLauncher com linhas limpas, cantos suaves e pílula indicadora de 5dp.
-- **Novo Compromisso Rápido:** Atalho direto no topo da lista para criação ágil de agendamentos.
+- **Animação Wave do Alfabeto:** Implementada física de onda fluida no canvas baseada no GraceLauncher com spring e curva gaussiana suave.
+- **Arrasto Horizontal Refinado:** Expansão dinâmica e retração elástica ao deslizar pelo alfabeto.

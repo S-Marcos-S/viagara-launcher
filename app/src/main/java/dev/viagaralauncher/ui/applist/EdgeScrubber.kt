@@ -3,6 +3,8 @@ package dev.viagaralauncher.ui.applist
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
@@ -23,18 +25,19 @@ import kotlin.math.exp
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-/** How far the bulge pushes the column away from the edge at its peak. */
-private const val BELL_AMPLITUDE_DP = 75f
+/** Physics constants from GraceLauncher (AlphabetRail.kt) */
+private const val WAVE_RADIUS_DP = 82f
+private const val BASE_PULL_DP = 50f
 
 /**
- * Ultra-high-performance Canvas-based A-Z strip.
+ * Ultra-high-performance Canvas-based A-Z strip with GraceLauncher fluid wave animation.
  *
  * Rather than creating 28+ separate Compose LayoutNodes, Boxes, and Text components with
  * individual graphicsLayer invalidation passes, the entire alphabet is rendered directly on a
  * single hardware-accelerated Canvas during the draw phase.
  *
- * This delivers a locked 120 FPS frame rate identical to Niagara Launcher, with zero
- * layout/measure overhead and zero GC allocations during scrubbing.
+ * Uses GraceLauncher physics: 82dp wave radius, 50dp base pull, extra horizontal pull,
+ * and spring wave damping (0.86f / 700f).
  */
 @Composable
 fun EdgeScrubber(
@@ -50,13 +53,22 @@ fun EdgeScrubber(
 
     val density = LocalDensity.current.density
     val textSizePx = with(LocalDensity.current) { 12.sp.toPx() }
-    val spacingPx = band.heightPx / letters.size
-    val sigmaPx = 2.6f * spacingPx.coerceAtLeast(1f)
-    val twoSigmaSq = 2f * sigmaPx * sigmaPx
-    val bellPx = BELL_AMPLITUDE_DP * density
+    val waveRadiusPx = WAVE_RADIUS_DP * density
+    val twoWaveRadiusSq = 2f * waveRadiusPx * waveRadiusPx
+    val basePullPx = BASE_PULL_DP * density
     val insetPx = sidePaddingDp.coerceAtLeast(0) * density
     val baseGlyphWidthPx = 24f * density
     val halfGlyphWidthPx = baseGlyphWidthPx / 2f
+
+    val currentY = scrubY()
+    val isScrubbing = currentY != null
+    val lastY = remember { floatArrayOf(0f) }
+
+    val wave by animateFloatAsState(
+        targetValue = if (isScrubbing) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.86f, stiffness = 700f),
+        label = "alphabetWave",
+    )
 
     val textPaint = remember(textSizePx) {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -107,6 +119,10 @@ fun EdgeScrubber(
             .fillMaxHeight(),
     ) {
         val y = scrubY()
+        if (y != null) {
+            lastY[0] = y
+        }
+        val targetY = y ?: lastY[0]
         val pull = pullPx()
         val isLeft = side == EdgeSide.LEFT
 
@@ -117,21 +133,22 @@ fun EdgeScrubber(
             size.width - insetPx - halfGlyphWidthPx
         }
 
+        val extraPull = (pull * 0.35f).coerceIn(0f, basePullPx)
         val count = letters.size
         for (index in 0 until count) {
             val c = letters[index]
             val centerY = ScrubberGeometry.letterCenterY(index, band.topPx, band.heightPx, count)
 
-            val gain = if (y == null || twoSigmaSq <= 0f) {
-                0f
+            val distance = centerY - targetY
+            val gaussian = if (twoWaveRadiusSq > 0f) {
+                exp(-(distance * distance) / twoWaveRadiusSq)
             } else {
-                val d = y - centerY
-                exp(-(d * d) / twoSigmaSq)
+                0f
             }
 
-            val outward = bellPx * gain + pull * gain
+            val outward = (basePullPx + extraPull) * gaussian * wave
             val glyphX = if (isLeft) baseX + outward else baseX - outward
-            val alpha = 0.60f + 0.40f * gain
+            val alpha = 0.60f + 0.40f * gaussian * wave
             val isOverBrightBg = if (index < isBrightFlags.size) isBrightFlags[index] else false
 
             if (c == SCRUBBER_STAR) {
