@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.50
+### 🚀 Novidades da Versão v0.60.51
 
-- **Favoritos em Papéis de Parede:** Adicionado botão de coração em cada item para favoritar.
-- **Categoria Favoritos:** Nova categoria posicionada logo após "Todos" para acesso rápido aos itens salvos.
+- **Redesign da Agenda:** Novo visual baseado no GraceLauncher com linhas limpas, cantos suaves e pílula indicadora de 5dp.
+- **Novo Compromisso Rápido:** Atalho direto no topo da lista para criação ágil de agendamentos.

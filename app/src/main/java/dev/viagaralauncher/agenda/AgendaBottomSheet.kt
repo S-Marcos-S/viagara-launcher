@@ -23,6 +23,7 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -233,12 +235,8 @@ fun AgendaBottomSheet(
                                 dragOffsetY = 0f
                             }
                         )
-                        .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 20.dp, bottomEnd = 20.dp))
-                        .background(lerp(colorScheme.surfaceContainerLow, colorScheme.primary, 0.08f).copy(alpha = 0.95f))
-                        .border(
-                            BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.28f)),
-                            shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
-                        )
+                        .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp))
+                        .background(colorScheme.surfaceContainer)
                         .pointerInput(Unit) {
                             awaitEachGesture {
                                 while (true) {
@@ -283,9 +281,9 @@ fun AgendaBottomSheet(
                         ) {
                             Column {
                                 Text(
-                                    text = "Agendamentos",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    text = "Sua agenda",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
@@ -303,7 +301,7 @@ fun AgendaBottomSheet(
                                 // Minimalist Toggle for Recurring Activities
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = if (hideRecurring) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                    color = if (hideRecurring) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                                     contentColor = if (hideRecurring) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
@@ -421,16 +419,20 @@ fun AgendaBottomSheet(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f),
-                                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 88.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 88.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
+                                item(key = "new_event_row") {
+                                    NewAgendaEventRow(onClick = { isCreatingNew = true })
+                                }
+
                                 groupedByDate.forEach { (date, itemsForDate) ->
-                                    item(key = date.toString()) {
+                                    item(key = "header_${date}") {
                                         AgendaDateHeader(date = date, today = today)
                                     }
 
                                     items(itemsForDate, key = { it.id }) { activity ->
-                                        AgendaItemCard(
+                                        AgendaItemRow(
                                             activity = activity,
                                             onToggleComplete = {
                                                 scope.launch {
@@ -500,200 +502,211 @@ private fun FilterChip(
     onClick: () -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.clickable(onClick = onClick)
+        shape = CircleShape,
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f),
+        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.clip(CircleShape).clickable(onClick = onClick)
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
         )
     }
 }
 
 @Composable
 private fun AgendaDateHeader(date: LocalDate, today: LocalDate) {
-    val title = when {
-        date == today -> "Hoje"
-        date == today.plusDays(1) -> "Amanhã"
-        date == today.minusDays(1) -> "Ontem"
-        else -> {
-            val dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale("pt", "BR"))
-                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-            val formatted = date.format(DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("pt", "BR")))
-            "$dayOfWeek, $formatted"
-        }
+    val difference = java.time.temporal.ChronoUnit.DAYS.between(today, date).toInt()
+    val relativeDay = when (difference) {
+        0 -> "Hoje"
+        1 -> "Amanhã"
+        -1 -> "Ontem"
+        else -> if (difference > 0) "em $difference dias" else "há ${-difference} dias"
     }
 
-    val subtitle = if (date == today || date == today.plusDays(1)) {
-        date.format(DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("pt", "BR")))
-    } else null
+    val locale = Locale("pt", "BR")
+    val formattedDate = try {
+        date.format(DateTimeFormatter.ofPattern("EEE, d 'de' MMM", locale))
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+    } catch (_: Exception) {
+        date.toString()
+    }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 4.dp),
+            .padding(top = 14.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = if (date == today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            text = formattedDate,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
-        if (subtitle != null) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "($subtitle)",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = relativeDay,
+            fontSize = 13.sp,
+            color = if (difference == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
     }
 }
 
 @Composable
-private fun AgendaItemCard(
+private fun NewAgendaEventRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.width(24.dp), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Novo agendamento",
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 15.sp
+        )
+    }
+}
+
+@Composable
+private fun AgendaItemRow(
     activity: AgendaActivity,
     onToggleComplete: () -> Unit,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val priorityColor = when (activity.categoryColor) {
+    val indicatorColor = when (activity.categoryColor) {
         "2" -> Color(0xFF2196F3)
         "3" -> Color(0xFFFFC107)
         "4" -> Color(0xFFF44336)
-        else -> Color.Transparent
+        else -> when (activity.activityType) {
+            AgendaActivityType.BIRTHDAY -> Color(0xFFFF9800)
+            AgendaActivityType.NOTE -> Color(0xFF9C27B0)
+            AgendaActivityType.EVENT -> MaterialTheme.colorScheme.primary
+            AgendaActivityType.TASK -> MaterialTheme.colorScheme.primary
+        }
     }
 
-    Card(
+    val isAllDayOrNote = activity.isAllDay || activity.startTime == null
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = if (isAllDayOrNote) 48.dp else 64.dp)
             .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // Vertical color indicator pill (GraceLauncher: width 5dp, rounded 4dp, centered in 24dp box)
+        Box(
+            modifier = Modifier.width(24.dp),
+            contentAlignment = Alignment.Center
         ) {
-            // Priority Indicator Bar
-            if (priorityColor != Color.Transparent) {
-                Box(
-                    modifier = Modifier
-                        .width(4.dp)
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(priorityColor)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
+            Box(
+                modifier = Modifier
+                    .width(5.dp)
+                    .height(if (isAllDayOrNote) 22.dp else 38.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(indicatorColor)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        // If it's a task, interactive checkbox
+        if (activity.activityType == AgendaActivityType.TASK) {
+            Checkbox(
+                checked = activity.isCompleted,
+                onCheckedChange = { onToggleComplete() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = indicatorColor,
+                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                ),
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+
+        // Content
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = activity.title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (activity.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f) else MaterialTheme.colorScheme.onSurface,
+                textDecoration = if (activity.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            val timeText = when {
+                activity.isAllDay -> "Dia todo"
+                activity.startTime != null && activity.endTime != null ->
+                    "${activity.startTime.format(DateTimeFormatter.ofPattern("HH:mm"))}–${activity.endTime.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                activity.startTime != null ->
+                    activity.startTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                else -> null
             }
 
-            // Interactive Checkbox or Type Icon
-            if (activity.activityType == AgendaActivityType.TASK) {
-                Checkbox(
-                    checked = activity.isCompleted,
-                    onCheckedChange = { onToggleComplete() },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = MaterialTheme.colorScheme.primary,
-                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-            } else {
-                val icon = when (activity.activityType) {
-                    AgendaActivityType.EVENT -> Icons.Default.Event
-                    AgendaActivityType.NOTE -> Icons.Default.Note
-                    AgendaActivityType.BIRTHDAY -> Icons.Default.Cake
-                    else -> Icons.Default.Assignment
-                }
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (activity.activityType == AgendaActivityType.BIRTHDAY) Color(0xFFFF9800) else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
+            val subtitleParts = buildList {
+                if (timeText != null) add(timeText)
+                if (activity.recurrenceRule != null) add("Recorrente")
             }
 
-            // Content
-            Column(modifier = Modifier.weight(1f)) {
+            if (subtitleParts.isNotEmpty()) {
                 Text(
-                    text = activity.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = if (activity.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
-                    textDecoration = if (activity.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                    text = subtitleParts.joinToString(" · "),
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
-                activity.description?.takeIf { it.isNotBlank() }?.let { desc ->
-                    Text(
-                        text = desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                // Time or Type details
-                val timeText = when {
-                    activity.isAllDay -> "Dia todo"
-                    activity.startTime != null && activity.endTime != null ->
-                        "${activity.startTime.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${activity.endTime.format(DateTimeFormatter.ofPattern("HH:mm"))}"
-                    activity.startTime != null ->
-                        activity.startTime.format(DateTimeFormatter.ofPattern("HH:mm"))
-                    else -> null
-                }
-
-                if (timeText != null || activity.recurrenceRule != null) {
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        if (timeText != null) {
-                            Text(
-                                text = timeText,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
-                            )
-                        }
-                        if (activity.recurrenceRule != null) {
-                            Text(
-                                text = "• Recorrente",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
-                }
             }
 
-            // Delete button
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Excluir",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    modifier = Modifier.size(18.dp)
+            activity.description?.takeIf { it.isNotBlank() }?.let { desc ->
+                Text(
+                    text = desc,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+
+        // Delete action button
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Excluir",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
