@@ -1,6 +1,6 @@
 # 🖼️ Catálogo Visual de Papéis de Parede
 
-Total de papéis de parede: **270**
+Total de papéis de parede: **303**
 
 ### OLED (17)
 
@@ -24,7 +24,7 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_g88v9e.webp" width="80" alt="Google" /> | `wallpaper_wh_g88v9e` | **Google** | oled, abstract, Google, black background |
 | <img src="thumbnails/wallpaper_wh_3zdxdy.webp" width="80" alt="Black Background" /> | `wallpaper_wh_3zdxdy` | **Black Background** | oled, space, black background, Moon |
 
-### Abstrato (25)
+### Abstrato (28)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -53,8 +53,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_p885j3.webp" width="80" alt="Gradient" /> | `wallpaper_wh_p885j3` | **Gradient** | abstract, gradient, texture, blue |
 | <img src="thumbnails/wallpaper_wh_kwwrk1.webp" width="80" alt="Planet" /> | `wallpaper_wh_kwwrk1` | **Planet** | abstract, planet |
 | <img src="thumbnails/wallpaper_wh_gj233q.webp" width="80" alt="Glitch Art" /> | `wallpaper_wh_gj233q` | **Glitch Art** | abstract, glitch art, vaporwave, LSD |
+| <img src="thumbnails/wallpaper_wh_83j76k.webp" width="80" alt="Geometry" /> | `wallpaper_wh_83j76k` | **Geometry** | abstract, geometry, polygon art |
+| <img src="thumbnails/wallpaper_wh_45pw39.webp" width="80" alt="Monochrome" /> | `wallpaper_wh_45pw39` | **Monochrome** | abstract, monochrome, skull |
+| <img src="thumbnails/wallpaper_wh_k9pjx7.webp" width="80" alt="Triangle" /> | `wallpaper_wh_k9pjx7` | **Triangle** | abstract, triangle, geometry, glitch art |
 
-### Anime (34)
+### Anime (37)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -92,8 +95,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_p9pz89.webp" width="80" alt="Novelance" /> | `wallpaper_wh_p9pz89` | **Novelance** | anime, Novelance, original characters, messy |
 | <img src="thumbnails/wallpaper_wh_8ow83j.webp" width="80" alt="Chinese Dragon" /> | `wallpaper_wh_8ow83j` | **Chinese Dragon** | anime, Chinese dragon, farm, farmers |
 | <img src="thumbnails/wallpaper_wh_zyxvwj.webp" width="80" alt="Butterfly" /> | `wallpaper_wh_zyxvwj` | **Butterfly** | anime, butterfly, Kimetsu no Yaiba, Kochou Shinobu |
+| <img src="thumbnails/wallpaper_wh_v9r5d5.webp" width="80" alt="Rellakinoko" /> | `wallpaper_wh_v9r5d5` | **Rellakinoko** | anime, rellakinoko, blue hair, Hatsune Miku |
+| <img src="thumbnails/wallpaper_wh_eyp66k.webp" width="80" alt="Blue Dress" /> | `wallpaper_wh_eyp66k` | **Blue Dress** | anime, blue dress, red bow, looking sideways |
+| <img src="thumbnails/wallpaper_wh_57xmr3.webp" width="80" alt="Illustration" /> | `wallpaper_wh_57xmr3` | **Illustration** | anime, illustration, fan art, drawing |
 
-### Espaço (20)
+### Espaço (23)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -117,8 +123,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_966e88.webp" width="80" alt="Planet" /> | `wallpaper_wh_966e88` | **Planet** | space, planet, space art |
 | <img src="thumbnails/wallpaper_wh_763w6y.webp" width="80" alt="Space Art" /> | `wallpaper_wh_763w6y` | **Space Art** | space, space art, rocket, vehicle |
 | <img src="thumbnails/wallpaper_wh_yjmeyk.webp" width="80" alt="Train" /> | `wallpaper_wh_yjmeyk` | **Train** | space, train, vehicle, planet |
+| <img src="thumbnails/wallpaper_wh_577pm9.webp" width="80" alt="Rose" /> | `wallpaper_wh_577pm9` | **Rose** | space, rose, flowers, astronaut |
+| <img src="thumbnails/wallpaper_wh_g8m9y3.webp" width="80" alt="Moon" /> | `wallpaper_wh_g8m9y3` | **Moon** | space, Moon, Saturn, Earth |
+| <img src="thumbnails/wallpaper_wh_43y226.webp" width="80" alt="Supernova" /> | `wallpaper_wh_43y226` | **Supernova** | space, supernova, TylerCreatesWorlds, space art |
 
-### Natureza (55)
+### Natureza (58)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -177,8 +186,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_zmxd7j.webp" width="80" alt="Sea" /> | `wallpaper_wh_zmxd7j` | **Sea** | nature, sea, lake, water |
 | <img src="thumbnails/wallpaper_wh_lmxjzr.webp" width="80" alt="Earth" /> | `wallpaper_wh_lmxjzr` | **Earth** | nature, Earth, satellite, aerial view |
 | <img src="thumbnails/wallpaper_wh_wygd66.webp" width="80" alt="Earth" /> | `wallpaper_wh_wygd66` | **Earth** | nature, Earth, satellite, aerial view |
+| <img src="thumbnails/wallpaper_wh_eyrdpw.webp" width="80" alt="Fantasy Art" /> | `wallpaper_wh_eyrdpw` | **Fantasy Art** | nature, fantasy art, dark, The Lord of the Rings |
+| <img src="thumbnails/wallpaper_wh_jx7p3m.webp" width="80" alt="Exotic" /> | `wallpaper_wh_jx7p3m` | **Exotic** | nature, exotic, leaves, neon |
+| <img src="thumbnails/wallpaper_wh_e73mxk.webp" width="80" alt="Trees" /> | `wallpaper_wh_e73mxk` | **Trees** | nature, trees, landscape |
 
-### Minimalista (34)
+### Minimalista (37)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -216,8 +228,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_76o69y.webp" width="80" alt="Downtown" /> | `wallpaper_wh_76o69y` | **Downtown** | minimal, downtown, monochrome, building |
 | <img src="thumbnails/wallpaper_wh_2ke9k6.webp" width="80" alt="Truck" /> | `wallpaper_wh_2ke9k6` | **Truck** | minimal, truck, vehicle, blue background |
 | <img src="thumbnails/wallpaper_wh_0qxjjr.webp" width="80" alt="Logo" /> | `wallpaper_wh_0qxjjr` | **Logo** | minimal, logo, blue background, Microsoft |
+| <img src="thumbnails/wallpaper_wh_y81157.webp" width="80" alt="Eclipse" /> | `wallpaper_wh_y81157` | **Eclipse** | minimal, eclipse , Boreal Studios, illustration |
+| <img src="thumbnails/wallpaper_wh_4yyyex.webp" width="80" alt="Square" /> | `wallpaper_wh_4yyyex` | **Square** | minimal, square |
+| <img src="thumbnails/wallpaper_wh_z8royw.webp" width="80" alt="Planet" /> | `wallpaper_wh_z8royw` | **Planet** | minimal, planet, mountains, trees |
 
-### Jogos (40)
+### Jogos (43)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -261,8 +276,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_w55w3r.webp" width="80" alt="Fan Art" /> | `wallpaper_wh_w55w3r` | **Fan Art** | games, fan art, Ria-neearts, umbrella |
 | <img src="thumbnails/wallpaper_wh_jxwx9m.webp" width="80" alt="Shenhe (genshin Impact)" /> | `wallpaper_wh_jxwx9m` | **Shenhe (genshin Impact)** | games, Shenhe (Genshin Impact), Genshin Impact, blue eyes |
 | <img src="thumbnails/wallpaper_wh_x8e9kd.webp" width="80" alt="Bianca (punishing: Gray Raven)" /> | `wallpaper_wh_x8e9kd` | **Bianca (punishing: Gray Raven)** | games, Bianca (Punishing: Gray Raven), Punishing: Gray Raven, video games |
+| <img src="thumbnails/wallpaper_wh_gwjkql.webp" width="80" alt="Artelsia" /> | `wallpaper_wh_gwjkql` | **Artelsia** | games, artelsia, Nier: Automata, video game girls |
+| <img src="thumbnails/wallpaper_wh_jevmz5.webp" width="80" alt="Wuthering Waves" /> | `wallpaper_wh_jevmz5` | **Wuthering Waves** | games, Wuthering Waves, Lucilla (Wuthering Waves), Rafaelaaa |
+| <img src="thumbnails/wallpaper_wh_qrr1j7.webp" width="80" alt="Fuann" /> | `wallpaper_wh_qrr1j7` | **Fuann** | games, Fuann, Wuthering Waves, illustration |
 
-### Cyberpunk (11)
+### Cyberpunk (14)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -277,8 +295,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_z8lo6v.webp" width="80" alt="Cyberpunk" /> | `wallpaper_wh_z8lo6v` | **Cyberpunk** | cyberpunk, fantasy girl |
 | <img src="thumbnails/wallpaper_wh_yx6kxx.webp" width="80" alt="Gaako" /> | `wallpaper_wh_yx6kxx` | **Gaako** | cyberpunk, Gaako, signs |
 | <img src="thumbnails/wallpaper_wh_3l1p16.webp" width="80" alt="Pascal Blanche" /> | `wallpaper_wh_3l1p16` | **Pascal Blanche** | cyberpunk, Pascal Blanche, Akira |
+| <img src="thumbnails/wallpaper_wh_95l9od.webp" width="80" alt="Soufiane Idrassi" /> | `wallpaper_wh_95l9od` | **Soufiane Idrassi** | cyberpunk, Soufiane Idrassi, technology, gun |
+| <img src="thumbnails/wallpaper_wh_13yw9g.webp" width="80" alt="Neon" /> | `wallpaper_wh_13yw9g` | **Neon** | cyberpunk, neon, cats |
+| <img src="thumbnails/wallpaper_wh_3l5516.webp" width="80" alt="City" /> | `wallpaper_wh_3l5516` | **City** | cyberpunk, city, science fiction |
 
-### Cidades (14)
+### Cidades (17)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -296,8 +317,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_k9mwq7.webp" width="80" alt="City" /> | `wallpaper_wh_k9mwq7` | **City** | city, tower, Kuala Lumpur |
 | <img src="thumbnails/wallpaper_wh_9536ld.webp" width="80" alt="City" /> | `wallpaper_wh_9536ld` | **City** | city, tower, Kuala Lumpur |
 | <img src="thumbnails/wallpaper_wh_wyqqr6.webp" width="80" alt="Water On Glass" /> | `wallpaper_wh_wyqqr6` | **Water On Glass** | city, water on glass, sunrise |
+| <img src="thumbnails/wallpaper_wh_vg5ov5.webp" width="80" alt="Photoshopped" /> | `wallpaper_wh_vg5ov5` | **Photoshopped** | city, photoshopped, realistic, hoods |
+| <img src="thumbnails/wallpaper_wh_wqwm1p.webp" width="80" alt="Lights" /> | `wallpaper_wh_wqwm1p` | **Lights** | city, lights, traffic, city lights |
+| <img src="thumbnails/wallpaper_wh_xlrqgv.webp" width="80" alt="London" /> | `wallpaper_wh_xlrqgv` | **London** | city, London, night |
 
-### Fantasia (4)
+### Fantasia (7)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -305,8 +329,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_we1xx7.webp" width="80" alt="Portrait" /> | `wallpaper_wh_we1xx7` | **Portrait** | anime, portrait, illustration, fantasy art |
 | <img src="thumbnails/wallpaper_wh_y8dvqk.webp" width="80" alt="Xision Wu" /> | `wallpaper_wh_y8dvqk` | **Xision Wu** | oled, Xision Wu, mythology, legend |
 | <img src="thumbnails/wallpaper_wh_57xry3.webp" width="80" alt="Xision Wu" /> | `wallpaper_wh_57xry3` | **Xision Wu** | Xision Wu, mythology, legend |
+| <img src="thumbnails/wallpaper_wh_7p66we.webp" width="80" alt="Portrait" /> | `wallpaper_wh_7p66we` | **Portrait** | fantasy, portrait, belly button, braids |
+| <img src="thumbnails/wallpaper_wh_l3539r.webp" width="80" alt="High Heels" /> | `wallpaper_wh_l3539r` | **High Heels** | fantasy, high heels, CGI, heels |
+| <img src="thumbnails/wallpaper_wh_jx5ro5.webp" width="80" alt="Portrait" /> | `wallpaper_wh_jx5ro5` | **Portrait** | fantasy, portrait, silver hair, Umbrella Corporation |
 
-### Carros (5)
+### Carros (8)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -315,8 +342,11 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_z82w6j.webp" width="80" alt="Subway" /> | `wallpaper_wh_z82w6j` | **Subway** | cars, subway, urban, underground |
 | <img src="thumbnails/wallpaper_wh_p8rzx3.webp" width="80" alt="Car" /> | `wallpaper_wh_p8rzx3` | **Car** | cars, car, Porsche, low car |
 | <img src="thumbnails/wallpaper_wh_md8ev8.webp" width="80" alt="Car" /> | `wallpaper_wh_md8ev8` | **Car** | cars, car, Porsche, low car |
+| <img src="thumbnails/wallpaper_wh_3917jv.webp" width="80" alt="Bmw" /> | `wallpaper_wh_3917jv` | **Bmw** | cars, BMW, black, dark |
+| <img src="thumbnails/wallpaper_wh_ymrdlg.webp" width="80" alt="Nissan" /> | `wallpaper_wh_ymrdlg` | **Nissan** | cars, Nissan, car, movement |
+| <img src="thumbnails/wallpaper_wh_2kmq6y.webp" width="80" alt="Drone Photo" /> | `wallpaper_wh_2kmq6y` | **Drone Photo** | cars, drone photo, road, bridge |
 
-### Animais (11)
+### Animais (14)
 
 | Prévia | ID | Nome | Tags |
 | :---: | :--- | :--- | :--- |
@@ -331,3 +361,6 @@ Total de papéis de parede: **270**
 | <img src="thumbnails/wallpaper_wh_6qk2jx.webp" width="80" alt="Gorillas" /> | `wallpaper_wh_6qk2jx` | **Gorillas** | animals, gorillas, monkey, yellow background |
 | <img src="thumbnails/wallpaper_wh_qd6g6r.webp" width="80" alt="Deer" /> | `wallpaper_wh_qd6g6r` | **Deer** | animals, deer, landscape |
 | <img src="thumbnails/wallpaper_wh_8ol91k.webp" width="80" alt="Animal Ears" /> | `wallpaper_wh_8ol91k` | **Animal Ears** | animals, animal ears, cats |
+| <img src="thumbnails/wallpaper_wh_725p9y.webp" width="80" alt="Chinese Clothing" /> | `wallpaper_wh_725p9y` | **Chinese Clothing** | animals, Chinese clothing, Chinese dress, dress |
+| <img src="thumbnails/wallpaper_wh_d5e1vm.webp" width="80" alt="Animals" /> | `wallpaper_wh_d5e1vm` | **Animals** | animals, illustration, monkey |
+| <img src="thumbnails/wallpaper_wh_6qk2qx.webp" width="80" alt="Flowers" /> | `wallpaper_wh_6qk2qx` | **Flowers** | animals, flowers, plants, birds |
