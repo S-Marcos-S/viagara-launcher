@@ -75,6 +75,7 @@
     <string name="daily_wallpaper_like">Gostei (favoritar)</string>
     <string name="daily_wallpaper_dislike">Não gostei (próximo)</string>
     <string name="daily_wallpaper_liked_feedback">Salvo nos favoritos</string>
+    <string name="daily_wallpaper_disliked_feedback">Papel de parede ignorado</string>
     <string name="clock_notification_channel_name">Estilos de Relógio</string>
     <string name="clock_notification_channel_desc">Notificações sobre novos widgets de relógio adicionados ao repositório</string>
     <string name="clock_new_notification_title">Novos estilos de relógio disponíveis!</string>

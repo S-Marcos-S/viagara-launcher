@@ -3,6 +3,7 @@ package dev.viagaralauncher.wallpaper
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Calendar
@@ -146,6 +147,14 @@ class DailyWallpaperTest {
         assertTrue(DailyWallpaperManager.isDifferentDay(calLastDay.timeInMillis, calNewYear.timeInMillis))
     }
 
+    private fun createMockWallpaper(id: String) = WallpaperItem(
+        id = id,
+        name = "Name $id",
+        author = "Author",
+        thumbnailUrl = "https://example.com/$id.jpg",
+        fullUrl = "https://example.com/$id.jpg",
+    )
+
     @Test
     fun `cyclical catalog navigation wraps around correctly`() {
         val items = listOf("wp1", "wp2", "wp3")
@@ -165,5 +174,69 @@ class DailyWallpaperTest {
         assertEquals("wp2", nextItem("wp1"))
         assertEquals("wp3", nextItem("wp2"))
         assertEquals("wp1", nextItem("wp3"))
+    }
+
+    @Test
+    fun `selectNextWallpaper skips disliked wallpapers`() {
+        val wallList = listOf(
+            createMockWallpaper("wp1"),
+            createMockWallpaper("wp2"),
+            createMockWallpaper("wp3"),
+            createMockWallpaper("wp4"),
+        )
+        val disliked = setOf("wp2")
+
+        val nextAfter1 = DailyWallpaperManager.selectNextWallpaper(
+            allStatic = wallList,
+            dislikedIds = disliked,
+            currentId = "wp1",
+        )
+        assertNotNull(nextAfter1)
+        assertEquals("wp3", nextAfter1?.id)
+    }
+
+    @Test
+    fun `selectNextWallpaper skips multiple consecutive disliked wallpapers and wraps`() {
+        val wallList = listOf(
+            createMockWallpaper("wp1"),
+            createMockWallpaper("wp2"),
+            createMockWallpaper("wp3"),
+            createMockWallpaper("wp4"),
+            createMockWallpaper("wp5"),
+        )
+        val disliked = setOf("wp2", "wp3", "wp4")
+
+        val nextAfter1 = DailyWallpaperManager.selectNextWallpaper(
+            allStatic = wallList,
+            dislikedIds = disliked,
+            currentId = "wp1",
+        )
+        assertNotNull(nextAfter1)
+        assertEquals("wp5", nextAfter1?.id)
+
+        val nextAfter5 = DailyWallpaperManager.selectNextWallpaper(
+            allStatic = wallList,
+            dislikedIds = disliked,
+            currentId = "wp5",
+        )
+        assertNotNull(nextAfter5)
+        assertEquals("wp1", nextAfter5?.id)
+    }
+
+    @Test
+    fun `selectNextWallpaper falls back to static catalog if all wallpapers are disliked`() {
+        val wallList = listOf(
+            createMockWallpaper("wp1"),
+            createMockWallpaper("wp2"),
+        )
+        val disliked = setOf("wp1", "wp2")
+
+        val next = DailyWallpaperManager.selectNextWallpaper(
+            allStatic = wallList,
+            dislikedIds = disliked,
+            currentId = "wp1",
+        )
+        assertNotNull(next)
+        assertEquals("wp2", next?.id)
     }
 }

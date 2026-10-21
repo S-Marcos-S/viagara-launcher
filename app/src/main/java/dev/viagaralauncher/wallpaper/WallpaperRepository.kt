@@ -64,9 +64,13 @@ object WallpaperRepository {
 
     private const val PREFS_WALLPAPERS = "wallpaper_prefs"
     private const val KEY_FAVORITE_WALLPAPER_IDS = "favorite_wallpaper_ids"
+    private const val KEY_DISLIKED_WALLPAPER_IDS = "disliked_wallpaper_ids"
 
     private val _favoriteIds = kotlinx.coroutines.flow.MutableStateFlow<Set<String>>(emptySet())
     val favoriteIds: kotlinx.coroutines.flow.StateFlow<Set<String>> = _favoriteIds
+
+    private val _dislikedIds = kotlinx.coroutines.flow.MutableStateFlow<Set<String>>(emptySet())
+    val dislikedIds: kotlinx.coroutines.flow.StateFlow<Set<String>> = _dislikedIds
 
     fun initFavorites(context: Context) {
         val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
@@ -77,7 +81,18 @@ object WallpaperRepository {
         _favoriteIds.value = merged.toSet()
     }
 
+    fun initDisliked(context: Context) {
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
+        val saved = prefs.getStringSet(KEY_DISLIKED_WALLPAPER_IDS, emptySet()) ?: emptySet()
+        val merged = HashSet<String>(_dislikedIds.value).apply {
+            addAll(saved)
+        }
+        _dislikedIds.value = merged.toSet()
+    }
+
     fun isFavorite(id: String): Boolean = _favoriteIds.value.contains(id.trim())
+
+    fun isDisliked(id: String): Boolean = _dislikedIds.value.contains(id.trim())
 
     fun toggleFavorite(context: Context, id: String): Boolean {
         val targetId = id.trim()
@@ -92,6 +107,7 @@ object WallpaperRepository {
             false
         } else {
             newSet.add(targetId)
+            removeDisliked(context, targetId)
             true
         }
         prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, HashSet(newSet)).commit()
@@ -102,6 +118,7 @@ object WallpaperRepository {
     fun addFavorite(context: Context, id: String): Boolean {
         val targetId = id.trim()
         if (targetId.isBlank()) return false
+        removeDisliked(context, targetId)
         val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
         val saved = prefs.getStringSet(KEY_FAVORITE_WALLPAPER_IDS, emptySet()) ?: emptySet()
         val newSet = HashSet<String>(_favoriteIds.value).apply {
@@ -111,6 +128,59 @@ object WallpaperRepository {
         val success = prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, HashSet(newSet)).commit()
         _favoriteIds.value = newSet.toSet()
         return success
+    }
+
+    fun removeFavorite(context: Context, id: String): Boolean {
+        val targetId = id.trim()
+        if (targetId.isBlank()) return false
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
+        val saved = prefs.getStringSet(KEY_FAVORITE_WALLPAPER_IDS, emptySet()) ?: emptySet()
+        val newSet = HashSet<String>(_favoriteIds.value).apply {
+            addAll(saved)
+            remove(targetId)
+        }
+        val success = prefs.edit().putStringSet(KEY_FAVORITE_WALLPAPER_IDS, HashSet(newSet)).commit()
+        _favoriteIds.value = newSet.toSet()
+        return success
+    }
+
+    fun addDisliked(context: Context, id: String): Boolean {
+        val targetId = id.trim()
+        if (targetId.isBlank()) return false
+        removeFavorite(context, targetId)
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
+        val saved = prefs.getStringSet(KEY_DISLIKED_WALLPAPER_IDS, emptySet()) ?: emptySet()
+        val newSet = HashSet<String>(_dislikedIds.value).apply {
+            addAll(saved)
+            add(targetId)
+        }
+        val success = prefs.edit().putStringSet(KEY_DISLIKED_WALLPAPER_IDS, HashSet(newSet)).commit()
+        _dislikedIds.value = newSet.toSet()
+        return success
+    }
+
+    fun removeDisliked(context: Context, id: String): Boolean {
+        val targetId = id.trim()
+        if (targetId.isBlank()) return false
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
+        val saved = prefs.getStringSet(KEY_DISLIKED_WALLPAPER_IDS, emptySet()) ?: emptySet()
+        val newSet = HashSet<String>(_dislikedIds.value).apply {
+            addAll(saved)
+            remove(targetId)
+        }
+        val success = prefs.edit().putStringSet(KEY_DISLIKED_WALLPAPER_IDS, HashSet(newSet)).commit()
+        _dislikedIds.value = newSet.toSet()
+        return success
+    }
+
+    fun getDislikedIds(context: Context): Set<String> {
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_WALLPAPERS, Context.MODE_PRIVATE)
+        val saved = prefs.getStringSet(KEY_DISLIKED_WALLPAPER_IDS, emptySet()) ?: emptySet()
+        val merged = HashSet<String>(_dislikedIds.value).apply {
+            addAll(saved)
+        }
+        _dislikedIds.value = merged.toSet()
+        return _dislikedIds.value
     }
 
     val DEFAULT_CATEGORIES = listOf(

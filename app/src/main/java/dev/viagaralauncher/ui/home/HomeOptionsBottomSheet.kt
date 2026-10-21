@@ -137,6 +137,7 @@ fun HomeOptionsBottomSheet(
             showChangelogDialog = false
             UpdateManager.checkForUpdates(coroutineScope, force = true)
             WallpaperRepository.initFavorites(context)
+            WallpaperRepository.initDisliked(context)
             DailyWallpaperManager.syncCurrentWallpaper(context)
             DailyWallpaperManager.checkAndAdvanceIfNewDay(context, coroutineScope)
         }
@@ -275,7 +276,9 @@ fun HomeOptionsBottomSheet(
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 coroutineScope.launch {
                                     val changed = DailyWallpaperManager.advanceToNextWallpaper(context, isUserDislike = true)
-                                    if (!changed) {
+                                    if (changed) {
+                                        Toast.makeText(context, R.string.daily_wallpaper_disliked_feedback, Toast.LENGTH_SHORT).show()
+                                    } else {
                                         Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
                                     }
                                 }

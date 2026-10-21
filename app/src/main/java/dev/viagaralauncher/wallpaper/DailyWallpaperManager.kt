@@ -91,6 +91,40 @@ object DailyWallpaperManager {
         }
     }
 
+    fun selectNextWallpaper(
+        allStatic: List<WallpaperItem>,
+        dislikedIds: Set<String>,
+        currentId: String,
+        savedIndex: Int = -1,
+        isUserDislike: Boolean = false,
+    ): WallpaperItem? {
+        if (allStatic.isEmpty()) return null
+        val eligible = allStatic.filter { it.id !in dislikedIds }
+            .ifEmpty { allStatic }
+
+        val currentIdxInAll = allStatic.indexOfFirst { it.id == currentId }
+        if (currentIdxInAll >= 0) {
+            for (step in 1..allStatic.size) {
+                val candidate = allStatic[(currentIdxInAll + step) % allStatic.size]
+                if (candidate in eligible) {
+                    return candidate
+                }
+            }
+        }
+
+        if (savedIndex in allStatic.indices) {
+            val startOffset = if (isUserDislike) 1 else 0
+            for (step in 0 until allStatic.size) {
+                val candidate = allStatic[(savedIndex + startOffset + step) % allStatic.size]
+                if (candidate in eligible) {
+                    return candidate
+                }
+            }
+        }
+
+        return if (isUserDislike && eligible.size > 1) eligible[1] else eligible.firstOrNull()
+    }
+
     @SuppressLint("MissingPermission")
     suspend fun advanceToNextWallpaper(
         context: Context,
@@ -103,25 +137,32 @@ object DailyWallpaperManager {
 
         try {
             val prefs = Prefs(context)
+            var currentId = _currentWallpaperId.value.ifBlank { prefs.dailyWallpaperCurrentId.first() }.trim()
+
+            if (isUserDislike && currentId.isNotBlank()) {
+                WallpaperRepository.addDisliked(context, currentId)
+            }
+
             val catalog = WallpaperRepository.loadCatalog(context)
-            val eligible = catalog.wallpapers.filter { !it.isLive && it.type != "video" }
+            val staticWallpapers = catalog.wallpapers.filter { !it.isLive && it.type != "video" }
                 .ifEmpty { catalog.wallpapers }
 
-            if (eligible.isEmpty()) {
+            if (staticWallpapers.isEmpty()) {
                 return@withContext false
             }
 
-            val currentId = prefs.dailyWallpaperCurrentId.first()
-            val currentIndex = eligible.indexOfFirst { it.id == currentId }
-            val savedIndex = prefs.dailyWallpaperIndex.first()
+            val dislikedIds = WallpaperRepository.getDislikedIds(context)
+            val eligible = staticWallpapers.filter { it.id !in dislikedIds }
+                .ifEmpty { staticWallpapers }
 
-            val nextIndex = when {
-                currentIndex >= 0 -> (currentIndex + 1) % eligible.size
-                savedIndex in eligible.indices -> {
-                    if (isUserDislike) (savedIndex + 1) % eligible.size else savedIndex
-                }
-                else -> if (isUserDislike && eligible.size > 1) 1 else 0
-            }
+            val savedIndex = prefs.dailyWallpaperIndex.first()
+            val candidateItem = selectNextWallpaper(
+                allStatic = staticWallpapers,
+                dislikedIds = dislikedIds,
+                currentId = currentId,
+                savedIndex = savedIndex,
+                isUserDislike = isUserDislike,
+            ) ?: eligible.firstOrNull() ?: return@withContext false
 
             val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
@@ -129,7 +170,8 @@ object DailyWallpaperManager {
                 0
             }
 
-            var targetIndex = nextIndex
+            val startEligibleIndex = eligible.indexOfFirst { it.id == candidateItem.id }.coerceAtLeast(0)
+            var targetIndex = startEligibleIndex
             var applySuccess = false
             var attempts = 0
             val maxAttempts = minOf(3, eligible.size)
@@ -140,7 +182,8 @@ object DailyWallpaperManager {
                 if (applyResult.isSuccess) {
                     _currentWallpaperId.value = candidate.id
                     prefs.setDailyWallpaperCurrentId(candidate.id)
-                    prefs.setDailyWallpaperIndex(targetIndex)
+                    val staticIndex = staticWallpapers.indexOfFirst { it.id == candidate.id }
+                    prefs.setDailyWallpaperIndex(if (staticIndex >= 0) staticIndex else targetIndex)
                     prefs.setDailyWallpaperLastTimestamp(System.currentTimeMillis())
                     applySuccess = true
                 } else {

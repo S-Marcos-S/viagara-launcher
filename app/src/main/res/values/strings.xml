@@ -93,6 +93,7 @@
     <string name="daily_wallpaper_like">Like (add to favorites)</string>
     <string name="daily_wallpaper_dislike">Dislike (next wallpaper)</string>
     <string name="daily_wallpaper_liked_feedback">Saved to favorites</string>
+    <string name="daily_wallpaper_disliked_feedback">Wallpaper dismissed</string>
     <string name="clock_notification_channel_name">Clock Styles</string>
     <string name="clock_notification_channel_desc">Notifications about new clock widgets added to the repository</string>
     <string name="clock_new_notification_title">New clock styles available!</string>
