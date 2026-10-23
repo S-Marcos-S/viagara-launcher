@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.60.57
+### 🚀 Novidades da Versão v0.60.58
 
-- **Descarte de Papel de Parede:** Ao clicar em dislike, o papel de parede atual é descartado e não reaparece mais na rotação diária.
-- **Rotação Inteligente:** O seletor diário pula automaticamente os papéis de parede descurtidos sem travar o ciclo.
-- **Confirmação Visual:** Feedback rápido exibido ao descartar o papel de parede.
+- **Novo Cabeçalho no README:** Ícone centralizado e cards coloridos com status e especificações do projeto.
+- **Navegação & Links:** Acesso rápido às seções e documentação técnica integrada.
