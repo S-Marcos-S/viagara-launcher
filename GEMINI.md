@@ -2,8 +2,9 @@
 
 ## Regra Obrigatória: Validação Prévia em Branch de Testes (Proteção da Branch Main)
 Para evitar poluir a branch `main` com commits que possam quebrar a compilação ou falhar na geração de APKs:
-- **Toda alteração deve ser testada primeiro na branch `test`:** É estritamente proibido enviar commits de novas implementações ou correções diretamente para a `main` sem validação prévia.
-- **Fluxo de Trabalho Obrigatório:**
+- **Toda alteração de código ou que envolva nova build deve ser testada primeiro na branch `test`:** É estritamente proibido enviar commits de novas implementações ou correções diretamente para a `main` sem validação prévia.
+- **Commits triviais ou de documentação pura:** Mudanças que afetam apenas documentação (`README.md`, `docs/`, etc.) e que não alteram código funcional nem disparam nova build podem ser commitadas normalmente (veja a regra abaixo).
+- **Fluxo de Trabalho Obrigatório para Builds:**
   1. Desenvolva as mudanças e utilize a branch de testes (`git checkout -b test` ou `git switch test`).
   2. Faça o bump de versão em `app/build.gradle.kts` e atualize `CHANGELOG_LATEST.md` (e `app/src/main/assets/CHANGELOG_LATEST.md`).
   3. Realize o commit contendo a versão na mensagem e faça o push para a branch `test` (`git push origin test --force` ou `git push origin test`).
@@ -16,8 +17,20 @@ Para evitar poluir a branch `main` com commits que possam quebrar a compilação
      git push origin main
      ```
 
-## Regra Obrigatória: Bump de Versão/Release para Disparar Builds
-Sempre que for realizado um commit que gera uma mudança visual no aplicativo ou alguma correção finalizada, **DEVE-SE** incrementar o número de release/versão (`versionCode` e `versionName` no arquivo `app/build.gradle.kts`) e **OBRIGATORIAMENTE incluir o número da versão na mensagem/comentário do commit** (exemplo: `0.60.12` ou `v0.60.12`). O GitHub Actions inspeciona a mensagem do commit (`check-version`) e só inicia a build se encontrar o padrão de versão no texto do commit.
+## Regra Obrigatória: Bump de Versão/Release Apenas para Mudanças Relevantes (Proibido para Mudanças Bestas/Triviais)
+- **Mudanças Bestas / Triviais (NÃO gerar build):**
+  - Para alterações pequenas, triviais ou que não alteram o funcionamento do aplicativo em si — como edições em documentação (`README.md`, pasta `docs/`, `CONTRIBUTING.md`), comentários no código, formatação, correção de digitação (typos), `.gitignore` ou scripts auxiliares:
+    - **NUNCA** faça bump de versão (`versionCode` e `versionName` em `app/build.gradle.kts`).
+    - **NUNCA** altere o `CHANGELOG_LATEST.md`.
+    - **NUNCA** inclua número de versão na mensagem do commit.
+    - Faça apenas um **commit normal** (exemplo: `docs: update README header` ou `chore: fix typo`).
+    - Como o workflow do GitHub Actions (`check-version`) só dispara a compilação se detectar um padrão de versão na mensagem do commit, sem a versão ele irá pular a build (`Skipping build`), evitando gastar minutos de CI e poluir as Releases com APKs desnecessários.
+- **Mudanças Relevantes no Aplicativo (GERAR build):**
+  - Sempre que for realizado um commit que traga uma **nova funcionalidade/feature**, **correção de bug real**, **refatoração funcional** ou **mudança visual direta no aplicativo**:
+    - **DEVE-SE** incrementar o número de release/versão (`versionCode` e `versionName` no arquivo `app/build.gradle.kts`).
+    - **DEVE-SE** atualizar o arquivo `CHANGELOG_LATEST.md` (resumido e compacto).
+    - **OBRIGATORIAMENTE** incluir o número da versão na mensagem/comentário do commit (exemplo: `0.60.12` ou `v0.60.12`).
+    - Seguir rigorosamente o fluxo de validação prévia na branch `test` antes da `main`.
 
 ## Regra Obrigatória: Changelogs Resumidas e Compactas Pré-Build
 Sempre que forem realizadas novas implementações, correções ou modificações no código, o arquivo `CHANGELOG_LATEST.md` na raiz do projeto (e seu espelho em `app/src/main/assets/CHANGELOG_LATEST.md`) **DEVE** ser atualizado antes de efetuar o commit e disparar a build do GitHub Actions.
