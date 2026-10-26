@@ -1,6 +1,8 @@
 package dev.viagaralauncher.ui.battery
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -566,36 +568,28 @@ private fun RealtimeDrainCard(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    if (!isNotificationEnabled) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.anomaly_status_disabled),
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
                 }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    IconButton(
-                        onClick = onResetSession,
-                        modifier = Modifier.size(32.dp)
+                    AnimatedVisibility(
+                        visible = isNotificationEnabled,
+                        enter = fadeIn() + expandHorizontally(),
+                        exit = fadeOut() + shrinkHorizontally()
                     ) {
-                        Icon(
-                            Icons.Outlined.RestartAlt,
-                            contentDescription = stringResource(R.string.reset_session),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        IconButton(
+                            onClick = onResetSession,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.RestartAlt,
+                                contentDescription = stringResource(R.string.reset_session),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                     Switch(
                         checked = isNotificationEnabled,
@@ -612,57 +606,77 @@ private fun RealtimeDrainCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 2.dp),
-                color = dynamicBorderColor(alpha = 0.20f)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            AnimatedVisibility(
+                visible = isNotificationEnabled,
+                enter = expandVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeIn(),
+                exit = shrinkVertically(
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeOut()
             ) {
-                DrainMetricItem(
-                    label = stringResource(R.string.screen_on),
-                    rate = formatDrainPercentage(drainState.screenOnDrainRatePercent),
-                    time = formatDuration(drainState.screenOnTimeMs),
-                    color = Color(0xFFEAB308)
-                )
-                DrainMetricItem(
-                    label = stringResource(R.string.screen_off),
-                    rate = formatDrainPercentage(drainState.screenOffDrainRatePercent),
-                    time = formatDuration(drainState.screenOffTimeMs),
-                    color = Color(0xFF3B82F6)
-                )
-                DrainMetricItem(
-                    label = stringResource(R.string.deep_sleep),
-                    rate = formatDrainPercentage(drainState.deepSleepDrainRatePercent),
-                    time = "${formatDuration(drainState.deepSleepTimeMs)} (${String.format(Locale.getDefault(), "%.0f%%", drainState.deepSleepPercentage)})",
-                    color = Color(0xFF10B981)
-                )
-            }
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 2.dp),
+                        color = dynamicBorderColor(alpha = 0.20f)
+                    )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                DrainMetricItem(
-                    label = stringResource(R.string.active),
-                    rate = formatDrainPercentage(drainState.activeDrainRatePercent),
-                    time = formatDuration(drainState.activeTimeMs),
-                    color = Color(0xFFEF4444)
-                )
-                DrainMetricItem(
-                    label = stringResource(R.string.idle),
-                    rate = formatDrainPercentage(drainState.idleDrainRatePercent),
-                    time = formatDuration(drainState.idleTimeMs),
-                    color = Color(0xFF8B5CF6)
-                )
-                DrainMetricItem(
-                    label = stringResource(R.string.total),
-                    rate = String.format(Locale.getDefault(), "%.1f mAh", drainState.totalDrainMah),
-                    time = formatDuration(drainState.totalTimeMs),
-                    color = MaterialTheme.colorScheme.primary
-                )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        DrainMetricItem(
+                            label = stringResource(R.string.screen_on),
+                            rate = formatDrainPercentage(drainState.screenOnDrainRatePercent),
+                            time = formatDuration(drainState.screenOnTimeMs),
+                            color = Color(0xFFEAB308)
+                        )
+                        DrainMetricItem(
+                            label = stringResource(R.string.screen_off),
+                            rate = formatDrainPercentage(drainState.screenOffDrainRatePercent),
+                            time = formatDuration(drainState.screenOffTimeMs),
+                            color = Color(0xFF3B82F6)
+                        )
+                        DrainMetricItem(
+                            label = stringResource(R.string.deep_sleep),
+                            rate = formatDrainPercentage(drainState.deepSleepDrainRatePercent),
+                            time = "${formatDuration(drainState.deepSleepTimeMs)} (${String.format(Locale.getDefault(), "%.0f%%", drainState.deepSleepPercentage)})",
+                            color = Color(0xFF10B981)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        DrainMetricItem(
+                            label = stringResource(R.string.active),
+                            rate = formatDrainPercentage(drainState.activeDrainRatePercent),
+                            time = formatDuration(drainState.activeTimeMs),
+                            color = Color(0xFFEF4444)
+                        )
+                        DrainMetricItem(
+                            label = stringResource(R.string.idle),
+                            rate = formatDrainPercentage(drainState.idleDrainRatePercent),
+                            time = formatDuration(drainState.idleTimeMs),
+                            color = Color(0xFF8B5CF6)
+                        )
+                        DrainMetricItem(
+                            label = stringResource(R.string.total),
+                            rate = String.format(Locale.getDefault(), "%.1f mAh", drainState.totalDrainMah),
+                            time = formatDuration(drainState.totalTimeMs),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         }
     }
@@ -745,11 +759,25 @@ private fun OverviewTab(
             )
         }
         item {
-            LiveBatteryChartsCard(
-                batteryInfo = batteryLiveInfo,
-                history = batteryDischargeHistory,
-                isLive = isDrainNotificationEnabled,
-            )
+            AnimatedVisibility(
+                visible = isDrainNotificationEnabled,
+                enter = expandVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeIn(),
+                exit = shrinkVertically(
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeOut()
+            ) {
+                LiveBatteryChartsCard(
+                    batteryInfo = batteryLiveInfo,
+                    history = batteryDischargeHistory,
+                )
+            }
         }
         item {
             BackgroundAnomalyCard(
@@ -779,7 +807,6 @@ private fun OverviewTab(
 private fun LiveBatteryChartsCard(
     batteryInfo: SystemTaskInspector.BatteryInfoSample?,
     history: List<Float>,
-    isLive: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -839,8 +866,8 @@ private fun LiveBatteryChartsCard(
                 // Live Pulse Badge
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (isLive) Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-                    border = BorderStroke(1.dp, if (isLive) Color(0xFF10B981).copy(alpha = 0.35f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f))
+                    color = Color(0xFF10B981).copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.35f))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
@@ -851,13 +878,13 @@ private fun LiveBatteryChartsCard(
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(if (isLive) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant)
+                                .background(Color(0xFF10B981))
                         )
                         Text(
-                            text = if (isLive) stringResource(R.string.task_manager_live_badge) else stringResource(R.string.anomaly_status_disabled).uppercase(),
+                            text = stringResource(R.string.task_manager_live_badge),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isLive) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color(0xFF10B981)
                         )
                     }
                 }
