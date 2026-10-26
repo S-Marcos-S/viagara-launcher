@@ -68,9 +68,15 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     val cpuInfo: StateFlow<List<RootBatteryStatsCollector.CpuInfo>> = _cpuInfo.asStateFlow()
 
     init {
-        // Start drain tracker in background so it maintains running state
-        if (!drainTracker.isRunning()) {
-            drainTracker.start()
+        // Start drain tracker in background ONLY if real-time drain monitoring is enabled
+        if (DrainNotificationManager.isNotificationEnabled(context)) {
+            if (!drainTracker.isRunning()) {
+                drainTracker.start()
+            }
+        } else {
+            if (drainTracker.isRunning()) {
+                drainTracker.stop()
+            }
         }
         refresh(forceRefresh = true)
     }
@@ -131,6 +137,24 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     fun toggleDrainNotification(enabled: Boolean) {
         DrainNotificationManager.setNotificationEnabled(context, enabled)
         _isDrainNotificationEnabled.value = enabled
+        if (enabled) {
+            if (!drainTracker.isRunning()) {
+                drainTracker.start()
+            }
+        } else {
+            if (drainTracker.isRunning()) {
+                drainTracker.stop()
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        if (!DrainNotificationManager.isNotificationEnabled(context)) {
+            if (drainTracker.isRunning()) {
+                drainTracker.stop()
+            }
+        }
     }
 
     fun toggleAnomalyNotification(enabled: Boolean) {

@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.58
+### 🚀 Novidades da Versão v0.60.59
 
-- **Novo Cabeçalho no README:** Ícone centralizado e cards coloridos com status e especificações do projeto.
-- **Navegação & Links:** Acesso rápido às seções e documentação técnica integrada.
+- **Otimização do Monitor de Bateria:** Monitoramento em segundo plano e receptores são interrompidos imediatamente ao desativar o monitoramento em tempo real.
+- **Pausa de Telemetria Contínua:** Amostragem periódica da bateria e gráficos ao vivo na tela agora respeitam o estado desativado.
+- **Correção de Acúmulo de Tempo:** Estado de drenagem e tempo de sessão permanecem congelados sem avançar enquanto desativado.

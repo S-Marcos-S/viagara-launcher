@@ -150,7 +150,7 @@ fun BatteryStatsScreen(
         vm.refresh()
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isDrainNotificationEnabled) {
         val initial = withContext(Dispatchers.IO) {
             SystemTaskInspector.sampleBatteryInfo(context)
         }
@@ -159,17 +159,19 @@ fun BatteryStatsScreen(
         if (batteryDischargeHistory.isEmpty()) {
             batteryDischargeHistory.add(initMa)
         }
-        while (isActive) {
-            delay(1500L)
-            val sample = withContext(Dispatchers.IO) {
-                SystemTaskInspector.sampleBatteryInfo(context)
+        if (isDrainNotificationEnabled) {
+            while (isActive) {
+                delay(1500L)
+                val sample = withContext(Dispatchers.IO) {
+                    SystemTaskInspector.sampleBatteryInfo(context)
+                }
+                liveBatteryInfo = sample
+                val battMa = kotlin.math.abs(sample.currentNowMa ?: 0L).toFloat()
+                if (batteryDischargeHistory.size >= 30) {
+                    batteryDischargeHistory.removeAt(0)
+                }
+                batteryDischargeHistory.add(battMa)
             }
-            liveBatteryInfo = sample
-            val battMa = kotlin.math.abs(sample.currentNowMa ?: 0L).toFloat()
-            if (batteryDischargeHistory.size >= 30) {
-                batteryDischargeHistory.removeAt(0)
-            }
-            batteryDischargeHistory.add(battMa)
         }
     }
 
@@ -564,6 +566,20 @@ private fun RealtimeDrainCard(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    if (!isNotificationEnabled) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.anomaly_status_disabled),
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
 
                 Row(
@@ -732,6 +748,7 @@ private fun OverviewTab(
             LiveBatteryChartsCard(
                 batteryInfo = batteryLiveInfo,
                 history = batteryDischargeHistory,
+                isLive = isDrainNotificationEnabled,
             )
         }
         item {
@@ -762,6 +779,7 @@ private fun OverviewTab(
 private fun LiveBatteryChartsCard(
     batteryInfo: SystemTaskInspector.BatteryInfoSample?,
     history: List<Float>,
+    isLive: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -821,8 +839,8 @@ private fun LiveBatteryChartsCard(
                 // Live Pulse Badge
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF10B981).copy(alpha = 0.15f),
-                    border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.35f))
+                    color = if (isLive) Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, if (isLive) Color(0xFF10B981).copy(alpha = 0.35f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
@@ -833,13 +851,13 @@ private fun LiveBatteryChartsCard(
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF10B981))
+                                .background(if (isLive) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant)
                         )
                         Text(
-                            text = stringResource(R.string.task_manager_live_badge),
+                            text = if (isLive) stringResource(R.string.task_manager_live_badge) else stringResource(R.string.anomaly_status_disabled).uppercase(),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981)
+                            color = if (isLive) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

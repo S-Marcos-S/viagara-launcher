@@ -336,11 +336,13 @@ class AdvancedDrainTracker private constructor(
             cumulativeNetworkTxBytes = prefs.getLong("cumulative_network_tx_bytes", 0L)
 
             val isInteractive = powerManager.isInteractive
-            val gapMs = (nowRealtime - savedLastSaveRealtime).coerceAtLeast(0L)
-            if (isInteractive) {
-                screenOnTime += gapMs
-            } else {
-                screenOffTime += gapMs
+            val gapMs = if (running.get()) (nowRealtime - savedLastSaveRealtime).coerceAtLeast(0L) else 0L
+            if (gapMs > 0L) {
+                if (isInteractive) {
+                    screenOnTime += gapMs
+                } else {
+                    screenOffTime += gapMs
+                }
             }
 
             cumulativeScreenOnTime = screenOnTime
@@ -395,19 +397,21 @@ class AdvancedDrainTracker private constructor(
         if (!restoreSession()) {
             resetSession()
         }
+        lastScreenState = powerManager.isInteractive
+        lastScreenChangeRealtime = SystemClock.elapsedRealtime()
+        lastScreenChangeTime = System.currentTimeMillis()
+        lastSnapshot = null
         registerReceivers()
 
         trackingJob = scope.launch {
             takeSnapshot()?.let { snapshot ->
-                lastSnapshot?.let { prev ->
-                    processSnapshot(snapshot, wasScreenOn = lastScreenState)
-                }
                 lastSnapshot = snapshot
                 updateDrainState()
                 saveSession()
             }
 
             while (isActive && running.get()) {
+                delay(DEFAULT_INTERVAL_MS)
                 try {
                     takeSnapshot()?.let { currentSnapshot ->
                         processSnapshot(currentSnapshot, wasScreenOn = lastScreenState)
@@ -419,7 +423,6 @@ class AdvancedDrainTracker private constructor(
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in tracking loop", e)
                 }
-                delay(DEFAULT_INTERVAL_MS)
             }
         }
     }
@@ -429,10 +432,22 @@ class AdvancedDrainTracker private constructor(
 
         Log.i(TAG, "Stopping advanced drain tracking")
         _isTracking.value = false
-        saveSession()
+
+        val nowRealtime = SystemClock.elapsedRealtime()
+        val pending = (nowRealtime - lastScreenChangeRealtime).coerceAtLeast(0L)
+        if (lastScreenState) {
+            cumulativeScreenOnTime += pending
+        } else {
+            cumulativeScreenOffTime += pending
+        }
+        lastScreenChangeRealtime = nowRealtime
+
         trackingJob?.cancel()
         trackingJob = null
         unregisterReceivers()
+
+        updateDrainState()
+        saveSession()
     }
 
     fun resetSession() {
@@ -617,12 +632,13 @@ class AdvancedDrainTracker private constructor(
         val nowRealtime = SystemClock.elapsedRealtime()
         val nowUptime = SystemClock.uptimeMillis()
 
-        val pending = (nowRealtime - lastScreenChangeRealtime).coerceAtLeast(0L)
+        val isRunning = running.get()
+        val pending = if (isRunning) (nowRealtime - lastScreenChangeRealtime).coerceAtLeast(0L) else 0L
         val screenOnTimeTotal = cumulativeScreenOnTime + if (lastScreenState) pending else 0L
         val screenOffTimeTotal = cumulativeScreenOffTime + if (!lastScreenState) pending else 0L
 
-        val sessionElapsed = (nowRealtime - sessionStartRealtime).coerceAtLeast(0L)
-        val sessionUptime = (nowUptime - sessionStartUptime).coerceAtLeast(0L)
+        val sessionElapsed = if (isRunning) (nowRealtime - sessionStartRealtime).coerceAtLeast(0L) else (screenOnTimeTotal + screenOffTimeTotal)
+        val sessionUptime = if (isRunning) (nowUptime - sessionStartUptime).coerceAtLeast(0L) else (screenOnTimeTotal + cumulativeAwakeTime)
         val totalSessionDeepSleep = (sessionElapsed - sessionUptime).coerceAtLeast(0L)
 
         val deepSleepTimeMs = totalSessionDeepSleep.coerceAtMost(screenOffTimeTotal)

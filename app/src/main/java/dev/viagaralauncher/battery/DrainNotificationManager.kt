@@ -116,6 +116,9 @@ class DrainNotificationManager private constructor(
         updateJob?.cancel()
         updateJob = null
         notificationManager.cancel(NOTIFICATION_ID)
+        if (drainTracker.isRunning()) {
+            drainTracker.stop()
+        }
     }
 
     fun updateNow() {
