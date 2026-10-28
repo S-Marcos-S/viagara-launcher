@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.63
+### 🚀 Novidades da Versão v0.60.64
 
-- **Efeito Fosco (Frosted Blur) nos Ícones de Vidro:** Adicionado desfoque suave de vidro fosco ao fundo dos ícones, mantendo refração, dispersão e iluminação especular.
+- **Efeito Vidro no Botão Flutuante e no Alfabeto:** Efeito de vidro idêntico aos ícones aplicado ao botão dinâmico da tela inicial e ao mostrador de letras do app drawer quando o estilo vidro está ativo.

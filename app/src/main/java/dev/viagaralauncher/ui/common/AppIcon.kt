@@ -57,6 +57,7 @@ import dev.viagaralauncher.ViagaraApp
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.ThemedIconStyle
 import dev.viagaralauncher.ui.theme.glass.GlassStyle
+import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import dev.viagaralauncher.ui.theme.glass.WallpaperGlassProvider
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -345,47 +346,12 @@ fun GlassIconContainer(
     val isDark = isSystemInDarkTheme()
     val defaultGlyphColor = if (isDark) Color(0xFFF2F2F2) else MaterialTheme.colorScheme.primary
     val effectiveGlyphTint = tintColor ?: defaultGlyphColor
-    val density = LocalDensity.current.density
-    val context = LocalContext.current
-    val view = LocalView.current
-    val configuration = LocalConfiguration.current
-    val (screenWidthPx, screenHeightPx) = remember(context, view, configuration) {
-        WallpaperGlassProvider.getRealWindowSize(context, view)
-    }
-    var positionInWindow by remember { mutableStateOf(Offset.Zero) }
-    val surfaceColor = MaterialTheme.colorScheme.secondaryContainer.toArgb()
-    LaunchedEffect(Unit) {
-        WallpaperGlassProvider.init(context)
-    }
-    val wallpaperTick by WallpaperGlassProvider.wallpaperTick.collectAsState()
 
-    Box(
-        modifier = modifier
-            .size(sizeDp.dp)
-            .onGloballyPositioned { coords ->
-                positionInWindow = coords.positionInWindow()
-            },
-        contentAlignment = Alignment.Center,
+    GlassSurface(
+        modifier = modifier.size(sizeDp.dp),
+        cornerFraction = 0.28f,
+        style = style,
     ) {
-        val tick = wallpaperTick
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val dummy = tick
-            drawIntoCanvas { composeCanvas ->
-                WallpaperGlassProvider.drawGlassElement(
-                    canvas = composeCanvas.nativeCanvas,
-                    bounds = RectF(0f, 0f, size.width, size.height),
-                    positionInWindow = positionInWindow,
-                    screenWidth = screenWidthPx,
-                    screenHeight = screenHeightPx,
-                    corner = size.width * 0.28f,
-                    style = style,
-                    surfaceColor = surfaceColor,
-                    tintOpacity = 20,
-                    density = density,
-                    night = isDark,
-                )
-            }
-        }
         if (bitmap != null) {
             Image(
                 bitmap = bitmap,

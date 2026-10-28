@@ -113,9 +113,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.EdgeSide
+import dev.viagaralauncher.data.ThemedIconStyle
 import dev.viagaralauncher.ui.common.AppIcon
-import dev.viagaralauncher.ui.common.recordTouchPosition
 import dev.viagaralauncher.ui.common.EditAppDialog
+import dev.viagaralauncher.ui.common.LocalIconConfig
+import dev.viagaralauncher.ui.common.recordTouchPosition
+import dev.viagaralauncher.ui.theme.glass.GlassStyle
+import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -1294,20 +1298,21 @@ private fun ScrubLetterBubble(
     val halfPx = with(density) { (bubble / 2).toPx() }
     val insetPx = with(density) { 122.dp.toPx() }
 
-    Surface(
-        color = Color.Black.copy(alpha = 0.6f),
-        shape = RoundedCornerShape(22.dp),
-        modifier = modifier
-            .offset {
-                val x = insetPx + scrub.currentPull()
-                val y = (scrub.currentY() ?: 0f) - halfPx
-                IntOffset(
-                    x = if (activeSide == EdgeSide.LEFT) x.roundToInt() else -x.roundToInt(),
-                    y = y.roundToInt(),
-                )
-            }
-            .size(bubble),
-    ) {
+    val iconConfig = LocalIconConfig.current
+    val isGlassActive = iconConfig.themedIcons && iconConfig.themedIconStyle == ThemedIconStyle.GLASS
+
+    val bubbleModifier = modifier
+        .offset {
+            val x = insetPx + scrub.currentPull()
+            val y = (scrub.currentY() ?: 0f) - halfPx
+            IntOffset(
+                x = if (activeSide == EdgeSide.LEFT) x.roundToInt() else -x.roundToInt(),
+                y = y.roundToInt(),
+            )
+        }
+        .size(bubble)
+
+    val bubbleContent: @Composable () -> Unit = {
         Box(contentAlignment = Alignment.Center) {
             if (letter == SCRUBBER_STAR) {
                 Icon(
@@ -1324,6 +1329,24 @@ private fun ScrubLetterBubble(
                     fontWeight = FontWeight.Bold,
                 )
             }
+        }
+    }
+
+    if (isGlassActive) {
+        GlassSurface(
+            modifier = bubbleModifier,
+            cornerPx = with(density) { 22.dp.toPx() },
+            style = GlassStyle.DEFAULT,
+        ) {
+            bubbleContent()
+        }
+    } else {
+        Surface(
+            color = Color.Black.copy(alpha = 0.6f),
+            shape = RoundedCornerShape(22.dp),
+            modifier = bubbleModifier,
+        ) {
+            bubbleContent()
         }
     }
 }

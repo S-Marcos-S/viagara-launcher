@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -61,7 +62,10 @@ import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.EdgeSide
 import dev.viagaralauncher.data.ThemedIconStyle
 import dev.viagaralauncher.service.HapticUtil
+import dev.viagaralauncher.ui.common.LocalIconConfig
 import dev.viagaralauncher.ui.common.ThemedAppIcon
+import dev.viagaralauncher.ui.theme.glass.GlassStyle
+import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -368,32 +372,19 @@ fun DynamicActionButton(
             else -> ActiveButtonTarget.CLICK
         }
 
-        Box(
-            modifier = Modifier
-                .graphicsLayer {
-                    translationY = dragOffsetY.value
-                    scaleX = stretchScaleX.value * pressScale.value
-                    scaleY = stretchScaleY.value * pressScale.value
-                    this.transformOrigin = transformOrigin
-                }
-                .size(buttonSizeDp)
-                .shadow(
-                    elevation = if (thresholdCrossed) 12.dp else 6.dp,
-                    shape = RoundedCornerShape(22.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = if (thresholdCrossed) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.35f),
-                )
-                .clip(RoundedCornerShape(22.dp))
-                .background(surfaceColor)
-                .border(
-                    BorderStroke(
-                        width = if (thresholdCrossed) 2.dp else 1.dp,
-                        color = activeBorderColor,
-                    ),
-                    shape = RoundedCornerShape(22.dp),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
+        val iconConfig = LocalIconConfig.current
+        val isGlassActive = iconConfig.themedIcons && iconConfig.themedIconStyle == ThemedIconStyle.GLASS
+
+        val buttonModifier = Modifier
+            .graphicsLayer {
+                translationY = dragOffsetY.value
+                scaleX = stretchScaleX.value * pressScale.value
+                scaleY = stretchScaleY.value * pressScale.value
+                this.transformOrigin = transformOrigin
+            }
+            .size(buttonSizeDp)
+
+        val buttonContent: @Composable () -> Unit = {
             AnimatedContent(
                 targetState = activeTarget,
                 transitionSpec = {
@@ -477,6 +468,47 @@ fun DynamicActionButton(
                         }
                     }
                 }
+            }
+        }
+
+        if (isGlassActive) {
+            val glassStyle = if (thresholdCrossed) {
+                GlassStyle.DEFAULT.copy(
+                    outlineColor = MaterialTheme.colorScheme.primary.toArgb(),
+                    outlineOpacity = 0.85f,
+                    outlineWidth = 1.8f,
+                )
+            } else {
+                GlassStyle.DEFAULT
+            }
+            GlassSurface(
+                modifier = buttonModifier,
+                cornerPx = with(density) { 22.dp.toPx() },
+                style = glassStyle,
+            ) {
+                buttonContent()
+            }
+        } else {
+            Box(
+                modifier = buttonModifier
+                    .shadow(
+                        elevation = if (thresholdCrossed) 12.dp else 6.dp,
+                        shape = RoundedCornerShape(22.dp),
+                        ambientColor = Color.Black.copy(alpha = 0.25f),
+                        spotColor = if (thresholdCrossed) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.35f),
+                    )
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(surfaceColor)
+                    .border(
+                        BorderStroke(
+                            width = if (thresholdCrossed) 2.dp else 1.dp,
+                            color = activeBorderColor,
+                        ),
+                        shape = RoundedCornerShape(22.dp),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                buttonContent()
             }
         }
     }

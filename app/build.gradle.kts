@@ -30,8 +30,8 @@ android {
     defaultConfig {
         applicationId = "dev.viagaralauncher"
         minSdk = 26
-        versionCode = 237
-        versionName = "0.60.63"
+        versionCode = 238
+        versionName = "0.60.64"
 
         buildConfigField("String", "GIT_SHA", "\"$gitCommitSha\"")
         buildConfigField("Long", "BUILD_TIME_MILLIS", "${buildTimeMillis}L")

@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+package dev.viagaralauncher.ui.theme.glass
+
+import android.graphics.RectF
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+
+/**
+ * Universal glass container that renders refractive liquid/frosted glass backdrop
+ * mapped 1:1 to screen wallpaper coordinates.
+ */
+@Composable
+fun GlassSurface(
+    modifier: Modifier = Modifier,
+    cornerPx: Float? = null,
+    cornerFraction: Float = 0.28f,
+    tintOpacity: Int = 20,
+    style: GlassStyle = GlassStyle.DEFAULT,
+    surfaceColor: Int = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val isDark = isSystemInDarkTheme()
+    val density = LocalDensity.current.density
+    val context = LocalContext.current
+    val view = LocalView.current
+    val configuration = LocalConfiguration.current
+    val (screenWidthPx, screenHeightPx) = remember(context, view, configuration) {
+        WallpaperGlassProvider.getRealWindowSize(context, view)
+    }
+    var positionInWindow by remember { mutableStateOf(Offset.Zero) }
+
+    LaunchedEffect(Unit) {
+        WallpaperGlassProvider.init(context)
+    }
+    val wallpaperTick by WallpaperGlassProvider.wallpaperTick.collectAsState()
+
+    Box(
+        modifier = modifier
+            .onGloballyPositioned { coords ->
+                positionInWindow = coords.positionInWindow()
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        val tick = wallpaperTick
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val dummy = tick
+            drawIntoCanvas { composeCanvas ->
+                val resolvedCorner = cornerPx ?: (size.width * cornerFraction)
+                WallpaperGlassProvider.drawGlassElement(
+                    canvas = composeCanvas.nativeCanvas,
+                    bounds = RectF(0f, 0f, size.width, size.height),
+                    positionInWindow = positionInWindow,
+                    screenWidth = screenWidthPx,
+                    screenHeight = screenHeightPx,
+                    corner = resolvedCorner,
+                    style = style,
+                    surfaceColor = surfaceColor,
+                    tintOpacity = tintOpacity,
+                    density = density,
+                    night = isDark,
+                )
+            }
+        }
+        content()
+    }
+}
