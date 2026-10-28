@@ -49,7 +49,7 @@ import kotlin.math.roundToInt
 object WallpaperGlassProvider {
 
     private const val SHARP_WIDTH = 720
-    private const val FROSTED_SAMPLE_WIDTH = 160
+    private const val FROSTED_SAMPLE_WIDTH = 220
 
     private val initialized = AtomicBoolean(false)
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -137,7 +137,7 @@ object WallpaperGlassProvider {
         cachedSharp = sharp
 
         val blurW = min(FROSTED_SAMPLE_WIDTH, sharpW)
-        val blurred = GlassShader.sampleBlur(sharp, blurW, 3)
+        val blurred = GlassShader.sampleBlur(sharp, blurW, 2)
         cachedBlurred = blurred
     }
 
@@ -278,7 +278,7 @@ object WallpaperGlassProvider {
 
         if (base != null && targetWidth > 0f && targetHeight > 0f) {
             val isTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-            val activeBitmap = if (isTiramisu) base else (cachedBlurred ?: base)
+            val activeBitmap = cachedBlurred ?: base
             val scale = max(targetWidth / activeBitmap.width.toFloat(), targetHeight / activeBitmap.height.toFloat())
             val scaledWidth = activeBitmap.width.toFloat() * scale
             val scaledHeight = activeBitmap.height.toFloat() * scale

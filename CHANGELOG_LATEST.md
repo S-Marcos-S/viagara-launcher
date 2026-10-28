@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.62
+### 🚀 Novidades da Versão v0.60.63
 
-- **Alinhamento dos Ícones em Vidro:** Correção da escala e altura da tela no efeito de vidro para reflexo exato 1:1 com o papel de parede.
+- **Efeito Fosco (Frosted Blur) nos Ícones de Vidro:** Adicionado desfoque suave de vidro fosco ao fundo dos ícones, mantendo refração, dispersão e iluminação especular.
