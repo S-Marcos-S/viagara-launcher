@@ -12,9 +12,11 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -81,15 +83,20 @@ private val LightColors = lightColorScheme(
     onErrorContainer = Color(0xFF410002),
 )
 
+val LocalGlassThemeActive = compositionLocalOf { false }
+val LocalActiveThemeId = compositionLocalOf { "system_dynamic" }
+
 @Composable
 fun ViagaraTheme(
     font: AppFont = AppFont.SYSTEM,
     activeThemeId: String = "system_dynamic",
     content: @Composable () -> Unit,
 ) {
+    val isGlassThemeActive = activeThemeId == "glass"
     val darkTheme = when (activeThemeId) {
         "oled_black", "dark_modern" -> true
         "light_clean" -> false
+        "glass" -> isSystemInDarkTheme()
         else -> isSystemInDarkTheme()
     }
     val context = LocalContext.current
@@ -190,6 +197,29 @@ fun ViagaraTheme(
                     )
                 } else LightColors
             }
+            "glass" -> {
+                val base = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                } else {
+                    if (darkTheme) DarkColors else LightColors
+                }
+                val tinted = if (wallpaperPrimary != null) {
+                    base.copy(
+                        primary = wallpaperPrimary,
+                        primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+                        onPrimaryContainer = if (darkTheme) Color.White else Color.Black,
+                    )
+                } else base
+                tinted.copy(
+                    surface = if (darkTheme) Color(0x33101520) else Color(0x33F0F4F8),
+                    surfaceContainer = if (darkTheme) Color(0x33141B26) else Color(0x33E5EDF4),
+                    surfaceContainerHigh = if (darkTheme) Color(0x441F2937) else Color(0x44D9E2EC),
+                    surfaceContainerHighest = if (darkTheme) Color(0x552D3748) else Color(0x55CBD5E1),
+                    surfaceContainerLow = if (darkTheme) Color(0x220B0F17) else Color(0x22F1F5F9),
+                    outline = if (darkTheme) Color(0x4DFFFFFF) else Color(0x4D000000),
+                    outlineVariant = if (darkTheme) Color(0x33FFFFFF) else Color(0x33000000),
+                )
+            }
             else -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val systemColors = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -226,7 +256,12 @@ fun ViagaraTheme(
         titleSmall = baseTypography.titleSmall.copy(fontFamily = fontFamily),
         labelLarge = baseTypography.labelLarge.copy(fontFamily = fontFamily),
     )
-    MaterialTheme(colorScheme = colors, typography = typography, content = content)
+    CompositionLocalProvider(
+        LocalGlassThemeActive provides isGlassThemeActive,
+        LocalActiveThemeId provides activeThemeId,
+    ) {
+        MaterialTheme(colorScheme = colors, typography = typography, content = content)
+    }
 }
 
 /**

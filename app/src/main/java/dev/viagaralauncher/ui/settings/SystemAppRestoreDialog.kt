@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.viagaralauncher.root.AppUninstallManager
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,12 +66,11 @@ fun SystemAppRestoreDialog(onDismiss: () -> Unit) {
     }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
+        GlassDialogContainer(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.8f)
+                .fillMaxHeight(0.8f),
+            cornerRadiusDp = 16.dp,
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(

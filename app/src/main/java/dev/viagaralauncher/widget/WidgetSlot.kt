@@ -4,8 +4,12 @@ package dev.viagaralauncher.widget
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
+import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.WindowManager
+import androidx.compose.ui.window.DialogWindowProvider
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -33,6 +37,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -43,15 +48,18 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -711,6 +719,13 @@ private fun ResizeOverlay(
     }
 }
 
+private data class WidgetMenuItem(
+    val title: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val onClick: () -> Unit,
+    val isDestructive: Boolean = false,
+)
+
 @Composable
 private fun WidgetContextMenu(
     expanded: Boolean,
@@ -722,116 +737,249 @@ private fun WidgetContextMenu(
     onEditLayout: () -> Unit,
     actions: WidgetSlotActions,
 ) {
+    if (!expanded) return
+
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dialogWindow != null) {
+            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = dialogWindow.attributes
+            params.blurBehindRadius = 32
+            dialogWindow.attributes = params
+        }
+        onDispose {}
+    }
+
     val context = LocalContext.current
+    val colorScheme = MaterialTheme.colorScheme
     val appWidgetManager = remember { AppWidgetManager.getInstance(context) }
     val info = remember(activeWidgetId) {
         if (activeWidgetId > 0) runCatching { appWidgetManager.getAppWidgetInfo(activeWidgetId) }.getOrNull() else null
     }
 
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest, offset = offset) {
+    val widgetLabel = remember(info) {
+        info?.loadLabel(context.packageManager) ?: context.getString(R.string.home_option_widget)
+    }
+
+    val items = remember(activeWidgetId, info) {
+        val list = mutableListOf<WidgetMenuItem>()
         if (activeWidgetId > 0 && info != null) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_resize)) },
-                leadingIcon = { Icon(Icons.Filled.OpenInFull, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    onStartResize()
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.action_resize),
+                    icon = Icons.Filled.OpenInFull,
+                    onClick = onStartResize,
+                )
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_app_info)) },
-                leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    actions.onAppInfo(activeWidgetId)
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.action_app_info),
+                    icon = Icons.Filled.Info,
+                    onClick = { actions.onAppInfo(activeWidgetId) },
+                )
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_edit_layout)) },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    onEditLayout()
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.action_edit_layout),
+                    icon = Icons.Filled.Edit,
+                    onClick = onEditLayout,
+                )
             )
             if (info.configure != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.widget_change_settings)) },
-                    leadingIcon = { Icon(Icons.Filled.Tune, contentDescription = null) },
-                    onClick = {
-                        onDismissRequest()
-                        actions.onWidgetSettings(activeWidgetId)
-                    },
+                list.add(
+                    WidgetMenuItem(
+                        title = context.getString(R.string.widget_change_settings),
+                        icon = Icons.Filled.Tune,
+                        onClick = { actions.onWidgetSettings(activeWidgetId) },
+                    )
                 )
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.widget_add_custom)) },
-                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    actions.onAddWidget()
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.widget_add_custom),
+                    icon = Icons.Filled.Add,
+                    onClick = actions.onAddWidget,
+                )
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_remove)) },
-                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    actions.onRemoveWidget(activeWidgetId)
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.action_remove),
+                    icon = Icons.Filled.Delete,
+                    onClick = { actions.onRemoveWidget(activeWidgetId) },
+                    isDestructive = true,
+                )
             )
         } else if (activeWidgetId > 0) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_remove)) },
-                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    actions.onRemoveWidget(activeWidgetId)
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.action_remove),
+                    icon = Icons.Filled.Delete,
+                    onClick = { actions.onRemoveWidget(activeWidgetId) },
+                    isDestructive = true,
+                )
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.widget_add_custom)) },
-                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    actions.onAddWidget()
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.widget_add_custom),
+                    icon = Icons.Filled.Add,
+                    onClick = actions.onAddWidget,
+                )
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_edit_layout)) },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    onEditLayout()
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.action_edit_layout),
+                    icon = Icons.Filled.Edit,
+                    onClick = onEditLayout,
+                )
             )
         } else {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.widget_add_custom)) },
-                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    actions.onAddWidget()
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.widget_add_custom),
+                    icon = Icons.Filled.Add,
+                    onClick = actions.onAddWidget,
+                )
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_edit_layout)) },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    onEditLayout()
-                },
+            list.add(
+                WidgetMenuItem(
+                    title = context.getString(R.string.action_edit_layout),
+                    icon = Icons.Filled.Edit,
+                    onClick = onEditLayout,
+                )
             )
         }
-        HorizontalDivider()
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.action_open_settings)) },
-            leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-            onClick = {
-                onDismissRequest()
-                actions.onOpenSettings()
-            },
+        list.add(
+            WidgetMenuItem(
+                title = context.getString(R.string.action_open_settings),
+                icon = Icons.Filled.Settings,
+                onClick = actions.onOpenSettings,
+            )
         )
+        list
+    }
+
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false,
+        ),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colorScheme.scrim.copy(alpha = 0.45f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismissRequest,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            GlassDialogContainer(
+                modifier = Modifier
+                    .fillMaxWidth(0.86f)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                    ),
+                cornerRadiusDp = 28.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                ) {
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(colorScheme.primary.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Widgets,
+                                contentDescription = null,
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = widgetLabel,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colorScheme.onSurface,
+                                maxLines = 1,
+                            )
+                            Text(
+                                text = stringResource(R.string.home_option_widget),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                                maxLines = 1,
+                                fontSize = 11.sp,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(color = colorScheme.primary.copy(alpha = 0.20f))
+                    Spacer(Modifier.height(10.dp))
+
+                    // Menu items
+                    items.forEach { item ->
+                        val itemColor = if (item.isDestructive) colorScheme.error else colorScheme.onSurface
+                        val iconColor = if (item.isDestructive) colorScheme.error else colorScheme.primary
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .clickable {
+                                    onDismissRequest()
+                                    item.onClick()
+                                }
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (item.isDestructive) colorScheme.errorContainer.copy(alpha = 0.35f)
+                                        else colorScheme.primary.copy(alpha = 0.14f)
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = null,
+                                    tint = iconColor,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            Text(
+                                text = item.title,
+                                color = itemColor,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 15.sp,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -49,6 +49,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -121,19 +122,15 @@ fun FolderFloatingDialog(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Surface(
+            GlassDialogContainer(
                 modifier = Modifier
                     .fillMaxWidth(0.90f)
-                    .clip(RoundedCornerShape(26.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                color = dynamicSurfaceColor(),
-                border = androidx.compose.foundation.BorderStroke(1.dp, dynamicBorderColor()),
-                shape = RoundedCornerShape(26.dp),
-                tonalElevation = 6.dp,
+                cornerRadiusDp = 26.dp,
             ) {
                 Column(
                     modifier = Modifier

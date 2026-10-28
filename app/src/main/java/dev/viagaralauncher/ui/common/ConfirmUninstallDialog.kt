@@ -49,6 +49,7 @@ import dev.viagaralauncher.R
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 
 /**
  * A dialog that asks the user to confirm the uninstallation of an application,
@@ -95,19 +96,15 @@ fun ConfirmUninstallDialog(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Surface(
+            GlassDialogContainer(
                 modifier = Modifier
                     .fillMaxWidth(0.88f)
-                    .clip(RoundedCornerShape(26.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                shape = RoundedCornerShape(26.dp),
-                color = dynamicSurfaceColor(),
-                border = BorderStroke(1.dp, dynamicBorderColor()),
-                tonalElevation = 6.dp,
+                cornerRadiusDp = 26.dp,
             ) {
                 Column(
                     modifier = Modifier

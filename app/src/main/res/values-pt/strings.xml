@@ -86,6 +86,8 @@
     <string name="themes_subtitle">Personalize a aparência e cores do seu launcher</string>
     <string name="theme_system_dynamic_title">Dinâmico do Sistema</string>
     <string name="theme_system_dynamic_desc">Cores extraídas do papel de parede com Material You</string>
+    <string name="theme_glass_title">Vidro</string>
+    <string name="theme_glass_desc">Efeito de refração líquida e vidro fosco em toda a launcher</string>
     <string name="theme_oled_black_title">OLED Preto Puro</string>
     <string name="theme_oled_black_desc">Superfícies em preto absoluto, ideal para telas AMOLED</string>
     <string name="theme_dark_modern_title">Escuro Moderno</string>

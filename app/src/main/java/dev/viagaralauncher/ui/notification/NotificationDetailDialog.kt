@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -117,15 +118,11 @@ fun NotificationDetailDialog(
             val timeText = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(selectedItem.postTime))
 
             // Glassmorphism card
-            Surface(
+            GlassDialogContainer(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
-                    .clip(RoundedCornerShape(24.dp))
                     .clickable(enabled = false) {}, // absorb clicks inside dialog
-                color = dynamicSurfaceColor(),
-                border = BorderStroke(1.dp, dynamicBorderColor()),
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 6.dp,
+                cornerRadiusDp = 24.dp,
             ) {
                 Column(
                     modifier = Modifier

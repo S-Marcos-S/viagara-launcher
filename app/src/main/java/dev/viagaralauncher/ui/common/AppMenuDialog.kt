@@ -44,6 +44,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 
 data class AppMenuItem(
     val title: String,
@@ -95,19 +96,15 @@ fun AppMenuDialog(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Surface(
+            GlassDialogContainer(
                 modifier = Modifier
                     .fillMaxWidth(0.86f)
-                    .clip(RoundedCornerShape(28.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                color = dynamicSurfaceColor(),
-                border = androidx.compose.foundation.BorderStroke(1.dp, dynamicBorderColor()),
-                shape = RoundedCornerShape(28.dp),
-                tonalElevation = 6.dp,
+                cornerRadiusDp = 28.dp,
             ) {
                 Column(
                     modifier = Modifier

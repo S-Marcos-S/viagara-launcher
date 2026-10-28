@@ -249,7 +249,9 @@ object WallpaperGlassProvider {
         positionInWindow: Offset,
         screenWidth: Float,
         screenHeight: Float,
-        corner: Float,
+        corner: Float = 0f,
+        topCorner: Float = corner,
+        bottomCorner: Float = corner,
         style: GlassStyle = GlassStyle.DEFAULT,
         surfaceColor: Int,
         tintOpacity: Int = 18,
@@ -259,7 +261,17 @@ object WallpaperGlassProvider {
         if (bounds.isEmpty) return
 
         val path = Path().apply {
-            addRoundRect(bounds, corner, corner, Path.Direction.CW)
+            if (topCorner == bottomCorner) {
+                addRoundRect(bounds, topCorner, topCorner, Path.Direction.CW)
+            } else {
+                val radii = floatArrayOf(
+                    topCorner, topCorner,
+                    topCorner, topCorner,
+                    bottomCorner, bottomCorner,
+                    bottomCorner, bottomCorner,
+                )
+                addRoundRect(bounds, radii, Path.Direction.CW)
+            }
         }
 
         // Draw shadow behind the element
@@ -299,7 +311,7 @@ object WallpaperGlassProvider {
                 shader.setInputShader("image", imageShader)
                 shader.setFloatUniform("origin", bounds.left, bounds.top)
                 shader.setFloatUniform("size", bounds.width(), bounds.height())
-                GlassShader.setRadii(shader, corner)
+                GlassShader.setRadii(shader, topCorner, bottomCorner)
                 GlassShader.applyStyle(shader, bounds.width(), bounds.height(), style)
                 GlassShader.setDim(shader, Color.TRANSPARENT)
                 shader.setInputShader("mask", emptyMaskShader)
@@ -339,6 +351,6 @@ object WallpaperGlassProvider {
         }
 
         // Draw outline / specular rim
-        GlassShader.drawOutline(canvas, bounds, corner, corner, style, 1f, density)
+        GlassShader.drawOutline(canvas, bounds, topCorner, bottomCorner, style, 1f, density)
     }
 }

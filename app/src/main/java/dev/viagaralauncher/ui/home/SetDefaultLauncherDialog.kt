@@ -50,6 +50,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import dev.viagaralauncher.R
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 
 @Composable
 fun SetDefaultLauncherDialog(
@@ -89,20 +90,16 @@ fun SetDefaultLauncherDialog(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            // Floating frosted glass dialog
-            Surface(
+            // Floating dialog with glass support
+            GlassDialogContainer(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(24.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                shape = RoundedCornerShape(24.dp),
-                color = dynamicSurfaceColor(),
-                border = BorderStroke(1.dp, dynamicBorderColor()),
-                tonalElevation = 6.dp,
+                cornerRadiusDp = 24.dp,
             ) {
                 Column(
                     modifier = Modifier

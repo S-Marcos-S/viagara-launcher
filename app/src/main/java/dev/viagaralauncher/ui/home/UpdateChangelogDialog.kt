@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -110,20 +111,16 @@ fun UpdateChangelogDialog(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            // Balão flutuante translúcido (frosted glass) com blur e transparência
-            Surface(
+            // Balão flutuante translúcido com suporte total a tema de vidro
+            GlassDialogContainer(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(24.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                shape = RoundedCornerShape(24.dp),
-                color = dynamicSurfaceColor(),
-                border = BorderStroke(1.dp, dynamicBorderColor()),
-                tonalElevation = 6.dp,
+                cornerRadiusDp = 24.dp,
             ) {
                 Column(
                     modifier = Modifier

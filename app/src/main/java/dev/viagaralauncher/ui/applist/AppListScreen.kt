@@ -119,6 +119,7 @@ import dev.viagaralauncher.ui.common.EditAppDialog
 import dev.viagaralauncher.ui.common.LocalIconConfig
 import dev.viagaralauncher.ui.common.recordTouchPosition
 import dev.viagaralauncher.ui.common.toComposeShape
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
 import dev.viagaralauncher.ui.theme.glass.GlassStyle
 import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import kotlinx.coroutines.Job
@@ -1057,7 +1058,7 @@ private fun AppListFloatingSearchButton(
     }
 
     val iconConfig = LocalIconConfig.current
-    val isGlassActive = iconConfig.themedIcons && iconConfig.themedIconStyle == ThemedIconStyle.GLASS
+    val isGlassActive = LocalGlassThemeActive.current
 
     val buttonSizeDp = 54.dp
     val surfaceColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.88f)
@@ -1321,7 +1322,7 @@ private fun ScrubLetterBubble(
     val insetPx = with(density) { 122.dp.toPx() }
 
     val iconConfig = LocalIconConfig.current
-    val isGlassActive = iconConfig.themedIcons && iconConfig.themedIconStyle == ThemedIconStyle.GLASS
+    val isGlassActive = LocalGlassThemeActive.current
 
     val bubbleModifier = modifier
         .offset {

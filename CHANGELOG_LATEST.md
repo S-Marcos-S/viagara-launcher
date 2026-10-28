@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.66
+### 🚀 Novidades da Versão v0.60.67
 
-- **Formatos de Ícones Personalizáveis:** Adicionada seleção de formato dos ícones nas configurações (Redondo, Estilo iOS, Material You e Quadrado).
-- **Suporte Total ao Efeito Vidro:** Todos os efeitos de refração, blur, iluminação de bordas e dispersão preservados em todos os formatos de ícone.
+- **Novo Tema Vidro:** Opção dedicada de tema nas configurações para ativar o efeito de vidro líquido e fosco na launcher.
+- **Efeito Vidro em Todas as Janelas:** Menus de aplicativos, relógio, widget, opções da tela inicial e diálogos agora contam com efeito de vidro refrativo completo.
+- **Separação de Lógica:** Botão dinâmico, busca e mostrador alfabético agora respondem ao Tema Vidro selecionado.

@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.window.DialogWindowProvider
 import dev.viagaralauncher.data.DailyQuote
 import dev.viagaralauncher.data.DailyQuoteManager
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -1958,19 +1959,15 @@ private fun FolderEditDialog(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Surface(
+            GlassDialogContainer(
                 modifier = Modifier
                     .fillMaxWidth(0.90f)
-                    .clip(RoundedCornerShape(28.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                color = dynamicSurfaceColor(),
-                border = androidx.compose.foundation.BorderStroke(1.dp, dynamicBorderColor()),
-                shape = RoundedCornerShape(28.dp),
-                tonalElevation = 6.dp,
+                cornerRadiusDp = 28.dp,
             ) {
                 Column(
                     modifier = Modifier
@@ -2316,19 +2313,15 @@ private fun ClockContextMenu(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Surface(
+            GlassDialogContainer(
                 modifier = Modifier
                     .fillMaxWidth(0.86f)
-                    .clip(RoundedCornerShape(28.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                color = dynamicSurfaceColor(),
-                border = BorderStroke(1.dp, dynamicBorderColor()),
-                shape = RoundedCornerShape(28.dp),
-                tonalElevation = 6.dp,
+                cornerRadiusDp = 28.dp,
             ) {
                 Column(
                     modifier = Modifier

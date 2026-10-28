@@ -65,6 +65,7 @@ import dev.viagaralauncher.service.HapticUtil
 import dev.viagaralauncher.ui.common.LocalIconConfig
 import dev.viagaralauncher.ui.common.ThemedAppIcon
 import dev.viagaralauncher.ui.common.toComposeShape
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
 import dev.viagaralauncher.ui.theme.glass.GlassStyle
 import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import kotlinx.coroutines.Job
@@ -374,7 +375,7 @@ fun DynamicActionButton(
         }
 
         val iconConfig = LocalIconConfig.current
-        val isGlassActive = iconConfig.themedIcons && iconConfig.themedIconStyle == ThemedIconStyle.GLASS
+        val isGlassActive = LocalGlassThemeActive.current
 
         val buttonModifier = Modifier
             .graphicsLayer {

@@ -80,6 +80,16 @@ fun ThemesScreen(
                 ),
             ),
             ThemeOption(
+                id = "glass",
+                titleRes = R.string.theme_glass_title,
+                descRes = R.string.theme_glass_desc,
+                previewSwatches = listOf(
+                    Color(0xFF7FD1E0),
+                    Color(0x66FFFFFF),
+                    Color(0xFF22303E),
+                ),
+            ),
+            ThemeOption(
                 id = "oled_black",
                 titleRes = R.string.theme_oled_black_title,
                 descRes = R.string.theme_oled_black_desc,

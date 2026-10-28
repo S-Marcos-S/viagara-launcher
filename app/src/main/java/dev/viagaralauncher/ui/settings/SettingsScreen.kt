@@ -4,6 +4,7 @@ package dev.viagaralauncher.ui.settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -1078,7 +1079,8 @@ private fun ThemeColorPaletteRow(
     val view = LocalView.current
     val colorScheme = MaterialTheme.colorScheme
 
-    val options = remember(colorScheme) {
+    val isDark = isSystemInDarkTheme()
+    val options = remember(colorScheme, isDark) {
         listOf(
             ThemeColorDotOption(
                 id = "system_dynamic",
@@ -1086,6 +1088,13 @@ private fun ThemeColorPaletteRow(
                 color = colorScheme.primary,
                 borderColor = colorScheme.outlineVariant.copy(alpha = 0.5f),
                 checkmarkColor = colorScheme.onPrimary,
+            ),
+            ThemeColorDotOption(
+                id = "glass",
+                nameRes = R.string.theme_glass_title,
+                color = if (isDark) Color(0x667FD1E0) else Color(0x88A0D0E8),
+                borderColor = Color.White.copy(alpha = 0.85f),
+                checkmarkColor = Color.White,
             ),
             ThemeColorDotOption(
                 id = "oled_black",

@@ -26,6 +26,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -82,7 +83,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
+import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -144,6 +148,9 @@ fun HomeOptionsBottomSheet(
     }
 
     val colorScheme = MaterialTheme.colorScheme
+    val isGlassActive = LocalGlassThemeActive.current
+    val density = LocalDensity.current
+    val topCornerPx = with(density) { 24.dp.toPx() }
 
     AnimatedVisibility(
         visible = visible,
@@ -162,78 +169,71 @@ fun HomeOptionsBottomSheet(
                 ),
             contentAlignment = Alignment.BottomCenter,
         ) {
-            Column(
-                modifier = Modifier
-                    .animateEnterExit(
-                        enter = slideInVertically(
-                            initialOffsetY = { fullHeight -> fullHeight },
-                            animationSpec = spring(
-                                dampingRatio = 0.82f,
-                                stiffness = Spring.StiffnessMediumLow,
-                            ),
-                        ) + fadeIn(animationSpec = tween(durationMillis = 180)),
-                        exit = slideOutVertically(
-                            targetOffsetY = { fullHeight -> fullHeight },
-                            animationSpec = tween(
-                                durationMillis = 200,
-                                easing = FastOutLinearInEasing,
-                            ),
-                        ) + fadeOut(animationSpec = tween(durationMillis = 150)),
-                    )
-                    .offset { IntOffset(0, dragOffsetY.value.coerceAtLeast(0f).roundToInt()) }
-                    .draggable(
-                        state = rememberDraggableState { delta ->
-                            coroutineScope.launch {
-                                val next = (dragOffsetY.value + delta).coerceAtLeast(0f)
-                                dragOffsetY.snapTo(next)
-                            }
-                        },
-                        orientation = Orientation.Vertical,
-                        onDragStopped = { velocity ->
-                            coroutineScope.launch {
-                                // velocity < 0: gesture moving/flung UPWARDS
-                                // velocity > 0: gesture moving/flung DOWNWARDS
-                                val isFlingUp = velocity < -150f
-                                val isFlingDown = velocity > 600f
+            val sheetModifier = Modifier
+                .animateEnterExit(
+                    enter = slideInVertically(
+                        initialOffsetY = { fullHeight -> fullHeight },
+                        animationSpec = spring(
+                            dampingRatio = 0.82f,
+                            stiffness = Spring.StiffnessMediumLow,
+                        ),
+                    ) + fadeIn(animationSpec = tween(durationMillis = 180)),
+                    exit = slideOutVertically(
+                        targetOffsetY = { fullHeight -> fullHeight },
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = FastOutLinearInEasing,
+                        ),
+                    ) + fadeOut(animationSpec = tween(durationMillis = 150)),
+                )
+                .offset { IntOffset(0, dragOffsetY.value.coerceAtLeast(0f).roundToInt()) }
+                .draggable(
+                    state = rememberDraggableState { delta ->
+                        coroutineScope.launch {
+                            val next = (dragOffsetY.value + delta).coerceAtLeast(0f)
+                            dragOffsetY.snapTo(next)
+                        }
+                    },
+                    orientation = Orientation.Vertical,
+                    onDragStopped = { velocity ->
+                        coroutineScope.launch {
+                            // velocity < 0: gesture moving/flung UPWARDS
+                            // velocity > 0: gesture moving/flung DOWNWARDS
+                            val isFlingUp = velocity < -150f
+                            val isFlingDown = velocity > 600f
 
-                                val shouldDismiss = when {
-                                    isFlingUp -> false
-                                    isFlingDown -> true
-                                    velocity < 0f -> dragOffsetY.value > 280f
-                                    else -> dragOffsetY.value > 160f
-                                }
-
-                                if (shouldDismiss) {
-                                    onDismiss()
-                                } else {
-                                    val initialVel = if (velocity < 0f) velocity else 0f
-                                    dragOffsetY.animateTo(
-                                        targetValue = 0f,
-                                        initialVelocity = initialVel,
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioNoBouncy,
-                                            stiffness = Spring.StiffnessMediumLow,
-                                        ),
-                                    )
-                                }
+                            val shouldDismiss = when {
+                                isFlingUp -> false
+                                isFlingDown -> true
+                                velocity < 0f -> dragOffsetY.value > 280f
+                                else -> dragOffsetY.value > 160f
                             }
-                        },
-                    )
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .background(lerp(colorScheme.surfaceContainerLow, colorScheme.primary, 0.10f))
-                    .border(
-                        BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.25f)),
-                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    )
-                    .navigationBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {},
-                    ),
-            ) {
+
+                            if (shouldDismiss) {
+                                onDismiss()
+                            } else {
+                                val initialVel = if (velocity < 0f) velocity else 0f
+                                dragOffsetY.animateTo(
+                                    targetValue = 0f,
+                                    initialVelocity = initialVel,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMediumLow,
+                                    ),
+                                )
+                            }
+                        }
+                    },
+                )
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                )
+
+            val sheetInnerContent: @Composable ColumnScope.() -> Unit = {
                 // Drag handle
                 Box(
                     modifier = Modifier
@@ -495,6 +495,34 @@ fun HomeOptionsBottomSheet(
                 )
 
                 Spacer(Modifier.height(8.dp))
+            }
+
+            if (isGlassActive) {
+                GlassSurface(
+                    modifier = sheetModifier,
+                    topCornerPx = topCornerPx,
+                    bottomCornerPx = 0f,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        content = sheetInnerContent,
+                    )
+                }
+            } else {
+                Column(
+                    modifier = sheetModifier
+                        .background(lerp(colorScheme.surfaceContainerLow, colorScheme.primary, 0.10f))
+                        .border(
+                            BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.25f)),
+                            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                        )
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    content = sheetInnerContent,
+                )
             }
         }
     }

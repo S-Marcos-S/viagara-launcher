@@ -104,6 +104,8 @@
     <string name="themes_subtitle">Personalize the appearance and colors of your launcher</string>
     <string name="theme_system_dynamic_title">System Dynamic</string>
     <string name="theme_system_dynamic_desc">Colors extracted from your wallpaper with Material You</string>
+    <string name="theme_glass_title">Glass</string>
+    <string name="theme_glass_desc">Liquid refraction and frosted glass styling across the launcher</string>
     <string name="theme_oled_black_title">OLED Black</string>
     <string name="theme_oled_black_desc">Pure deep black surfaces, ideal for AMOLED displays</string>
     <string name="theme_dark_modern_title">Modern Dark</string>
