@@ -238,7 +238,7 @@ object WallpaperGlassProvider {
             val wallpaperRect = RectF(0f, 0f, screenWidth, screenHeight)
             val shaderMatrix = Matrix()
             val bitmapRect = RectF(0f, 0f, base.width.toFloat(), base.height.toFloat())
-            shaderMatrix.setRectToRect(bitmapRect, wallpaperRect, Matrix.ScaleToFit.CENTER_CROP)
+            shaderMatrix.setRectToRect(bitmapRect, wallpaperRect, Matrix.ScaleToFit.FILL)
             shaderMatrix.postTranslate(-positionInWindow.x, -positionInWindow.y)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
