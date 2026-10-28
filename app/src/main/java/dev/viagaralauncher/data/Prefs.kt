@@ -55,6 +55,29 @@ enum class TextColorMode { AUTO, LIGHT, DARK }
 
 enum class ThemedIconStyle { MATERIAL_YOU, MINIMALIST, OLED_DARK, GLASS }
 
+enum class IconShape {
+    CIRCLE,
+    SQUIRCLE_IOS,
+    MATERIAL_YOU,
+    SQUARE;
+
+    val cornerPercent: Int
+        get() = when (this) {
+            CIRCLE -> 50
+            SQUIRCLE_IOS -> 22
+            MATERIAL_YOU -> 28
+            SQUARE -> 4
+        }
+
+    val cornerFraction: Float
+        get() = when (this) {
+            CIRCLE -> 0.50f
+            SQUIRCLE_IOS -> 0.22f
+            MATERIAL_YOU -> 0.28f
+            SQUARE -> 0.04f
+        }
+}
+
 private val Context.dataStore by preferencesDataStore(name = "viagara_prefs")
 
 class Prefs(private val context: Context) {
@@ -92,6 +115,7 @@ class Prefs(private val context: Context) {
         val ICON_PACK_PACKAGE = stringPreferencesKey("icon_pack_package")
         val THEMED_ICONS = booleanPreferencesKey("themed_icons")
         val THEMED_ICON_STYLE = stringPreferencesKey("themed_icon_style")
+        val ICON_SHAPE = stringPreferencesKey("icon_shape")
         val NOW_PLAYING_ENABLED = booleanPreferencesKey("now_playing_enabled")
         val AUDIO_VISUALIZER_ENABLED = booleanPreferencesKey("audio_visualizer_enabled")
         val AUDIO_VISUALIZER_SPEED = floatPreferencesKey("audio_visualizer_speed")
@@ -229,6 +253,11 @@ class Prefs(private val context: Context) {
     val themedIconStyle: Flow<ThemedIconStyle> = data.map {
         runCatching { ThemedIconStyle.valueOf(it[Keys.THEMED_ICON_STYLE] ?: ThemedIconStyle.MATERIAL_YOU.name) }
             .getOrDefault(ThemedIconStyle.MATERIAL_YOU)
+    }.distinctUntilChanged()
+
+    val iconShape: Flow<IconShape> = data.map {
+        runCatching { IconShape.valueOf(it[Keys.ICON_SHAPE] ?: IconShape.MATERIAL_YOU.name) }
+            .getOrDefault(IconShape.MATERIAL_YOU)
     }.distinctUntilChanged()
 
     val nowPlayingEnabled: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_ENABLED] ?: true }.distinctUntilChanged()
@@ -507,6 +536,10 @@ class Prefs(private val context: Context) {
 
     suspend fun setThemedIconStyle(v: ThemedIconStyle) {
         context.dataStore.edit { it[Keys.THEMED_ICON_STYLE] = v.name }
+    }
+
+    suspend fun setIconShape(v: IconShape) {
+        context.dataStore.edit { it[Keys.ICON_SHAPE] = v.name }
     }
 
     suspend fun setActiveThemeId(id: String) {

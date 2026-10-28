@@ -118,6 +118,7 @@ import dev.viagaralauncher.ui.common.AppIcon
 import dev.viagaralauncher.ui.common.EditAppDialog
 import dev.viagaralauncher.ui.common.LocalIconConfig
 import dev.viagaralauncher.ui.common.recordTouchPosition
+import dev.viagaralauncher.ui.common.toComposeShape
 import dev.viagaralauncher.ui.theme.glass.GlassStyle
 import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import kotlinx.coroutines.Job
@@ -1097,10 +1098,11 @@ private fun AppListFloatingSearchButton(
         )
     }
 
+    val buttonShape = iconConfig.iconShape.toComposeShape()
+
     if (isGlassActive) {
         GlassSurface(
             modifier = buttonModifier,
-            cornerPx = with(density) { 22.dp.toPx() },
             style = GlassStyle.DEFAULT,
         ) {
             iconContent()
@@ -1110,15 +1112,15 @@ private fun AppListFloatingSearchButton(
             modifier = buttonModifier
                 .shadow(
                     elevation = 6.dp,
-                    shape = RoundedCornerShape(22.dp),
+                    shape = buttonShape,
                     ambientColor = Color.Black.copy(alpha = 0.25f),
                     spotColor = Color.Black.copy(alpha = 0.35f),
                 )
-                .clip(RoundedCornerShape(22.dp))
+                .clip(buttonShape)
                 .background(surfaceColor)
                 .border(
                     BorderStroke(1.dp, borderColor),
-                    shape = RoundedCornerShape(22.dp),
+                    shape = buttonShape,
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -1352,10 +1354,11 @@ private fun ScrubLetterBubble(
         }
     }
 
+    val bubbleShape = iconConfig.iconShape.toComposeShape()
+
     if (isGlassActive) {
         GlassSurface(
             modifier = bubbleModifier,
-            cornerPx = with(density) { 22.dp.toPx() },
             style = GlassStyle.DEFAULT,
         ) {
             bubbleContent()
@@ -1363,7 +1366,7 @@ private fun ScrubLetterBubble(
     } else {
         Surface(
             color = Color.Black.copy(alpha = 0.6f),
-            shape = RoundedCornerShape(22.dp),
+            shape = bubbleShape,
             modifier = bubbleModifier,
         ) {
             bubbleContent()

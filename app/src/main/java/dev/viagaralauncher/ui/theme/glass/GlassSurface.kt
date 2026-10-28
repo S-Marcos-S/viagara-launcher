@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import dev.viagaralauncher.ui.common.LocalIconConfig
 
 /**
  * Universal glass container that renders refractive liquid/frosted glass backdrop
@@ -36,7 +37,7 @@ import androidx.compose.ui.platform.LocalView
 fun GlassSurface(
     modifier: Modifier = Modifier,
     cornerPx: Float? = null,
-    cornerFraction: Float = 0.28f,
+    cornerFraction: Float? = null,
     tintOpacity: Int = 20,
     style: GlassStyle = GlassStyle.DEFAULT,
     surfaceColor: Int = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
@@ -56,6 +57,8 @@ fun GlassSurface(
         WallpaperGlassProvider.init(context)
     }
     val wallpaperTick by WallpaperGlassProvider.wallpaperTick.collectAsState()
+    val iconConfig = LocalIconConfig.current
+    val effectiveCornerFraction = cornerFraction ?: iconConfig.iconShape.cornerFraction
 
     Box(
         modifier = modifier
@@ -68,7 +71,7 @@ fun GlassSurface(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val dummy = tick
             drawIntoCanvas { composeCanvas ->
-                val resolvedCorner = cornerPx ?: (size.width * cornerFraction)
+                val resolvedCorner = cornerPx ?: (size.width * effectiveCornerFraction)
                 WallpaperGlassProvider.drawGlassElement(
                     canvas = composeCanvas.nativeCanvas,
                     bounds = RectF(0f, 0f, size.width, size.height),

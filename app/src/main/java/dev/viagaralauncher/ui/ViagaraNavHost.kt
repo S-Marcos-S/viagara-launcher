@@ -47,6 +47,7 @@ import dev.viagaralauncher.data.AppFont
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.ClockStyle
 import dev.viagaralauncher.data.EdgeSide
+import dev.viagaralauncher.data.IconShape
 import dev.viagaralauncher.data.CustomClockStyle
 import dev.viagaralauncher.data.HomePaddings
 import dev.viagaralauncher.data.ThemedIconStyle
@@ -237,6 +238,7 @@ fun ViagaraNavHost(
 
     val themedIcons by app.prefs.themedIcons.collectAsState(initial = false)
     val themedIconStyle by app.prefs.themedIconStyle.collectAsState(initial = ThemedIconStyle.MATERIAL_YOU)
+    val iconShape by app.prefs.iconShape.collectAsState(initial = IconShape.MATERIAL_YOU)
     val activeThemeId by app.prefs.activeThemeId.collectAsState(initial = "system_dynamic")
 
     val dynamicButtonEnabled by app.prefs.dynamicButtonEnabled.collectAsState(initial = true)
@@ -516,6 +518,8 @@ fun ViagaraNavHost(
                 themedIconStyle = themedIconStyle,
                 onSetThemedIcons = { scope.launch { app.prefs.setThemedIcons(it) } },
                 onSetThemedIconStyle = { scope.launch { app.prefs.setThemedIconStyle(it) } },
+                iconShape = iconShape,
+                onSetIconShape = { scope.launch { app.prefs.setIconShape(it) } },
                 activeThemeId = activeThemeId,
                 onSetActiveThemeId = { scope.launch { app.prefs.setActiveThemeId(it) } },
                 onOpenAccessibilitySettings = {

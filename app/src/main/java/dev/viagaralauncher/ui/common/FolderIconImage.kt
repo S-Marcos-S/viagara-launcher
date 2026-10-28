@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.viagaralauncher.ViagaraApp
+import dev.viagaralauncher.data.IconShape
 import dev.viagaralauncher.data.ThemedIconStyle
 
 /**
@@ -51,22 +52,23 @@ fun FolderIconImage(override: String, sizeDp: Int, modifier: Modifier = Modifier
     }
 
     if (bitmap != null) {
+        val composeShape = remember(config.iconShape) { config.iconShape.toComposeShape() }
         if (config.themedIcons) {
             when (config.themedIconStyle) {
                 ThemedIconStyle.MATERIAL_YOU -> {
-                    val squircleShape = remember { RoundedCornerShape(percent = 28) }
+                    val glyphScale = if (config.iconShape == IconShape.CIRCLE) 0.68f else 0.74f
                     Box(
                         modifier = modifier
                             .size(sizeDp.dp)
-                            .clip(squircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer, squircleShape),
+                            .clip(composeShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer, composeShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
                             bitmap = bitmap,
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary, BlendMode.SrcIn),
-                            modifier = Modifier.size((sizeDp * 0.74f).dp),
+                            modifier = Modifier.size((sizeDp * glyphScale).dp),
                         )
                     }
                 }
@@ -84,20 +86,20 @@ fun FolderIconImage(override: String, sizeDp: Int, modifier: Modifier = Modifier
                     }
                 }
                 ThemedIconStyle.OLED_DARK -> {
-                    val squircleShape = remember { RoundedCornerShape(percent = 28) }
+                    val glyphScale = if (config.iconShape == IconShape.CIRCLE) 0.66f else 0.72f
                     Box(
                         modifier = modifier
                             .size(sizeDp.dp)
-                            .clip(squircleShape)
-                            .background(androidx.compose.ui.graphics.Color.Black, squircleShape)
-                            .border(1.dp, androidx.compose.ui.graphics.Color(0xFF262626), squircleShape),
+                            .clip(composeShape)
+                            .background(androidx.compose.ui.graphics.Color.Black, composeShape)
+                            .border(1.dp, androidx.compose.ui.graphics.Color(0xFF262626), composeShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
                             bitmap = bitmap,
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(androidx.compose.ui.graphics.Color(0xFFEDEDED), BlendMode.SrcIn),
-                            modifier = Modifier.size((sizeDp * 0.72f).dp),
+                            modifier = Modifier.size((sizeDp * glyphScale).dp),
                         )
                     }
                 }
@@ -107,11 +109,18 @@ fun FolderIconImage(override: String, sizeDp: Int, modifier: Modifier = Modifier
                         bitmap = bitmap,
                         contentDescription = null,
                         modifier = modifier,
+                        shape = config.iconShape,
                     )
                 }
             }
         } else {
-            Image(bitmap = bitmap, contentDescription = null, modifier = modifier.size(sizeDp.dp))
+            Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                modifier = modifier
+                    .size(sizeDp.dp)
+                    .clip(composeShape),
+            )
         }
         return true
     }

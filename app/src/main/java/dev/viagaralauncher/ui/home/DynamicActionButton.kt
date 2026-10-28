@@ -64,6 +64,7 @@ import dev.viagaralauncher.data.ThemedIconStyle
 import dev.viagaralauncher.service.HapticUtil
 import dev.viagaralauncher.ui.common.LocalIconConfig
 import dev.viagaralauncher.ui.common.ThemedAppIcon
+import dev.viagaralauncher.ui.common.toComposeShape
 import dev.viagaralauncher.ui.theme.glass.GlassStyle
 import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import kotlinx.coroutines.Job
@@ -471,6 +472,8 @@ fun DynamicActionButton(
             }
         }
 
+        val buttonShape = iconConfig.iconShape.toComposeShape()
+
         if (isGlassActive) {
             val glassStyle = if (thresholdCrossed) {
                 GlassStyle.DEFAULT.copy(
@@ -483,7 +486,6 @@ fun DynamicActionButton(
             }
             GlassSurface(
                 modifier = buttonModifier,
-                cornerPx = with(density) { 22.dp.toPx() },
                 style = glassStyle,
             ) {
                 buttonContent()
@@ -493,18 +495,18 @@ fun DynamicActionButton(
                 modifier = buttonModifier
                     .shadow(
                         elevation = if (thresholdCrossed) 12.dp else 6.dp,
-                        shape = RoundedCornerShape(22.dp),
+                        shape = buttonShape,
                         ambientColor = Color.Black.copy(alpha = 0.25f),
                         spotColor = if (thresholdCrossed) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.35f),
                     )
-                    .clip(RoundedCornerShape(22.dp))
+                    .clip(buttonShape)
                     .background(surfaceColor)
                     .border(
                         BorderStroke(
                             width = if (thresholdCrossed) 2.dp else 1.dp,
                             color = activeBorderColor,
                         ),
-                        shape = RoundedCornerShape(22.dp),
+                        shape = buttonShape,
                     ),
                 contentAlignment = Alignment.Center,
             ) {

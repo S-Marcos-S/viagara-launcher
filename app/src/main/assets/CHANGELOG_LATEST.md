@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.65
+### 🚀 Novidades da Versão v0.60.66
 
-- **Efeito Vidro no Botão de Pesquisa:** Efeito de vidro idêntico aos ícones aplicado ao botão flutuante de busca do app drawer quando o estilo vidro está ativo.
-- **Menu de Contexto do App Simplificado:** Removidas as opções de configurações do launcher e editar layout ao pressionar e segurar um app na tela inicial.
+- **Formatos de Ícones Personalizáveis:** Adicionada seleção de formato dos ícones nas configurações (Redondo, Estilo iOS, Material You e Quadrado).
+- **Suporte Total ao Efeito Vidro:** Todos os efeitos de refração, blur, iluminação de bordas e dispersão preservados em todos os formatos de ícone.

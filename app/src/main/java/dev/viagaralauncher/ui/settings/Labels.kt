@@ -71,3 +71,11 @@ fun dev.viagaralauncher.data.ThemedIconStyle.labelRes(): Int = when (this) {
     dev.viagaralauncher.data.ThemedIconStyle.OLED_DARK -> R.string.settings_themed_icons_style_oled_dark
     dev.viagaralauncher.data.ThemedIconStyle.GLASS -> R.string.settings_themed_icons_style_glass
 }
+
+@StringRes
+fun dev.viagaralauncher.data.IconShape.labelRes(): Int = when (this) {
+    dev.viagaralauncher.data.IconShape.CIRCLE -> R.string.settings_icon_shape_circle
+    dev.viagaralauncher.data.IconShape.SQUIRCLE_IOS -> R.string.settings_icon_shape_ios
+    dev.viagaralauncher.data.IconShape.MATERIAL_YOU -> R.string.settings_icon_shape_material_you
+    dev.viagaralauncher.data.IconShape.SQUARE -> R.string.settings_icon_shape_square
+}

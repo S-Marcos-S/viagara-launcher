@@ -82,6 +82,7 @@ import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.ClockStyle
 import dev.viagaralauncher.data.EdgeSide
 import dev.viagaralauncher.data.IconPackRepository
+import dev.viagaralauncher.data.IconShape
 import dev.viagaralauncher.data.TextColorMode
 import dev.viagaralauncher.data.ThemedIconStyle
 import dev.viagaralauncher.ui.common.AppIcon
@@ -145,6 +146,8 @@ fun SettingsScreen(
     themedIconStyle: ThemedIconStyle = ThemedIconStyle.MATERIAL_YOU,
     onSetThemedIcons: (Boolean) -> Unit = {},
     onSetThemedIconStyle: (ThemedIconStyle) -> Unit = {},
+    iconShape: IconShape = IconShape.MATERIAL_YOU,
+    onSetIconShape: (IconShape) -> Unit = {},
     activeThemeId: String = "system_dynamic",
     onSetActiveThemeId: (String) -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit,
@@ -202,6 +205,8 @@ fun SettingsScreen(
                     RowPreview(previewApp, iconSizeDp, labelSizeSp, font)
                     RowDivider()
                     IconPackRow(iconPacks, iconPackPackage, onSetIconPack)
+                    RowDivider()
+                    IconShapeRow(iconShape, onSetIconShape)
                     RowDivider()
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_themed_icons),
@@ -875,6 +880,23 @@ private fun IconPackRow(packs: List<IconPackRepository.IconPackInfo>, selected: 
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier.padding(top = 8.dp),
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun IconShapeRow(selected: IconShape, onSelect: (IconShape) -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(stringResource(R.string.settings_icon_shape), style = MaterialTheme.typography.bodyMedium)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            IconShape.entries.forEach { shape ->
+                FilledChip(stringResource(shape.labelRes()), selected == shape) { onSelect(shape) }
+            }
         }
     }
 }

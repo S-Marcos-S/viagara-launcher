@@ -22,6 +22,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.viagaralauncher.ViagaraApp
 import dev.viagaralauncher.data.AppInfo
+import dev.viagaralauncher.data.IconShape
 import dev.viagaralauncher.data.ThemedIconStyle
 import dev.viagaralauncher.ui.theme.glass.GlassStyle
 import dev.viagaralauncher.ui.theme.glass.GlassSurface
@@ -176,10 +179,18 @@ data class IconConfig(
     val overrides: Map<String, String>,
     val themedIcons: Boolean = false,
     val themedIconStyle: ThemedIconStyle = ThemedIconStyle.MATERIAL_YOU,
+    val iconShape: IconShape = IconShape.MATERIAL_YOU,
 )
 
+fun IconShape.toComposeShape(): Shape = when (this) {
+    IconShape.CIRCLE -> CircleShape
+    IconShape.SQUIRCLE_IOS -> RoundedCornerShape(percent = 22)
+    IconShape.MATERIAL_YOU -> RoundedCornerShape(percent = 28)
+    IconShape.SQUARE -> RoundedCornerShape(percent = 4)
+}
+
 val LocalIconConfig = staticCompositionLocalOf {
-    IconConfig(null, emptyMap(), false, ThemedIconStyle.MATERIAL_YOU)
+    IconConfig(null, emptyMap(), false, ThemedIconStyle.MATERIAL_YOU, IconShape.MATERIAL_YOU)
 }
 
 @Composable
@@ -217,8 +228,15 @@ fun AppIcon(app: AppInfo, sizeDp: Int, modifier: Modifier = Modifier) {
         }
 
         val currentBitmap = bitmap
+        val composeShape = remember(config.iconShape) { config.iconShape.toComposeShape() }
         if (currentBitmap != null) {
-            Image(bitmap = currentBitmap, contentDescription = app.label, modifier = modifier.size(sizeDp.dp))
+            Image(
+                bitmap = currentBitmap,
+                contentDescription = app.label,
+                modifier = modifier
+                    .size(sizeDp.dp)
+                    .clip(composeShape),
+            )
         } else {
             Box(modifier = modifier.size(sizeDp.dp))
         }
@@ -236,6 +254,7 @@ fun ThemedAppIcon(
     sizeDp: Int,
     modifier: Modifier = Modifier,
     style: ThemedIconStyle = LocalIconConfig.current.themedIconStyle,
+    shape: IconShape = LocalIconConfig.current.iconShape,
     tintColor: Color? = null,
     containerColor: Color? = null,
 ) {
@@ -269,12 +288,13 @@ fun ThemedAppIcon(
 
     when (style) {
         ThemedIconStyle.MATERIAL_YOU -> {
-            val squircleShape = remember { RoundedCornerShape(percent = 28) }
+            val composeShape = remember(shape) { shape.toComposeShape() }
+            val glyphScale = if (shape == IconShape.CIRCLE) 0.68f else 0.74f
             Box(
                 modifier = modifier
                     .size(sizeDp.dp)
-                    .clip(squircleShape)
-                    .background(effectiveContainerColor, squircleShape),
+                    .clip(composeShape)
+                    .background(effectiveContainerColor, composeShape),
                 contentAlignment = Alignment.Center,
             ) {
                 if (currentBitmap != null) {
@@ -282,7 +302,7 @@ fun ThemedAppIcon(
                         bitmap = currentBitmap,
                         contentDescription = app.label,
                         colorFilter = ColorFilter.tint(effectiveTintColor, BlendMode.SrcIn),
-                        modifier = Modifier.size((sizeDp * 0.74f).dp),
+                        modifier = Modifier.size((sizeDp * glyphScale).dp),
                     )
                 }
             }
@@ -303,13 +323,14 @@ fun ThemedAppIcon(
             }
         }
         ThemedIconStyle.OLED_DARK -> {
-            val squircleShape = remember { RoundedCornerShape(percent = 28) }
+            val composeShape = remember(shape) { shape.toComposeShape() }
+            val glyphScale = if (shape == IconShape.CIRCLE) 0.66f else 0.72f
             Box(
                 modifier = modifier
                     .size(sizeDp.dp)
-                    .clip(squircleShape)
-                    .background(Color.Black, squircleShape)
-                    .border(1.dp, Color(0xFF262626), squircleShape),
+                    .clip(composeShape)
+                    .background(Color.Black, composeShape)
+                    .border(1.dp, Color(0xFF262626), composeShape),
                 contentAlignment = Alignment.Center,
             ) {
                 if (currentBitmap != null) {
@@ -317,7 +338,7 @@ fun ThemedAppIcon(
                         bitmap = currentBitmap,
                         contentDescription = app.label,
                         colorFilter = ColorFilter.tint(Color(0xFFEDEDED), BlendMode.SrcIn),
-                        modifier = Modifier.size((sizeDp * 0.72f).dp),
+                        modifier = Modifier.size((sizeDp * glyphScale).dp),
                     )
                 }
             }
@@ -329,6 +350,7 @@ fun ThemedAppIcon(
                 contentDescription = app.label,
                 modifier = modifier,
                 tintColor = tintColor,
+                shape = shape,
             )
         }
     }
@@ -342,6 +364,7 @@ fun GlassIconContainer(
     modifier: Modifier = Modifier,
     tintColor: Color? = null,
     style: GlassStyle = GlassStyle.DEFAULT,
+    shape: IconShape = LocalIconConfig.current.iconShape,
 ) {
     val isDark = isSystemInDarkTheme()
     val defaultGlyphColor = if (isDark) Color(0xFFF2F2F2) else MaterialTheme.colorScheme.primary
@@ -349,15 +372,16 @@ fun GlassIconContainer(
 
     GlassSurface(
         modifier = modifier.size(sizeDp.dp),
-        cornerFraction = 0.28f,
+        cornerFraction = shape.cornerFraction,
         style = style,
     ) {
         if (bitmap != null) {
+            val glyphScale = if (shape == IconShape.CIRCLE) 0.66f else 0.72f
             Image(
                 bitmap = bitmap,
                 contentDescription = contentDescription,
                 colorFilter = ColorFilter.tint(effectiveGlyphTint, BlendMode.SrcIn),
-                modifier = Modifier.size((sizeDp * 0.72f).dp),
+                modifier = Modifier.size((sizeDp * glyphScale).dp),
             )
         }
     }
