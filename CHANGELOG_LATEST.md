@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.60.67
+### 🚀 Novidades da Versão v0.60.68
 
-- **Novo Tema Vidro:** Opção dedicada de tema nas configurações para ativar o efeito de vidro líquido e fosco na launcher.
-- **Efeito Vidro em Todas as Janelas:** Menus de aplicativos, relógio, widget, opções da tela inicial e diálogos agora contam com efeito de vidro refrativo completo.
-- **Separação de Lógica:** Botão dinâmico, busca e mostrador alfabético agora respondem ao Tema Vidro selecionado.
+- **Notificação de Velocidade ao Vivo:** Indicador de velocidade na barra de status e consumo diário móvel/Wi-Fi em tempo real.
+- **Visualização de Apps Ativos:** Botão para listar apps consumindo rede acima de 50 KB/s com atualização instantânea.
+- **Ações Rápidas Resumidas:** Botões compactos para ocultar apps, parar o serviço e abrir as configurações.

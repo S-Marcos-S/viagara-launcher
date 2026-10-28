@@ -1043,4 +1043,23 @@
     <string name="enforce_doze_notif_title">Eficiência do Enforce Doze</string>
     <string name="enforce_doze_notif_content">Standby: %1$s | Dreno: -%2$d%% (%3$s%%/h)</string>
     <string name="enforce_doze_notif_big_text">Período de tela apagada: %1$s\nBateria consumida: %2$d%% (Taxa: %3$s%%/h)\nO sono profundo forçado manteve processos e conexões contidos.</string>
+
+    <!-- Net Speed Indicator Notification -->
+    <string name="net_speed_notif_channel_name">Monitor de Velocidade de Rede</string>
+    <string name="net_speed_notif_channel_desc">Exibe a velocidade da internet em tempo real e consumo diário</string>
+    <string name="net_speed_title">Indicador de Rede</string>
+    <string name="net_speed_download">Download</string>
+    <string name="net_speed_upload">Upload</string>
+    <string name="net_speed_mobile_today">Dados Móveis hoje</string>
+    <string name="net_speed_wifi_today">Wi-Fi hoje</string>
+    <string name="net_speed_action_view_apps">Ver apps</string>
+    <string name="net_speed_action_hide_apps">Ocultar</string>
+    <string name="net_speed_action_stop">Parar</string>
+    <string name="net_speed_action_settings">Config.</string>
+    <string name="net_speed_active_apps_header">Apps ativos (&gt; %1$d KB/s):</string>
+    <string name="net_speed_no_active_apps">Nenhum app consumindo &gt; %1$d KB/s</string>
+    <string name="net_speed_card_title">Notificação de Consumo ao Vivo</string>
+    <string name="net_speed_card_desc">Velocidade em tempo real na barra de status e consumo diário móvel/Wi-Fi</string>
+    <string name="net_speed_option_realtime">Velocidade em tempo real</string>
+    <string name="net_speed_option_daily">Consumo de dados diário</string>
 </resources>

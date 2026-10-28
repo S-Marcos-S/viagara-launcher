@@ -4,6 +4,8 @@ package dev.viagaralauncher.battery
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import dev.viagaralauncher.network.NetSpeedSettings
+import dev.viagaralauncher.network.SpeedMonitorService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,6 +32,9 @@ class DrainNotificationReceiver : BroadcastReceiver() {
                     val tracker = AdvancedDrainTracker.getInstance(context)
                     tracker.clearSavedSession()
                     tracker.resetSession()
+                }
+                if (NetSpeedSettings(context).isEnabled) {
+                    SpeedMonitorService.start(context)
                 }
             }
         }

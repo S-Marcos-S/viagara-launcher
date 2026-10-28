@@ -64,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -78,7 +79,9 @@ import dev.viagaralauncher.R
 import dev.viagaralauncher.network.AppUsageInfo
 import dev.viagaralauncher.network.AppUsageSegment
 import dev.viagaralauncher.network.DataPoint
+import dev.viagaralauncher.network.NetSpeedSettings
 import dev.viagaralauncher.network.NetworkStatsRepository
+import dev.viagaralauncher.network.SpeedMonitorService
 import dev.viagaralauncher.network.StatsPeriod
 import dev.viagaralauncher.network.StatsUiState
 import dev.viagaralauncher.network.TimePeriodStats
@@ -341,6 +344,10 @@ private fun StatsContentList(
         }
 
         item {
+            LiveSpeedNotificationCard()
+        }
+
+        item {
             // Gráfico de Consumo
             Surface(
                 modifier = Modifier
@@ -407,6 +414,120 @@ private fun StatsContentList(
 
         item {
             Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun LiveSpeedNotificationCard() {
+    val context = LocalContext.current
+    val settings = remember { NetSpeedSettings(context) }
+    var isEnabled by remember { mutableStateOf(settings.isEnabled) }
+    var realTimeEnabled by remember { mutableStateOf(settings.isRealTimeEnabled) }
+    var dailyUsageEnabled by remember { mutableStateOf(settings.isDailyUsageEnabled) }
+    val colorScheme = MaterialTheme.colorScheme
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(20.dp)),
+        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+        tonalElevation = 2.dp,
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.net_speed_card_title),
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onSurface,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.net_speed_card_desc),
+                        fontSize = 11.5.sp,
+                        color = colorScheme.onSurfaceVariant,
+                        lineHeight = 15.sp,
+                    )
+                }
+                Switch(
+                    checked = isEnabled,
+                    onCheckedChange = { checked ->
+                        isEnabled = checked
+                        settings.isEnabled = checked
+                        if (checked) {
+                            SpeedMonitorService.start(context)
+                        } else {
+                            SpeedMonitorService.stop(context)
+                        }
+                    },
+                    modifier = Modifier.scale(0.85f),
+                )
+            }
+
+            AnimatedVisibility(visible = isEnabled) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    HorizontalDivider(color = colorScheme.outline.copy(alpha = 0.12f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.net_speed_option_realtime),
+                            fontSize = 12.5.sp,
+                            color = colorScheme.onSurface,
+                        )
+                        Switch(
+                            checked = realTimeEnabled,
+                            onCheckedChange = { checked ->
+                                realTimeEnabled = checked
+                                settings.isRealTimeEnabled = checked
+                                if (isEnabled) SpeedMonitorService.start(context)
+                            },
+                            modifier = Modifier.scale(0.75f),
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.net_speed_option_daily),
+                            fontSize = 12.5.sp,
+                            color = colorScheme.onSurface,
+                        )
+                        Switch(
+                            checked = dailyUsageEnabled,
+                            onCheckedChange = { checked ->
+                                dailyUsageEnabled = checked
+                                settings.isDailyUsageEnabled = checked
+                                if (isEnabled) SpeedMonitorService.start(context)
+                            },
+                            modifier = Modifier.scale(0.75f),
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -53,6 +53,9 @@ class ViagaraApp : Application() {
         if (dev.viagaralauncher.battery.DrainNotificationManager.isNotificationEnabled(this)) {
             dev.viagaralauncher.battery.DrainNotificationManager.getInstance(this).startNotification()
         }
+        if (dev.viagaralauncher.network.NetSpeedSettings(this).isEnabled) {
+            dev.viagaralauncher.network.SpeedMonitorService.start(this)
+        }
         val anomalyWatcher = dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(this)
         if (anomalyWatcher.config.value.isEnabled) {
             anomalyWatcher.start()

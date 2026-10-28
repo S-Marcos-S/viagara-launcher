@@ -1081,4 +1081,23 @@
     <string name="enforce_doze_notif_title">Enforce Doze Efficiency</string>
     <string name="enforce_doze_notif_content">Standby: %1$s | Drain: -%2$d%% (%3$s%%/h)</string>
     <string name="enforce_doze_notif_big_text">Screen off period: %1$s\nBattery used: %2$d%% (Rate: %3$s%%/h)\nDeep sleep mode kept background tasks constrained.</string>
+
+    <!-- Net Speed Indicator Notification -->
+    <string name="net_speed_notif_channel_name">Network Speed Monitor</string>
+    <string name="net_speed_notif_channel_desc">Shows real-time internet speed and daily data usage</string>
+    <string name="net_speed_title">Network Indicator</string>
+    <string name="net_speed_download">Download</string>
+    <string name="net_speed_upload">Upload</string>
+    <string name="net_speed_mobile_today">Mobile data today</string>
+    <string name="net_speed_wifi_today">Wi-Fi today</string>
+    <string name="net_speed_action_view_apps">Apps</string>
+    <string name="net_speed_action_hide_apps">Hide</string>
+    <string name="net_speed_action_stop">Stop</string>
+    <string name="net_speed_action_settings">Settings</string>
+    <string name="net_speed_active_apps_header">Active apps (&gt; %1$d KB/s):</string>
+    <string name="net_speed_no_active_apps">No apps consuming &gt; %1$d KB/s</string>
+    <string name="net_speed_card_title">Live Network Notification</string>
+    <string name="net_speed_card_desc">Real-time status bar speed icon and daily data usage notification</string>
+    <string name="net_speed_option_realtime">Real-time speed</string>
+    <string name="net_speed_option_daily">Daily data usage</string>
 </resources>
