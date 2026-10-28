@@ -1225,13 +1225,6 @@ fun HomeScreen(
             }
             add(
                 dev.viagaralauncher.ui.common.AppMenuItem(
-                    title = stringResource(R.string.action_edit_layout),
-                    icon = Icons.Filled.Edit,
-                    onClick = { onEditModeChange(true) },
-                )
-            )
-            add(
-                dev.viagaralauncher.ui.common.AppMenuItem(
                     title = stringResource(R.string.action_app_info),
                     icon = Icons.Filled.Info,
                     onClick = { onAppInfo(app) },
@@ -1242,13 +1235,6 @@ fun HomeScreen(
                     title = stringResource(R.string.action_edit_icon_and_name),
                     icon = Icons.Filled.Tune,
                     onClick = { renameDialogFor = app },
-                )
-            )
-            add(
-                dev.viagaralauncher.ui.common.AppMenuItem(
-                    title = stringResource(R.string.action_open_settings),
-                    icon = Icons.Filled.Settings,
-                    onClick = onOpenSettings,
                 )
             )
             add(
@@ -1574,11 +1560,6 @@ private fun FavoriteRow(
                 onClick = onMoveToFolder,
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_edit_layout)) },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                onClick = onEditLayout,
-            )
-            DropdownMenuItem(
                 text = { Text(stringResource(R.string.action_app_info)) },
                 leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },
                 onClick = onAppInfo,
@@ -1594,13 +1575,6 @@ private fun FavoriteRow(
                 leadingIcon = { Icon(Icons.Filled.Tune, contentDescription = null) },
                 onClick = onEditIconName,
             )
-            HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_open_settings)) },
-                leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                onClick = onOpenSettings,
-            )
-        }
     }
 }
 

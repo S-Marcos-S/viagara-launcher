@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.64
+### 🚀 Novidades da Versão v0.60.65
 
-- **Efeito Vidro no Botão Flutuante e no Alfabeto:** Efeito de vidro idêntico aos ícones aplicado ao botão dinâmico da tela inicial e ao mostrador de letras do app drawer quando o estilo vidro está ativo.
+- **Menu de Contexto do App Simplificado:** Removidas as opções de abrir configurações do launcher e editar layout ao pressionar e segurar um aplicativo, mantendo o menu mais limpo e direto.
