@@ -50,6 +50,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.viagaralauncher.ViagaraApp
@@ -345,13 +346,14 @@ fun GlassIconContainer(
     val defaultGlyphColor = if (isDark) Color(0xFFF2F2F2) else MaterialTheme.colorScheme.primary
     val effectiveGlyphTint = tintColor ?: defaultGlyphColor
     val density = LocalDensity.current.density
+    val context = LocalContext.current
+    val view = LocalView.current
     val configuration = LocalConfiguration.current
-    val screenWidthPx = with(LocalDensity.current) { configuration.screenWidthDp.dp.toPx() }
-    val screenHeightPx = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
+    val (screenWidthPx, screenHeightPx) = remember(context, view, configuration) {
+        WallpaperGlassProvider.getRealWindowSize(context, view)
+    }
     var positionInWindow by remember { mutableStateOf(Offset.Zero) }
     val surfaceColor = MaterialTheme.colorScheme.secondaryContainer.toArgb()
-
-    val context = LocalContext.current
     LaunchedEffect(Unit) {
         WallpaperGlassProvider.init(context)
     }

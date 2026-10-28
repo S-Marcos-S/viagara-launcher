@@ -21,6 +21,9 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.DisplayMetrics
+import android.view.View
+import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Offset
 import androidx.core.graphics.ColorUtils
@@ -64,6 +67,8 @@ object WallpaperGlassProvider {
     private var fallbackBitmap: Bitmap? = null
 
     private var liquidShaderInstance: Any? = null
+    @Volatile
+    private var appContextRef: Context? = null
 
     private val emptyMaskShader: BitmapShader by lazy {
         val bmp = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
@@ -71,8 +76,9 @@ object WallpaperGlassProvider {
     }
 
     fun init(context: Context) {
-        if (!initialized.compareAndSet(false, true)) return
         val appContext = context.applicationContext
+        appContextRef = appContext
+        if (!initialized.compareAndSet(false, true)) return
         refreshWallpaper(appContext)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -100,6 +106,7 @@ object WallpaperGlassProvider {
 
     fun refreshWallpaper(context: Context) {
         val appContext = context.applicationContext
+        appContextRef = appContext
         scope.launch {
             val bitmap = loadWallpaperBitmap(appContext)
             if (bitmap != null) {
@@ -211,6 +218,31 @@ object WallpaperGlassProvider {
         return shader
     }
 
+    fun getRealWindowSize(context: Context, view: View? = null): Pair<Float, Float> {
+        val rootView = view?.rootView
+        if (rootView != null && rootView.width > 0 && rootView.height > 0) {
+            return Pair(rootView.width.toFloat(), rootView.height.toFloat())
+        }
+        val wm = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
+        if (wm != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val bounds = wm.currentWindowMetrics.bounds
+                if (bounds.width() > 0 && bounds.height() > 0) {
+                    return Pair(bounds.width().toFloat(), bounds.height().toFloat())
+                }
+            } else {
+                val dm = DisplayMetrics()
+                @Suppress("DEPRECATION")
+                wm.defaultDisplay.getRealMetrics(dm)
+                if (dm.widthPixels > 0 && dm.heightPixels > 0) {
+                    return Pair(dm.widthPixels.toFloat(), dm.heightPixels.toFloat())
+                }
+            }
+        }
+        val dm = context.resources.displayMetrics
+        return Pair(dm.widthPixels.toFloat(), dm.heightPixels.toFloat())
+    }
+
     fun drawGlassElement(
         canvas: Canvas,
         bounds: RectF,
@@ -234,16 +266,34 @@ object WallpaperGlassProvider {
         GlassShader.drawShadow(canvas, path, bounds, style.shadow, density)
 
         val base = cachedSharp ?: fallbackBitmap
-        if (base != null && screenWidth > 0f && screenHeight > 0f) {
-            val wallpaperRect = RectF(0f, 0f, screenWidth, screenHeight)
-            val shaderMatrix = Matrix()
-            val bitmapRect = RectF(0f, 0f, base.width.toFloat(), base.height.toFloat())
-            shaderMatrix.setRectToRect(bitmapRect, wallpaperRect, Matrix.ScaleToFit.FILL)
-            shaderMatrix.postTranslate(-positionInWindow.x, -positionInWindow.y)
+        var targetWidth = screenWidth
+        var targetHeight = screenHeight
+        if (targetWidth <= 0f || targetHeight <= 0f) {
+            appContextRef?.let { ctx ->
+                val (w, h) = getRealWindowSize(ctx)
+                targetWidth = w
+                targetHeight = h
+            }
+        }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (base != null && targetWidth > 0f && targetHeight > 0f) {
+            val isTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            val activeBitmap = if (isTiramisu) base else (cachedBlurred ?: base)
+            val scale = max(targetWidth / activeBitmap.width.toFloat(), targetHeight / activeBitmap.height.toFloat())
+            val scaledWidth = activeBitmap.width.toFloat() * scale
+            val scaledHeight = activeBitmap.height.toFloat() * scale
+            val dx = (targetWidth - scaledWidth) / 2f
+            val dy = (targetHeight - scaledHeight) / 2f
+
+            val shaderMatrix = Matrix().apply {
+                setScale(scale, scale)
+                postTranslate(dx, dy)
+                postTranslate(-positionInWindow.x, -positionInWindow.y)
+            }
+
+            if (isTiramisu) {
                 val shader = getOrCreateLiquidShader()
-                val imageShader = BitmapShader(base, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+                val imageShader = BitmapShader(activeBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
                     setLocalMatrix(shaderMatrix)
                 }
                 shader.setInputShader("image", imageShader)
@@ -263,8 +313,7 @@ object WallpaperGlassProvider {
                 }
                 canvas.drawPath(path, paint)
             } else {
-                val blurred = cachedBlurred ?: base
-                val imageShader = BitmapShader(blurred, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+                val imageShader = BitmapShader(activeBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
                     setLocalMatrix(shaderMatrix)
                 }
                 val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {

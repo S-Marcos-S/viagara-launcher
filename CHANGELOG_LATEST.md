@@ -1,4 +1,3 @@
-### 🚀 Novidades da Versão v0.60.61
+### 🚀 Novidades da Versão v0.60.62
 
-- **Estilo de Ícones Vidro (Glass):** Novo estilo visual inspirado no PixelLauncherEnhanced com refração líquida AGSL e efeito fosco sobre o papel de parede.
-- **Dispersão Óptica e Borda Especular:** Efeito de lente com desvio cromático RGB, iluminação de contorno e sombreamento dinâmico.
+- **Alinhamento dos Ícones em Vidro:** Correção da escala e altura da tela no efeito de vidro para reflexo exato 1:1 com o papel de parede.
