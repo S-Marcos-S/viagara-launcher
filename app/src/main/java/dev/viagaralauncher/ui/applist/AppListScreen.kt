@@ -1046,6 +1046,7 @@ private fun AppListFloatingSearchButton(
 ) {
     val view = LocalView.current
     val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
     val pressScale = remember { Animatable(1f) }
     val pressSpring = remember {
         spring<Float>(
@@ -1054,56 +1055,75 @@ private fun AppListFloatingSearchButton(
         )
     }
 
+    val iconConfig = LocalIconConfig.current
+    val isGlassActive = iconConfig.themedIcons && iconConfig.themedIconStyle == ThemedIconStyle.GLASS
+
     val buttonSizeDp = 54.dp
     val surfaceColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.88f)
     val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
 
-    Box(
-        modifier = modifier
-            .size(buttonSizeDp)
-            .graphicsLayer {
-                scaleX = pressScale.value
-                scaleY = pressScale.value
-            }
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = Color.Black.copy(alpha = 0.25f),
-                spotColor = Color.Black.copy(alpha = 0.35f),
-            )
-            .clip(RoundedCornerShape(22.dp))
-            .background(surfaceColor)
-            .border(
-                BorderStroke(1.dp, borderColor),
-                shape = RoundedCornerShape(22.dp),
-            )
-            .pointerInput(hapticsEnabled) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    down.consume()
-                    scope.launch { pressScale.animateTo(0.88f, pressSpring) }
-                    val up = waitForUpOrCancellation()
-                    if (up != null) {
-                        up.consume()
-                        HapticUtil.tick(view, hapticsEnabled)
-                        scope.launch {
-                            pressScale.animateTo(1.08f, pressSpring)
-                            pressScale.animateTo(1.0f, pressSpring)
-                        }
-                        onClick()
-                    } else {
-                        scope.launch { pressScale.animateTo(1.0f, pressSpring) }
+    val buttonModifier = modifier
+        .size(buttonSizeDp)
+        .graphicsLayer {
+            scaleX = pressScale.value
+            scaleY = pressScale.value
+        }
+        .pointerInput(hapticsEnabled) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                down.consume()
+                scope.launch { pressScale.animateTo(0.88f, pressSpring) }
+                val up = waitForUpOrCancellation()
+                if (up != null) {
+                    up.consume()
+                    HapticUtil.tick(view, hapticsEnabled)
+                    scope.launch {
+                        pressScale.animateTo(1.08f, pressSpring)
+                        pressScale.animateTo(1.0f, pressSpring)
                     }
+                    onClick()
+                } else {
+                    scope.launch { pressScale.animateTo(1.0f, pressSpring) }
                 }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
+            }
+        }
+
+    val iconContent: @Composable () -> Unit = {
         Icon(
             imageVector = Icons.Filled.Search,
             contentDescription = stringResource(R.string.settings_search_title),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp),
         )
+    }
+
+    if (isGlassActive) {
+        GlassSurface(
+            modifier = buttonModifier,
+            cornerPx = with(density) { 22.dp.toPx() },
+            style = GlassStyle.DEFAULT,
+        ) {
+            iconContent()
+        }
+    } else {
+        Box(
+            modifier = buttonModifier
+                .shadow(
+                    elevation = 6.dp,
+                    shape = RoundedCornerShape(22.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.25f),
+                    spotColor = Color.Black.copy(alpha = 0.35f),
+                )
+                .clip(RoundedCornerShape(22.dp))
+                .background(surfaceColor)
+                .border(
+                    BorderStroke(1.dp, borderColor),
+                    shape = RoundedCornerShape(22.dp),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            iconContent()
+        }
     }
 }
 

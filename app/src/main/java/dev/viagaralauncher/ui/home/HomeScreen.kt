@@ -1575,6 +1575,7 @@ private fun FavoriteRow(
                 leadingIcon = { Icon(Icons.Filled.Tune, contentDescription = null) },
                 onClick = onEditIconName,
             )
+        }
     }
 }
 
