@@ -759,7 +759,7 @@ private fun WidgetContextMenu(
     }
 
     val widgetLabel = remember(info) {
-        info?.loadLabel(context.packageManager) ?: context.getString(R.string.home_option_widget)
+        info?.loadLabel(context.packageManager) ?: context.getString(R.string.widget_title)
     }
 
     val items = remember(activeWidgetId, info) {
@@ -922,7 +922,7 @@ private fun WidgetContextMenu(
                                 maxLines = 1,
                             )
                             Text(
-                                text = stringResource(R.string.home_option_widget),
+                                text = stringResource(R.string.widget_title),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                                 maxLines = 1,

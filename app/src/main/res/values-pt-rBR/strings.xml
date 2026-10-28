@@ -336,6 +336,7 @@
     <string name="icon_picker_no_matches">Nenhum ícone corresponde a “%1$s”.</string>
 
     <!-- Widgets -->
+    <string name="widget_title">Widget</string>
     <string name="widget_add">Adicionar widget</string>
     <string name="widget_add_custom">Adicionar widget personalizado</string>
     <string name="widget_change_settings">Configurações do widget</string>
