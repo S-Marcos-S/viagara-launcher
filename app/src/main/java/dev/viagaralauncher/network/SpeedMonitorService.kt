@@ -459,14 +459,14 @@ class SpeedMonitorService : Service() {
         val notifyIntent = Intent(this, MainActivity::class.java).apply {
             action = ACTION_OPEN_NETWORK_STATS
             putExtra("open_network_stats", true)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         } else {
             PendingIntent.FLAG_UPDATE_CURRENT
         }
-        val pendingIntent = PendingIntent.getActivity(this, 1000, notifyIntent, flags)
+        val pendingIntent = PendingIntent.getActivity(this, 1000, notifyIntent, pendingIntentFlags)
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.net_speed_title))
@@ -515,7 +515,7 @@ class SpeedMonitorService : Service() {
         val toggleAppsIntent = Intent(this, SpeedMonitorService::class.java).apply {
             action = if (isViewingApps) ACTION_HIDE_APPS else ACTION_VIEW_APPS
         }
-        val toggleAppsPending = PendingIntent.getService(this, 1001, toggleAppsIntent, flags)
+        val toggleAppsPending = PendingIntent.getService(this, 1001, toggleAppsIntent, pendingIntentFlags)
         val toggleLabel = if (isViewingApps) {
             getString(R.string.net_speed_action_hide_apps)
         } else {
@@ -527,16 +527,16 @@ class SpeedMonitorService : Service() {
         val stopIntent = Intent(this, SpeedMonitorService::class.java).apply {
             action = ACTION_STOP
         }
-        val stopPending = PendingIntent.getService(this, 1002, stopIntent, flags)
+        val stopPending = PendingIntent.getService(this, 1002, stopIntent, pendingIntentFlags)
         builder.addAction(0, getString(R.string.net_speed_action_stop), stopPending)
 
         // 3. Settings button ("Config.")
         val settingsIntent = Intent(this, MainActivity::class.java).apply {
             action = ACTION_OPEN_NETWORK_STATS
             putExtra("open_network_stats", true)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        val settingsPending = PendingIntent.getActivity(this, 1003, settingsIntent, flags)
+        val settingsPending = PendingIntent.getActivity(this, 1003, settingsIntent, pendingIntentFlags)
         builder.addAction(0, getString(R.string.net_speed_action_settings), settingsPending)
 
         return builder.build()
