@@ -76,6 +76,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.viagaralauncher.data.AppFont
@@ -1120,6 +1121,8 @@ private fun ThemeColorPaletteRow(
         )
     }
 
+    val activeOption = options.firstOrNull { it.id == activeThemeId } ?: options.first()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1128,9 +1131,14 @@ private fun ThemeColorPaletteRow(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = stringResource(R.string.settings_theme_colors),
+            text = stringResource(activeOption.nameRes),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .padding(end = 8.dp),
         )
 
         Row(
