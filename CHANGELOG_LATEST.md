@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.60
+### 🚀 Novidades da Versão v0.60.61
 
-- **Animação Fluida de Ocultação:** Gráficos e métricas de drenagem em tempo real recolhem e somem suavemente ao desativar a opção.
-- **Transição Bouncy:** Expansão e retração vertical com física de mola nos cards de telemetria da bateria.
+- **Estilo de Ícones Vidro (Glass):** Novo estilo visual inspirado no PixelLauncherEnhanced com refração líquida AGSL e efeito fosco sobre o papel de parede.
+- **Dispersão Óptica e Borda Especular:** Efeito de lente com desvio cromático RGB, iluminação de contorno e sombreamento dinâmico.

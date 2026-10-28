@@ -69,4 +69,5 @@ fun dev.viagaralauncher.data.ThemedIconStyle.labelRes(): Int = when (this) {
     dev.viagaralauncher.data.ThemedIconStyle.MATERIAL_YOU -> R.string.settings_themed_icons_style_material_you
     dev.viagaralauncher.data.ThemedIconStyle.MINIMALIST -> R.string.settings_themed_icons_style_minimalist
     dev.viagaralauncher.data.ThemedIconStyle.OLED_DARK -> R.string.settings_themed_icons_style_oled_dark
+    dev.viagaralauncher.data.ThemedIconStyle.GLASS -> R.string.settings_themed_icons_style_glass
 }

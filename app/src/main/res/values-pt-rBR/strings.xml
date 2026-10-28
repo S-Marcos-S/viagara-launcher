@@ -190,6 +190,7 @@
     <string name="settings_themed_icons_style_material_you">Material You</string>
     <string name="settings_themed_icons_style_minimalist">Minimalista</string>
     <string name="settings_themed_icons_style_oled_dark">OLED Escuro</string>
+    <string name="settings_themed_icons_style_glass">Vidro</string>
     <string name="settings_icon_size">Tamanho dos ícones</string>
     <string name="settings_text_size">Tamanho do texto</string>
     <string name="settings_favorite_spacing">Espaçamento entre favoritos</string>

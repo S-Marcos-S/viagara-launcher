@@ -14,16 +14,20 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.util.LruCache
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,11 +36,18 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -44,6 +55,8 @@ import androidx.core.graphics.drawable.toBitmap
 import dev.viagaralauncher.ViagaraApp
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.ThemedIconStyle
+import dev.viagaralauncher.ui.theme.glass.GlassStyle
+import dev.viagaralauncher.ui.theme.glass.WallpaperGlassProvider
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.Dispatchers
@@ -306,6 +319,78 @@ fun ThemedAppIcon(
                     )
                 }
             }
+        }
+        ThemedIconStyle.GLASS -> {
+            GlassIconContainer(
+                sizeDp = sizeDp,
+                bitmap = currentBitmap,
+                contentDescription = app.label,
+                modifier = modifier,
+                tintColor = tintColor,
+            )
+        }
+    }
+}
+
+@Composable
+fun GlassIconContainer(
+    sizeDp: Int,
+    bitmap: ImageBitmap?,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tintColor: Color? = null,
+    style: GlassStyle = GlassStyle.DEFAULT,
+) {
+    val isDark = isSystemInDarkTheme()
+    val defaultGlyphColor = if (isDark) Color(0xFFF2F2F2) else MaterialTheme.colorScheme.primary
+    val effectiveGlyphTint = tintColor ?: defaultGlyphColor
+    val density = LocalDensity.current.density
+    val configuration = LocalConfiguration.current
+    val screenWidthPx = with(LocalDensity.current) { configuration.screenWidthDp.dp.toPx() }
+    val screenHeightPx = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
+    var positionInWindow by remember { mutableStateOf(Offset.Zero) }
+    val surfaceColor = MaterialTheme.colorScheme.secondaryContainer.toArgb()
+
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        WallpaperGlassProvider.init(context)
+    }
+    val wallpaperTick by WallpaperGlassProvider.wallpaperTick.collectAsState()
+
+    Box(
+        modifier = modifier
+            .size(sizeDp.dp)
+            .onGloballyPositioned { coords ->
+                positionInWindow = coords.positionInWindow()
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        val tick = wallpaperTick
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val dummy = tick
+            drawIntoCanvas { composeCanvas ->
+                WallpaperGlassProvider.drawGlassElement(
+                    canvas = composeCanvas.nativeCanvas,
+                    bounds = RectF(0f, 0f, size.width, size.height),
+                    positionInWindow = positionInWindow,
+                    screenWidth = screenWidthPx,
+                    screenHeight = screenHeightPx,
+                    corner = size.width * 0.28f,
+                    style = style,
+                    surfaceColor = surfaceColor,
+                    tintOpacity = 20,
+                    density = density,
+                    night = isDark,
+                )
+            }
+        }
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = contentDescription,
+                colorFilter = ColorFilter.tint(effectiveGlyphTint, BlendMode.SrcIn),
+                modifier = Modifier.size((sizeDp * 0.72f).dp),
+            )
         }
     }
 }

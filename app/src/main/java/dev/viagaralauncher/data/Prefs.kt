@@ -53,7 +53,7 @@ enum class ClockStyle {
 /** AUTO picks light or dark text from the wallpaper's own colours. */
 enum class TextColorMode { AUTO, LIGHT, DARK }
 
-enum class ThemedIconStyle { MATERIAL_YOU, MINIMALIST, OLED_DARK }
+enum class ThemedIconStyle { MATERIAL_YOU, MINIMALIST, OLED_DARK, GLASS }
 
 private val Context.dataStore by preferencesDataStore(name = "viagara_prefs")
 

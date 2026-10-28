@@ -131,6 +131,7 @@ class MainActivity : ComponentActivity() {
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.onLauncherResume()
         dev.viagaralauncher.visualizer.AudioVisualizerManager.onLauncherResume(this)
         dev.viagaralauncher.wallpaper.DailyWallpaperManager.checkAndAdvanceIfNewDay(this, lifecycleScope)
+        dev.viagaralauncher.ui.theme.glass.WallpaperGlassProvider.refreshWallpaper(this)
         if (dev.viagaralauncher.agenda.AgendaSyncService.isBigCalendarInstalled(this)) {
             lifecycleScope.launch(Dispatchers.IO) {
                 dev.viagaralauncher.agenda.AgendaSyncService(this@MainActivity).syncWithLocalFile()

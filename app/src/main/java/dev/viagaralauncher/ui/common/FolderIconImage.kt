@@ -101,6 +101,14 @@ fun FolderIconImage(override: String, sizeDp: Int, modifier: Modifier = Modifier
                         )
                     }
                 }
+                ThemedIconStyle.GLASS -> {
+                    GlassIconContainer(
+                        sizeDp = sizeDp,
+                        bitmap = bitmap,
+                        contentDescription = null,
+                        modifier = modifier,
+                    )
+                }
             }
         } else {
             Image(bitmap = bitmap, contentDescription = null, modifier = modifier.size(sizeDp.dp))
