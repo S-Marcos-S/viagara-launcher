@@ -21,6 +21,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.pow
 
 
 /**
@@ -431,24 +432,53 @@ object AudioVisualizerManager {
                 val fallAlpha = (0.08f + 0.32f * speed).coerceIn(0.05f, 0.50f)
                 val peakFallAlpha = (0.008f + 0.015f * speed).coerceIn(0.005f, 0.030f)
 
+                // Snappy, agile ballistics for bass bands to reveal dynamic beat pump without ceiling jitter
+                val bassRiseAlpha = (0.60f + 0.35f * speed).coerceIn(0.45f, 0.95f)
+                val bassFallAlpha = (0.18f + 0.36f * speed).coerceIn(0.14f, 0.60f)
+                val bassPeakFallAlpha = (0.010f + 0.020f * speed).coerceIn(0.006f, 0.035f)
+
                 for (i in 0 until NUM_BANDS) {
-                    val target = incomingBands[i].coerceIn(0f, 1f)
+                    val rawTarget = incomingBands[i].coerceIn(0f, 1f)
+                    if (rawTarget > 0.01f) activeSignal = true
 
-                    if (target > 0.01f) activeSignal = true
+                    // Dynamic contrast expansion on bass/sub bands:
+                    // Separates instantaneous kick/sub beat strikes from sustained background drone,
+                    // expanding visual excursion and preventing the 80% ceiling vibration.
+                    val target = when (i) {
+                        0 -> {
+                            // Band 0 (Sub): Strong contrast expansion (pow 1.85) + floor cleanup
+                            val cleaned = ((rawTarget - 0.03f) / 0.97f).coerceIn(0f, 1f)
+                            cleaned.pow(1.85f)
+                        }
+                        1 -> {
+                            // Band 1 (Kick Drum): Punchy dynamic contrast (pow 1.60)
+                            val cleaned = ((rawTarget - 0.03f) / 0.97f).coerceIn(0f, 1f)
+                            cleaned.pow(1.60f)
+                        }
+                        2 -> {
+                            // Band 2 (Punch / Low-Mid): Smooth transitional expansion (pow 1.30)
+                            val cleaned = ((rawTarget - 0.02f) / 0.98f).coerceIn(0f, 1f)
+                            cleaned.pow(1.30f)
+                        }
+                        else -> rawTarget
+                    }
 
-                    // 1. Asymmetric ballistics: responsive rise, graceful damped fall
+                    // 1. Asymmetric ballistics: snappy attack on beats, agile decay on bass, smooth on highs
+                    val activeRiseAlpha = if (i < 2) bassRiseAlpha else riseAlpha
+                    val activeFallAlpha = if (i < 2) bassFallAlpha else fallAlpha
                     val current = currentLevels[i]
-                    val alpha = if (target >= current) riseAlpha else fallAlpha
+                    val alpha = if (target >= current) activeRiseAlpha else activeFallAlpha
                     currentLevels[i] = current + (target - current) * alpha
                     if (currentLevels[i] < 0.002f) currentLevels[i] = 0f
                     bandsOut[i] = currentLevels[i]
 
                     // 2. Peak physics: instant rise, continuous asymptotic fall
+                    val activePeakFallAlpha = if (i < 2) bassPeakFallAlpha else peakFallAlpha
                     val v = currentLevels[i]
                     if (v >= currentPeaks[i]) {
                         currentPeaks[i] = v
                     } else {
-                        currentPeaks[i] += (v - currentPeaks[i]) * peakFallAlpha
+                        currentPeaks[i] += (v - currentPeaks[i]) * activePeakFallAlpha
                     }
                     if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
                     peaksOut[i] = currentPeaks[i]

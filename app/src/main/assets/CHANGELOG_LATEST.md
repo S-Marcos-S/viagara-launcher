@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.77
+### 🚀 Novidades da Versão v0.60.78
 
-- **Legibilidade Aprimorada no Tema Vidro:** Camada de contraste inteligente e desfoque aveludado em todas as janelas, pastas e menus, garantindo leitura perfeita mesmo com papéis de parede claros ou muito coloridos.
+- **Dinâmica e Batidas Reais no Visualizador:** Expansão de contraste dinâmico e balística ágil nas barras de grave e bumbo, eliminando o travamento no topo e fazendo as barras pulsarem com amplitude real a cada impacto rítmico.
