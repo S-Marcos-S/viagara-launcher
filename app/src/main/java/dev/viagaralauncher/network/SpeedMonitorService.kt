@@ -136,6 +136,13 @@ class SpeedMonitorService : Service() {
         settings = NetSpeedSettings(this)
         createNotificationChannel()
 
+        val initialNotif = createNotification("0 B/s", "0 B/s", "0 B/s", "0 B", "0 B", false, "", emptyList())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, initialNotif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIFICATION_ID, initialNotif)
+        }
+
         lastRxBytes = TrafficStats.getTotalRxBytes()
         lastTxBytes = TrafficStats.getTotalTxBytes()
         lastTime = System.currentTimeMillis()
@@ -183,20 +190,23 @@ class SpeedMonitorService : Service() {
                 updateStats(forceUpdate = true)
                 return START_STICKY
             }
-            ACTION_START -> {
-                if (isServiceRunning) {
-                    updateStats(forceUpdate = true)
-                    return START_STICKY
-                }
-            }
         }
 
         // Start in foreground
-        val initialNotif = createNotification("0 B/s", "0 B/s", "0 B/s", "0 B", "0 B", false, "", emptyList())
+        val notif = createNotification(
+            iconSpeedText = lastIconSpeedText.ifEmpty { "0 B/s" },
+            downSpeedText = "0 B/s",
+            upSpeedText = "0 B/s",
+            mobileText = formatBytes(dailyMobileTotal),
+            wifiText = formatBytes(dailyWifiTotal),
+            showRealTime = lastShowRealTime,
+            contentText = lastNotificationText,
+            activeApps = emptyList()
+        )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, initialNotif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            startForeground(NOTIFICATION_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
-            startForeground(NOTIFICATION_ID, initialNotif)
+            startForeground(NOTIFICATION_ID, notif)
         }
 
         lastRxBytes = TrafficStats.getTotalRxBytes()
@@ -270,10 +280,11 @@ class SpeedMonitorService : Service() {
 
         val isDownload = downloadSpeed >= uploadSpeed
         val displaySpeed = if (isDownload) downloadSpeed else uploadSpeed
+        val totalSpeed = downloadSpeed + uploadSpeed
 
         val thresholdInBytes = settings.getThresholdInBytes()
 
-        val showRealTime = settings.isRealTimeEnabled && (thresholdInBytes <= 0.0 || displaySpeed >= thresholdInBytes)
+        val showRealTime = settings.isRealTimeEnabled && (thresholdInBytes <= 0.0 || totalSpeed >= thresholdInBytes)
 
         val finalDownSpeed = if (showRealTime) downloadSpeed else 0.0
         val finalUpSpeed = if (showRealTime) uploadSpeed else 0.0
@@ -286,16 +297,15 @@ class SpeedMonitorService : Service() {
         val wifiText = formatBytes(dailyWifiTotal)
 
         val contentText = buildString {
-            if (settings.isRealTimeEnabled) {
-                if (showRealTime) {
-                    append("↓$downSpeedText ↑$upSpeedText")
-                } else if (!settings.isDailyUsageEnabled) {
-                    append("↓0 B/s ↑0 B/s")
-                }
+            if (settings.isRealTimeEnabled && showRealTime) {
+                append("↓$downSpeedText ↑$upSpeedText")
             }
             if (settings.isDailyUsageEnabled) {
                 if (isNotEmpty()) append(" | ")
                 append("M:$mobileText W:$wifiText")
+            }
+            if (isEmpty()) {
+                append("↓0 B/s ↑0 B/s")
             }
         }
 

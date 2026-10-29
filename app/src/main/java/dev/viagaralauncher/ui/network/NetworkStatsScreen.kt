@@ -8,6 +8,7 @@ import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +36,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
@@ -43,10 +45,9 @@ import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -580,7 +581,6 @@ private fun LiveSpeedNotificationCard() {
                                         val parsed = valid.replace(',', '.').toFloatOrNull()
                                         val valueToSave = (parsed ?: 0f).coerceAtLeast(0f)
                                         settings.thresholdValue = valueToSave
-                                        if (isEnabled) SpeedMonitorService.start(context)
                                     },
                                     modifier = Modifier.weight(1f),
                                     placeholder = {
@@ -608,34 +608,48 @@ private fun LiveSpeedNotificationCard() {
                                 )
 
                                 val units = listOf("B/s", "KB/s", "MB/s", "GB/s")
-                                ExposedDropdownMenuBox(
-                                    expanded = unitMenuExpanded,
-                                    onExpandedChange = { unitMenuExpanded = !unitMenuExpanded },
-                                    modifier = Modifier.width(115.dp),
-                                ) {
-                                    OutlinedTextField(
-                                        value = thresholdUnit,
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        singleLine = true,
-                                        label = {
-                                            Text(
-                                                text = stringResource(R.string.net_speed_threshold_unit_label),
-                                                fontSize = 11.5.sp,
-                                            )
-                                        },
-                                        trailingIcon = {
-                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitMenuExpanded)
-                                        },
+                                Box(modifier = Modifier.width(115.dp)) {
+                                    Surface(
+                                        onClick = { unitMenuExpanded = true },
                                         shape = RoundedCornerShape(12.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = colorScheme.primary,
-                                            unfocusedBorderColor = colorScheme.outline.copy(alpha = 0.25f),
+                                        border = BorderStroke(
+                                            1.dp,
+                                            colorScheme.outline.copy(alpha = 0.25f)
                                         ),
-                                        modifier = Modifier.menuAnchor(),
-                                    )
+                                        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.35f),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(56.dp),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(horizontal = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                        ) {
+                                            Column(verticalArrangement = Arrangement.Center) {
+                                                Text(
+                                                    text = stringResource(R.string.net_speed_threshold_unit_label),
+                                                    fontSize = 10.sp,
+                                                    color = colorScheme.onSurfaceVariant,
+                                                )
+                                                Text(
+                                                    text = thresholdUnit,
+                                                    fontSize = 13.5.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = colorScheme.onSurface,
+                                                )
+                                            }
+                                            Icon(
+                                                imageVector = Icons.Filled.ArrowDropDown,
+                                                contentDescription = null,
+                                                tint = colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
 
-                                    ExposedDropdownMenu(
+                                    DropdownMenu(
                                         expanded = unitMenuExpanded,
                                         onDismissRequest = { unitMenuExpanded = false },
                                     ) {
@@ -652,7 +666,6 @@ private fun LiveSpeedNotificationCard() {
                                                     thresholdUnit = unit
                                                     settings.thresholdUnit = unit
                                                     unitMenuExpanded = false
-                                                    if (isEnabled) SpeedMonitorService.start(context)
                                                 },
                                             )
                                         }
