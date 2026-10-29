@@ -1104,4 +1104,7 @@
     <string name="net_speed_threshold_desc">Only show real-time speed when traffic is equal to or above this value (0 to show always)</string>
     <string name="net_speed_threshold_value_label">Min value</string>
     <string name="net_speed_threshold_unit_label">Unit</string>
+    <string name="net_speed_permission_required">Usage access required to show apps (tap to grant)</string>
+    <string name="net_speed_calculating_apps">Calculating app usage…</string>
+    <string name="net_speed_action_grant_permission">Permission</string>
 </resources>

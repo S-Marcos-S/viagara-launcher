@@ -33,7 +33,7 @@ class NetSpeedSettings(context: Context) {
         set(value) = prefs.edit().putLong("update_interval", value).apply()
 
     var minAppUsageKb: Long
-        get() = prefs.getLong("min_app_usage_kb", 50L)
+        get() = prefs.getLong("min_app_usage_kb", 10L)
         set(value) = prefs.edit().putLong("min_app_usage_kb", value).apply()
 
     fun getThresholdInBytes(): Double = calculateThresholdInBytes(thresholdValue, thresholdUnit)

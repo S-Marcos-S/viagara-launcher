@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.71
+### 🚀 Novidades da Versão v0.60.72
 
-- **Sincronização de Agenda:** Proteção contra arquivos corrompidos/nulos e gravação atômica com fsync no sync local.
-- **Robustez de Importação:** Tratamento seguro de JSON com recuperação automática e prevenção de exceções de parsing.
+- **Monitor de Rede:** Correção na listagem de apps consumindo dados na notificação via deltas cumulativos de NetworkStatsManager.
+- **Detecção e Permissões:** Tratamento de permissão de acesso ao uso com auto-concessão root e atalho direto na notificação.
+- **Suavização de Consumo:** Retenção temporária de consumo recente para evitar oscilações visuais bruscas.

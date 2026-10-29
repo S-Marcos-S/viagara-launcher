@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.viagaralauncher.network
 
-import android.app.ActivityManager
+import android.app.AppOpsManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -26,10 +26,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.IconCompat
 import dev.viagaralauncher.MainActivity
 import dev.viagaralauncher.R
+import dev.viagaralauncher.update.RootInstaller
 import java.util.Calendar
 import java.util.Locale
 
@@ -75,10 +77,36 @@ class SpeedMonitorService : Service() {
                 context.startService(intent)
             } catch (_: Exception) {}
         }
+
+        fun calculateActiveAppsFromDeltas(
+            currentTotals: Map<Int, Long>,
+            previousTotals: Map<Int, Long>,
+            deltaTimeSec: Double,
+            minBytesPerSec: Double,
+            resolveName: (Int) -> String?
+        ): List<ActiveAppSpeed> {
+            if (deltaTimeSec <= 0.0) return emptyList()
+            val active = mutableListOf<ActiveAppSpeed>()
+            for ((uid, current) in currentTotals) {
+                if (uid < 10000 && uid != 0 && uid != 1000) continue
+                val prev = previousTotals[uid] ?: continue
+                if (current > prev) {
+                    val delta = current - prev
+                    val speed = delta / deltaTimeSec
+                    if (speed >= minBytesPerSec) {
+                        val name = resolveName(uid)
+                        if (name != null) {
+                            active.add(ActiveAppSpeed(name, speed))
+                        }
+                    }
+                }
+            }
+            return active.sortedByDescending { it.speedBytesSec }
+        }
     }
 
-    private data class UidSnapshot(val rx: Long, val tx: Long, val timestamp: Long)
-    private data class ActiveAppSpeed(val appName: String, val speedBytesSec: Double)
+    data class ActiveAppSpeed(val appName: String, val speedBytesSec: Double)
+    private data class RecentAppRecord(val speedBytesSec: Double, val timestamp: Long)
 
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var settings: NetSpeedSettings
@@ -102,7 +130,8 @@ class SpeedMonitorService : Service() {
     private var lastAppsSummary = ""
 
     private val appNameCache = mutableMapOf<Int, String>()
-    private val lastUidSnapshots = mutableMapOf<Int, UidSnapshot>()
+    private val lastUidCumulativeTotals = mutableMapOf<Int, Long>()
+    private val recentActiveApps = mutableMapOf<String, RecentAppRecord>()
     private var lastAppStatsQueryTime = 0L
 
     private val screenReceiver = object : BroadcastReceiver() {
@@ -175,18 +204,35 @@ class SpeedMonitorService : Service() {
             ACTION_VIEW_APPS -> {
                 isViewingApps = true
                 lastAppsSummary = ""
+                takeAppsBaselineSnapshot()
                 updateStats(forceUpdate = true)
+                handler.postDelayed({
+                    if (isViewingApps) updateStats(forceUpdate = true)
+                }, 400L)
                 return START_STICKY
             }
             ACTION_HIDE_APPS -> {
                 isViewingApps = false
                 lastAppsSummary = ""
+                recentActiveApps.clear()
+                lastUidCumulativeTotals.clear()
+                lastAppStatsQueryTime = 0L
                 updateStats(forceUpdate = true)
                 return START_STICKY
             }
             ACTION_TOGGLE_APPS -> {
                 isViewingApps = !isViewingApps
                 lastAppsSummary = ""
+                if (isViewingApps) {
+                    takeAppsBaselineSnapshot()
+                    handler.postDelayed({
+                        if (isViewingApps) updateStats(forceUpdate = true)
+                    }, 400L)
+                } else {
+                    recentActiveApps.clear()
+                    lastUidCumulativeTotals.clear()
+                    lastAppStatsQueryTime = 0L
+                }
                 updateStats(forceUpdate = true)
                 return START_STICKY
             }
@@ -227,6 +273,9 @@ class SpeedMonitorService : Service() {
             unregisterReceiver(screenReceiver)
         } catch (_: Exception) {}
         handler.removeCallbacks(updateRunnable)
+        recentActiveApps.clear()
+        lastUidCumulativeTotals.clear()
+        appNameCache.clear()
         super.onDestroy()
     }
 
@@ -340,75 +389,104 @@ class SpeedMonitorService : Service() {
         }
     }
 
-    private fun getActiveAppsSpeed(deltaTime: Double): List<ActiveAppSpeed> {
-        val minBytesPerSec = settings.minAppUsageKb * 1024.0 // Threshold 50 KB/s
-        val activeApps = mutableListOf<ActiveAppSpeed>()
-        val currentTime = System.currentTimeMillis()
-
-        // 1. Process-level quick check via TrafficStats for running apps
-        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-        val runningUids = mutableSetOf<Int>()
-        activityManager?.runningAppProcesses?.forEach { process ->
-            if (process.uid >= 10000) runningUids.add(process.uid)
+    private fun hasUsageStatsPermission(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager ?: return false
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+        } else {
+            @Suppress("DEPRECATION")
+            appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
         }
-
-        var usedTrafficStats = false
-        if (runningUids.isNotEmpty()) {
-            var validSamples = 0
-            for (uid in runningUids) {
-                val curRx = TrafficStats.getUidRxBytes(uid)
-                val curTx = TrafficStats.getUidTxBytes(uid)
-                if (curRx >= 0 && curTx >= 0) {
-                    validSamples++
-                    val last = lastUidSnapshots[uid]
-                    if (last != null) {
-                        val dRx = if (curRx >= last.rx) curRx - last.rx else 0L
-                        val dTx = if (curTx >= last.tx) curTx - last.tx else 0L
-                        val totalSpeed = (dRx + dTx) / deltaTime
-                        if (totalSpeed >= minBytesPerSec) {
-                            val name = getAppNameForUid(uid)
-                            if (name != null) {
-                                activeApps.add(ActiveAppSpeed(name, totalSpeed))
-                            }
-                        }
-                    }
-                    lastUidSnapshots[uid] = UidSnapshot(curRx, curTx, currentTime)
-                }
-            }
-            if (validSamples > 0) {
-                usedTrafficStats = true
-            }
-        }
-
-        // 2. Fallback to NetworkStatsManager querySummary if TrafficStats is restricted on device
-        if (!usedTrafficStats) {
-            val nsm = getSystemService(Context.NETWORK_STATS_SERVICE) as? NetworkStatsManager
-            if (nsm != null && lastAppStatsQueryTime > 0) {
-                val windowStart = lastAppStatsQueryTime
-                val windowEnd = currentTime
-                val uidMap = mutableMapOf<Int, Long>()
-                collectUidDeltas(nsm, ConnectivityManager.TYPE_WIFI, windowStart, windowEnd, uidMap)
-                collectUidDeltas(nsm, ConnectivityManager.TYPE_MOBILE, windowStart, windowEnd, uidMap)
-
-                val winSec = ((windowEnd - windowStart) / 1000.0).coerceAtLeast(0.5)
-                for ((uid, totalDelta) in uidMap) {
-                    if (uid < 10000) continue
-                    val totalSpeed = totalDelta / winSec
-                    if (totalSpeed >= minBytesPerSec) {
-                        val name = getAppNameForUid(uid)
-                        if (name != null) {
-                            activeApps.add(ActiveAppSpeed(name, totalSpeed))
-                        }
-                    }
-                }
-            }
-            lastAppStatsQueryTime = currentTime
-        }
-
-        return activeApps.sortedByDescending { it.speedBytesSec }.take(4)
+        return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    private fun collectUidDeltas(
+    private fun tryAutoGrantUsagePermission() {
+        if (RootInstaller.isRootAvailable()) {
+            Thread {
+                try {
+                    val cmd = "pm grant $packageName android.permission.PACKAGE_USAGE_STATS 2>/dev/null; cmd appops set $packageName GET_USAGE_STATS allow 2>/dev/null; appops set $packageName GET_USAGE_STATS allow 2>/dev/null"
+                    Runtime.getRuntime().exec(arrayOf("su", "-c", cmd)).waitFor()
+                } catch (_: Exception) {}
+            }.start()
+        }
+    }
+
+    private fun takeAppsBaselineSnapshot() {
+        if (!hasUsageStatsPermission()) {
+            tryAutoGrantUsagePermission()
+            return
+        }
+        val nsm = getSystemService(Context.NETWORK_STATS_SERVICE) as? NetworkStatsManager ?: return
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfDay = calendar.timeInMillis
+        val currentTime = System.currentTimeMillis()
+
+        val totals = mutableMapOf<Int, Long>()
+        collectUidCumulative(nsm, ConnectivityManager.TYPE_WIFI, startOfDay, currentTime, totals)
+        collectUidCumulative(nsm, ConnectivityManager.TYPE_MOBILE, startOfDay, currentTime, totals)
+        collectUidCumulative(nsm, ConnectivityManager.TYPE_ETHERNET, startOfDay, currentTime, totals)
+
+        lastUidCumulativeTotals.clear()
+        lastUidCumulativeTotals.putAll(totals)
+        lastAppStatsQueryTime = currentTime
+    }
+
+    private fun getActiveAppsSpeed(deltaTime: Double): List<ActiveAppSpeed> {
+        if (!hasUsageStatsPermission()) {
+            tryAutoGrantUsagePermission()
+            return emptyList()
+        }
+
+        val currentTime = System.currentTimeMillis()
+        val nsm = getSystemService(Context.NETWORK_STATS_SERVICE) as? NetworkStatsManager ?: return emptyList()
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfDay = calendar.timeInMillis
+
+        val currentTotals = mutableMapOf<Int, Long>()
+        collectUidCumulative(nsm, ConnectivityManager.TYPE_WIFI, startOfDay, currentTime, currentTotals)
+        collectUidCumulative(nsm, ConnectivityManager.TYPE_MOBILE, startOfDay, currentTime, currentTotals)
+        collectUidCumulative(nsm, ConnectivityManager.TYPE_ETHERNET, startOfDay, currentTime, currentTotals)
+
+        val minBytesPerSec = (settings.minAppUsageKb.coerceAtLeast(1L) * 1024.0)
+
+        if (lastUidCumulativeTotals.isNotEmpty() && lastAppStatsQueryTime > 0) {
+            val elapsedSec = ((currentTime - lastAppStatsQueryTime) / 1000.0).coerceAtLeast(0.3)
+            val detected = calculateActiveAppsFromDeltas(
+                currentTotals = currentTotals,
+                previousTotals = lastUidCumulativeTotals,
+                deltaTimeSec = elapsedSec,
+                minBytesPerSec = minBytesPerSec,
+                resolveName = { uid -> getAppNameForUid(uid) }
+            )
+            for (app in detected) {
+                recentActiveApps[app.appName] = RecentAppRecord(app.speedBytesSec, currentTime)
+            }
+        }
+
+        lastUidCumulativeTotals.clear()
+        lastUidCumulativeTotals.putAll(currentTotals)
+        lastAppStatsQueryTime = currentTime
+
+        // Prune records older than 3000ms
+        recentActiveApps.entries.removeAll { (currentTime - it.value.timestamp) > 3000L }
+
+        return recentActiveApps.map { (name, record) ->
+            ActiveAppSpeed(name, record.speedBytesSec)
+        }.sortedByDescending { it.speedBytesSec }.take(4)
+    }
+
+    private fun collectUidCumulative(
         nsm: NetworkStatsManager,
         networkType: Int,
         startTime: Long,
@@ -425,27 +503,36 @@ class SpeedMonitorService : Service() {
                 result[uid] = current + bucket.rxBytes + bucket.txBytes
             }
             stats.close()
-        } catch (_: Exception) {}
+        } catch (_: Throwable) {}
     }
 
     private fun getAppNameForUid(uid: Int): String? {
         if (uid == android.os.Process.myUid()) return null
-        return appNameCache.getOrPut(uid) {
-            val packages = packageManager.getPackagesForUid(uid)
-            val pkg = packages?.firstOrNull() ?: return@getOrPut "UID $uid"
-            if (pkg == packageName) return null
-            try {
-                val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    packageManager.getApplicationInfo(pkg, PackageManager.ApplicationInfoFlags.of(0))
-                } else {
-                    @Suppress("DEPRECATION")
-                    packageManager.getApplicationInfo(pkg, 0)
+        val cached = appNameCache[uid]
+        if (cached != null) return cached
+
+        val resolvedName = when (uid) {
+            0 -> "Sistema (Root)"
+            1000 -> "Sistema Android"
+            else -> {
+                val packages = packageManager.getPackagesForUid(uid)
+                val pkg = packages?.firstOrNull() ?: packageManager.getNameForUid(uid) ?: "UID $uid"
+                if (pkg == packageName) return null
+                try {
+                    val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        packageManager.getApplicationInfo(pkg, PackageManager.ApplicationInfoFlags.of(0))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        packageManager.getApplicationInfo(pkg, 0)
+                    }
+                    packageManager.getApplicationLabel(info).toString()
+                } catch (_: Exception) {
+                    pkg
                 }
-                packageManager.getApplicationLabel(info).toString()
-            } catch (_: Exception) {
-                pkg
             }
         }
+        appNameCache[uid] = resolvedName
+        return resolvedName
     }
 
     private fun formatBytes(bytes: Long): String {
@@ -475,10 +562,17 @@ class SpeedMonitorService : Service() {
         contentText: String = "",
         activeApps: List<ActiveAppSpeed> = emptyList()
     ): Notification {
-        val notifyIntent = Intent(this, MainActivity::class.java).apply {
-            action = ACTION_OPEN_NETWORK_STATS
-            putExtra("open_network_stats", true)
-            setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val hasUsagePermission = hasUsageStatsPermission()
+        val notifyIntent = if (isViewingApps && !hasUsagePermission) {
+            Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+        } else {
+            Intent(this, MainActivity::class.java).apply {
+                action = ACTION_OPEN_NETWORK_STATS
+                putExtra("open_network_stats", true)
+                setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
         }
         val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -517,11 +611,15 @@ class SpeedMonitorService : Service() {
 
             if (isViewingApps) {
                 append("\n\n")
-                if (activeApps.isNotEmpty()) {
+                if (!hasUsagePermission) {
+                    append(getString(R.string.net_speed_permission_required))
+                } else if (activeApps.isNotEmpty()) {
                     appendLine(getString(R.string.net_speed_active_apps_header, settings.minAppUsageKb))
                     for (app in activeApps) {
                         appendLine("• ${app.appName}: ${formatSpeed(app.speedBytesSec)}")
                     }
+                } else if (lastAppStatsQueryTime == 0L || lastUidCumulativeTotals.isEmpty()) {
+                    append(getString(R.string.net_speed_calculating_apps))
                 } else {
                     append(getString(R.string.net_speed_no_active_apps, settings.minAppUsageKb))
                 }
@@ -549,14 +647,26 @@ class SpeedMonitorService : Service() {
         val stopPending = PendingIntent.getService(this, 1002, stopIntent, pendingIntentFlags)
         builder.addAction(0, getString(R.string.net_speed_action_stop), stopPending)
 
-        // 3. Settings button ("Config.")
-        val settingsIntent = Intent(this, MainActivity::class.java).apply {
-            action = ACTION_OPEN_NETWORK_STATS
-            putExtra("open_network_stats", true)
-            setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        // 3. Settings or Permission button
+        val action3Pending = if (isViewingApps && !hasUsagePermission) {
+            val usageIntent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            PendingIntent.getActivity(this, 1004, usageIntent, pendingIntentFlags)
+        } else {
+            val settingsIntent = Intent(this, MainActivity::class.java).apply {
+                action = ACTION_OPEN_NETWORK_STATS
+                putExtra("open_network_stats", true)
+                setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+            PendingIntent.getActivity(this, 1003, settingsIntent, pendingIntentFlags)
         }
-        val settingsPending = PendingIntent.getActivity(this, 1003, settingsIntent, pendingIntentFlags)
-        builder.addAction(0, getString(R.string.net_speed_action_settings), settingsPending)
+        val action3Label = if (isViewingApps && !hasUsagePermission) {
+            getString(R.string.net_speed_action_grant_permission)
+        } else {
+            getString(R.string.net_speed_action_settings)
+        }
+        builder.addAction(0, action3Label, action3Pending)
 
         return builder.build()
     }
