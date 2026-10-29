@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.78
+### 🚀 Novidades da Versão v0.60.79
 
-- **Dinâmica e Batidas Reais no Visualizador:** Expansão de contraste dinâmico e balística ágil nas barras de grave e bumbo, eliminando o travamento no topo e fazendo as barras pulsarem com amplitude real a cada impacto rítmico.
+- **Pulso Rítmico e Pico de 100% nos Graves:** Ganho calibrado de 1.55x para que as batidas alcancem o topo com facilidade e filtro de envelope musical que elimina oscilações rápidas, fazendo a barra pulsar no tempo exato da música.

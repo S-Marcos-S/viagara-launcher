@@ -432,33 +432,37 @@ object AudioVisualizerManager {
                 val fallAlpha = (0.08f + 0.32f * speed).coerceIn(0.05f, 0.50f)
                 val peakFallAlpha = (0.008f + 0.015f * speed).coerceIn(0.005f, 0.030f)
 
-                // Snappy, agile ballistics for bass bands to reveal dynamic beat pump without ceiling jitter
-                val bassRiseAlpha = (0.60f + 0.35f * speed).coerceIn(0.45f, 0.95f)
-                val bassFallAlpha = (0.18f + 0.36f * speed).coerceIn(0.14f, 0.60f)
-                val bassPeakFallAlpha = (0.010f + 0.020f * speed).coerceIn(0.006f, 0.035f)
+                // Musical envelope ballistics for bass bands: smooths out 60 FPS frame-rate flicker
+                // and follows the organic musical rhythm of the beat (rising solidly to 100% and falling in tempo)
+                val bassRiseAlpha = (0.38f + 0.32f * speed).coerceIn(0.32f, 0.75f)
+                val bassFallAlpha = (0.11f + 0.18f * speed).coerceIn(0.09f, 0.30f)
+                val bassPeakFallAlpha = (0.008f + 0.012f * speed).coerceIn(0.005f, 0.025f)
 
                 for (i in 0 until NUM_BANDS) {
                     val rawTarget = incomingBands[i].coerceIn(0f, 1f)
                     if (rawTarget > 0.01f) activeSignal = true
 
-                    // Dynamic contrast expansion on bass/sub bands:
-                    // Separates instantaneous kick/sub beat strikes from sustained background drone,
-                    // expanding visual excursion and preventing the 80% ceiling vibration.
+                    // Dynamic range expansion and calibrated gain on bass/sub bands:
+                    // Boosts beat peaks to reach 100% easily while clearing the sustain floor between beats.
                     val target = when (i) {
                         0 -> {
-                            // Band 0 (Sub): Strong contrast expansion (pow 1.85) + floor cleanup
-                            val cleaned = ((rawTarget - 0.03f) / 0.97f).coerceIn(0f, 1f)
-                            cleaned.pow(1.85f)
+                            // Band 0 (Subgrave): Calibrated 1.55x gain so kick/808 hits easily touch 100%,
+                            // with clean sustain subtraction so it drops down between beats instead of hovering at 50%.
+                            val boosted = (rawTarget * 1.55f).coerceIn(0f, 1f)
+                            val dynamic = ((boosted - 0.12f) / 0.88f).coerceIn(0f, 1f)
+                            dynamic.pow(1.25f)
                         }
                         1 -> {
-                            // Band 1 (Kick Drum): Punchy dynamic contrast (pow 1.60)
-                            val cleaned = ((rawTarget - 0.03f) / 0.97f).coerceIn(0f, 1f)
-                            cleaned.pow(1.60f)
+                            // Band 1 (Bumbo / Kick): Calibrated 1.40x gain for full-scale punch
+                            val boosted = (rawTarget * 1.40f).coerceIn(0f, 1f)
+                            val dynamic = ((boosted - 0.10f) / 0.90f).coerceIn(0f, 1f)
+                            dynamic.pow(1.20f)
                         }
                         2 -> {
-                            // Band 2 (Punch / Low-Mid): Smooth transitional expansion (pow 1.30)
-                            val cleaned = ((rawTarget - 0.02f) / 0.98f).coerceIn(0f, 1f)
-                            cleaned.pow(1.30f)
+                            // Band 2 (Punch / Ataque): Smooth transitional curve
+                            val boosted = (rawTarget * 1.20f).coerceIn(0f, 1f)
+                            val dynamic = ((boosted - 0.05f) / 0.95f).coerceIn(0f, 1f)
+                            dynamic.pow(1.10f)
                         }
                         else -> rawTarget
                     }
