@@ -48,13 +48,15 @@
 
 ## ✨ Destaques / Features
 
-- **Ergonomia com Uma Mão:** Lista vertical rápida e scrubber alfabético com feedback tátil.
-- **Catálogo Oficial de Wallpapers:** Papéis de parede em alta definição com aplicação direta e atualizações automáticas.
-- **Temas & Cores Dinâmicas:** Material You integrado, OLED Preto Puro e adaptação imediata às cores do wallpaper.
+- **Ergonomia com Uma Mão:** Lista vertical rápida e scrubber alfabético com física de curva gaussiana e feedback tátil.
+- **Monitor de Velocidade de Rede em Tempo Real:** Notificação na barra de status com velocidade instantânea (download/upload), limite mínimo configurável (B, KB, MB), intervalos de atualização personalizáveis (1s a 10s) e identificação precisa em tempo real de quais apps estão consumindo tráfego.
+- **Agenda & Sincronização Inteligente:** Gerenciamento integrado de tarefas e compromissos com suporte a repetições, lembretes pontuais e sincronização bidirecional resiliente com calendários externos e arquivos locais.
+- **Catálogo Oficial de Wallpapers & Live Wallpapers:** Papéis de parede em alta definição via Wallhaven, suporte a vídeos como papel de parede animado e rotação diária automática.
+- **Temas & Cores Dinâmicas:** Material You integrado, OLED Preto Puro, efeitos de vidro fosco translúcido (*Glassmorphism*) via shaders AGSL e adaptação imediata às cores do wallpaper.
 - **Notificações Integradas:** Prévias sob os apps e pop-up expansível translúcido com histórico de mensagens.
-- **Widgets & Now Playing:** Suporte a widgets do Android e controle multimídia na tela inicial.
-- **Customização:** Ícones temáticos, suporte a icon packs externos, ocultação de apps e pastas.
-- **Atualizador Embutido:** Download e verificação de novidades diretamente pelo app via GitHub Releases.
+- **Widgets & Now Playing:** Suporte a widgets do Android e controle multimídia integrado com suporte a visualizador de áudio reativo.
+- **Customização & Backup:** Ícones temáticos, suporte a icon packs externos, ocultação de apps, pastas e backup/restauração automática de configurações em JSON.
+- **Atualizador Embutido:** Download, verificação de novidades e atualização silenciosa (via root) diretamente pelo app via GitHub Releases.
 
 ---
 
@@ -62,9 +64,11 @@
 
 *(Ferramentas extras para usuários avançados; o launcher funciona 100% sem root)*
 
-- **Gerenciador de Processos:** Inspeção detalhada de memória/CPU e encerramento forçado de processos em segundo plano.
-- **Monitor de Desempenho:** Acompanhamento de taxas de uso de hardware em tempo real.
-- **Diagnóstico do Sistema:** Análise profunda de bateria (`batterystats`), rastreamento de anomalias e visualizador de crashes.
+- **Gerenciador de Processos & Tarefas:** Inspeção detalhada de memória (PSS/RAM), CPU, threads, conexões de socket ativas e encerramento forçado de processos em segundo plano.
+- **Terminal Integrado & Visualizador de Logs ao Vivo:** Terminal de comandos shell/su (`TerminalEngine`) e janela flutuante sobreposta de Logcat com filtros avançados e gravação de logs.
+- **Diagnóstico do Sistema & Bateria:** Análise profunda de bateria (`dumpsys batterystats`), histórico de descargas, wakelocks, estimativas precisas e controle de Doze agressivo.
+- **Detector de Anomalias em Segundo Plano (`BackgroundAnomalyWatcher`):** Monitoramento inteligente em repouso com alertas proativos contra apps vilões consumindo bateria ou dados sem permissão.
+- **Desinstalação Silenciosa de Apps de Sistema:** Remoção ou congelamento profundo de bloatware diretamente pela interface do launcher.
 
 ---
 
