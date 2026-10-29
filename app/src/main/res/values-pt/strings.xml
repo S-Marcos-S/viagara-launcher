@@ -1075,4 +1075,8 @@
     <string name="net_speed_card_desc">Velocidade em tempo real na barra de status e consumo diário móvel/Wi-Fi</string>
     <string name="net_speed_option_realtime">Velocidade em tempo real</string>
     <string name="net_speed_option_daily">Consumo de dados diário</string>
+    <string name="net_speed_threshold_title">Velocidade mínima para exibir</string>
+    <string name="net_speed_threshold_desc">Mostrar velocidade em tempo real somente acima deste valor (0 para exibir sempre)</string>
+    <string name="net_speed_threshold_value_label">Valor mínimo</string>
+    <string name="net_speed_threshold_unit_label">Unidade</string>
 </resources>

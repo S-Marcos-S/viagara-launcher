@@ -1100,4 +1100,8 @@
     <string name="net_speed_card_desc">Real-time status bar speed icon and daily data usage notification</string>
     <string name="net_speed_option_realtime">Real-time speed</string>
     <string name="net_speed_option_daily">Daily data usage</string>
+    <string name="net_speed_threshold_title">Minimum speed threshold</string>
+    <string name="net_speed_threshold_desc">Only show real-time speed when traffic is equal to or above this value (0 to show always)</string>
+    <string name="net_speed_threshold_value_label">Min value</string>
+    <string name="net_speed_threshold_unit_label">Unit</string>
 </resources>

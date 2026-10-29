@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
@@ -42,12 +43,18 @@ import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -71,6 +78,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -418,6 +426,7 @@ private fun StatsContentList(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LiveSpeedNotificationCard() {
     val context = LocalContext.current
@@ -425,6 +434,26 @@ private fun LiveSpeedNotificationCard() {
     var isEnabled by remember { mutableStateOf(settings.isEnabled) }
     var realTimeEnabled by remember { mutableStateOf(settings.isRealTimeEnabled) }
     var dailyUsageEnabled by remember { mutableStateOf(settings.isDailyUsageEnabled) }
+    var thresholdText by remember {
+        val initialVal = settings.thresholdValue
+        mutableStateOf(
+            if (initialVal <= 0f) ""
+            else if (initialVal % 1f == 0f) initialVal.toInt().toString()
+            else initialVal.toString()
+        )
+    }
+    var thresholdUnit by remember {
+        val unit = settings.thresholdUnit.uppercase().replace("/S", "").trim()
+        mutableStateOf(
+            when (unit) {
+                "B" -> "B/s"
+                "KB", "K" -> "KB/s"
+                "MB", "M" -> "MB/s"
+                "GB", "G" -> "GB/s"
+                else -> "KB/s"
+            }
+        )
+    }
     val colorScheme = MaterialTheme.colorScheme
 
     Surface(
@@ -504,6 +533,133 @@ private fun LiveSpeedNotificationCard() {
                             },
                             modifier = Modifier.scale(0.75f),
                         )
+                    }
+
+                    AnimatedVisibility(visible = realTimeEnabled) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.net_speed_threshold_title),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colorScheme.onSurface,
+                            )
+                            Text(
+                                text = stringResource(R.string.net_speed_threshold_desc),
+                                fontSize = 11.sp,
+                                color = colorScheme.onSurfaceVariant,
+                                lineHeight = 14.sp,
+                            )
+
+                            var unitMenuExpanded by remember { mutableStateOf(false) }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                OutlinedTextField(
+                                    value = thresholdText,
+                                    onValueChange = { input ->
+                                        val filtered = input.filter { it.isDigit() || it == '.' || it == ',' }
+                                        val firstSep = filtered.indexOfFirst { it == '.' || it == ',' }
+                                        val valid = if (firstSep != -1) {
+                                            val before = filtered.substring(0, firstSep + 1)
+                                            val after = filtered.substring(firstSep + 1).filter { it.isDigit() }
+                                            before + after
+                                        } else {
+                                            filtered
+                                        }
+                                        thresholdText = valid
+                                        val parsed = valid.replace(',', '.').toFloatOrNull()
+                                        val valueToSave = (parsed ?: 0f).coerceAtLeast(0f)
+                                        settings.thresholdValue = valueToSave
+                                        if (isEnabled) SpeedMonitorService.start(context)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = {
+                                        Text(
+                                            text = "0",
+                                            fontSize = 13.sp,
+                                            color = colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            text = stringResource(R.string.net_speed_threshold_value_label),
+                                            fontSize = 11.5.sp,
+                                        )
+                                    },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Decimal,
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = colorScheme.primary,
+                                        unfocusedBorderColor = colorScheme.outline.copy(alpha = 0.25f),
+                                    ),
+                                )
+
+                                val units = listOf("B/s", "KB/s", "MB/s", "GB/s")
+                                ExposedDropdownMenuBox(
+                                    expanded = unitMenuExpanded,
+                                    onExpandedChange = { unitMenuExpanded = !unitMenuExpanded },
+                                    modifier = Modifier.width(115.dp),
+                                ) {
+                                    OutlinedTextField(
+                                        value = thresholdUnit,
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        singleLine = true,
+                                        label = {
+                                            Text(
+                                                text = stringResource(R.string.net_speed_threshold_unit_label),
+                                                fontSize = 11.5.sp,
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitMenuExpanded)
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = colorScheme.primary,
+                                            unfocusedBorderColor = colorScheme.outline.copy(alpha = 0.25f),
+                                        ),
+                                        modifier = Modifier.menuAnchor(),
+                                    )
+
+                                    ExposedDropdownMenu(
+                                        expanded = unitMenuExpanded,
+                                        onDismissRequest = { unitMenuExpanded = false },
+                                    ) {
+                                        units.forEach { unit ->
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        text = unit,
+                                                        fontSize = 13.sp,
+                                                        fontWeight = if (thresholdUnit == unit) FontWeight.Bold else FontWeight.Normal,
+                                                    )
+                                                },
+                                                onClick = {
+                                                    thresholdUnit = unit
+                                                    settings.thresholdUnit = unit
+                                                    unitMenuExpanded = false
+                                                    if (isEnabled) SpeedMonitorService.start(context)
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     Row(

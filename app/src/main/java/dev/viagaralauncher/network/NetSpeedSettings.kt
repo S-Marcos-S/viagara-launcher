@@ -35,4 +35,20 @@ class NetSpeedSettings(context: Context) {
     var minAppUsageKb: Long
         get() = prefs.getLong("min_app_usage_kb", 50L)
         set(value) = prefs.edit().putLong("min_app_usage_kb", value).apply()
+
+    fun getThresholdInBytes(): Double = calculateThresholdInBytes(thresholdValue, thresholdUnit)
+
+    companion object {
+        fun calculateThresholdInBytes(value: Float, unit: String): Double {
+            val normalizedUnit = unit.uppercase().replace("/S", "").trim()
+            val dVal = value.toDouble()
+            if (dVal.isNaN() || dVal.isInfinite() || dVal <= 0.0) return 0.0
+            return when (normalizedUnit) {
+                "KB", "K" -> dVal * 1024.0
+                "MB", "M" -> dVal * 1024.0 * 1024.0
+                "GB", "G" -> dVal * 1024.0 * 1024.0 * 1024.0
+                else -> dVal
+            }
+        }
+    }
 }

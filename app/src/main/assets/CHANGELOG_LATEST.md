@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.60.68
+### 🚀 Novidades da Versão v0.60.69
 
-- **Notificação de Velocidade ao Vivo:** Indicador de velocidade na barra de status e consumo diário móvel/Wi-Fi em tempo real.
-- **Visualização de Apps Ativos:** Botão para listar apps consumindo rede acima de 50 KB/s com atualização instantânea.
-- **Ações Rápidas Resumidas:** Botões compactos para ocultar apps, parar o serviço e abrir as configurações.
+- **Limite Mínimo de Velocidade:** Opção para definir valor mínimo para a notificação em tempo real ser exibida.
+- **Seletor de Unidades:** Escolha entre B/s, KB/s, MB/s e GB/s para o limite configurado.

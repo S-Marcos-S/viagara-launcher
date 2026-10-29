@@ -98,6 +98,7 @@ class SpeedMonitorService : Service() {
     private var lastNotificationText = ""
     private var lastIconSpeedText = ""
     private var lastIsDownload = false
+    private var lastShowRealTime = false
     private var lastAppsSummary = ""
 
     private val appNameCache = mutableMapOf<Int, String>()
@@ -182,6 +183,12 @@ class SpeedMonitorService : Service() {
                 updateStats(forceUpdate = true)
                 return START_STICKY
             }
+            ACTION_START -> {
+                if (isServiceRunning) {
+                    updateStats(forceUpdate = true)
+                    return START_STICKY
+                }
+            }
         }
 
         // Start in foreground
@@ -264,13 +271,9 @@ class SpeedMonitorService : Service() {
         val isDownload = downloadSpeed >= uploadSpeed
         val displaySpeed = if (isDownload) downloadSpeed else uploadSpeed
 
-        val thresholdInBytes = when (settings.thresholdUnit) {
-            "KB/s" -> settings.thresholdValue * 1024
-            "MB/s" -> settings.thresholdValue * 1024 * 1024
-            else -> settings.thresholdValue
-        }
+        val thresholdInBytes = settings.getThresholdInBytes()
 
-        val showRealTime = settings.isRealTimeEnabled && displaySpeed >= thresholdInBytes
+        val showRealTime = settings.isRealTimeEnabled && (thresholdInBytes <= 0.0 || displaySpeed >= thresholdInBytes)
 
         val finalDownSpeed = if (showRealTime) downloadSpeed else 0.0
         val finalUpSpeed = if (showRealTime) uploadSpeed else 0.0
@@ -284,7 +287,11 @@ class SpeedMonitorService : Service() {
 
         val contentText = buildString {
             if (settings.isRealTimeEnabled) {
-                append("↓$downSpeedText ↑$upSpeedText")
+                if (showRealTime) {
+                    append("↓$downSpeedText ↑$upSpeedText")
+                } else if (!settings.isDailyUsageEnabled) {
+                    append("↓0 B/s ↑0 B/s")
+                }
             }
             if (settings.isDailyUsageEnabled) {
                 if (isNotEmpty()) append(" | ")
@@ -299,12 +306,14 @@ class SpeedMonitorService : Service() {
         if (forceUpdate ||
             contentText != lastNotificationText ||
             appsSummary != lastAppsSummary ||
+            showRealTime != lastShowRealTime ||
             (showRealTime && (speedText != lastIconSpeedText || isDownload != lastIsDownload))
         ) {
             lastNotificationText = contentText
             lastIconSpeedText = speedText
             lastIsDownload = isDownload
             lastAppsSummary = appsSummary
+            lastShowRealTime = showRealTime
 
             val notification = createNotification(
                 iconSpeedText = speedText,
