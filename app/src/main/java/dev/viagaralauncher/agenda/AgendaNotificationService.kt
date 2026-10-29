@@ -231,6 +231,8 @@ class AgendaNotificationService(private val context: Context) {
             .setStyle(NotificationCompat.BigTextStyle().bigText(descText))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setGroup("dev.viagaralauncher.group.AGENDA")
+            .setGroupSummary(false)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .addAction(

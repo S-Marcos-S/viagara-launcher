@@ -117,6 +117,9 @@ object ClockNotificationManager {
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setGroup("dev.viagaralauncher.group.CLOCKS")
+                .setGroupSummary(false)
                 .build()
 
             notificationManager.notify(NOTIFICATION_ID, notification)

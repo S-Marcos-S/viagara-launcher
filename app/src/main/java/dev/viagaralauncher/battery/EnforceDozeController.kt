@@ -290,6 +290,9 @@ class EnforceDozeController private constructor(
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setGroup("dev.viagaralauncher.group.DOZE")
+            .setGroupSummary(false)
             .build()
 
         try {

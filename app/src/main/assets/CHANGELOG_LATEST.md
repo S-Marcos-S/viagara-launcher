@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.74
+### 🚀 Novidades da Versão v0.60.75
 
-- **Intervalo Personalizado:** Opção para selecionar a frequência de atualização do consumo (1s, 2s, 3s, 5s ou 10s) para economizar ainda mais bateria.
+- **Isolamento de Notificações na Status Bar:** Chaves de grupo exclusivas para evitar que o Android junte a notificação de velocidade com outros alertas do app, mantendo a velocidade sempre visível na barra de status.

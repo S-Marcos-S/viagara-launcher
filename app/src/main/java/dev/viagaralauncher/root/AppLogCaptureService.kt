@@ -69,6 +69,7 @@ class AppLogCaptureService : Service() {
 
         const val CHANNEL_ID = "viagara_app_log_capture_channel"
         const val NOTIFICATION_ID_RECORDING = 88410
+        const val GROUP_KEY = "dev.viagaralauncher.group.LOGS"
         const val MAX_RING_BUFFER_SIZE = 6000
 
         private val _capturingPackage = MutableStateFlow<String?>(null)
@@ -582,6 +583,9 @@ class AppLogCaptureService : Service() {
             .setContentIntent(openPending)
             .setDeleteIntent(discardPending)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setGroup(GROUP_KEY)
+            .setGroupSummary(false)
             .addAction(
                 android.R.drawable.ic_menu_save,
                 getString(R.string.log_notif_action_save),
@@ -661,6 +665,9 @@ class AppLogCaptureService : Service() {
             .setContentText(text)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setGroup(GROUP_KEY)
+            .setGroupSummary(false)
 
         if (fileUri != null) {
             val mimeType = if (fileName.endsWith(".zip")) "application/zip" else "text/plain"

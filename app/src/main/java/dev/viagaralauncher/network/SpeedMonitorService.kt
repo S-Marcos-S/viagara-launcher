@@ -40,6 +40,7 @@ class SpeedMonitorService : Service() {
     companion object {
         const val CHANNEL_ID = "speed_monitor_channel"
         const val NOTIFICATION_ID = 2100
+        const val GROUP_KEY = "dev.viagaralauncher.group.SPEED_MONITOR"
 
         const val ACTION_START = "dev.viagaralauncher.network.ACTION_START_SPEED_MONITOR"
         const val ACTION_STOP = "dev.viagaralauncher.network.ACTION_STOP_SPEED_MONITOR"
@@ -648,6 +649,10 @@ class SpeedMonitorService : Service() {
             .setContentText(contentText)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setGroup(GROUP_KEY)
+            .setGroupSummary(false)
+            .setSortKey("0_speed_monitor")
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

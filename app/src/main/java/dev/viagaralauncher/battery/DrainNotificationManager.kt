@@ -286,6 +286,8 @@ class DrainNotificationManager private constructor(
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setGroup("dev.viagaralauncher.group.BATTERY_DRAIN")
+            .setGroupSummary(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
                 android.R.drawable.ic_menu_rotate,

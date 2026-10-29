@@ -126,6 +126,8 @@ class BackgroundAnomalyNotificationManager private constructor(private val conte
             .setStyle(NotificationCompat.BigTextStyle().bigText(anomaly.description))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setGroup("dev.viagaralauncher.group.ANOMALY")
+            .setGroupSummary(false)
             .setAutoCancel(true)
             .setContentIntent(inspectPendingIntent)
             .addAction(
