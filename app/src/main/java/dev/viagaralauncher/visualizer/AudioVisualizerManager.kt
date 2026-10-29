@@ -459,17 +459,19 @@ object AudioVisualizerManager {
                             dynamic.pow(1.20f)
                         }
                         2 -> {
-                            // Band 2 (Punch / Ataque): Smooth transitional curve
-                            val boosted = (rawTarget * 1.20f).coerceIn(0f, 1f)
-                            val dynamic = ((boosted - 0.05f) / 0.95f).coerceIn(0f, 1f)
-                            dynamic.pow(1.10f)
+                            // Band 2 (Punch / Ataque - 115-175 Hz): Naturally accumulates 2 FFT bins (bins 3 and 4).
+                            // Calibrated at 0.88x to compensate for dual-bin energy and eliminate hypersensitivity,
+                            // with clean sustain subtraction and 1.30 contrast curve.
+                            val calibrated = (rawTarget * 0.88f).coerceIn(0f, 1f)
+                            val dynamic = ((calibrated - 0.12f) / 0.88f).coerceIn(0f, 1f)
+                            dynamic.pow(1.30f)
                         }
                         else -> rawTarget
                     }
 
-                    // 1. Asymmetric ballistics: snappy attack on beats, agile decay on bass, smooth on highs
-                    val activeRiseAlpha = if (i < 2) bassRiseAlpha else riseAlpha
-                    val activeFallAlpha = if (i < 2) bassFallAlpha else fallAlpha
+                    // 1. Asymmetric ballistics: snappy attack on beats, agile decay on bass (bars 0, 1, 2), smooth on highs
+                    val activeRiseAlpha = if (i < 3) bassRiseAlpha else riseAlpha
+                    val activeFallAlpha = if (i < 3) bassFallAlpha else fallAlpha
                     val current = currentLevels[i]
                     val alpha = if (target >= current) activeRiseAlpha else activeFallAlpha
                     currentLevels[i] = current + (target - current) * alpha
@@ -477,7 +479,7 @@ object AudioVisualizerManager {
                     bandsOut[i] = currentLevels[i]
 
                     // 2. Peak physics: instant rise, continuous asymptotic fall
-                    val activePeakFallAlpha = if (i < 2) bassPeakFallAlpha else peakFallAlpha
+                    val activePeakFallAlpha = if (i < 3) bassPeakFallAlpha else peakFallAlpha
                     val v = currentLevels[i]
                     if (v >= currentPeaks[i]) {
                         currentPeaks[i] = v

@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.79
+### 🚀 Novidades da Versão v0.60.80
 
-- **Pulso Rítmico e Pico de 100% nos Graves:** Ganho calibrado de 1.55x para que as batidas alcancem o topo com facilidade e filtro de envelope musical que elimina oscilações rápidas, fazendo a barra pulsar no tempo exato da música.
+- **Calibração de Sensibilidade da 3ª Barra:** Ajuste equilibrado de ganho (0.88x) e inclusão no envelope musical ágil para a faixa de 115-175Hz, eliminando a hipersensibilidade e harmonizando a barra com o restante do espectro.
