@@ -435,7 +435,7 @@ object AudioVisualizerManager {
                 // Musical envelope ballistics for bass bands: smooths out 60 FPS frame-rate flicker
                 // and follows the organic musical rhythm of the beat (rising solidly to 100% and falling in tempo)
                 val bassRiseAlpha = (0.38f + 0.32f * speed).coerceIn(0.32f, 0.75f)
-                val bassFallAlpha = (0.11f + 0.18f * speed).coerceIn(0.09f, 0.30f)
+                val bassFallAlpha = (0.16f + 0.22f * speed).coerceIn(0.14f, 0.40f)
                 val bassPeakFallAlpha = (0.008f + 0.012f * speed).coerceIn(0.005f, 0.025f)
 
                 for (i in 0 until NUM_BANDS) {
@@ -443,35 +443,42 @@ object AudioVisualizerManager {
                     if (rawTarget > 0.01f) activeSignal = true
 
                     // Dynamic range expansion and calibrated gain on bass/sub bands:
-                    // Boosts beat peaks to reach 100% easily while clearing the sustain floor between beats.
+                    // Subtracts sustain floor FIRST so rapid bass hits drop between beats without getting stuck at the top.
                     val target = when (i) {
                         0 -> {
-                            // Band 0 (Subgrave): Calibrated 1.55x gain so kick/808 hits easily touch 100%,
-                            // with clean sustain subtraction so it drops down between beats instead of hovering at 50%.
-                            val boosted = (rawTarget * 1.55f).coerceIn(0f, 1f)
-                            val dynamic = ((boosted - 0.12f) / 0.88f).coerceIn(0f, 1f)
-                            dynamic.pow(1.25f)
+                            // Band 0 (Subgrave): Subtract sustain floor first (0.22f) so fast bass tails drop to low levels,
+                            // then boost to 100% on the punch.
+                            val aboveFloor = ((rawTarget - 0.22f) / 0.78f).coerceIn(0f, 1f)
+                            val boosted = (aboveFloor * 1.60f).coerceIn(0f, 1f)
+                            boosted.pow(1.20f)
                         }
                         1 -> {
-                            // Band 1 (Bumbo / Kick): Calibrated 1.40x gain for full-scale punch
-                            val boosted = (rawTarget * 1.40f).coerceIn(0f, 1f)
-                            val dynamic = ((boosted - 0.10f) / 0.90f).coerceIn(0f, 1f)
-                            dynamic.pow(1.20f)
+                            // Band 1 (Bumbo / Kick): Subtract floor then boost for full-scale punch
+                            val aboveFloor = ((rawTarget - 0.16f) / 0.84f).coerceIn(0f, 1f)
+                            val boosted = (aboveFloor * 1.45f).coerceIn(0f, 1f)
+                            boosted.pow(1.20f)
                         }
                         2 -> {
-                            // Band 2 (Punch / Ataque - 115-175 Hz): Naturally accumulates 2 FFT bins (bins 3 and 4).
-                            // Calibrated at 0.88x to compensate for dual-bin energy and eliminate hypersensitivity,
-                            // with clean sustain subtraction and 1.30 contrast curve.
-                            val calibrated = (rawTarget * 0.88f).coerceIn(0f, 1f)
-                            val dynamic = ((calibrated - 0.12f) / 0.88f).coerceIn(0f, 1f)
-                            dynamic.pow(1.30f)
+                            // Band 2 (Punch / Ataque): Smooth transitional curve
+                            val boosted = (rawTarget * 1.20f).coerceIn(0f, 1f)
+                            val dynamic = ((boosted - 0.05f) / 0.95f).coerceIn(0f, 1f)
+                            dynamic.pow(1.10f)
                         }
                         else -> rawTarget
                     }
 
-                    // 1. Asymmetric ballistics: snappy attack on beats, agile decay on bass (bars 0, 1, 2), smooth on highs
-                    val activeRiseAlpha = if (i < 3) bassRiseAlpha else riseAlpha
-                    val activeFallAlpha = if (i < 3) bassFallAlpha else fallAlpha
+                    // 1. Asymmetric ballistics: snappy attack on beats, progressive fast decay from top on bass
+                    val activeRiseAlpha = if (i < 2) bassRiseAlpha else riseAlpha
+                    val activeFallAlpha = if (i < 2) {
+                        // Progressive fall: right after a peak hit (current > 0.35f), drop fast so rapid beats can fall in time
+                        if (currentLevels[i] > 0.35f) {
+                            (bassFallAlpha * 1.60f).coerceIn(0.18f, 0.55f)
+                        } else {
+                            bassFallAlpha
+                        }
+                    } else {
+                        fallAlpha
+                    }
                     val current = currentLevels[i]
                     val alpha = if (target >= current) activeRiseAlpha else activeFallAlpha
                     currentLevels[i] = current + (target - current) * alpha
@@ -479,7 +486,7 @@ object AudioVisualizerManager {
                     bandsOut[i] = currentLevels[i]
 
                     // 2. Peak physics: instant rise, continuous asymptotic fall
-                    val activePeakFallAlpha = if (i < 3) bassPeakFallAlpha else peakFallAlpha
+                    val activePeakFallAlpha = if (i < 2) bassPeakFallAlpha else peakFallAlpha
                     val v = currentLevels[i]
                     if (v >= currentPeaks[i]) {
                         currentPeaks[i] = v

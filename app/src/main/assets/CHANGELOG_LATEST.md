@@ -1,3 +1,4 @@
-### 🚀 Novidades da Versão v0.60.80
+### 🚀 Novidades da Versão v0.60.81
 
-- **Calibração de Sensibilidade da 3ª Barra:** Ajuste equilibrado de ganho (0.88x) e inclusão no envelope musical ágil para a faixa de 115-175Hz, eliminando a hipersensibilidade e harmonizando a barra com o restante do espectro.
+- **Dinâmica Rápida nos Graves:** Decaimento progressivo ágil e corte limpo do chão acústico no subgrave, permitindo que a 1ª barra caia e pulse nitidamente mesmo em batidas rápidas e compassos acelerados.
+- **Restauração da 3ª Barra:** Restaurada a calibração anterior da 3ª barra de transição.
