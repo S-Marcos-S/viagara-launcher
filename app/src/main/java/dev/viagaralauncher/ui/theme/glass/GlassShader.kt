@@ -179,11 +179,20 @@ object GlassShader {
         return ColorMatrixColorFilter(matrix)
     }
 
+    private val reusableShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val reusableOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val reusableOutlinePath = Path()
+    private val reusableOutlineRect = RectF()
+    private val reusableOutlineRadii = FloatArray(8)
+
     fun drawShadow(canvas: Canvas, path: Path, rect: RectF, strength: Float, density: Float) {
+        if (strength <= 0f) return
         val alpha = (32 * strength).roundToInt().coerceIn(0, 255)
         if (alpha <= 0) return
         val blur = max(4f * density, min(rect.width(), rect.height()) * 0.08f)
-        val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val shadowPaint = reusableShadowPaint.apply {
+            reset()
+            isAntiAlias = true
             color = Color.BLACK
             setShadowLayer(blur, blur * 0.25f, blur * 0.375f, Color.argb(alpha, 0, 0, 0))
         }
@@ -208,15 +217,28 @@ object GlassShader {
         if (width <= 0f || outlineAlpha <= 0) return
 
         val inset = width / 2f
-        val outlineRect = RectF(rect).apply { inset(inset, inset) }
-        val radii = FloatArray(8) { idx ->
-            val r = if (idx < 4) corner else bottomCorner
-            max(0f, r - inset)
+        val outlineRect = reusableOutlineRect.apply {
+            set(rect)
+            inset(inset, inset)
         }
-        val outlinePath = Path().apply {
-            addRoundRect(outlineRect, radii, Path.Direction.CW)
+        val topR = max(0f, corner - inset)
+        val botR = max(0f, bottomCorner - inset)
+        reusableOutlineRadii[0] = topR
+        reusableOutlineRadii[1] = topR
+        reusableOutlineRadii[2] = topR
+        reusableOutlineRadii[3] = topR
+        reusableOutlineRadii[4] = botR
+        reusableOutlineRadii[5] = botR
+        reusableOutlineRadii[6] = botR
+        reusableOutlineRadii[7] = botR
+
+        val outlinePath = reusableOutlinePath.apply {
+            reset()
+            addRoundRect(outlineRect, reusableOutlineRadii, Path.Direction.CW)
         }
-        val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val outlinePaint = reusableOutlinePaint.apply {
+            reset()
+            isAntiAlias = true
             this.style = Paint.Style.STROKE
             strokeWidth = width
             color = style.outlineColor

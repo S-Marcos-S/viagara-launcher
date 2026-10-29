@@ -38,7 +38,8 @@ import java.util.Locale
 class SpeedMonitorService : Service() {
 
     companion object {
-        const val CHANNEL_ID = "speed_monitor_channel"
+        const val CHANNEL_ID = "speed_monitor_channel_v2"
+        const val OLD_CHANNEL_ID = "speed_monitor_channel"
         const val NOTIFICATION_ID = 2100
         const val GROUP_KEY = "dev.viagaralauncher.group.SPEED_MONITOR"
 
@@ -648,7 +649,7 @@ class SpeedMonitorService : Service() {
             .setContentTitle(getString(R.string.net_speed_title))
             .setContentText(contentText)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setGroup(GROUP_KEY)
             .setGroupSummary(false)
@@ -764,17 +765,24 @@ class SpeedMonitorService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            // Delete legacy channel so system immediately upgrades to default importance without sound
+            runCatching {
+                notificationManager.deleteNotificationChannel(OLD_CHANNEL_ID)
+            }
+
             val name = getString(R.string.net_speed_notif_channel_name)
             val descriptionText = getString(R.string.net_speed_notif_channel_desc)
-            val importance = NotificationManager.IMPORTANCE_LOW
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
                 setShowBadge(false)
                 enableLights(false)
                 enableVibration(false)
+                setSound(null, null)
             }
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }

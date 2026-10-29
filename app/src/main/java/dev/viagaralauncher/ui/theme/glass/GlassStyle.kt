@@ -33,5 +33,17 @@ data class GlassStyle(
         const val DEFAULT_OUTLINE_COLOR = Color.WHITE
 
         val DEFAULT = GlassStyle()
+
+        val ICON = GlassStyle(
+            refraction = 0.85f,
+            depth = 0.85f,
+            dispersion = 0.7f,
+            vibrancy = 0f,
+            rim = 0.85f,
+            shadow = 0f,
+            outlineWidth = 0.75f,
+            outlineOpacity = 0.18f,
+            outlineColor = Color.WHITE,
+        )
     }
 }

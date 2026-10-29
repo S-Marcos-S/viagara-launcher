@@ -75,6 +75,29 @@ object WallpaperGlassProvider {
         BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
     }
 
+    // Preallocated drawing objects to prevent GC churning at 60/120 FPS
+    private val reusablePath = Path()
+    private val reusableRadii = FloatArray(8)
+    private val reusableMatrix = Matrix()
+    private val reusablePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val reusableTintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val reusableBasePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    @Volatile
+    private var cachedActiveBitmapShader: BitmapShader? = null
+    @Volatile
+    private var lastBitmapForShader: Bitmap? = null
+
+    private fun getOrCreateBitmapShader(bitmap: Bitmap): BitmapShader {
+        var bs = cachedActiveBitmapShader
+        if (bs == null || lastBitmapForShader !== bitmap) {
+            bs = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+            cachedActiveBitmapShader = bs
+            lastBitmapForShader = bitmap
+        }
+        return bs
+    }
+
     fun init(context: Context) {
         val appContext = context.applicationContext
         appContextRef = appContext
@@ -260,21 +283,24 @@ object WallpaperGlassProvider {
     ) {
         if (bounds.isEmpty) return
 
-        val path = Path().apply {
+        val path = reusablePath.apply {
+            reset()
             if (topCorner == bottomCorner) {
                 addRoundRect(bounds, topCorner, topCorner, Path.Direction.CW)
             } else {
-                val radii = floatArrayOf(
-                    topCorner, topCorner,
-                    topCorner, topCorner,
-                    bottomCorner, bottomCorner,
-                    bottomCorner, bottomCorner,
-                )
-                addRoundRect(bounds, radii, Path.Direction.CW)
+                reusableRadii[0] = topCorner
+                reusableRadii[1] = topCorner
+                reusableRadii[2] = topCorner
+                reusableRadii[3] = topCorner
+                reusableRadii[4] = bottomCorner
+                reusableRadii[5] = bottomCorner
+                reusableRadii[6] = bottomCorner
+                reusableRadii[7] = bottomCorner
+                addRoundRect(bounds, reusableRadii, Path.Direction.CW)
             }
         }
 
-        // Draw shadow behind the element
+        // Draw shadow behind the element (bypassed if shadow strength <= 0)
         GlassShader.drawShadow(canvas, path, bounds, style.shadow, density)
 
         val base = cachedSharp ?: fallbackBitmap
@@ -297,17 +323,19 @@ object WallpaperGlassProvider {
             val dx = (targetWidth - scaledWidth) / 2f
             val dy = (targetHeight - scaledHeight) / 2f
 
-            val shaderMatrix = Matrix().apply {
+            val shaderMatrix = reusableMatrix.apply {
+                reset()
                 setScale(scale, scale)
                 postTranslate(dx, dy)
                 postTranslate(-positionInWindow.x, -positionInWindow.y)
             }
 
+            val imageShader = getOrCreateBitmapShader(activeBitmap).apply {
+                setLocalMatrix(shaderMatrix)
+            }
+
             if (isTiramisu) {
                 val shader = getOrCreateLiquidShader()
-                val imageShader = BitmapShader(activeBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
-                    setLocalMatrix(shaderMatrix)
-                }
                 shader.setInputShader("image", imageShader)
                 shader.setFloatUniform("origin", bounds.left, bounds.top)
                 shader.setFloatUniform("size", bounds.width(), bounds.height())
@@ -320,22 +348,25 @@ object WallpaperGlassProvider {
                 shader.setFloatUniform("maskScale", 1f)
                 shader.setFloatUniform("maskRange", 1f)
 
-                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                val paint = reusablePaint.apply {
+                    reset()
+                    isAntiAlias = true
                     this.shader = shader
                 }
                 canvas.drawPath(path, paint)
             } else {
-                val imageShader = BitmapShader(activeBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
-                    setLocalMatrix(shaderMatrix)
-                }
-                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                val paint = reusablePaint.apply {
+                    reset()
+                    isAntiAlias = true
                     this.shader = imageShader
                     colorFilter = GlassShader.backdropFilter(Color.TRANSPARENT, style.saturation)
                 }
                 canvas.drawPath(path, paint)
             }
         } else {
-            val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            val basePaint = reusableBasePaint.apply {
+                reset()
+                isAntiAlias = true
                 color = if (night) 0x33FFFFFF else 0x55FFFFFF
             }
             canvas.drawPath(path, basePaint)
@@ -344,7 +375,9 @@ object WallpaperGlassProvider {
         // Draw surface tint overlay
         if (tintOpacity > 0) {
             val tintAlpha = (tintOpacity.coerceIn(0, 100) * 255 / 100)
-            val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            val tintPaint = reusableTintPaint.apply {
+                reset()
+                isAntiAlias = true
                 color = ColorUtils.setAlphaComponent(surfaceColor, tintAlpha)
             }
             canvas.drawPath(path, tintPaint)

@@ -363,7 +363,7 @@ fun GlassIconContainer(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     tintColor: Color? = null,
-    style: GlassStyle = GlassStyle.DEFAULT,
+    style: GlassStyle = GlassStyle.ICON,
     shape: IconShape = LocalIconConfig.current.iconShape,
 ) {
     val isDark = isSystemInDarkTheme()

@@ -63,6 +63,7 @@ fun GlassSurface(
         WallpaperGlassProvider.getRealWindowSize(context, view)
     }
     var positionInWindow by remember { mutableStateOf(Offset.Zero) }
+    val elementBounds = remember { RectF() }
 
     LaunchedEffect(Unit) {
         WallpaperGlassProvider.init(context)
@@ -85,9 +86,10 @@ fun GlassSurface(
                 val defaultCorner = cornerPx ?: (size.width * effectiveCornerFraction)
                 val resolvedTopCorner = topCornerPx ?: defaultCorner
                 val resolvedBottomCorner = bottomCornerPx ?: defaultCorner
+                elementBounds.set(0f, 0f, size.width, size.height)
                 WallpaperGlassProvider.drawGlassElement(
                     canvas = composeCanvas.nativeCanvas,
-                    bounds = RectF(0f, 0f, size.width, size.height),
+                    bounds = elementBounds,
                     positionInWindow = positionInWindow,
                     screenWidth = screenWidthPx,
                     screenHeight = screenHeightPx,
