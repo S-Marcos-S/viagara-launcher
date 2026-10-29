@@ -83,25 +83,45 @@ class SpeedMonitorService : Service() {
             previousTotals: Map<Int, Long>,
             deltaTimeSec: Double,
             minBytesPerSec: Double,
+            totalDeviceSpeed: Double = 0.0,
             resolveName: (Int) -> String?
         ): List<ActiveAppSpeed> {
             if (deltaTimeSec <= 0.0) return emptyList()
-            val active = mutableListOf<ActiveAppSpeed>()
+            val rawActive = mutableListOf<ActiveAppSpeed>()
             for ((uid, current) in currentTotals) {
                 if (uid < 10000 && uid != 0 && uid != 1000) continue
                 val prev = previousTotals[uid] ?: continue
                 if (current > prev) {
                     val delta = current - prev
-                    val speed = delta / deltaTimeSec
-                    if (speed >= minBytesPerSec) {
+                    val rawSpeed = delta / deltaTimeSec
+                    if (rawSpeed >= minBytesPerSec) {
                         val name = resolveName(uid)
                         if (name != null) {
-                            active.add(ActiveAppSpeed(name, speed))
+                            rawActive.add(ActiveAppSpeed(name, rawSpeed))
                         }
                     }
                 }
             }
-            return active.sortedByDescending { it.speedBytesSec }
+            if (rawActive.isEmpty()) return emptyList()
+
+            val result = if (totalDeviceSpeed > 0.0) {
+                val sumRaw = rawActive.sumOf { it.speedBytesSec }
+                if (sumRaw > totalDeviceSpeed) {
+                    val factor = totalDeviceSpeed / sumRaw
+                    rawActive.map { app ->
+                        ActiveAppSpeed(app.appName, app.speedBytesSec * factor)
+                    }
+                } else {
+                    rawActive.map { app ->
+                        ActiveAppSpeed(app.appName, minOf(app.speedBytesSec, totalDeviceSpeed))
+                    }
+                }
+            } else {
+                rawActive
+            }
+
+            return result.filter { it.speedBytesSec >= minBytesPerSec }
+                .sortedByDescending { it.speedBytesSec }
         }
     }
 
@@ -122,6 +142,8 @@ class SpeedMonitorService : Service() {
 
     private var isScreenOn = true
     private var isViewingApps = false
+    private var isAppsLoading = false
+    private var appsViewStartTime = 0L
 
     private var lastNotificationText = ""
     private var lastIconSpeedText = ""
@@ -203,16 +225,22 @@ class SpeedMonitorService : Service() {
             }
             ACTION_VIEW_APPS -> {
                 isViewingApps = true
+                isAppsLoading = true
+                appsViewStartTime = System.currentTimeMillis()
                 lastAppsSummary = ""
+                recentActiveApps.clear()
+                lastUidCumulativeTotals.clear()
+                lastAppStatsQueryTime = 0L
                 takeAppsBaselineSnapshot()
                 updateStats(forceUpdate = true)
                 handler.postDelayed({
                     if (isViewingApps) updateStats(forceUpdate = true)
-                }, 400L)
+                }, 1000L)
                 return START_STICKY
             }
             ACTION_HIDE_APPS -> {
                 isViewingApps = false
+                isAppsLoading = false
                 lastAppsSummary = ""
                 recentActiveApps.clear()
                 lastUidCumulativeTotals.clear()
@@ -224,11 +252,17 @@ class SpeedMonitorService : Service() {
                 isViewingApps = !isViewingApps
                 lastAppsSummary = ""
                 if (isViewingApps) {
+                    isAppsLoading = true
+                    appsViewStartTime = System.currentTimeMillis()
+                    recentActiveApps.clear()
+                    lastUidCumulativeTotals.clear()
+                    lastAppStatsQueryTime = 0L
                     takeAppsBaselineSnapshot()
                     handler.postDelayed({
                         if (isViewingApps) updateStats(forceUpdate = true)
-                    }, 400L)
+                    }, 1000L)
                 } else {
+                    isAppsLoading = false
                     recentActiveApps.clear()
                     lastUidCumulativeTotals.clear()
                     lastAppStatsQueryTime = 0L
@@ -358,7 +392,7 @@ class SpeedMonitorService : Service() {
             }
         }
 
-        val activeApps = if (isViewingApps) getActiveAppsSpeed(deltaTime) else emptyList()
+        val activeApps = if (isViewingApps) getActiveAppsSpeed(deltaTime, totalSpeed) else emptyList()
         val appsSummary = if (isViewingApps) activeApps.joinToString { "${it.appName}:${it.speedBytesSec}" } else ""
 
         // Only notify if something meaningful changed or if forceUpdate is requested
@@ -436,13 +470,20 @@ class SpeedMonitorService : Service() {
         lastAppStatsQueryTime = currentTime
     }
 
-    private fun getActiveAppsSpeed(deltaTime: Double): List<ActiveAppSpeed> {
+    private fun getActiveAppsSpeed(deltaTime: Double, totalDeviceSpeed: Double): List<ActiveAppSpeed> {
         if (!hasUsageStatsPermission()) {
             tryAutoGrantUsagePermission()
             return emptyList()
         }
 
         val currentTime = System.currentTimeMillis()
+        val minBytesPerSec = (settings.minAppUsageKb.coerceAtLeast(1L) * 1024.0)
+
+        // If total device speed is virtually zero or below threshold, clear cached apps immediately
+        if (totalDeviceSpeed < minBytesPerSec && recentActiveApps.isNotEmpty()) {
+            recentActiveApps.clear()
+        }
+
         val nsm = getSystemService(Context.NETWORK_STATS_SERVICE) as? NetworkStatsManager ?: return emptyList()
 
         val calendar = Calendar.getInstance().apply {
@@ -458,32 +499,53 @@ class SpeedMonitorService : Service() {
         collectUidCumulative(nsm, ConnectivityManager.TYPE_MOBILE, startOfDay, currentTime, currentTotals)
         collectUidCumulative(nsm, ConnectivityManager.TYPE_ETHERNET, startOfDay, currentTime, currentTotals)
 
-        val minBytesPerSec = (settings.minAppUsageKb.coerceAtLeast(1L) * 1024.0)
-
         if (lastUidCumulativeTotals.isNotEmpty() && lastAppStatsQueryTime > 0) {
-            val elapsedSec = ((currentTime - lastAppStatsQueryTime) / 1000.0).coerceAtLeast(0.3)
-            val detected = calculateActiveAppsFromDeltas(
-                currentTotals = currentTotals,
-                previousTotals = lastUidCumulativeTotals,
-                deltaTimeSec = elapsedSec,
-                minBytesPerSec = minBytesPerSec,
-                resolveName = { uid -> getAppNameForUid(uid) }
-            )
-            for (app in detected) {
-                recentActiveApps[app.appName] = RecentAppRecord(app.speedBytesSec, currentTime)
+            val elapsedSec = ((currentTime - lastAppStatsQueryTime) / 1000.0)
+            if (elapsedSec >= 0.8) {
+                val detected = calculateActiveAppsFromDeltas(
+                    currentTotals = currentTotals,
+                    previousTotals = lastUidCumulativeTotals,
+                    deltaTimeSec = elapsedSec,
+                    minBytesPerSec = minBytesPerSec,
+                    totalDeviceSpeed = totalDeviceSpeed,
+                    resolveName = { uid -> getAppNameForUid(uid) }
+                )
+                if (detected.isNotEmpty()) {
+                    isAppsLoading = false
+                    recentActiveApps.clear()
+                    for (app in detected) {
+                        recentActiveApps[app.appName] = RecentAppRecord(app.speedBytesSec, currentTime)
+                    }
+                } else if (currentTime - appsViewStartTime >= 1800L) {
+                    isAppsLoading = false
+                }
+                lastUidCumulativeTotals.clear()
+                lastUidCumulativeTotals.putAll(currentTotals)
+                lastAppStatsQueryTime = currentTime
             }
+        } else {
+            lastUidCumulativeTotals.clear()
+            lastUidCumulativeTotals.putAll(currentTotals)
+            lastAppStatsQueryTime = currentTime
         }
 
-        lastUidCumulativeTotals.clear()
-        lastUidCumulativeTotals.putAll(currentTotals)
-        lastAppStatsQueryTime = currentTime
+        // Prune records older than 2500ms
+        recentActiveApps.entries.removeAll { (currentTime - it.value.timestamp) > 2500L }
 
-        // Prune records older than 3000ms
-        recentActiveApps.entries.removeAll { (currentTime - it.value.timestamp) > 3000L }
+        val activeList = recentActiveApps.map { (name, record) ->
+            val speed = if (totalDeviceSpeed > 0.0) minOf(record.speedBytesSec, totalDeviceSpeed) else record.speedBytesSec
+            ActiveAppSpeed(name, speed)
+        }.filter { it.speedBytesSec >= minBytesPerSec }
+         .sortedByDescending { it.speedBytesSec }
+         .take(4)
 
-        return recentActiveApps.map { (name, record) ->
-            ActiveAppSpeed(name, record.speedBytesSec)
-        }.sortedByDescending { it.speedBytesSec }.take(4)
+        if (activeList.isNotEmpty()) {
+            isAppsLoading = false
+        } else if (currentTime - appsViewStartTime >= 1800L) {
+            isAppsLoading = false
+        }
+
+        return activeList
     }
 
     private fun collectUidCumulative(
@@ -618,7 +680,7 @@ class SpeedMonitorService : Service() {
                     for (app in activeApps) {
                         appendLine("• ${app.appName}: ${formatSpeed(app.speedBytesSec)}")
                     }
-                } else if (lastAppStatsQueryTime == 0L || lastUidCumulativeTotals.isEmpty()) {
+                } else if (isAppsLoading) {
                     append(getString(R.string.net_speed_calculating_apps))
                 } else {
                     append(getString(R.string.net_speed_no_active_apps, settings.minAppUsageKb))

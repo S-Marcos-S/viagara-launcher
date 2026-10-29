@@ -1067,6 +1067,6 @@
     <string name="net_speed_threshold_value_label">Valor mínimo</string>
     <string name="net_speed_threshold_unit_label">Unidade</string>
     <string name="net_speed_permission_required">Acesso de uso necessário para ver apps (toque para conceder)</string>
-    <string name="net_speed_calculating_apps">Calculando consumo dos apps…</string>
+    <string name="net_speed_calculating_apps">Carregando consumo dos apps…</string>
     <string name="net_speed_action_grant_permission">Permissão</string>
 </resources>

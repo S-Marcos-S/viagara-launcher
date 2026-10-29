@@ -1,5 +1,4 @@
-### 🚀 Novidades da Versão v0.60.72
+### 🚀 Novidades da Versão v0.60.73
 
-- **Monitor de Rede:** Correção na listagem de apps consumindo dados na notificação via deltas cumulativos de NetworkStatsManager.
-- **Detecção e Permissões:** Tratamento de permissão de acesso ao uso com auto-concessão root e atalho direto na notificação.
-- **Suavização de Consumo:** Retenção temporária de consumo recente para evitar oscilações visuais bruscas.
+- **Monitor de Rede:** Exibição do estado "Carregando consumo dos apps…" imediatamente ao expandir os apps.
+- **Precisão de Velocidade:** Calibração e normalização proporcional das taxas dos apps contra a velocidade total real do dispositivo, evitando valores inflados por descargas de buffer.
