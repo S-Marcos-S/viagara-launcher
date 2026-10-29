@@ -49,7 +49,7 @@ import kotlin.math.roundToInt
 object WallpaperGlassProvider {
 
     private const val SHARP_WIDTH = 720
-    private const val FROSTED_SAMPLE_WIDTH = 220
+    private const val FROSTED_SAMPLE_WIDTH = 180
 
     private val initialized = AtomicBoolean(false)
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -160,7 +160,7 @@ object WallpaperGlassProvider {
         cachedSharp = sharp
 
         val blurW = min(FROSTED_SAMPLE_WIDTH, sharpW)
-        val blurred = GlassShader.sampleBlur(sharp, blurW, 2)
+        val blurred = GlassShader.sampleBlur(sharp, blurW, 4)
         cachedBlurred = blurred
     }
 
@@ -334,6 +334,18 @@ object WallpaperGlassProvider {
                 setLocalMatrix(shaderMatrix)
             }
 
+            val dimColor = if (style.dimFactor > 0f) {
+                if (night) {
+                    val alpha = (85 * style.dimFactor).roundToInt().coerceIn(0, 255)
+                    Color.argb(alpha, 14, 18, 26) // Deep neutral darkening in dark mode for contrast
+                } else {
+                    val alpha = (95 * style.dimFactor).roundToInt().coerceIn(0, 255)
+                    Color.argb(alpha, 245, 247, 252) // Milky brightening in light mode for contrast
+                }
+            } else {
+                Color.TRANSPARENT
+            }
+
             if (isTiramisu) {
                 val shader = getOrCreateLiquidShader()
                 shader.setInputShader("image", imageShader)
@@ -341,7 +353,7 @@ object WallpaperGlassProvider {
                 shader.setFloatUniform("size", bounds.width(), bounds.height())
                 GlassShader.setRadii(shader, topCorner, bottomCorner)
                 GlassShader.applyStyle(shader, bounds.width(), bounds.height(), style)
-                GlassShader.setDim(shader, Color.TRANSPARENT)
+                GlassShader.setDim(shader, dimColor)
                 shader.setInputShader("mask", emptyMaskShader)
                 shader.setFloatUniform("useMask", 0f)
                 shader.setFloatUniform("maskOrigin", 0f, 0f)
@@ -359,7 +371,7 @@ object WallpaperGlassProvider {
                     reset()
                     isAntiAlias = true
                     this.shader = imageShader
-                    colorFilter = GlassShader.backdropFilter(Color.TRANSPARENT, style.saturation)
+                    colorFilter = GlassShader.backdropFilter(dimColor, style.saturation)
                 }
                 canvas.drawPath(path, paint)
             }

@@ -1,4 +1,3 @@
-### 🚀 Novidades da Versão v0.60.76
+### 🚀 Novidades da Versão v0.60.77
 
-- **Desmembramento Total de Notificações:** Novo canal prioritário silencioso para a velocidade de rede, impedindo definitivamente o agrupamento com a notificação de bateria mesmo em repouso.
-- **Otimização Extrema do Tema Vidro:** Renderização a 60/120 FPS sem micro-travamentos com reaproveitamento de objetos gráficos e remoção de sombras pesadas em ícones.
+- **Legibilidade Aprimorada no Tema Vidro:** Camada de contraste inteligente e desfoque aveludado em todas as janelas, pastas e menus, garantindo leitura perfeita mesmo com papéis de parede claros ou muito coloridos.

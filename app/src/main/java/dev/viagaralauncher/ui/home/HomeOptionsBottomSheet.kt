@@ -87,6 +87,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
 import dev.viagaralauncher.ui.theme.glass.GlassSurface
+import dev.viagaralauncher.ui.theme.glass.GlassStyle
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -498,10 +501,14 @@ fun HomeOptionsBottomSheet(
             }
 
             if (isGlassActive) {
+                val isDark = isSystemInDarkTheme()
                 GlassSurface(
                     modifier = sheetModifier,
                     topCornerPx = topCornerPx,
                     bottomCornerPx = 0f,
+                    style = GlassStyle.DIALOG,
+                    tintOpacity = if (isDark) 55 else 62,
+                    surfaceColor = colorScheme.surfaceContainerHigh.toArgb(),
                 ) {
                     Column(
                         modifier = Modifier

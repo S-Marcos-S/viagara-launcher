@@ -118,11 +118,13 @@ fun GlassDialogContainer(
     topCornerDp: Dp = cornerRadiusDp,
     bottomCornerDp: Dp = cornerRadiusDp,
     isGlassActive: Boolean = LocalGlassThemeActive.current,
-    style: GlassStyle = GlassStyle.DEFAULT,
-    tintOpacity: Int = 20,
-    surfaceColor: Int = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+    style: GlassStyle = GlassStyle.DIALOG,
+    tintOpacity: Int? = null,
+    surfaceColor: Int = dynamicSurfaceColor(alpha = 1f).toArgb(),
     content: @Composable BoxScope.() -> Unit,
 ) {
+    val isDark = isSystemInDarkTheme()
+    val resolvedTintOpacity = tintOpacity ?: if (isDark) 55 else 62
     val density = LocalDensity.current
     val topPx = with(density) { topCornerDp.toPx() }
     val bottomPx = with(density) { bottomCornerDp.toPx() }
@@ -139,7 +141,7 @@ fun GlassDialogContainer(
             topCornerPx = topPx,
             bottomCornerPx = bottomPx,
             style = style,
-            tintOpacity = tintOpacity,
+            tintOpacity = resolvedTintOpacity,
             surfaceColor = surfaceColor,
             content = content,
         )

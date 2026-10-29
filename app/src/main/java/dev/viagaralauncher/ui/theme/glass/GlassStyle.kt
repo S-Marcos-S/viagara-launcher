@@ -17,6 +17,7 @@ data class GlassStyle(
     val outlineWidth: Float = 1f,
     val outlineOpacity: Float = 0.20f,
     val outlineColor: Int = Color.WHITE,
+    val dimFactor: Float = 0f,
 ) {
     val saturation: Float
         get() = (1f + vibrancy).coerceAtLeast(0f)
@@ -33,6 +34,19 @@ data class GlassStyle(
         const val DEFAULT_OUTLINE_COLOR = Color.WHITE
 
         val DEFAULT = GlassStyle()
+
+        val DIALOG = GlassStyle(
+            refraction = 0.85f,
+            depth = 0.95f,
+            dispersion = 0.4f,
+            vibrancy = -0.30f,
+            rim = 1.15f,
+            shadow = 0.9f,
+            outlineWidth = 1f,
+            outlineOpacity = 0.22f,
+            outlineColor = Color.WHITE,
+            dimFactor = 1f,
+        )
 
         val ICON = GlassStyle(
             refraction = 0.85f,
