@@ -1,4 +1,3 @@
-### 🚀 Novidades da Versão v0.60.73
+### 🚀 Novidades da Versão v0.60.74
 
-- **Monitor de Rede:** Exibição do estado "Carregando consumo dos apps…" imediatamente ao expandir os apps.
-- **Precisão de Velocidade:** Calibração e normalização proporcional das taxas dos apps contra a velocidade total real do dispositivo, evitando valores inflados por descargas de buffer.
+- **Intervalo Personalizado:** Opção para selecionar a frequência de atualização do consumo (1s, 2s, 3s, 5s ou 10s) para economizar ainda mais bateria.

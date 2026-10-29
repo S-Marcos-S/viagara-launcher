@@ -1107,4 +1107,6 @@
     <string name="net_speed_permission_required">Usage access required to show apps (tap to grant)</string>
     <string name="net_speed_calculating_apps">Loading app usage…</string>
     <string name="net_speed_action_grant_permission">Permission</string>
+    <string name="net_speed_interval_title">Update interval</string>
+    <string name="net_speed_interval_desc">Frequency of real-time speed updates (longer interval = less battery usage)</string>
 </resources>

@@ -1069,4 +1069,6 @@
     <string name="net_speed_permission_required">Acesso de uso necessário para ver apps (toque para conceder)</string>
     <string name="net_speed_calculating_apps">Carregando consumo dos apps…</string>
     <string name="net_speed_action_grant_permission">Permissão</string>
+    <string name="net_speed_interval_title">Intervalo de atualização</string>
+    <string name="net_speed_interval_desc">Frequência de atualização em tempo real (maior intervalo = menos bateria)</string>
 </resources>

@@ -32,6 +32,12 @@ class NetSpeedSettings(context: Context) {
         get() = prefs.getLong("update_interval", 1000L)
         set(value) = prefs.edit().putLong("update_interval", value).apply()
 
+    var updateIntervalSeconds: Int
+        get() = (updateInterval / 1000L).toInt().coerceIn(1, 10)
+        set(value) {
+            updateInterval = value.toLong().coerceIn(1L, 10L) * 1000L
+        }
+
     var minAppUsageKb: Long
         get() = prefs.getLong("min_app_usage_kb", 10L)
         set(value) = prefs.edit().putLong("min_app_usage_kb", value).apply()

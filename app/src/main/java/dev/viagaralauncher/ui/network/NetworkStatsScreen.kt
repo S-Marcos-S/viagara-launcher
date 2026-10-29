@@ -672,6 +672,58 @@ private fun LiveSpeedNotificationCard() {
                                     }
                                 }
                             }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.net_speed_interval_title),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colorScheme.onSurface,
+                            )
+                            Text(
+                                text = stringResource(R.string.net_speed_interval_desc),
+                                fontSize = 11.sp,
+                                color = colorScheme.onSurfaceVariant,
+                                lineHeight = 14.sp,
+                            )
+
+                            var updateIntervalSeconds by remember { mutableStateOf(settings.updateIntervalSeconds) }
+                            val intervals = listOf(1 to "1s", 2 to "2s", 3 to "3s", 5 to "5s", 10 to "10s")
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(colorScheme.surfaceContainerHigh)
+                                    .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                    .padding(3.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                intervals.forEach { (sec, label) ->
+                                    val isSelected = updateIntervalSeconds == sec
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (isSelected) colorScheme.primary else Color.Transparent)
+                                            .clickable {
+                                                updateIntervalSeconds = sec
+                                                settings.updateIntervalSeconds = sec
+                                                if (isEnabled) SpeedMonitorService.start(context)
+                                            }
+                                            .padding(vertical = 6.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) colorScheme.onPrimary else colorScheme.onSurface.copy(alpha = 0.75f),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
