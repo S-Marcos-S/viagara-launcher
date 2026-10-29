@@ -186,7 +186,8 @@ data class AgendaActivity(
             val exDatesArr = json.optJSONArray("excludedDates")
             if (exDatesArr != null) {
                 for (i in 0 until exDatesArr.length()) {
-                    excludedDates.add(exDatesArr.getString(i))
+                    val d = exDatesArr.optString(i)
+                    if (!d.isNullOrEmpty()) excludedDates.add(d)
                 }
             }
 
@@ -194,7 +195,8 @@ data class AgendaActivity(
             val exInstArr = json.optJSONArray("excludedInstances")
             if (exInstArr != null) {
                 for (i in 0 until exInstArr.length()) {
-                    excludedInstances.add(exInstArr.getString(i))
+                    val inst = exInstArr.optString(i)
+                    if (!inst.isNullOrEmpty()) excludedInstances.add(inst)
                 }
             }
 

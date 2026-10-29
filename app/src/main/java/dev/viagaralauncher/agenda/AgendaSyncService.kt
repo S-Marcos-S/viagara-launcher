@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDate
 
 class AgendaSyncService(private val context: Context) {
@@ -49,8 +50,15 @@ class AgendaSyncService(private val context: Context) {
             val file = getSyncFile()
             if (file.exists() && file.length() > 0) {
                 val content = file.readText(Charsets.UTF_8)
-                if (content.isNotBlank()) {
-                    repository.importAgendaJson(content)
+                val cleanContent = content.trim { it <= ' ' || it == '\u0000' }
+                if (cleanContent.isNotEmpty() && (cleanContent.startsWith("{") || cleanContent.startsWith("["))) {
+                    try {
+                        repository.importAgendaJson(cleanContent)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Arquivo de sincronização corrompido, ignorando importação: ${e.message}")
+                    }
+                } else {
+                    Log.w(TAG, "Arquivo de sincronização corrompido ou vazio detectado (${file.length()} bytes)")
                 }
             }
 
@@ -70,6 +78,11 @@ class AgendaSyncService(private val context: Context) {
 
         try {
             val file = getSyncFile()
+            val parentDir = file.parentFile
+            if (parentDir != null && !parentDir.exists()) {
+                parentDir.mkdirs()
+            }
+
             val active = repository.activities.first()
             val completed = repository.completedActivities.first()
             val deleted = repository.deletedActivityIds.first()
@@ -83,7 +96,21 @@ class AgendaSyncService(private val context: Context) {
                 put("deletedActivities", JSONArray().apply { deleted.forEach { put(it) } })
             }
 
-            file.writeText(root.toString(), Charsets.UTF_8)
+            val jsonString = root.toString()
+            val tempFile = File(file.parentFile, "${file.name}.tmp")
+            FileOutputStream(tempFile).use { fos ->
+                fos.write(jsonString.toByteArray(Charsets.UTF_8))
+                fos.flush()
+                try {
+                    fos.fd.sync()
+                } catch (_: Exception) {}
+            }
+            if (tempFile.exists() && tempFile.length() > 0) {
+                if (file.exists()) {
+                    file.delete()
+                }
+                tempFile.renameTo(file)
+            }
             true
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao gravar arquivo de sincronização: ${e.message}", e)

@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.70
+### 🚀 Novidades da Versão v0.60.71
 
-- **Correção no Serviço de Velocidade:** Inicialização em primeiro plano corrigida para prevenir ForegroundServiceDidNotStartInTimeException.
-- **Seletor de Limite de Rede:** Seletor de unidades remodelado com clique direto e cálculo da velocidade total (down + up).
+- **Sincronização de Agenda:** Proteção contra arquivos corrompidos/nulos e gravação atômica com fsync no sync local.
+- **Robustez de Importação:** Tratamento seguro de JSON com recuperação automática e prevenção de exceções de parsing.

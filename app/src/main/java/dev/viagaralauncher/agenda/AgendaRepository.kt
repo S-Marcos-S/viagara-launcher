@@ -2,6 +2,7 @@
 package dev.viagaralauncher.agenda
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -130,19 +131,31 @@ class AgendaRepository(private val context: Context) {
     )
 
     suspend fun importAgendaJson(jsonStr: String): Int {
-        val root = JSONObject(jsonStr)
+        val trimmed = jsonStr.trim { it <= ' ' || it == '\u0000' }
+        if (trimmed.isEmpty() || !trimmed.startsWith("{")) {
+            Log.w("AgendaRepository", "Payload JSON inválido para importação da agenda")
+            return 0
+        }
+
+        val root = try {
+            JSONObject(trimmed)
+        } catch (e: Exception) {
+            Log.e("AgendaRepository", "Erro ao analisar JSON da agenda: ${e.message}")
+            return 0
+        }
+
         val activeArr = root.optJSONArray("activities") ?: JSONArray()
         val compArr = root.optJSONArray("completedActivities") ?: JSONArray()
 
         val parsedActive = mutableListOf<AgendaActivity>()
         for (i in 0 until activeArr.length()) {
-            val obj = activeArr.getJSONObject(i)
+            val obj = activeArr.optJSONObject(i) ?: continue
             runCatching { parseAgendaActivityFromAny(obj) }.getOrNull()?.let { parsedActive.add(it) }
         }
 
         val parsedComp = mutableListOf<AgendaActivity>()
         for (i in 0 until compArr.length()) {
-            val obj = compArr.getJSONObject(i)
+            val obj = compArr.optJSONObject(i) ?: continue
             runCatching { parseAgendaActivityFromAny(obj) }.getOrNull()?.let { parsedComp.add(it) }
         }
 
