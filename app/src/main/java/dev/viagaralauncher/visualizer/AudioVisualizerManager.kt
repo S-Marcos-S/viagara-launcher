@@ -98,22 +98,22 @@ object AudioVisualizerManager {
     private val currentPeaks = FloatArray(NUM_BANDS)
 
     // Equal-loudness spectral tilt compensation (Pink noise 1/f acoustic curve)
-    // Organic, gentle acoustic profile avoiding hypersensitivity across mids, highs and sub-bass
+    // Organic acoustic profile with subtle, balanced sensitivity across mids, highs and sub-bass
     private val SPECTRAL_WEIGHTS = floatArrayOf(
-        0.80f, // Band 0:  25 - 65 Hz   (Deep Sub / Subgrave)
-        0.82f, // Band 1:  65 - 115 Hz  (Kick Drum / Bumbo)
-        0.85f, // Band 2:  115 - 175 Hz (Punch / Ataque)
-        0.88f, // Band 3:  175 - 260 Hz (Bassline / Contrabaixo)
-        0.90f, // Band 4:  260 - 390 Hz (Corpo / Warmth)
-        0.93f, // Band 5:  390 - 580 Hz (Caixa / Voz baixa)
-        0.96f, // Band 6:  580 - 870 Hz (Medios / Harmônicos vocais)
-        0.99f, // Band 7:  870 - 1300 Hz (Clareza vocal / Sintetizadores)
-        1.02f, // Band 8:  1300 - 2000 Hz (Presença vocal / Ataque melódico)
-        1.05f, // Band 9:  2000 - 3200 Hz (Articulação vocal / Estalo)
-        1.08f, // Band 10: 3200 - 5000 Hz (Agudos / Pratos de ataque)
-        1.10f, // Band 11: 5000 - 8000 Hz (Pratos de condução / Ride)
-        1.12f, // Band 12: 8000 - 12500 Hz (Chimbal / Hi-hats)
-        1.12f, // Band 13: 12500 - 18500 Hz (Ar / Ambiência cristalina)
+        0.84f, // Band 0:  25 - 65 Hz   (Deep Sub / Subgrave)
+        0.86f, // Band 1:  65 - 115 Hz  (Kick Drum / Bumbo)
+        0.88f, // Band 2:  115 - 175 Hz (Punch / Ataque)
+        0.91f, // Band 3:  175 - 260 Hz (Bassline / Contrabaixo)
+        0.94f, // Band 4:  260 - 390 Hz (Corpo / Warmth)
+        0.97f, // Band 5:  390 - 580 Hz (Caixa / Voz baixa)
+        1.00f, // Band 6:  580 - 870 Hz (Medios / Harmônicos vocais)
+        1.03f, // Band 7:  870 - 1300 Hz (Clareza vocal / Sintetizadores)
+        1.06f, // Band 8:  1300 - 2000 Hz (Presença vocal / Ataque melódico)
+        1.08f, // Band 9:  2000 - 3200 Hz (Articulação vocal / Estalo)
+        1.10f, // Band 10: 3200 - 5000 Hz (Agudos / Pratos de ataque)
+        1.12f, // Band 11: 5000 - 8000 Hz (Pratos de condução / Ride)
+        1.14f, // Band 12: 8000 - 12500 Hz (Chimbal / Hi-hats)
+        1.14f, // Band 13: 12500 - 18500 Hz (Ar / Ambiência cristalina)
     )
     @Volatile
     private var currentSpeed: Float = 0.50f
@@ -465,24 +465,24 @@ object AudioVisualizerManager {
                         0 -> {
                             // Band 0 (Subgrave - 25-65 Hz): Clean sustain floor subtraction with natural curve.
                             // Drops cleanly between rapid bass kicks without getting stuck or feeling hypersensitive.
-                            val cleaned = ((rawTarget - 0.16f) / 0.84f).coerceIn(0f, 1f)
-                            (cleaned.pow(1.35f) * 0.78f).coerceIn(0f, 1f)
+                            val cleaned = ((rawTarget - 0.14f) / 0.86f).coerceIn(0f, 1f)
+                            (cleaned.pow(1.30f) * 0.84f).coerceIn(0f, 1f)
                         }
                         1 -> {
                             // Band 1 (Bumbo / Kick - 65-115 Hz): Punchy beat response with controlled headroom.
-                            val cleaned = ((rawTarget - 0.10f) / 0.90f).coerceIn(0f, 1f)
-                            (cleaned.pow(1.25f) * 0.80f).coerceIn(0f, 1f)
+                            val cleaned = ((rawTarget - 0.08f) / 0.92f).coerceIn(0f, 1f)
+                            (cleaned.pow(1.22f) * 0.85f).coerceIn(0f, 1f)
                         }
                         2 -> {
                             // Band 2 (Punch / Ataque - 115-175 Hz): Smooth transition.
-                            val cleaned = ((rawTarget - 0.08f) / 0.92f).coerceIn(0f, 1f)
-                            (cleaned.pow(1.20f) * 0.82f).coerceIn(0f, 1f)
+                            val cleaned = ((rawTarget - 0.06f) / 0.94f).coerceIn(0f, 1f)
+                            (cleaned.pow(1.18f) * 0.86f).coerceIn(0f, 1f)
                         }
                         else -> {
                             // Bands 3 to 13: Mids and highs with pleasant acoustic headroom, avoiding hypersensitivity.
                             val weight = SPECTRAL_WEIGHTS[i]
-                            val cleaned = ((rawTarget - 0.05f) / 0.95f).coerceIn(0f, 1f)
-                            (cleaned * weight * 0.78f).coerceIn(0f, 1f)
+                            val cleaned = ((rawTarget - 0.04f) / 0.96f).coerceIn(0f, 1f)
+                            (cleaned * weight * 0.84f).coerceIn(0f, 1f)
                         }
                     }
 
