@@ -27,9 +27,20 @@ data class WallpaperCategory(
     val label: String,
 )
 
+data class WallpaperNotificationInfo(
+    val id: String,
+    val title: String? = null,
+    val message: String? = null,
+    val count: Int = 0,
+    val wallpaperIds: List<String> = emptyList(),
+    val timestamp: Long = 0L,
+    val generatedBy: String = "fallback",
+)
+
 data class WallpaperCatalog(
     val categories: List<WallpaperCategory>,
     val wallpapers: List<WallpaperItem>,
+    val latestNotification: WallpaperNotificationInfo? = null,
 )
 
 data class WallpaperItem(
@@ -325,7 +336,30 @@ object WallpaperRepository {
                     )
                 )
             }
-            WallpaperCatalog(categories, list)
+
+            val notifObj = root.optJSONObject("latest_notification")
+            val latestNotification = notifObj?.let { notif ->
+                val idsArray = notif.optJSONArray("wallpaper_ids")
+                val notifIds = mutableListOf<String>()
+                if (idsArray != null) {
+                    for (i in 0 until idsArray.length()) {
+                        notifIds.add(idsArray.getString(i))
+                    }
+                }
+                val rawTitle = notif.optString("title", "").trim()
+                val rawMessage = notif.optString("message", "").trim()
+                WallpaperNotificationInfo(
+                    id = notif.optString("id", ""),
+                    title = rawTitle.takeIf { it.isNotBlank() },
+                    message = rawMessage.takeIf { it.isNotBlank() },
+                    count = notif.optInt("count", notifIds.size),
+                    wallpaperIds = notifIds,
+                    timestamp = notif.optLong("timestamp", 0L),
+                    generatedBy = notif.optString("generated_by", "fallback"),
+                )
+            }
+
+            WallpaperCatalog(categories, list, latestNotification)
         }.getOrDefault(WallpaperCatalog(DEFAULT_CATEGORIES, emptyList()))
     }
 

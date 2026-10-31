@@ -126,6 +126,15 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".wallpaper.WallpaperCheckAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="dev.viagaralauncher.action.CHECK_WALLPAPERS" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".root.AppLogCaptureService"
             android:exported="false"

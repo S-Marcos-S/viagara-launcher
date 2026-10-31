@@ -24,6 +24,7 @@ object WallpaperNotificationManager {
     private const val PREFS_NAME = "wallpaper_notifications_prefs"
     private const val KEY_KNOWN_IDS = "known_wallpaper_ids"
     private const val KEY_INITIALIZED = "known_wallpapers_initialized"
+    private const val KEY_LAST_NOTIFIED_ID = "last_notified_notification_id"
 
     fun checkAndNotifyNewWallpapers(context: Context, catalog: WallpaperCatalog) {
         val appCtx = context.applicationContext
@@ -47,7 +48,33 @@ object WallpaperNotificationManager {
         val newWallpapers = currentWallpapers.filter { it.id !in knownIds }
 
         if (newWallpapers.isNotEmpty()) {
-            postNewWallpapersNotification(appCtx, newWallpapers.size)
+            val latestNotif = catalog.latestNotification
+            val lastNotifiedId = prefs.getString(KEY_LAST_NOTIFIED_ID, "")
+
+            val hasGeminiText = latestNotif != null &&
+                    latestNotif.id.isNotBlank() &&
+                    latestNotif.id != lastNotifiedId &&
+                    latestNotif.generatedBy.equals("gemini", ignoreCase = true) &&
+                    !latestNotif.title.isNullOrBlank() &&
+                    !latestNotif.message.isNullOrBlank()
+
+            if (hasGeminiText && latestNotif != null) {
+                postWallpaperNotification(
+                    context = appCtx,
+                    title = latestNotif.title!!,
+                    text = latestNotif.message!!
+                )
+                prefs.edit().putString(KEY_LAST_NOTIFIED_ID, latestNotif.id).apply()
+            } else {
+                val title = appCtx.getString(R.string.wallpaper_new_notification_title)
+                val text = if (newWallpapers.size == 1) {
+                    appCtx.getString(R.string.wallpaper_new_notification_single)
+                } else {
+                    appCtx.getString(R.string.wallpaper_new_notification_multiple, newWallpapers.size)
+                }
+                postWallpaperNotification(context = appCtx, title = title, text = text)
+            }
+
             val updated = HashSet(knownIds).apply { addAll(currentIds) }
             prefs.edit()
                 .putStringSet(KEY_KNOWN_IDS, updated)
@@ -55,7 +82,7 @@ object WallpaperNotificationManager {
         }
     }
 
-    private fun postNewWallpapersNotification(context: Context, count: Int) {
+    private fun postWallpaperNotification(context: Context, title: String, text: String) {
         runCatching {
             val appCtx = context.applicationContext
             val notificationManager = appCtx.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
@@ -92,13 +119,6 @@ object WallpaperNotificationManager {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-
-            val title = appCtx.getString(R.string.wallpaper_new_notification_title)
-            val text = if (count == 1) {
-                appCtx.getString(R.string.wallpaper_new_notification_single)
-            } else {
-                appCtx.getString(R.string.wallpaper_new_notification_multiple, count)
-            }
 
             val notification = NotificationCompat.Builder(appCtx, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
