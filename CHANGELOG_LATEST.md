@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.86
+### 🚀 Novidades da Versão v0.60.87
 
-- **Sensibilidade do Visualizador Refinada:** Leve aumento da sensibilidade de resposta em todas as barras, garantindo movimento mais expressivo sem perder a suavidade.
+- **Alinhamento do Efeito de Vidro:** Ajustada a escala do reflexo para adaptar-se à largura da tela, corrigindo o posicionamento do vidro em papéis de parede com proporções personalizadas.

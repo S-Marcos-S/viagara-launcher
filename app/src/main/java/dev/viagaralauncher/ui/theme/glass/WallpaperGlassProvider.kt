@@ -317,10 +317,10 @@ object WallpaperGlassProvider {
         if (base != null && targetWidth > 0f && targetHeight > 0f) {
             val isTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             val activeBitmap = cachedBlurred ?: base
-            val scale = max(targetWidth / activeBitmap.width.toFloat(), targetHeight / activeBitmap.height.toFloat())
-            val scaledWidth = activeBitmap.width.toFloat() * scale
+            val scale = targetWidth / activeBitmap.width.toFloat().coerceAtLeast(1f)
+            val scaledWidth = targetWidth
             val scaledHeight = activeBitmap.height.toFloat() * scale
-            val dx = (targetWidth - scaledWidth) / 2f
+            val dx = 0f
             val dy = (targetHeight - scaledHeight) / 2f
 
             val shaderMatrix = reusableMatrix.apply {
