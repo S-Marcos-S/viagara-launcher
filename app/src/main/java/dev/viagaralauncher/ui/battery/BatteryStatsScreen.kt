@@ -1424,6 +1424,15 @@ private fun AppsTab(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        AppsSummaryCard(
+            totalPowerMah = totalAppsPowerMah,
+            capacityMah = effectiveCapacity,
+            activeAppsCount = apps.count { it.powerMah > 0.05 },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
+        )
+
         // Filters
         Row(
             modifier = Modifier
@@ -1490,6 +1499,77 @@ private fun AppsTab(
                         sessionDischargePct = totalDischargePercent,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppsSummaryCard(
+    totalPowerMah: Double,
+    capacityMah: Double,
+    activeAppsCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    val pctOfCapacity = if (capacityMah > 0) {
+        (totalPowerMah / capacityMah * 100.0).coerceAtLeast(0.0)
+    } else 0.0
+
+    FrostedCard(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                modifier = Modifier.size(42.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Outlined.Apps,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.total_apps_power_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = String.format(Locale.getDefault(), "%.1f mAh", totalPowerMah),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = stringResource(
+                        R.string.total_apps_power_subtitle,
+                        String.format(Locale.getDefault(), "%.1f", pctOfCapacity),
+                        activeAppsCount
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+            ) {
+                Text(
+                    text = String.format(Locale.getDefault(), "%.1f%%", pctOfCapacity),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
             }
         }
     }
@@ -1713,6 +1793,9 @@ private fun AppStatsCard(
                     StatRow(R.string.cpu_time, formatDuration(app.cpuTimeMs))
                     StatRow(R.string.wakelock_time, formatDuration(app.wakeLockTimeMs))
                     StatRow(R.string.foreground, formatDuration(app.foregroundTimeMs))
+                    if (app.foregroundServiceTimeMs > 0L) {
+                        StatRow(R.string.foreground_service, formatDuration(app.foregroundServiceTimeMs))
+                    }
                     StatRow(R.string.background_service, formatDuration(app.backgroundTimeMs))
                     StatRow(R.string.gps, formatDuration(app.gpsTimeMs))
                     StatRow(R.string.sensors, formatDuration(app.sensorTimeMs))

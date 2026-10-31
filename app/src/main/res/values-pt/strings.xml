@@ -901,6 +901,8 @@
     <string name="drain_network_line">Rede: ↓ %1$s / ↑ %2$s</string>
     <string name="tab_overview">Visão geral</string>
     <string name="tab_apps">Apps</string>
+    <string name="total_apps_power_title">Consumo dos aplicativos</string>
+    <string name="total_apps_power_subtitle">%1$s%% da bateria • %2$d apps ativos</string>
     <string name="tab_wakelocks">Wakelocks</string>
     <string name="tab_network">Rede</string>
     <string name="tab_system">Sistema</string>

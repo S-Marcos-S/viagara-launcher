@@ -923,6 +923,8 @@
     <string name="drain_network_line">Network: ↓ %1$s / ↑ %2$s</string>
     <string name="tab_overview">Overview</string>
     <string name="tab_apps">Apps</string>
+    <string name="total_apps_power_title">Total apps consumption</string>
+    <string name="total_apps_power_subtitle">%1$s%% of battery • %2$d active apps</string>
     <string name="tab_wakelocks">Wakelocks</string>
     <string name="tab_network">Network</string>
     <string name="tab_system">System</string>

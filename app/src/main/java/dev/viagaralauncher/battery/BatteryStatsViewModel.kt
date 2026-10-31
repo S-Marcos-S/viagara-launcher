@@ -79,6 +79,18 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
             }
         }
         refresh(forceRefresh = true)
+
+        viewModelScope.launch {
+            var lastSessionStart = drainTracker.drainState.value.sessionStartTime
+            drainTracker.drainState.collect { state ->
+                if (state.sessionStartTime != lastSessionStart) {
+                    lastSessionStart = state.sessionStartTime
+                    if (_hasAdvanced.value) {
+                        collector.refresh()
+                    }
+                }
+            }
+        }
     }
 
     fun clearError() = collector.clearError()
@@ -126,6 +138,7 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
                 if (ok) {
                     drainTracker.resetSession()
                     DrainNotificationManager.getInstance(context).updateNow()
+                    collector.refresh()
                 }
                 ok
             } else false

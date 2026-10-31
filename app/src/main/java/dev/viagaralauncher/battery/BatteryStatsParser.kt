@@ -105,6 +105,15 @@ object BatteryStatsParser {
         val bluetoothUnoptimizedScanTimeMs: Long = 0L
     )
 
+    private data class StateTimes(
+        val topTimeMs: Long = 0L,
+        val foregroundServiceTimeMs: Long = 0L,
+        val topSleepingTimeMs: Long = 0L,
+        val foregroundTimeMs: Long = 0L,
+        val backgroundTimeMs: Long = 0L,
+        val cachedTimeMs: Long = 0L
+    )
+
     data class WakelockStats(
         val uid: Int,
         val packageName: String,
@@ -258,6 +267,9 @@ object BatteryStatsParser {
         var doze: DozeStats? = null
         val cpuFreq = mutableListOf<CpuFrequencyStats>()
         val processStats = mutableListOf<ProcessStats>()
+        val uidStateTimes = mutableMapOf<Int, StateTimes>()
+        val uidFgsTimes = mutableMapOf<Int, Long>()
+        val uidApkServiceTimes = mutableMapOf<Int, Long>()
 
         var batteryRealtimeMs = 0L
         var batteryUptimeMs = 0L
@@ -358,6 +370,41 @@ object BatteryStatsParser {
                     parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "pr" -> {
                         parseProcess(parts, uidToPackages, processStats)
                     }
+
+                    // State times: 9,<uid>,l,st,<top>,<fgs>,<top_sleeping>,<fg>,<bg>,<cached>
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "st" -> {
+                        val uid = parts.getOrNull(1)?.toIntOrNull() ?: return@forEach
+                        val top = parts.getOrNull(4)?.toLongOrNull() ?: 0L
+                        val fgs = parts.getOrNull(5)?.toLongOrNull() ?: 0L
+                        val topSleeping = parts.getOrNull(6)?.toLongOrNull() ?: 0L
+                        val fg = parts.getOrNull(7)?.toLongOrNull() ?: 0L
+                        val bg = parts.getOrNull(8)?.toLongOrNull() ?: 0L
+                        val cached = parts.getOrNull(9)?.toLongOrNull() ?: 0L
+
+                        val cur = uidStateTimes[uid] ?: StateTimes()
+                        uidStateTimes[uid] = StateTimes(
+                            topTimeMs = cur.topTimeMs + top,
+                            foregroundServiceTimeMs = cur.foregroundServiceTimeMs + fgs,
+                            topSleepingTimeMs = cur.topSleepingTimeMs + topSleeping,
+                            foregroundTimeMs = cur.foregroundTimeMs + fg,
+                            backgroundTimeMs = cur.backgroundTimeMs + bg,
+                            cachedTimeMs = cur.cachedTimeMs + cached
+                        )
+                    }
+
+                    // Foreground service: 9,<uid>,l,fgs,<service_name>,<time_ms>,<starts>
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "fgs" -> {
+                        val uid = parts.getOrNull(1)?.toIntOrNull() ?: return@forEach
+                        val timeMs = parts.getOrNull(5)?.toLongOrNull() ?: 0L
+                        uidFgsTimes[uid] = (uidFgsTimes[uid] ?: 0L) + timeMs
+                    }
+
+                    // Service in APK: 9,<uid>,l,apk,<wakeups>,<apk_name>,<service_name>,<start_time_ms>,<starts>,<launches>
+                    parts.getOrNull(2) in listOf("l", "u", "c", "a") && parts.getOrNull(3) == "apk" -> {
+                        val uid = parts.getOrNull(1)?.toIntOrNull() ?: return@forEach
+                        val startTimeMs = parts.getOrNull(7)?.toLongOrNull() ?: 0L
+                        uidApkServiceTimes[uid] = (uidApkServiceTimes[uid] ?: 0L) + startTimeMs
+                    }
                 }
             } catch (_: Exception) {
                 // Skip malformed lines
@@ -444,12 +491,19 @@ object BatteryStatsParser {
             addAll(mergedWakelocks.map { it.uid })
             addAll(mergedNetwork.map { it.uid })
             addAll(mergedSensors.map { it.uid })
+            addAll(uidStateTimes.keys)
+            addAll(uidFgsTimes.keys)
+            addAll(uidApkServiceTimes.keys)
+            addAll(mergedJobs.map { it.uid })
+            addAll(mergedSyncs.map { it.uid })
         }
 
         val procByUid = mergedProcessStats.groupBy { it.uid }
         val wlByUid = mergedWakelocks.groupBy { it.uid }
         val netByUid = mergedNetwork.associateBy { it.uid }
         val sensorByUid = mergedSensors.groupBy { it.uid }
+        val jobsByUid = mergedJobs.groupBy { it.uid }
+        val syncsByUid = mergedSyncs.groupBy { it.uid }
 
         val completeApps = allUids.mapNotNull { uid ->
             val pkgs = packagesFor(uid, uidToPackages)
@@ -473,6 +527,23 @@ object BatteryStatsParser {
             val sns = sensorByUid[uid].orEmpty()
             val gpsTime = sns.filter { it.sensorHandle == -10000 }.sumOf { it.totalTimeMs }
             val sensorTime = sns.filter { it.sensorHandle != -10000 }.sumOf { it.totalTimeMs }
+
+            val st = uidStateTimes[uid]
+            val fgsFromLines = uidFgsTimes[uid] ?: 0L
+            val apkServiceTime = uidApkServiceTimes[uid] ?: 0L
+            val jobsBgTime = jobsByUid[uid].orEmpty().sumOf { it.backgroundTimeMs.takeIf { t -> t > 0L } ?: it.totalTimeMs }
+            val syncsBgTime = syncsByUid[uid].orEmpty().sumOf { it.backgroundTimeMs.takeIf { t -> t > 0L } ?: it.totalTimeMs }
+            val bgCpuTime = (totalCpuTime - totalFgTime).coerceAtLeast(0L)
+
+            val finalFgTime = maxOf(totalFgTime, st?.foregroundTimeMs ?: 0L, st?.topTimeMs ?: 0L)
+            val finalFgsTime = maxOf(st?.foregroundServiceTimeMs ?: 0L, fgsFromLines)
+            val finalBgTime = maxOf(
+                st?.backgroundTimeMs ?: 0L,
+                apkServiceTime,
+                totalBgWlTime,
+                jobsBgTime + syncsBgTime,
+                bgCpuTime
+            )
 
             val rawPower = existing?.powerMah ?: 0.0
             val estimatedCpuMah = (totalCpuTime / 3600000.0) * 350.0
@@ -513,7 +584,7 @@ object BatteryStatsParser {
                 if (totalCpuTime > 0L || totalWlTime > 0L) estimatedCpuMah + estimatedWlMah else 0.0
             )
 
-            if (finalPower <= 0.0 && totalCpuTime == 0L && totalWlTime == 0L && (mobRx + mobTx + wifiRx + wifiTx) == 0L) {
+            if (finalPower <= 0.0 && totalCpuTime == 0L && totalWlTime == 0L && (mobRx + mobTx + wifiRx + wifiTx) == 0L && finalBgTime == 0L && finalFgsTime == 0L && finalFgTime == 0L) {
                 return@mapNotNull null
             }
 
@@ -537,11 +608,11 @@ object BatteryStatsParser {
                 bluetoothPowerMah = existing?.bluetoothPowerMah ?: 0.0,
                 screenPowerMah = existing?.screenPowerMah ?: 0.0,
                 proportionalSmearMah = existing?.proportionalSmearMah ?: 0.0,
-                foregroundTimeMs = totalFgTime,
-                foregroundServiceTimeMs = existing?.foregroundServiceTimeMs ?: 0L,
-                backgroundTimeMs = totalBgWlTime,
-                cachedTimeMs = existing?.cachedTimeMs ?: 0L,
-                topTimeMs = existing?.topTimeMs ?: 0L,
+                foregroundTimeMs = finalFgTime,
+                foregroundServiceTimeMs = finalFgsTime,
+                backgroundTimeMs = finalBgTime,
+                cachedTimeMs = st?.cachedTimeMs ?: (existing?.cachedTimeMs ?: 0L),
+                topTimeMs = st?.topTimeMs ?: (existing?.topTimeMs ?: 0L),
                 mobileRxBytes = mobRx,
                 mobileTxBytes = mobTx,
                 wifiRxBytes = wifiRx,

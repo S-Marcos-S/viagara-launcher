@@ -103,6 +103,11 @@ class AdvancedDrainTracker private constructor(
     private var sessionStartRealtime: Long = SystemClock.elapsedRealtime()
     private var sessionStartUptime: Long = SystemClock.uptimeMillis()
     private var receiverRegistered = false
+    private var hasResetForCurrentChargeCycle = false
+
+    init {
+        registerReceivers()
+    }
     private var estimatedCapacityMah: Double = getInitialCapacity()
 
     private fun getInitialCapacity(): Double {
@@ -164,6 +169,7 @@ class AdvancedDrainTracker private constructor(
                 Intent.ACTION_SCREEN_ON -> onScreenStateChanged(true)
                 Intent.ACTION_SCREEN_OFF -> onScreenStateChanged(false)
                 Intent.ACTION_POWER_CONNECTED -> {
+                    hasResetForCurrentChargeCycle = false
                     scope.launch {
                         takeSnapshot()?.let { snapshot ->
                             lastSnapshot = snapshot
@@ -172,18 +178,45 @@ class AdvancedDrainTracker private constructor(
                     }
                 }
                 Intent.ACTION_POWER_DISCONNECTED -> {
+                    val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
+                    val autoResetEnabled = prefs.getBoolean("auto_reset_enabled", false)
+                    val target = if (autoResetEnabled) prefs.getInt("auto_reset_percent", 100) else 100
+
                     scope.launch {
+                        val level = takeSnapshot()?.batteryLevel ?: getBatteryLevel()
+                        if (level != null && level >= target && !hasResetForCurrentChargeCycle) {
+                            hasResetForCurrentChargeCycle = true
+                            resetSession()
+                        }
+                        hasResetForCurrentChargeCycle = false
                         takeSnapshot()?.let { snapshot ->
                             lastSnapshot = snapshot
-                            val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
-                            if (prefs.getBoolean("auto_reset_enabled", false)) {
-                                val target = prefs.getInt("auto_reset_percent", 100)
-                                if (snapshot.batteryLevel != null && snapshot.batteryLevel >= target) {
-                                    resetSession()
-                                }
-                            }
                             updateDrainState()
                         }
+                    }
+                }
+                Intent.ACTION_BATTERY_CHANGED -> {
+                    val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+                    val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                                     status == BatteryManager.BATTERY_STATUS_FULL
+                    if (isCharging) {
+                        val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                        val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+                        val pct = if (scale > 0 && level >= 0) (level * 100) / scale else level
+
+                        val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
+                        val autoResetEnabled = prefs.getBoolean("auto_reset_enabled", false)
+                        val target = if (autoResetEnabled) prefs.getInt("auto_reset_percent", 100) else 100
+
+                        if (pct >= target && !hasResetForCurrentChargeCycle) {
+                            hasResetForCurrentChargeCycle = true
+                            scope.launch {
+                                resetSession()
+                                updateDrainState()
+                            }
+                        }
+                    } else {
+                        hasResetForCurrentChargeCycle = false
                     }
                 }
             }
@@ -444,7 +477,6 @@ class AdvancedDrainTracker private constructor(
 
         trackingJob?.cancel()
         trackingJob = null
-        unregisterReceivers()
 
         updateDrainState()
         saveSession()
@@ -488,6 +520,15 @@ class AdvancedDrainTracker private constructor(
             batteryTemperatureC = getBatteryTemperatureC()
         )
 
+        scope.launch(Dispatchers.IO) {
+            try {
+                shellRunner.exec("dumpsys batterystats --reset", allowEmpty = true)
+                Log.d(TAG, "dumpsys batterystats --reset executed on resetSession")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to run dumpsys batterystats --reset on resetSession", e)
+            }
+        }
+
         scope.launch {
             lastSnapshot = takeSnapshot()
             updateDrainState()
@@ -505,6 +546,7 @@ class AdvancedDrainTracker private constructor(
                 addAction(Intent.ACTION_SCREEN_OFF)
                 addAction(Intent.ACTION_POWER_CONNECTED)
                 addAction(Intent.ACTION_POWER_DISCONNECTED)
+                addAction(Intent.ACTION_BATTERY_CHANGED)
             }
             ContextCompat.registerReceiver(
                 context,
