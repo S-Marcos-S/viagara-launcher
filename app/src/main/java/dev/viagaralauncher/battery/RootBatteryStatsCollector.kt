@@ -66,7 +66,8 @@ object RootBatteryStatsCollector {
         val minFreq: Long,
         val maxFreq: Long,
         val governor: String,
-        val timeInState: Map<Long, Long> // freq -> time in jiffies
+        val timeInState: Map<Long, Long>, // freq -> time in jiffies
+        val cores: List<Int> = emptyList()
     )
 
     data class ThermalZone(
@@ -209,60 +210,209 @@ object RootBatteryStatsCollector {
 
     suspend fun getCpuInfo(): List<CpuInfo> = withContext(Dispatchers.IO) {
         val result = mutableListOf<CpuInfo>()
-        try {
-            val cpuDir = File("/sys/devices/system/cpu")
-            val cpuDirs = cpuDir.listFiles { f -> f.name.matches(Regex("cpu\\d+")) }
-                ?.sortedBy { it.name.removePrefix("cpu").toIntOrNull() ?: 0 }
-                ?: return@withContext result
+        val hasRoot = isRootAvailable()
 
-            val clusters = mutableMapOf<Int, MutableList<Int>>()
-            cpuDirs.forEach { cpu ->
-                val cpuNum = cpu.name.removePrefix("cpu").toIntOrNull() ?: return@forEach
-                val policyPath = File("${cpu.absolutePath}/cpufreq/affected_cpus")
-                val cluster = if (policyPath.exists() && policyPath.canRead()) {
-                    policyPath.readText().trim().split(" ").firstOrNull()?.toIntOrNull() ?: cpuNum
-                } else cpuNum
-                clusters.getOrPut(cluster) { mutableListOf() }.add(cpuNum)
+        // 1. If root is available, use consolidated root execution for complete SELinux bypass
+        if (hasRoot) {
+            val rootCmd = "sh -c '" +
+                "DIRS=\"\"; " +
+                "for d in /sys/devices/system/cpu/cpufreq/policy* /sys/devices/system/cpu/cpu[0-9]*/cpufreq; do " +
+                "  [ -d \"\$d\" ] && DIRS=\"\$DIRS \$d\"; " +
+                "done; " +
+                "SEEN=\"\"; " +
+                "for p in \$DIRS; do " +
+                "  aff=\$(cat \"\$p/affected_cpus\" 2>/dev/null); " +
+                "  [ -z \"\$aff\" ] && aff=\$(echo \"\$p\" | grep -o \"[0-9]*\" | tail -n 1); " +
+                "  case \"\$SEEN\" in *\" \$aff \"*) continue ;; esac; " +
+                "  SEEN=\"\$SEEN \$aff \"; " +
+                "  echo \"===POLICY===\"; " +
+                "  echo \"affected:\$aff\"; " +
+                "  gov=\$(cat \"\$p/scaling_governor\" 2>/dev/null); " +
+                "  [ -z \"\$gov\" ] && gov=\$(cat \"\$p/scaling_driver\" 2>/dev/null); " +
+                "  echo \"governor:\${gov:-unknown}\"; " +
+                "  cur=\$(cat \"\$p/scaling_cur_freq\" 2>/dev/null); " +
+                "  [ -z \"\$cur\" ] && cur=\$(cat \"\$p/cpuinfo_cur_freq\" 2>/dev/null); " +
+                "  echo \"cur:\${cur:-0}\"; " +
+                "  min=\$(cat \"\$p/scaling_min_freq\" 2>/dev/null); " +
+                "  [ -z \"\$min\" ] && min=\$(cat \"\$p/cpuinfo_min_freq\" 2>/dev/null); " +
+                "  echo \"min:\${min:-0}\"; " +
+                "  max=\$(cat \"\$p/scaling_max_freq\" 2>/dev/null); " +
+                "  [ -z \"\$max\" ] && max=\$(cat \"\$p/cpuinfo_max_freq\" 2>/dev/null); " +
+                "  echo \"max:\${max:-0}\"; " +
+                "  echo \"---TIS---\"; " +
+                "  cat \"\$p/stats/time_in_state\" 2>/dev/null; " +
+                "  echo \"===END===\"; " +
+                "done'"
+
+            val out = exec(rootCmd, 3500L)
+            if (!out.isNullOrBlank()) {
+                val parsed = parseRootCpuOutput(out)
+                if (parsed.isNotEmpty()) {
+                    return@withContext parsed
+                }
             }
+        }
 
-            clusters.forEach { (clusterNum, _) ->
-                val cpuPath = "/sys/devices/system/cpu/cpu$clusterNum/cpufreq"
-                if (!File(cpuPath).exists()) return@forEach
+        // 2. Fallback to direct sysfs file reading (if accessible without root)
+        try {
+            val policyDir = File("/sys/devices/system/cpu/cpufreq")
+            val policyDirs = if (policyDir.exists() && policyDir.canRead()) {
+                policyDir.listFiles { f -> f.name.startsWith("policy") }
+                    ?.sortedBy { it.name.removePrefix("policy").toIntOrNull() ?: 0 }
+            } else null
 
-                fun read(name: String): String? = try {
-                    File("$cpuPath/$name").readText().trim()
-                } catch (_: Exception) { null }
+            if (!policyDirs.isNullOrEmpty()) {
+                policyDirs.forEach { p ->
+                    val policyNum = p.name.removePrefix("policy").toIntOrNull() ?: 0
+                    val affectedStr = readFileDirect(p, "affected_cpus") ?: "$policyNum"
+                    val cores = affectedStr.split(Regex("\\s+")).mapNotNull { it.toIntOrNull() }.sorted()
+                    val gov = readFileDirect(p, "scaling_governor") ?: readFileDirect(p, "scaling_driver") ?: "unknown"
+                    val cur = (readFileDirect(p, "scaling_cur_freq") ?: readFileDirect(p, "cpuinfo_cur_freq"))?.toLongOrNull() ?: 0L
+                    val min = (readFileDirect(p, "scaling_min_freq") ?: readFileDirect(p, "cpuinfo_min_freq"))?.toLongOrNull() ?: 0L
+                    val max = (readFileDirect(p, "scaling_max_freq") ?: readFileDirect(p, "cpuinfo_max_freq"))?.toLongOrNull() ?: 0L
+                    val tis = readTimeInStateDirect(File(p, "stats/time_in_state"))
 
-                val timeInState = mutableMapOf<Long, Long>()
-                try {
-                    val stateFile = File("$cpuPath/stats/time_in_state")
-                    if (stateFile.exists() && stateFile.canRead()) {
-                        stateFile.bufferedReader().useLines { lines ->
-                            lines.forEach { line ->
-                                val parts = line.split(" ")
-                                if (parts.size >= 2) {
-                                    val freq = parts[0].toLongOrNull() ?: return@forEach
-                                    val time = parts[1].toLongOrNull() ?: 0L
-                                    timeInState[freq] = time
-                                }
+                    result.add(
+                        CpuInfo(
+                            cluster = policyNum,
+                            currentFreq = cur,
+                            minFreq = min,
+                            maxFreq = max,
+                            governor = gov,
+                            timeInState = tis,
+                            cores = cores
+                        )
+                    )
+                }
+            } else {
+                val cpuDir = File("/sys/devices/system/cpu")
+                val cpuDirs = cpuDir.listFiles { f -> f.name.matches(Regex("cpu\\d+")) }
+                    ?.sortedBy { it.name.removePrefix("cpu").toIntOrNull() ?: 0 }
+                    ?: return@withContext result
+
+                val clusters = mutableMapOf<Int, MutableList<Int>>()
+                cpuDirs.forEach { cpu ->
+                    val cpuNum = cpu.name.removePrefix("cpu").toIntOrNull() ?: return@forEach
+                    val policyPath = File("${cpu.absolutePath}/cpufreq/affected_cpus")
+                    val cluster = if (policyPath.exists() && policyPath.canRead()) {
+                        policyPath.readText().trim().split(Regex("\\s+")).firstOrNull()?.toIntOrNull() ?: cpuNum
+                    } else cpuNum
+                    clusters.getOrPut(cluster) { mutableListOf() }.add(cpuNum)
+                }
+
+                clusters.forEach { (clusterNum, coreList) ->
+                    val cpuPath = File("/sys/devices/system/cpu/cpu$clusterNum/cpufreq")
+                    if (!cpuPath.exists()) return@forEach
+
+                    val gov = readFileDirect(cpuPath, "scaling_governor") ?: readFileDirect(cpuPath, "scaling_driver") ?: "unknown"
+                    val cur = (readFileDirect(cpuPath, "scaling_cur_freq") ?: readFileDirect(cpuPath, "cpuinfo_cur_freq"))?.toLongOrNull() ?: 0L
+                    val min = (readFileDirect(cpuPath, "scaling_min_freq") ?: readFileDirect(cpuPath, "cpuinfo_min_freq"))?.toLongOrNull() ?: 0L
+                    val max = (readFileDirect(cpuPath, "scaling_max_freq") ?: readFileDirect(cpuPath, "cpuinfo_max_freq"))?.toLongOrNull() ?: 0L
+                    val tis = readTimeInStateDirect(File(cpuPath, "stats/time_in_state"))
+
+                    result.add(
+                        CpuInfo(
+                            cluster = clusterNum,
+                            currentFreq = cur,
+                            minFreq = min,
+                            maxFreq = max,
+                            governor = gov,
+                            timeInState = tis,
+                            cores = coreList.sorted()
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {}
+
+        result.sortedBy { it.cluster }
+    }
+
+    private fun readFileDirect(dir: File, name: String): String? = try {
+        val f = File(dir, name)
+        if (f.exists() && f.canRead()) f.readText().trim().takeIf { it.isNotBlank() } else null
+    } catch (_: Exception) { null }
+
+    private fun readTimeInStateDirect(file: File): Map<Long, Long> {
+        val map = mutableMapOf<Long, Long>()
+        try {
+            if (file.exists() && file.canRead()) {
+                file.bufferedReader().useLines { lines ->
+                    lines.forEach { line ->
+                        val parts = line.trim().split(Regex("\\s+"))
+                        if (parts.size >= 2) {
+                            val freq = parts[0].toLongOrNull() ?: return@forEach
+                            val time = parts[1].toLongOrNull() ?: 0L
+                            map[freq] = time
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+        return map
+    }
+
+    private fun parseRootCpuOutput(output: String): List<CpuInfo> {
+        val result = mutableListOf<CpuInfo>()
+        val blocks = output.split("===POLICY===")
+        var clusterIndex = 0
+
+        for (block in blocks) {
+            val trimmed = block.trim()
+            if (trimmed.isEmpty()) continue
+
+            var affected = ""
+            var governor = "unknown"
+            var cur = 0L
+            var min = 0L
+            var max = 0L
+            val timeInState = mutableMapOf<Long, Long>()
+            var inTis = false
+
+            for (line in trimmed.lines()) {
+                val l = line.trim()
+                when {
+                    l == "---TIS---" -> inTis = true
+                    l == "===END===" -> inTis = false
+                    inTis -> {
+                        val parts = l.split(Regex("\\s+"))
+                        if (parts.size >= 2) {
+                            val freq = parts[0].toLongOrNull()
+                            val time = parts[1].toLongOrNull()
+                            if (freq != null && time != null) {
+                                timeInState[freq] = time
                             }
                         }
                     }
-                } catch (_: Exception) {}
-
-                result.add(
-                    CpuInfo(
-                        cluster = clusterNum,
-                        currentFreq = read("scaling_cur_freq")?.toLongOrNull() ?: 0L,
-                        minFreq = read("scaling_min_freq")?.toLongOrNull() ?: 0L,
-                        maxFreq = read("scaling_max_freq")?.toLongOrNull() ?: 0L,
-                        governor = read("scaling_governor") ?: "unknown",
-                        timeInState = timeInState
-                    )
-                )
+                    l.startsWith("affected:") -> affected = l.removePrefix("affected:").trim()
+                    l.startsWith("governor:") -> governor = l.removePrefix("governor:").trim()
+                    l.startsWith("cur:") -> cur = l.removePrefix("cur:").trim().toLongOrNull() ?: 0L
+                    l.startsWith("min:") -> min = l.removePrefix("min:").trim().toLongOrNull() ?: 0L
+                    l.startsWith("max:") -> max = l.removePrefix("max:").trim().toLongOrNull() ?: 0L
+                }
             }
-        } catch (_: Exception) {}
-        result
+
+            val cores = affected.split(Regex("\\s+"))
+                .mapNotNull { it.toIntOrNull() }
+                .sorted()
+
+            val clusterNum = cores.firstOrNull() ?: clusterIndex
+
+            result.add(
+                CpuInfo(
+                    cluster = clusterNum,
+                    currentFreq = cur,
+                    minFreq = min,
+                    maxFreq = max,
+                    governor = governor,
+                    timeInState = timeInState,
+                    cores = cores
+                )
+            )
+            clusterIndex++
+        }
+
+        return result.sortedBy { it.cluster }
     }
 
     suspend fun getThermalZones(): List<ThermalZone> = withContext(Dispatchers.IO) {

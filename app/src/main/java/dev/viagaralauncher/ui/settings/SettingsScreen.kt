@@ -424,15 +424,16 @@ fun SettingsScreen(
                         RowDivider()
                         val speedPercent = (audioVisualizerSpeed * 100).toInt()
                         val speedDesc = when {
-                            audioVisualizerSpeed <= 0.30f -> "Suave"
-                            audioVisualizerSpeed <= 0.60f -> "Equilibrado"
-                            audioVisualizerSpeed <= 0.80f -> "Dinâmico"
+                            audioVisualizerSpeed <= 0.20f -> "Ultra suave"
+                            audioVisualizerSpeed <= 0.40f -> "Suave"
+                            audioVisualizerSpeed <= 0.70f -> "Equilibrado"
+                            audioVisualizerSpeed <= 0.90f -> "Dinâmico"
                             else -> "Rápido"
                         }
                         SliderRow(
                             label = "Velocidade do visualizador",
                             value = audioVisualizerSpeed,
-                            range = 0.20f..1.00f,
+                            range = 0.10f..1.00f,
                             valueLabel = "$speedPercent% ($speedDesc)",
                             onValueChange = onSetAudioVisualizerSpeed,
                             step = 0.10f,

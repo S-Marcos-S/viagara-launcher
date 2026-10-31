@@ -97,30 +97,24 @@ object AudioVisualizerManager {
     private val currentLevels = FloatArray(NUM_BANDS)
     private val currentPeaks = FloatArray(NUM_BANDS)
 
-    // Dynamic adaptive sustain floor for bass bands (0 = Subgrave, 1 = Bumbo)
-    // Prevents sustained 808/drone tails from locking the visualizer at the top during rapid beats
-    private val bassFloors = FloatArray(2) { 0.12f }
-
     // Equal-loudness spectral tilt compensation (Pink noise 1/f acoustic curve)
-    // Compensates for natural low-frequency dominance in music, lifting voice, melody,
-    // and high-frequency harmonics into the active 30% - 75% visual range
+    // Organic, gentle acoustic profile avoiding hypersensitivity across mids, highs and sub-bass
     private val SPECTRAL_WEIGHTS = floatArrayOf(
-        1.00f, // Band 0:  25 - 65 Hz   (Deep Sub / Subgrave profundo)
-        1.00f, // Band 1:  65 - 115 Hz  (Kick Drum / Bumbo)
-        1.15f, // Band 2:  115 - 175 Hz (Punch / Ataque)
-        1.45f, // Band 3:  175 - 260 Hz (Bassline / Contrabaixo)
-        1.85f, // Band 4:  260 - 390 Hz (Corpo / Warmth)
-        2.30f, // Band 5:  390 - 580 Hz (Caixa / Voz baixa)
-        2.80f, // Band 6:  580 - 870 Hz (MÃ©dios / HarmÃ´nicos vocais)
-        3.20f, // Band 7:  870 - 1300 Hz (Clareza vocal / Sintetizadores)
-        3.50f, // Band 8:  1300 - 2000 Hz (PresenÃ§a vocal / Ataque melÃ³dico)
-        3.80f, // Band 9:  2000 - 3200 Hz (ArticulaÃ§Ã£o vocal / Estalo)
-        4.10f, // Band 10: 3200 - 5000 Hz (Agudos / Pratos de ataque)
-        4.40f, // Band 11: 5000 - 8000 Hz (Pratos de conduÃ§Ã£o / Ride)
-        4.70f, // Band 12: 8000 - 12500 Hz (Chimbal / Hi-hats)
-        5.00f, // Band 13: 12500 - 18500 Hz (Ar / AmbiÃªncia cristalina)
+        0.80f, // Band 0:  25 - 65 Hz   (Deep Sub / Subgrave)
+        0.82f, // Band 1:  65 - 115 Hz  (Kick Drum / Bumbo)
+        0.85f, // Band 2:  115 - 175 Hz (Punch / Ataque)
+        0.88f, // Band 3:  175 - 260 Hz (Bassline / Contrabaixo)
+        0.90f, // Band 4:  260 - 390 Hz (Corpo / Warmth)
+        0.93f, // Band 5:  390 - 580 Hz (Caixa / Voz baixa)
+        0.96f, // Band 6:  580 - 870 Hz (Medios / Harmônicos vocais)
+        0.99f, // Band 7:  870 - 1300 Hz (Clareza vocal / Sintetizadores)
+        1.02f, // Band 8:  1300 - 2000 Hz (Presença vocal / Ataque melódico)
+        1.05f, // Band 9:  2000 - 3200 Hz (Articulação vocal / Estalo)
+        1.08f, // Band 10: 3200 - 5000 Hz (Agudos / Pratos de ataque)
+        1.10f, // Band 11: 5000 - 8000 Hz (Pratos de condução / Ride)
+        1.12f, // Band 12: 8000 - 12500 Hz (Chimbal / Hi-hats)
+        1.12f, // Band 13: 12500 - 18500 Hz (Ar / Ambiência cristalina)
     )
-
     @Volatile
     private var currentSpeed: Float = 0.50f
 
@@ -137,7 +131,7 @@ object AudioVisualizerManager {
     private var stopJob: Job? = null
 
     fun setSpeed(speed: Float) {
-        currentSpeed = speed.coerceIn(0.20f, 1.00f)
+        currentSpeed = speed.coerceIn(0.10f, 1.00f)
     }
 
     fun updatePlaybackState(context: Context, enabled: Boolean, isPlaying: Boolean, hasSession: Boolean) {
@@ -194,7 +188,6 @@ object AudioVisualizerManager {
                 withContext(Dispatchers.Default) {
                     currentLevels.fill(0f)
                     currentPeaks.fill(0f)
-                    bassFloors.fill(0.12f)
                     _frameFlow.value = VisualizerFrame()
                 }
             }
@@ -252,7 +245,6 @@ object AudioVisualizerManager {
             withContext(Dispatchers.Default) {
                 currentLevels.fill(0f)
                 currentPeaks.fill(0f)
-                bassFloors.fill(0.12f)
                 _frameFlow.value = VisualizerFrame()
             }
 
@@ -452,18 +444,18 @@ object AudioVisualizerManager {
                 val bandsOut = FloatArray(NUM_BANDS)
                 val peaksOut = FloatArray(NUM_BANDS)
 
-                val speedFactor = currentSpeed.coerceIn(0.20f, 1.00f)
+                val normSpeed = ((currentSpeed - 0.10f) / 0.90f).coerceIn(0f, 1f)
+                val speedCurve = normSpeed.pow(1.4f)
 
-                // Proportional universal ballistics: all frequency bands smoothly follow the user speed slider
-                val baseRiseAlpha = (0.22f + 0.48f * speedFactor).coerceIn(0.15f, 0.85f)
-                val baseFallAlpha = (0.07f + 0.28f * speedFactor).coerceIn(0.05f, 0.45f)
-                val peakFallAlpha = (0.007f + 0.015f * speedFactor).coerceIn(0.005f, 0.028f)
+                // Truly silky, fluid and liquid at low speeds; agile and crisp at high speeds
+                val baseRiseAlpha = (0.045f + 0.455f * speedCurve).coerceIn(0.035f, 0.60f)
+                val baseFallAlpha = (0.010f + 0.150f * speedCurve).coerceIn(0.008f, 0.20f)
+                val peakFallAlpha = (0.0018f + 0.012f * speedCurve).coerceIn(0.0015f, 0.018f)
 
-                // Bass bands (0, 1, 2): slightly snappier attack to lock with beat tempo,
-                // but scaling directly and proportionally with user speed so lowering speed truly slows them down
-                val bassRiseAlpha = (baseRiseAlpha * 1.18f).coerceIn(0.18f, 0.90f)
-                val bassFallAlpha = (baseFallAlpha * 1.15f).coerceIn(0.06f, 0.50f)
-                val bassPeakFallAlpha = (peakFallAlpha * 1.10f).coerceIn(0.005f, 0.030f)
+                // All 14 bars move with unified ballistics and timing so bass bars never feel accelerated
+                val activeRiseAlpha = baseRiseAlpha
+                val activeFallAlpha = baseFallAlpha
+                val activePeakFallAlpha = peakFallAlpha
 
                 for (i in 0 until NUM_BANDS) {
                     val rawTarget = incomingBands[i].coerceIn(0f, 1f)
@@ -471,58 +463,30 @@ object AudioVisualizerManager {
 
                     val target = when (i) {
                         0 -> {
-                            // Band 0 (Subgrave - 25-65 Hz): Adaptive sustain-floor tracker.
-                            // In songs with continuous 808 sub-bass, tracks the sustained tail so
-                            // rapid kick impacts create full dynamic excursion and plunge between beats.
-                            if (rawTarget < bassFloors[0]) {
-                                bassFloors[0] = rawTarget
-                            } else {
-                                bassFloors[0] += (rawTarget - bassFloors[0]) * 0.014f
-                            }
-                            val floor = bassFloors[0].coerceIn(0.06f, 0.58f)
-                            val excursion = ((rawTarget - floor) / (1.0f - floor)).coerceIn(0f, 1f)
-                            val shaped = (excursion * 1.15f + rawTarget * 0.15f).coerceIn(0f, 1f)
-                            shaped.pow(1.15f)
+                            // Band 0 (Subgrave - 25-65 Hz): Clean sustain floor subtraction with natural curve.
+                            // Drops cleanly between rapid bass kicks without getting stuck or feeling hypersensitive.
+                            val cleaned = ((rawTarget - 0.16f) / 0.84f).coerceIn(0f, 1f)
+                            (cleaned.pow(1.35f) * 0.78f).coerceIn(0f, 1f)
                         }
                         1 -> {
-                            // Band 1 (Bumbo / Kick - 65-115 Hz): Adaptive punch tracker.
-                            if (rawTarget < bassFloors[1]) {
-                                bassFloors[1] = rawTarget
-                            } else {
-                                bassFloors[1] += (rawTarget - bassFloors[1]) * 0.018f
-                            }
-                            val floor = bassFloors[1].coerceIn(0.05f, 0.50f)
-                            val excursion = ((rawTarget - floor) / (1.0f - floor)).coerceIn(0f, 1f)
-                            val shaped = (excursion * 1.12f + rawTarget * 0.18f).coerceIn(0f, 1f)
-                            shaped.pow(1.12f)
+                            // Band 1 (Bumbo / Kick - 65-115 Hz): Punchy beat response with controlled headroom.
+                            val cleaned = ((rawTarget - 0.10f) / 0.90f).coerceIn(0f, 1f)
+                            (cleaned.pow(1.25f) * 0.80f).coerceIn(0f, 1f)
                         }
                         2 -> {
-                            // Band 2 (Punch / Ataque - 115-175 Hz): Smooth transitional curve
-                            val boosted = (rawTarget * 1.20f).coerceIn(0f, 1f)
-                            val dynamic = ((boosted - 0.05f) / 0.95f).coerceIn(0f, 1f)
-                            dynamic.pow(1.10f)
+                            // Band 2 (Punch / Ataque - 115-175 Hz): Smooth transition.
+                            val cleaned = ((rawTarget - 0.08f) / 0.92f).coerceIn(0f, 1f)
+                            (cleaned.pow(1.20f) * 0.82f).coerceIn(0f, 1f)
                         }
                         else -> {
-                            // Bands 3 to 13: Equal-loudness spectral tilt compensation (Pink noise 1/f curve).
-                            // Lifts mids (human voice) and highs (cymbals/air) so they dance expressively
-                            // alongside heavy bass rather than staying frozen near the bottom.
+                            // Bands 3 to 13: Mids and highs with pleasant acoustic headroom, avoiding hypersensitivity.
                             val weight = SPECTRAL_WEIGHTS[i]
-                            val weighted = (rawTarget * weight).coerceIn(0f, 1f)
-                            weighted.pow(0.82f)
+                            val cleaned = ((rawTarget - 0.05f) / 0.95f).coerceIn(0f, 1f)
+                            (cleaned * weight * 0.78f).coerceIn(0f, 1f)
                         }
                     }
 
-                    // 1. Asymmetric ballistics: snappy attack on beats, agile decay on bass
-                    val activeRiseAlpha = if (i < 3) bassRiseAlpha else baseRiseAlpha
-                    val activeFallAlpha = if (i < 3) {
-                        if (currentLevels[i] > 0.40f) {
-                            (bassFallAlpha * 1.25f).coerceIn(0.08f, 0.55f)
-                        } else {
-                            bassFallAlpha
-                        }
-                    } else {
-                        baseFallAlpha
-                    }
+                    // 1. Asymmetric ballistics: smooth rise and shared silky-smooth fall
                     val current = currentLevels[i]
                     val alpha = if (target >= current) activeRiseAlpha else activeFallAlpha
                     currentLevels[i] = current + (target - current) * alpha
@@ -530,7 +494,6 @@ object AudioVisualizerManager {
                     bandsOut[i] = currentLevels[i]
 
                     // 2. Peak physics: instant rise, continuous asymptotic fall
-                    val activePeakFallAlpha = if (i < 3) bassPeakFallAlpha else peakFallAlpha
                     val v = currentLevels[i]
                     if (v >= currentPeaks[i]) {
                         currentPeaks[i] = v
@@ -540,7 +503,6 @@ object AudioVisualizerManager {
                     if (currentPeaks[i] < 0.002f) currentPeaks[i] = 0f
                     peaksOut[i] = currentPeaks[i]
                 }
-
                 _frameFlow.value = VisualizerFrame(
                     bands = bandsOut,
                     peaks = peaksOut,

@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.84
+### 🚀 Novidades da Versão v0.60.85
 
-- **Notificações Dinâmicas da IA Gemini:** A launcher agora exibe notificações temáticas e dinâmicas geradas pela IA sobre novos wallpapers adicionados ao catálogo (com fallback automático para contagem padrão).
-- **Sincronização Periódica Diária:** Verificações automáticas duas vezes ao dia nos horários das atualizações para alertar novidades sem consumir bateria extra.
+- **Visualizador Suave e Fluido:** Balística ultra-suave com física líquida na velocidade mínima, eliminando agitação e unificando a velocidade das barras de graves com as demais.
+- **Sensibilidade Acústica Calibrada:** Atenuação e curva orgânica para subgraves, médios e agudos, evitando hipersensibilidade e saltos exagerados.
+- **Detecção e Clusters da CPU:** Leitura de cpufreq com suporte root direto, corrigindo governadores e mapeando os núcleos de cada cluster.

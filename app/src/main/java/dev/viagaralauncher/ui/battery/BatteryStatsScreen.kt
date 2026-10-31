@@ -2625,22 +2625,35 @@ private fun CpuFrequencyCard(cpuInfo: List<RootBatteryStatsCollector.CpuInfo>) {
         if (cpuInfo.isEmpty()) {
             Text(stringResource(R.string.no_cpu_info), color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            cpuInfo.forEach { cpu ->
+            cpuInfo.forEachIndexed { index, cpu ->
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    val clusterTitle = buildString {
+                        append(stringResource(R.string.cluster_n, index))
+                        if (cpu.cores.isNotEmpty()) {
+                            if (cpu.cores.size == 1) {
+                                append(" (Core ${cpu.cores.first()})")
+                            } else {
+                                append(" (Cores ${cpu.cores.first()}-${cpu.cores.last()})")
+                            }
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            stringResource(R.string.cluster_n, cpu.cluster),
+                            text = clusterTitle,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(cpu.governor) }
-                        )
+                        if (cpu.governor.isNotBlank() && cpu.governor != "unknown") {
+                            AssistChip(
+                                onClick = {},
+                                label = { Text(cpu.governor) }
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(4.dp))
@@ -2649,9 +2662,9 @@ private fun CpuFrequencyCard(cpuInfo: List<RootBatteryStatsCollector.CpuInfo>) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        StatColumn(R.string.current, "${cpu.currentFreq / 1000} MHz")
-                        StatColumn(R.string.min, "${cpu.minFreq / 1000} MHz")
-                        StatColumn(R.string.max, "${cpu.maxFreq / 1000} MHz")
+                        StatColumn(R.string.current, if (cpu.currentFreq > 0) "${cpu.currentFreq / 1000} MHz" else "—")
+                        StatColumn(R.string.min, if (cpu.minFreq > 0) "${cpu.minFreq / 1000} MHz" else "—")
+                        StatColumn(R.string.max, if (cpu.maxFreq > 0) "${cpu.maxFreq / 1000} MHz" else "—")
                     }
 
                     // Time in state visualization
