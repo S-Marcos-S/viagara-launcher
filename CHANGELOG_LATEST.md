@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.81
+### 🚀 Novidades da Versão v0.60.82
 
-- **Dinâmica Rápida nos Graves:** Decaimento progressivo ágil e corte limpo do chão acústico no subgrave, permitindo que a 1ª barra caia e pulse nitidamente mesmo em batidas rápidas e compassos acelerados.
-- **Restauração da 3ª Barra:** Restaurada a calibração anterior da 3ª barra de transição.
+- **Piso Adaptativo no Subgrave:** Rastreamento dinâmico de sustentação na 1ª barra, garantindo que o grave oscile e caia entre impactos rápidos mesmo em músicas com subgrave intenso contínuo.
+- **Velocidade Proporcional nos Graves:** Balística das 3 barras de graves unificada e perfeitamente ajustável pelo controle de velocidade.
+- **Compensação Espectral de Voz e Médios:** Curva ponderada equalizada que dá presença e movimento natural às frequências vocais e melódicas junto a graves pesados.
