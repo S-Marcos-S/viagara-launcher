@@ -100,6 +100,7 @@ Para detalhes sobre arquitetura, design de componentes e desenvolvimento, consul
 - **[Wallhaven](https://wallhaven.cc)** e seus artistas — Coleção oficial de papéis de parede.
 - **[LogFox](https://github.com/F0x1d/LogFox)** — Sistema de captura de logs e diagnóstico.
 - **[BatStats](https://github.com/mlm-games/BatStats)** — Telemetria e análise de bateria.
+- **[Grace Launcher](https://github.com/Galaxy-rio/GraceLauncher)** — Inspiração e referência para a tela de edição e personalização do widget de relógio.
 
 ---
 
