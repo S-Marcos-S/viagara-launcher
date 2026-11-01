@@ -420,6 +420,7 @@ private fun FlaggedAppCard(
                 if (appInfo != null) {
                     AppIcon(
                         app = appInfo,
+                        sizeDp = 36,
                         modifier = Modifier.size(36.dp),
                     )
                 } else {
