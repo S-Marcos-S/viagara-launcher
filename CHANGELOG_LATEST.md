@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.88
+### 🚀 Novidades da Versão v0.60.89
 
-- **Correção do Blur na Troca Diária:** Aplicado o enquadramento proporcional de tela na rotação automática de papéis de parede, corrigindo o alinhamento do efeito de vidro fosco.
+- **Efeito de Vidro nas Configurações:** Aplicado o visual de vidro translúcido com refração líquida e desfoque suave aos cartões, diálogos e cabeçalhos nas telas de configurações da launcher.

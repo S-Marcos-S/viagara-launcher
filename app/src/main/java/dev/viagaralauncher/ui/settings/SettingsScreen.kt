@@ -91,6 +91,13 @@ import dev.viagaralauncher.ui.common.AppIcon
 import dev.viagaralauncher.ui.theme.toFontFamily
 import dev.viagaralauncher.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
+import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
+import dev.viagaralauncher.ui.theme.glass.GlassStyle
+import dev.viagaralauncher.ui.theme.glass.GlassSurface
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -164,6 +171,14 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val surface = MaterialTheme.colorScheme.surface
+    val isDark = isSystemInDarkTheme()
+    val isGlassActive = LocalGlassThemeActive.current || activeThemeId == "glass"
+    val backgroundColor = if (isGlassActive) {
+        if (isDark) Color.Black.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.45f)
+    } else {
+        surface
+    }
+    val topBarColor = if (isGlassActive) Color.Transparent else surface
     var isRootAvailable by remember {
         mutableStateOf(RootBatteryStatsCollector.isRootCached == true || RootInstaller.isRootAvailable())
     }
@@ -174,29 +189,35 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        containerColor = surface,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
+                title = { Text(stringResource(R.string.settings_title), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = surface),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = topBarColor,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                ),
             )
         },
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor),
     ) { padding ->
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
             modifier = Modifier
                 .padding(padding)
-                .background(surface)
                 .fillMaxWidth(),
         ) {
             item {
-                Section(stringResource(R.string.settings_section_appearance)) {
+                Section(stringResource(R.string.settings_section_appearance), isGlassActive = isGlassActive) {
                     ThemeColorPaletteRow(
                         activeThemeId = activeThemeId,
                         hapticsEnabled = hapticsEnabled,
@@ -287,7 +308,7 @@ fun SettingsScreen(
             }
 
             item {
-                Section(stringResource(R.string.settings_section_behavior)) {
+                Section(stringResource(R.string.settings_section_behavior), isGlassActive = isGlassActive) {
                     NavigationRow(
                         label = stringResource(R.string.settings_default_launcher),
                         detail = stringResource(
@@ -411,7 +432,7 @@ fun SettingsScreen(
             }
 
             item {
-                Section(stringResource(R.string.settings_section_now_playing)) {
+                Section(stringResource(R.string.settings_section_now_playing), isGlassActive = isGlassActive) {
                     SwitchRow(stringResource(R.string.settings_now_playing_show), nowPlayingEnabled, onSetNowPlayingEnabled)
                     RowDivider()
                     SwitchRowWithDetail(
@@ -474,14 +495,8 @@ fun SettingsScreen(
                 }
             }
 
-            item { SectionLabel(stringResource(R.string.settings_section_apps)) }
             item {
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                  Column {
+                Section(stringResource(R.string.settings_section_apps), isGlassActive = isGlassActive) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -564,12 +579,11 @@ fun SettingsScreen(
                         checked = folderWindowPopup,
                         onCheckedChange = onSetFolderWindowPopup,
                     )
-                  }
                 }
             }
 
             item {
-                Section(stringResource(R.string.settings_section_backup)) {
+                Section(stringResource(R.string.settings_section_backup), isGlassActive = isGlassActive) {
                     NavigationRow(
                         label = stringResource(R.string.settings_backup_title),
                         detail = stringResource(R.string.settings_backup_subtitle),
@@ -579,7 +593,7 @@ fun SettingsScreen(
             }
 
             item {
-                Section(stringResource(R.string.settings_section_about)) {
+                Section(stringResource(R.string.settings_section_about), isGlassActive = isGlassActive) {
                     var showCurrentChangelog by remember { mutableStateOf(false) }
                     val context = LocalContext.current
                     val appVersionName = remember(context) {
@@ -627,18 +641,16 @@ fun SettingsScreen(
                                     ),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Surface(
+                                GlassDialogContainer(
                                     modifier = Modifier
                                         .fillMaxWidth(0.9f)
-                                        .clip(RoundedCornerShape(24.dp))
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,
                                             onClick = {},
                                         ),
-                                    shape = RoundedCornerShape(24.dp),
-                                    color = dev.viagaralauncher.ui.theme.dynamicSurfaceColor(),
-                                    border = BorderStroke(1.dp, dev.viagaralauncher.ui.theme.dynamicBorderColor()),
+                                    cornerRadiusDp = 24.dp,
+                                    isGlassActive = isGlassActive,
                                 ) {
                                     Column(
                                         modifier = Modifier
@@ -740,15 +752,37 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun Section(
+    title: String,
+    isGlassActive: Boolean = LocalGlassThemeActive.current,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column {
         SectionLabel(title)
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(content = content)
+        val shape = RoundedCornerShape(20.dp)
+        if (isGlassActive) {
+            val isDark = isSystemInDarkTheme()
+            val density = LocalDensity.current
+            val cornerPx = with(density) { 20.dp.toPx() }
+            GlassSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape),
+                cornerPx = cornerPx,
+                style = GlassStyle.DIALOG,
+                tintOpacity = if (isDark) 50 else 60,
+                surfaceColor = dynamicSurfaceColor(alpha = 1f).toArgb(),
+            ) {
+                Column(content = content)
+            }
+        } else {
+            Surface(
+                shape = shape,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(content = content)
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +50,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.viagaralauncher.R
 import dev.viagaralauncher.service.HapticUtil
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
+import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassStyle
+import dev.viagaralauncher.ui.theme.glass.GlassSurface
 
 private data class ThemeOption(
     val id: String,
@@ -122,8 +129,17 @@ fun ThemesScreen(
         )
     }
 
+    val isDark = isSystemInDarkTheme()
+    val isGlassActive = LocalGlassThemeActive.current || currentThemeId == "glass"
+    val backgroundColor = if (isGlassActive) {
+        if (isDark) Color.Black.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.45f)
+    } else {
+        surface
+    }
+    val topBarColor = if (isGlassActive) Color.Transparent else surface
+
     Scaffold(
-        containerColor = surface,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -142,9 +158,16 @@ fun ThemesScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = surface),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = topBarColor,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                ),
             )
         },
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor),
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -168,6 +191,7 @@ fun ThemesScreen(
                 ThemeCard(
                     theme = theme,
                     isSelected = isSelected,
+                    isGlassActive = isGlassActive,
                     onClick = {
                         HapticUtil.tick(view, hapticsEnabled)
                         onSelectTheme(theme.id)
@@ -187,7 +211,7 @@ fun ThemesScreen(
             }
 
             item {
-                ComingSoonThemeCard()
+                ComingSoonThemeCard(isGlassActive = isGlassActive)
             }
 
             item {
@@ -201,27 +225,14 @@ fun ThemesScreen(
 private fun ThemeCard(
     theme: ThemeOption,
     isSelected: Boolean,
+    isGlassActive: Boolean = LocalGlassThemeActive.current,
     onClick: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val isDark = isSystemInDarkTheme()
     val shape = RoundedCornerShape(18.dp)
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable(onClick = onClick),
-        shape = shape,
-        color = if (isSelected) {
-            colorScheme.primaryContainer.copy(alpha = 0.35f)
-        } else {
-            colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
-        },
-        border = BorderStroke(
-            width = if (isSelected) 2.dp else 1.dp,
-            color = if (isSelected) colorScheme.primary else colorScheme.outlineVariant.copy(alpha = 0.40f),
-        ),
-    ) {
+    val cardContent = @Composable {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -290,19 +301,51 @@ private fun ThemeCard(
             }
         }
     }
+
+    if (isGlassActive) {
+        val density = LocalDensity.current
+        val cornerPx = with(density) { 18.dp.toPx() }
+        GlassSurface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .clickable(onClick = onClick),
+            cornerPx = cornerPx,
+            style = if (isSelected) GlassStyle.DEFAULT.copy(rim = 1.35f, shadow = 0.8f) else GlassStyle.DIALOG,
+            tintOpacity = if (isSelected) 60 else (if (isDark) 45 else 55),
+            surfaceColor = if (isSelected) colorScheme.primaryContainer.toArgb() else dynamicSurfaceColor(alpha = 1f).toArgb(),
+        ) {
+            cardContent()
+        }
+    } else {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .clickable(onClick = onClick),
+            shape = shape,
+            color = if (isSelected) {
+                colorScheme.primaryContainer.copy(alpha = 0.35f)
+            } else {
+                colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
+            },
+            border = BorderStroke(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) colorScheme.primary else colorScheme.outlineVariant.copy(alpha = 0.40f),
+            ),
+        ) {
+            cardContent()
+        }
+    }
 }
 
 @Composable
-private fun ComingSoonThemeCard() {
+private fun ComingSoonThemeCard(isGlassActive: Boolean = LocalGlassThemeActive.current) {
     val colorScheme = MaterialTheme.colorScheme
+    val isDark = isSystemInDarkTheme()
     val shape = RoundedCornerShape(18.dp)
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = shape,
-        color = colorScheme.surfaceContainerLow.copy(alpha = 0.50f),
-        border = BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.25f)),
-    ) {
+    val content = @Composable {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -346,6 +389,31 @@ private fun ComingSoonThemeCard() {
                     lineHeight = 17.sp,
                 )
             }
+        }
+    }
+
+    if (isGlassActive) {
+        val density = LocalDensity.current
+        val cornerPx = with(density) { 18.dp.toPx() }
+        GlassSurface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape),
+            cornerPx = cornerPx,
+            style = GlassStyle.DIALOG,
+            tintOpacity = if (isDark) 40 else 50,
+            surfaceColor = dynamicSurfaceColor(alpha = 1f).toArgb(),
+        ) {
+            content()
+        }
+    } else {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = shape,
+            color = colorScheme.surfaceContainerLow.copy(alpha = 0.50f),
+            border = BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.25f)),
+        ) {
+            content()
         }
     }
 }

@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -42,12 +43,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import dev.viagaralauncher.R
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
+import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassStyle
+import dev.viagaralauncher.ui.theme.glass.GlassSurface
 import dev.viagaralauncher.ui.search.SearchConfig
 import dev.viagaralauncher.ui.search.SearchEngine
 
@@ -80,26 +89,41 @@ fun SearchSettingsScreen(
         hasContactsPermission = granted
     }
 
+    val isDark = isSystemInDarkTheme()
+    val isGlassActive = LocalGlassThemeActive.current
+    val backgroundColor = if (isGlassActive) {
+        if (isDark) Color.Black.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.45f)
+    } else {
+        surface
+    }
+    val topBarColor = if (isGlassActive) Color.Transparent else surface
+
     Scaffold(
-        containerColor = surface,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings_search_title)) },
+                title = { Text(stringResource(R.string.settings_search_title), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = surface),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = topBarColor,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                ),
             )
         },
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor),
     ) { padding ->
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
             modifier = Modifier
                 .padding(padding)
-                .background(surface)
                 .fillMaxSize(),
         ) {
             // General / Behavior Section
@@ -217,7 +241,11 @@ fun SearchSettingsScreen(
 }
 
 @Composable
-private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun Section(
+    title: String,
+    isGlassActive: Boolean = LocalGlassThemeActive.current,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column {
         Text(
             text = title.uppercase(),
@@ -226,12 +254,30 @@ private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) 
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
         )
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(content = content)
+        val shape = RoundedCornerShape(20.dp)
+        if (isGlassActive) {
+            val isDark = isSystemInDarkTheme()
+            val density = LocalDensity.current
+            val cornerPx = with(density) { 20.dp.toPx() }
+            GlassSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape),
+                cornerPx = cornerPx,
+                style = GlassStyle.DIALOG,
+                tintOpacity = if (isDark) 50 else 60,
+                surfaceColor = dynamicSurfaceColor(alpha = 1f).toArgb(),
+            ) {
+                Column(content = content)
+            }
+        } else {
+            Surface(
+                shape = shape,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(content = content)
+            }
         }
     }
 }
