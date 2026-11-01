@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.87
+### 🚀 Novidades da Versão v0.60.88
 
-- **Alinhamento do Efeito de Vidro:** Ajustada a escala do reflexo para adaptar-se à largura da tela, corrigindo o posicionamento do vidro em papéis de parede com proporções personalizadas.
+- **Correção do Blur na Troca Diária:** Aplicado o enquadramento proporcional de tela na rotação automática de papéis de parede, corrigindo o alinhamento do efeito de vidro fosco.

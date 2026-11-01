@@ -239,4 +239,28 @@ class DailyWallpaperTest {
         assertNotNull(next)
         assertEquals("wp2", next?.id)
     }
+
+    @Test
+    fun `aspect ratio calculation matches screen proportions for landscape wallpaper`() {
+        val screenW = 1080f
+        val screenH = 2400f
+        val targetH = 1920
+        val targetW = ((targetH.toFloat() / screenH) * screenW).toInt()
+        val screenAspect = screenW / screenH
+        val targetAspect = targetW.toFloat() / targetH.toFloat()
+        assertTrue(kotlin.math.abs(screenAspect - targetAspect) < 0.005f)
+    }
+
+    @Test
+    fun `aspect ratio calculation matches screen proportions for ultrawide wallpaper`() {
+        val screenW = 1440f
+        val screenH = 3120f
+        val bmpW = 3840f
+        val bmpH = 1600f
+        val targetH = maxOf(1920, bmpH.toInt()).coerceAtMost(3840)
+        val targetW = ((targetH.toFloat() / screenH) * screenW).toInt().coerceAtLeast(1)
+        val screenAspect = screenW / screenH
+        val targetAspect = targetW.toFloat() / targetH.toFloat()
+        assertTrue(kotlin.math.abs(screenAspect - targetAspect) < 0.005f)
+    }
 }

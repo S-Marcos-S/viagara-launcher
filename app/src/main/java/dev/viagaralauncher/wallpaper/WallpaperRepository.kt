@@ -6,9 +6,13 @@ import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
 import android.os.Build
 import android.content.Intent
 import android.net.Uri
+import dev.viagaralauncher.ui.theme.glass.WallpaperGlassProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -397,6 +401,82 @@ object WallpaperRepository {
         runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
     }
 
+    fun isBitmapFramedToDisplay(
+        context: Context,
+        bitmap: Bitmap,
+        viewportWidth: Float = 0f,
+        viewportHeight: Float = 0f,
+    ): Boolean {
+        if (bitmap.isRecycled || bitmap.width <= 0 || bitmap.height <= 0) return false
+        val (screenW, screenH) = if (viewportWidth > 0f && viewportHeight > 0f) {
+            Pair(viewportWidth, viewportHeight)
+        } else {
+            WallpaperGlassProvider.getRealWindowSize(context)
+        }
+        if (screenW <= 0f || screenH <= 0f) return true
+
+        val screenAspect = screenW / screenH
+        val bmpAspect = bitmap.width.toFloat() / bitmap.height.toFloat()
+        return kotlin.math.abs(screenAspect - bmpAspect) < 0.015f
+    }
+
+    fun frameBitmapToDisplay(
+        context: Context,
+        src: Bitmap,
+        scale: Float = 1f,
+        offsetX: Float = 0f,
+        offsetY: Float = 0f,
+        viewportWidth: Float = 0f,
+        viewportHeight: Float = 0f,
+    ): Bitmap {
+        if (src.isRecycled) return src
+        val (screenW, screenH) = if (viewportWidth > 0f && viewportHeight > 0f) {
+            Pair(viewportWidth, viewportHeight)
+        } else {
+            WallpaperGlassProvider.getRealWindowSize(context)
+        }
+        if (screenW <= 0f || screenH <= 0f) return src
+
+        val viewW = screenW
+        val viewH = screenH
+        val bmpW = src.width.toFloat()
+        val bmpH = src.height.toFloat()
+        if (bmpW <= 0f || bmpH <= 0f) return src
+
+        // If the bitmap is already framed to screen aspect ratio and no user transform is applied, return src directly
+        if (scale == 1f && offsetX == 0f && offsetY == 0f) {
+            val screenAspect = viewW / viewH
+            val bmpAspect = bmpW / bmpH
+            if (kotlin.math.abs(screenAspect - bmpAspect) < 0.015f && bmpH >= 1920f) {
+                return src
+            }
+        }
+
+        return runCatching {
+            val baseScale = maxOf(viewW / bmpW, viewH / bmpH)
+            val totalScale = baseScale * scale
+
+            val cx = viewW / 2f + offsetX
+            val cy = viewH / 2f + offsetY
+
+            val targetH = maxOf(1920, src.height).coerceAtMost(3840)
+            val targetW = ((targetH.toFloat() / viewH) * viewW).toInt().coerceAtLeast(1)
+
+            val resultBmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(resultBmp)
+            val matrix = Matrix()
+
+            val normFactor = targetH.toFloat() / viewH
+            matrix.postTranslate(-bmpW / 2f, -bmpH / 2f)
+            matrix.postScale(totalScale * normFactor, totalScale * normFactor)
+            matrix.postTranslate(cx * normFactor, cy * normFactor)
+
+            val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+            canvas.drawBitmap(src, matrix, paint)
+            resultBmp
+        }.getOrDefault(src)
+    }
+
     @SuppressLint("MissingPermission")
     suspend fun applyWallpaper(
         context: Context,
@@ -405,7 +485,12 @@ object WallpaperRepository {
     ): Result<Unit> = withContext(Dispatchers.IO) {
         val bitmap = getCachedOrDownloadBitmap(context, item.fullUrl)
             ?: return@withContext Result.failure(IllegalStateException("Could not download wallpaper bitmap"))
-        applyWallpaper(context, item, bitmap, flags)
+        val framedBitmap = frameBitmapToDisplay(context, bitmap)
+        val result = applyWallpaper(context, item, framedBitmap, flags)
+        if (framedBitmap !== bitmap && !bitmap.isRecycled) {
+            bitmap.recycle()
+        }
+        result
     }
 
     @SuppressLint("MissingPermission")
@@ -416,25 +501,30 @@ object WallpaperRepository {
         flags: Int,
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
+            val effectiveBitmap = if (isBitmapFramedToDisplay(context, bitmap)) {
+                bitmap
+            } else {
+                frameBitmapToDisplay(context, bitmap)
+            }
             val wm = WallpaperManager.getInstance(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 try {
-                    wm.setBitmap(bitmap, null, true, flags)
+                    wm.setBitmap(effectiveBitmap, null, true, flags)
                 } catch (e: Exception) {
                     if (flags != WallpaperManager.FLAG_SYSTEM) {
-                        wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                        wm.setBitmap(effectiveBitmap, null, true, WallpaperManager.FLAG_SYSTEM)
                     } else {
                         throw e
                     }
                 }
             } else {
-                wm.setBitmap(bitmap)
+                wm.setBitmap(effectiveBitmap)
             }
 
             // Immediately extract primary color from the applied wallpaper
             val extractedColor: Int? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 runCatching {
-                    android.app.WallpaperColors.fromBitmap(bitmap)?.primaryColor?.toArgb()
+                    android.app.WallpaperColors.fromBitmap(effectiveBitmap)?.primaryColor?.toArgb()
                 }.getOrNull()
             } else null ?: runCatching {
                 android.graphics.Color.parseColor(item.primaryColorHex)
@@ -453,8 +543,9 @@ object WallpaperRepository {
     @SuppressLint("MissingPermission")
     suspend fun applyWallpaper(context: Context, fullUrl: String, flags: Int): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val bitmap = getCachedOrDownloadBitmap(context, fullUrl)
+            val rawBitmap = getCachedOrDownloadBitmap(context, fullUrl)
                 ?: throw IllegalStateException("Could not download wallpaper bitmap")
+            val bitmap = frameBitmapToDisplay(context, rawBitmap)
 
             val wm = WallpaperManager.getInstance(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -477,6 +568,10 @@ object WallpaperRepository {
                         _currentPrimaryColor.value = it
                     }
                 }
+            }
+
+            if (bitmap !== rawBitmap && !rawBitmap.isRecycled) {
+                rawBitmap.recycle()
             }
 
             notifyWallpaperChanged()

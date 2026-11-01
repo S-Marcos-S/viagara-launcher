@@ -1084,35 +1084,18 @@ private fun WallpaperPreviewOverlay(
                 } else {
                     val getFinalFramedBitmap: () -> Bitmap? = {
                         val src = fullBitmap
-                        if (src != null && viewportSize.width > 0 && viewportSize.height > 0) {
-                            val viewW = viewportSize.width.toFloat()
-                            val viewH = viewportSize.height.toFloat()
-                            val bmpW = src.width.toFloat()
-                            val bmpH = src.height.toFloat()
-
-                            val baseScale = maxOf(viewW / bmpW, viewH / bmpH)
-                            val totalScale = baseScale * scale
-
-                            val cx = viewW / 2f + offsetX
-                            val cy = viewH / 2f + offsetY
-
-                            val targetH = maxOf(1920, src.height)
-                            val targetW = ((targetH.toFloat() / viewH) * viewW).toInt()
-
-                            val resultBmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
-                            val canvas = Canvas(resultBmp)
-                            val matrix = Matrix()
-
-                            val normFactor = targetH.toFloat() / viewH
-                            matrix.postTranslate(-bmpW / 2f, -bmpH / 2f)
-                            matrix.postScale(totalScale * normFactor, totalScale * normFactor)
-                            matrix.postTranslate(cx * normFactor, cy * normFactor)
-
-                            val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
-                            canvas.drawBitmap(src, matrix, paint)
-                            resultBmp
+                        if (src != null) {
+                            WallpaperRepository.frameBitmapToDisplay(
+                                context = context,
+                                src = src,
+                                scale = scale,
+                                offsetX = offsetX,
+                                offsetY = offsetY,
+                                viewportWidth = viewportSize.width.toFloat(),
+                                viewportHeight = viewportSize.height.toFloat(),
+                            )
                         } else {
-                            src
+                            null
                         }
                     }
 
