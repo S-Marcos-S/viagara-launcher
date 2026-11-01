@@ -46,6 +46,7 @@ import android.os.Build
 import android.view.WindowManager
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
+import dev.viagaralauncher.ui.theme.glass.GlassCard
 import dev.viagaralauncher.R
 import dev.viagaralauncher.battery.BatteryStatsParser
 import dev.viagaralauncher.battery.RootBatteryStatsCollector
@@ -179,7 +180,7 @@ fun BatteryStatsScreen(
     }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = if (showHeader) Modifier.nestedScroll(scrollBehavior.nestedScrollConnection) else Modifier,
         containerColor = if (showHeader) dynamicSurfaceColor(alpha = 0.40f, tintFraction = 0.16f) else Color.Transparent,
         topBar = {
             if (showHeader) {
@@ -314,7 +315,9 @@ fun BatteryStatsScreen(
                 CompositionLocalProvider(LocalShowAppNames provides showAppNames) {
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
                     ) { page ->
                         when (page) {
                             0 -> OverviewTab(
@@ -1490,6 +1493,9 @@ private fun AppsTab(
             }
         } else {
             LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -1850,6 +1856,9 @@ private fun WakelocksTab(
         }
 
         LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -1998,6 +2007,9 @@ private fun NetworkTab(network: List<BatteryStatsParser.NetworkStats>) {
             }
         } else {
             LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -2109,6 +2121,9 @@ private fun AlarmsJobsTab(
                     EmptyListMessage(R.string.no_alarm_data)
                 } else {
                     LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -2123,6 +2138,9 @@ private fun AlarmsJobsTab(
                     EmptyListMessage(R.string.no_job_data)
                 } else {
                     LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -2137,6 +2155,9 @@ private fun AlarmsJobsTab(
                     EmptyListMessage(R.string.no_sync_data)
                 } else {
                     LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -2833,16 +2854,12 @@ private fun FrostedCard(
     border: BorderStroke? = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.28f, tintFraction = 0.35f)),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
-        onClick = onClick ?: {},
-        enabled = onClick != null,
-        shape = shape,
-        color = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
+    GlassCard(
+        modifier = modifier.fillMaxWidth(),
+        cornerRadiusDp = 18.dp,
+        fallbackColor = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
         border = border,
-        tonalElevation = 2.dp,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
+        onClick = onClick,
     ) {
         Column(
             modifier = Modifier.padding(14.dp),

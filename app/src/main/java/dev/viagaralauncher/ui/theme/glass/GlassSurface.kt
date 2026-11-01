@@ -4,6 +4,7 @@ package dev.viagaralauncher.ui.theme.glass
 import android.graphics.RectF
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -156,6 +158,72 @@ fun GlassDialogContainer(
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center,
+                content = content,
+            )
+        }
+    }
+}
+
+/**
+ * Universal container for cards and bento boxes across Task Manager, Settings, and Stats screens.
+ * Renders refractive liquid glass when Glass theme is active,
+ * or smooth dynamic surface with subtle border when standard Monet theme is active.
+ */
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    cornerRadiusDp: Dp = 16.dp,
+    topCornerDp: Dp = cornerRadiusDp,
+    bottomCornerDp: Dp = cornerRadiusDp,
+    isGlassActive: Boolean = LocalGlassThemeActive.current,
+    style: GlassStyle = GlassStyle.DIALOG,
+    tintOpacity: Int? = null,
+    surfaceColor: Int = dynamicSurfaceColor(alpha = 1f).toArgb(),
+    fallbackColor: Color = dynamicSurfaceColor(alpha = 0.52f, tintFraction = 0.14f),
+    border: BorderStroke? = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.20f, tintFraction = 0.20f)),
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val isDark = isSystemInDarkTheme()
+    val resolvedTintOpacity = tintOpacity ?: if (isDark) 48 else 58
+    val density = LocalDensity.current
+    val topPx = with(density) { topCornerDp.toPx() }
+    val bottomPx = with(density) { bottomCornerDp.toPx() }
+    val shape = RoundedCornerShape(
+        topStart = topCornerDp,
+        topEnd = topCornerDp,
+        bottomEnd = bottomCornerDp,
+        bottomStart = bottomCornerDp,
+    )
+
+    val baseModifier = if (onClick != null) {
+        modifier
+            .clip(shape)
+            .clickable(onClick = onClick)
+    } else {
+        modifier.clip(shape)
+    }
+
+    if (isGlassActive) {
+        GlassSurface(
+            modifier = baseModifier,
+            topCornerPx = topPx,
+            bottomCornerPx = bottomPx,
+            style = style,
+            tintOpacity = resolvedTintOpacity,
+            surfaceColor = surfaceColor,
+            content = content,
+        )
+    } else {
+        Surface(
+            modifier = baseModifier,
+            shape = shape,
+            color = fallbackColor,
+            border = border,
+            tonalElevation = 2.dp,
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
                 content = content,
             )
         }

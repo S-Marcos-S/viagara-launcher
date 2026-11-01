@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -82,8 +83,10 @@ import dev.viagaralauncher.root.anomaly.AnomalyType
 import dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher
 import dev.viagaralauncher.root.anomaly.FlaggedAppSummary
 import dev.viagaralauncher.ui.common.AppIcon
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassCard
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -134,9 +137,9 @@ fun BackgroundWatcherScreen(
             .padding(horizontal = 10.dp),
     ) {
         // High Density Summary Row
-        Surface(
-            color = dynamicSurfaceColor(alpha = 0.55f, tintFraction = 0.12f),
-            shape = RoundedCornerShape(16.dp),
+        GlassCard(
+            fallbackColor = dynamicSurfaceColor(alpha = 0.55f, tintFraction = 0.12f),
+            cornerRadiusDp = 16.dp,
             border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.12f)),
             modifier = Modifier
                 .fillMaxWidth()
@@ -271,6 +274,7 @@ fun BackgroundWatcherScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
+                contentPadding = PaddingValues(bottom = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(filteredApps, key = { it.packageName }) { appSummary ->
@@ -401,9 +405,9 @@ private fun FlaggedAppCard(
         } else ""
     }
 
-    Surface(
-        color = dynamicSurfaceColor(alpha = 0.52f, tintFraction = 0.14f),
-        shape = RoundedCornerShape(16.dp),
+    GlassCard(
+        fallbackColor = dynamicSurfaceColor(alpha = 0.52f, tintFraction = 0.14f),
+        cornerRadiusDp = 16.dp,
         border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.12f)),
         modifier = Modifier.fillMaxWidth(),
     ) {

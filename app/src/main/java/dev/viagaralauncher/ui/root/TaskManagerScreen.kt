@@ -16,15 +16,18 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -132,8 +135,10 @@ import dev.viagaralauncher.root.SystemPerformanceSnapshot
 import dev.viagaralauncher.root.SystemTaskInspector
 import dev.viagaralauncher.root.TaskProcessItem
 import dev.viagaralauncher.ui.common.AppIcon
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -278,8 +283,19 @@ fun TaskManagerScreen(
         }
     }
 
+    val isDark = isSystemInDarkTheme()
+    val isGlassActive = LocalGlassThemeActive.current
+    val backgroundColor = if (isGlassActive) {
+        if (isDark) Color.Black.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.45f)
+    } else {
+        dynamicSurfaceColor(alpha = 0.40f, tintFraction = 0.16f)
+    }
+
     Scaffold(
-        containerColor = dynamicSurfaceColor(alpha = 0.40f, tintFraction = 0.16f),
+        containerColor = Color.Transparent,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor),
         topBar = {
             CleanTaskManagerTopBar(
                 tabs = tabs,
@@ -292,6 +308,7 @@ fun TaskManagerScreen(
                 onNavigateBack = onNavigateBack,
                 onOpenAnomalySettings = { showAnomalySettingsDialog = true },
                 isWatcherActive = anomalyConfig.isEnabled,
+                isGlassActive = isGlassActive,
             )
         },
     ) { paddingValues ->
@@ -453,6 +470,7 @@ private fun CleanTaskManagerTopBar(
     onNavigateBack: () -> Unit,
     onOpenAnomalySettings: () -> Unit,
     isWatcherActive: Boolean,
+    isGlassActive: Boolean = LocalGlassThemeActive.current,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val listState = rememberLazyListState()
@@ -465,7 +483,7 @@ private fun CleanTaskManagerTopBar(
     }
 
     Surface(
-        color = dynamicSurfaceColor(alpha = 0.65f, tintFraction = 0.18f),
+        color = if (isGlassActive) Color.Transparent else dynamicSurfaceColor(alpha = 0.65f, tintFraction = 0.18f),
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding(),
@@ -609,6 +627,7 @@ private fun ProcessesScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 14.dp),
+        contentPadding = PaddingValues(bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
@@ -841,14 +860,12 @@ private fun ProcessRowCard(
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, dynamicBorderColor(alpha = 0.25f, tintFraction = 0.30f), RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
-        color = dynamicSurfaceColor(alpha = 0.70f, tintFraction = 0.18f),
-        tonalElevation = 1.dp,
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadiusDp = 16.dp,
+        fallbackColor = dynamicSurfaceColor(alpha = 0.70f, tintFraction = 0.18f),
+        border = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.25f, tintFraction = 0.30f)),
+        onClick = onClick,
     ) {
         Row(
             modifier = Modifier
@@ -1031,6 +1048,7 @@ private fun PerformanceScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 14.dp),
+        contentPadding = PaddingValues(bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -1348,13 +1366,11 @@ private fun CpuWaveformCard(
         else -> Color(0xFF38BDF8) // Electric Cyan
     }
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, dynamicBorderColor(alpha = 0.28f, tintFraction = 0.35f), RoundedCornerShape(20.dp)),
-        color = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
-        tonalElevation = 2.dp,
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadiusDp = 20.dp,
+        fallbackColor = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
+        border = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.28f, tintFraction = 0.35f)),
     ) {
         Column(
             modifier = Modifier
@@ -1654,13 +1670,11 @@ private fun PerformanceResourceCard(
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, dynamicBorderColor(alpha = 0.28f, tintFraction = 0.35f), RoundedCornerShape(20.dp)),
-        color = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
-        tonalElevation = 2.dp,
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadiusDp = 20.dp,
+        fallbackColor = dynamicSurfaceColor(alpha = 0.72f, tintFraction = 0.18f),
+        border = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.28f, tintFraction = 0.35f)),
     ) {
         Column(
             modifier = Modifier

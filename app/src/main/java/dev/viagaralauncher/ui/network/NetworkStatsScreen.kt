@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -95,7 +96,9 @@ import dev.viagaralauncher.network.StatsPeriod
 import dev.viagaralauncher.network.StatsUiState
 import dev.viagaralauncher.network.TimePeriodStats
 import dev.viagaralauncher.root.AppRootInspector
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassCard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -134,12 +137,14 @@ fun NetworkStatsScreen(
         }
     }
 
+    val isGlassActive = LocalGlassThemeActive.current
+
     LaunchedEffect(selectedPeriod) {
         loadData(selectedPeriod)
     }
 
     Scaffold(
-        containerColor = if (showHeader) dynamicSurfaceColor() else Color.Transparent,
+        containerColor = if (showHeader) (if (isGlassActive) Color.Transparent else dynamicSurfaceColor()) else Color.Transparent,
         topBar = {
             if (showHeader) {
                 CleanNetworkTopBar(
@@ -194,6 +199,7 @@ fun NetworkStatsScreen(
                             stats = state.stats,
                             showAppBreakdown = showAppBreakdown,
                             onToggleBreakdown = { showAppBreakdown = it },
+                            modifier = Modifier.weight(1f),
                         )
                     }
 
@@ -222,9 +228,10 @@ private fun CleanNetworkTopBar(
     onRefresh: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val isGlassActive = LocalGlassThemeActive.current
 
     Surface(
-        color = dynamicSurfaceColor(),
+        color = if (isGlassActive) Color.Transparent else dynamicSurfaceColor(),
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding(),
@@ -323,11 +330,13 @@ private fun StatsContentList(
     stats: TimePeriodStats,
     showAppBreakdown: Boolean,
     onToggleBreakdown: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -361,14 +370,13 @@ private fun StatsContentList(
 
         item {
             // Gráfico de Consumo
-            Surface(
+            GlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(20.dp)),
-                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
-                tonalElevation = 2.dp,
+                    .padding(horizontal = 14.dp),
+                cornerRadiusDp = 20.dp,
+                fallbackColor = colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+                border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.12f)),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -1136,13 +1144,13 @@ private fun AppNetworkUsageItem(
     val colorScheme = MaterialTheme.colorScheme
     val progress = (appInfo.totalData.toFloat() / maxTotalBytes.toFloat()).coerceIn(0f, 1f)
 
-    Surface(
+    GlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, colorScheme.outline.copy(alpha = 0.08f), RoundedCornerShape(16.dp)),
-        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
+            .padding(horizontal = 14.dp),
+        cornerRadiusDp = 16.dp,
+        fallbackColor = colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
+        border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.08f)),
     ) {
         Column(
             modifier = Modifier

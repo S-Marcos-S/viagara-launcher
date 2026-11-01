@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -86,8 +87,10 @@ import dev.viagaralauncher.history.DailyHistoryRepository
 import dev.viagaralauncher.history.DailyUsageRecord
 import dev.viagaralauncher.history.HourlyNetUsagePoint
 import dev.viagaralauncher.root.AppRootInspector
+import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
+import dev.viagaralauncher.ui.theme.glass.GlassCard
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -199,8 +202,10 @@ fun DailyHistoryScreen(
         LazyColumn(
             state = cardsListState,
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxWidth()
                 .padding(horizontal = 10.dp),
+            contentPadding = PaddingValues(bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(daysInMonth, key = { it.toString() }) { date ->
@@ -219,7 +224,7 @@ fun DailyHistoryScreen(
             }
 
             item {
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(16.dp))
             }
         }
     }
@@ -239,9 +244,9 @@ private fun MonthHeaderRow(
         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
     val year = currentMonth.year
 
-    Surface(
-        color = dynamicSurfaceColor(alpha = 0.55f, tintFraction = 0.12f),
-        shape = RoundedCornerShape(14.dp),
+    GlassCard(
+        fallbackColor = dynamicSurfaceColor(alpha = 0.55f, tintFraction = 0.12f),
+        cornerRadiusDp = 14.dp,
         border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.12f)),
         modifier = Modifier
             .fillMaxWidth()
@@ -423,9 +428,9 @@ private fun CompactDayCard(
         BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.12f))
     }
 
-    Surface(
-        color = dynamicSurfaceColor(alpha = 0.52f, tintFraction = 0.14f),
-        shape = RoundedCornerShape(18.dp),
+    GlassCard(
+        fallbackColor = dynamicSurfaceColor(alpha = 0.52f, tintFraction = 0.14f),
+        cornerRadiusDp = 18.dp,
         border = cardBorder,
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -747,9 +752,10 @@ private fun BentoBox(
     extraContent: (@Composable () -> Unit)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val isGlassActive = LocalGlassThemeActive.current
 
     Surface(
-        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+        color = colorScheme.surfaceContainerHigh.copy(alpha = if (isGlassActive) 0.35f else 0.55f),
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.08f)),
         modifier = modifier,
@@ -809,6 +815,7 @@ private fun InternetUsageHourlyCard(
     hourlyPoints: List<HourlyNetUsagePoint>,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val isGlassActive = LocalGlassThemeActive.current
     var selectedHour by remember { mutableIntStateOf(-1) }
 
     val totalBytes = totalWifi + totalMobile
@@ -817,7 +824,7 @@ private fun InternetUsageHourlyCard(
     }
 
     Surface(
-        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+        color = colorScheme.surfaceContainerHigh.copy(alpha = if (isGlassActive) 0.35f else 0.55f),
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.08f)),
         modifier = Modifier.fillMaxWidth(),

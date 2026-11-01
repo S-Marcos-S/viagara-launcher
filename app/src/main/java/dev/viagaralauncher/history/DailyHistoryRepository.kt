@@ -141,7 +141,9 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             if (!dataFile.exists()) return@launch
             val content = runCatching { dataFile.readText(Charsets.UTF_8) }.getOrNull() ?: return@launch
             val map = parseRecordsJson(content)
-            memoryRecords.putAll(map)
+            val ignored = getIgnoredLauncherPackages()
+            val sanitized = map.mapValues { (_, rec) -> sanitizeRecord(rec, ignored) }
+            memoryRecords.putAll(sanitized)
             _recordsFlow.value = HashMap(memoryRecords)
         }
     }
@@ -283,6 +285,52 @@ class DailyHistoryRepository private constructor(private val context: Context) {
     }
 
     /**
+     * Resolves and caches home launchers and system shell packages to prevent them
+     * from falsely registering as opened apps in daily usage metrics.
+     */
+    private fun getIgnoredLauncherPackages(): Set<String> {
+        val launcherPkgs = mutableSetOf<String>()
+        launcherPkgs.add(context.packageName)
+        launcherPkgs.add("com.motorola.launcher3")
+        launcherPkgs.add("com.google.android.apps.nexuslauncher")
+        launcherPkgs.add("com.android.launcher")
+        launcherPkgs.add("com.android.launcher3")
+        launcherPkgs.add("com.sec.android.app.launcher")
+        launcherPkgs.add("com.miui.home")
+        launcherPkgs.add("com.mi.android.globallauncher")
+        launcherPkgs.add("com.oppo.launcher")
+        launcherPkgs.add("com.huawei.android.launcher")
+        launcherPkgs.add("com.android.systemui")
+        launcherPkgs.add("com.google.android.googlequicksearchbox")
+
+        runCatching {
+            val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+            val resolves = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.queryIntentActivities(homeIntent, PackageManager.ResolveInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.queryIntentActivities(homeIntent, 0)
+            }
+            for (resolve in resolves) {
+                val pkg = resolve.activityInfo?.packageName
+                if (!pkg.isNullOrBlank()) {
+                    launcherPkgs.add(pkg)
+                }
+            }
+        }
+        return launcherPkgs
+    }
+
+    private fun sanitizeRecord(record: DailyUsageRecord, ignoredPkgs: Set<String>): DailyUsageRecord {
+        val filteredLaunches = record.appLaunches.filter { !ignoredPkgs.contains(it.packageName) }
+        return if (filteredLaunches.size != record.appLaunches.size) {
+            record.copy(appLaunches = filteredLaunches)
+        } else {
+            record
+        }
+    }
+
+    /**
      * Precomputes or loads all days for the specified month.
      */
     suspend fun loadMonthRecords(year: Int, month: Int): List<DailyUsageRecord> = withContext(Dispatchers.IO) {
@@ -291,6 +339,7 @@ class DailyHistoryRepository private constructor(private val context: Context) {
         val now = LocalDate.now()
         val firstDay = LocalDate.of(year, month, 1)
         val lengthOfMonth = firstDay.lengthOfMonth()
+        val ignoredPkgs = getIgnoredLauncherPackages()
 
         for (day in 1..lengthOfMonth) {
             val date = LocalDate.of(year, month, day)
@@ -299,7 +348,8 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             val dateKey = date.format(DATE_FORMATTER)
             val existing = memoryRecords[dateKey]
             if (existing != null && !date.isEqual(now) && existing.appLaunches.isNotEmpty()) {
-                list.add(existing)
+                val sanitized = sanitizeRecord(existing, ignoredPkgs)
+                list.add(sanitized)
             } else {
                 val computed = refreshDay(date)
                 list.add(computed)
@@ -320,6 +370,7 @@ class DailyHistoryRepository private constructor(private val context: Context) {
 
     private fun computeUsageEventsForDay(startTimeMs: Long, endTimeMs: Long): UsageEventComputation {
         val usm = usageStatsManager ?: return UsageEventComputation(0L, 0L, 0, 0, emptyList(), emptyMap())
+        val ignoredPkgs = getIgnoredLauncherPackages()
 
         val launchCounts = mutableMapOf<String, Int>()
         val screenTimes = mutableMapOf<String, Long>()
@@ -345,7 +396,9 @@ class DailyHistoryRepository private constructor(private val context: Context) {
                 when (eventType) {
                     UsageEvents.Event.ACTIVITY_RESUMED, 1 /* MOVE_TO_FOREGROUND */ -> {
                         if (!pkg.isNullOrBlank()) {
-                            launchCounts[pkg] = (launchCounts[pkg] ?: 0) + 1
+                            if (!ignoredPkgs.contains(pkg)) {
+                                launchCounts[pkg] = (launchCounts[pkg] ?: 0) + 1
+                            }
                             if (lastResumedPkg != null && lastResumedTime > 0) {
                                 val duration = (time - lastResumedTime).coerceAtLeast(0L)
                                 screenTimes[lastResumedPkg] = (screenTimes[lastResumedPkg] ?: 0L) + duration
@@ -407,8 +460,10 @@ class DailyHistoryRepository private constructor(private val context: Context) {
         val totalWindowMs = (endTimeMs - startTimeMs).coerceAtLeast(0L)
         screenOffTime = (totalWindowMs - screenOnTime).coerceAtLeast(0L)
 
-        // Build sorted launch stats
-        val allPkgs = (launchCounts.keys + screenTimes.keys).filter { it.isNotBlank() }
+        // Build sorted launch stats, excluding launchers and system shell packages
+        val allPkgs = (launchCounts.keys + screenTimes.keys).filter {
+            it.isNotBlank() && !ignoredPkgs.contains(it)
+        }
         val appLaunches = allPkgs.mapNotNull { pkg ->
             val count = launchCounts[pkg] ?: 0
             val time = screenTimes[pkg] ?: 0L
