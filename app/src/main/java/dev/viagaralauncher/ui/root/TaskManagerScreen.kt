@@ -52,6 +52,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BatteryStd
 import androidx.compose.material.icons.filled.Bedtime
@@ -80,6 +81,7 @@ import androidx.compose.material.icons.filled.Wifi
 import dev.viagaralauncher.history.DailyHistoryRepository
 import dev.viagaralauncher.ui.network.NetworkStatsScreen
 import dev.viagaralauncher.ui.battery.BatteryStatsScreen
+import dev.viagaralauncher.ui.battery.BatteryCyclesScreen
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -148,6 +150,7 @@ private enum class TaskManagerTab {
     PROCESSES,
     PERFORMANCE,
     HISTORY,
+    CYCLES,
     BACKGROUND,
     NETWORK,
     BATTERY,
@@ -404,6 +407,17 @@ fun TaskManagerScreen(
                         )
                     }
 
+                    TaskManagerTab.CYCLES -> {
+                        BatteryCyclesScreen(
+                            allApps = allApps,
+                            onNavigateBack = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(TaskManagerTab.PERFORMANCE.ordinal)
+                                }
+                            },
+                        )
+                    }
+
                     TaskManagerTab.BACKGROUND -> {
                         BackgroundWatcherScreen(
                             allApps = allApps,
@@ -524,6 +538,7 @@ private fun CleanTaskManagerTopBar(
                         TaskManagerTab.PROCESSES -> stringResource(R.string.task_manager_tab_processes) to Icons.Filled.ViewList
                         TaskManagerTab.PERFORMANCE -> stringResource(R.string.task_manager_tab_performance) to Icons.Filled.Speed
                         TaskManagerTab.HISTORY -> stringResource(R.string.task_manager_tab_history) to Icons.Filled.CalendarMonth
+                        TaskManagerTab.CYCLES -> stringResource(R.string.task_manager_tab_cycles) to Icons.Filled.Autorenew
                         TaskManagerTab.BACKGROUND -> stringResource(R.string.task_manager_tab_background) to Icons.Filled.Bedtime
                         TaskManagerTab.NETWORK -> stringResource(R.string.task_manager_tab_network) to Icons.Filled.Wifi
                         TaskManagerTab.BATTERY -> stringResource(R.string.task_manager_tab_battery) to Icons.Filled.BatteryChargingFull

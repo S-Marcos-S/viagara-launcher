@@ -54,6 +54,7 @@ class ViagaraApp : Application() {
         if (dev.viagaralauncher.battery.DrainNotificationManager.isNotificationEnabled(this)) {
             dev.viagaralauncher.battery.DrainNotificationManager.getInstance(this).startNotification()
         }
+        dev.viagaralauncher.battery.BatteryCycleRepository.getInstance(this)
         if (dev.viagaralauncher.network.NetSpeedSettings(this).isEnabled) {
             dev.viagaralauncher.network.SpeedMonitorService.start(this)
         }

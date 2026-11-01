@@ -1,7 +1,6 @@
-### 🚀 Novidades da Versão v0.60.91 (Beta)
+### 🚀 Novidades da Versão v0.60.92 (Beta)
 
-- **Versão Beta:** Correções e aprimoramentos para as novas telas do Gerenciador de Tarefas.
-- **Efeito Vidro Aprimorado:** Container `GlassCard` com suporte completo ao shader de refração líquida em todas as abas.
-- **Filtro de Launchers:** Moto App Launcher e telas iniciais do sistema devidamente excluídos da contagem de aberturas de apps.
-- **Rolagem Vertical:** Corrigido o cálculo de layout e restrições nas listas de histórico, segundo plano, rede e bateria.
-- **Créditos Atualizados:** Removidas menções a Wallhaven e adicionados créditos a Grace Launcher.
+- **Nova Aba de Ciclos:** Monitoramento completo de ciclos de carga e descarga no Gerenciador de Tarefas.
+- **Detalhes de Descarga:** Gráficos da curva de descarga, temperatura, consumo por app e gasto em sono profundo e leve.
+- **Detalhes de Recarga:** Gráficos de velocidade de recarga (W, V, A) com tela ligada/desligada, temperatura e ciclos gastos.
+- **Design Minimalista e Adaptativo:** Visual moderno com Glassmorphism, cards expansíveis e adaptação compacta à tela.
