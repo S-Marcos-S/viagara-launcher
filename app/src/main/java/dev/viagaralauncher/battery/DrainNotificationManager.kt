@@ -7,13 +7,17 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import dev.viagaralauncher.MainActivity
 import dev.viagaralauncher.R
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
+import java.io.File
 import java.util.Locale
+import kotlin.math.abs
 
 /**
  * Manages the real-time persistent notification for battery drain statistics.
@@ -169,118 +173,183 @@ class DrainNotificationManager private constructor(
         val currentTemp = state.batteryTemperatureC ?: drainTracker.getBatteryTemperatureC()
         val tempText = if (showTemp && currentTemp != null) "${Math.round(currentTemp)}°" else null
 
-        val currentStateText = when {
-            state.isCharging -> {
-                val chargingText = context.getString(R.string.drain_state_charging)
-                if (tempText != null) "$tempText • $chargingText" else chargingText
-            }
-            state.isDeepSleep -> {
-                val sleepText = context.getString(R.string.drain_state_deep_sleep)
-                if (tempText != null) "$tempText • $sleepText" else sleepText
-            }
-            state.isDozing -> {
-                val dozeText = context.getString(R.string.drain_state_dozing)
-                if (tempText != null) "$tempText • $dozeText" else dozeText
-            }
-            state.isScreenOn -> {
-                tempText ?: ""
-            }
-            else -> {
-                val offText = context.getString(R.string.drain_state_screen_off)
-                if (tempText != null) "$tempText • $offText" else offText
-            }
-        }.removeEmojis()
+        val (finalTitle, finalContentText, finalBigText) = if (state.isCharging) {
+            val cycleRepo = BatteryCycleRepository.getInstance(context)
+            val activeChargeCycle = cycleRepo.cyclesFlow.value.firstOrNull { it.isActive && it.type == CycleType.CHARGE }
 
-        val title = if (state.batteryLevel != null) {
-            if (currentStateText.isNotBlank()) {
-                "${state.batteryLevel}% • $currentStateText"
-            } else {
-                "${state.batteryLevel}%"
+            val battIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val voltageMv = battIntent?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 4000) ?: 4000
+            val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+
+            var currentMicro = runCatching {
+                bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)?.toLong()
+            }.getOrNull()
+
+            if (currentMicro == null || currentMicro == 0L || currentMicro == Long.MIN_VALUE || currentMicro == Int.MIN_VALUE.toLong()) {
+                currentMicro = runCatching {
+                    File("/sys/class/power_supply/battery/current_now").readText().trim().toLongOrNull()
+                }.getOrNull()
             }
+
+            val currentMa = if (currentMicro != null && currentMicro != 0L) {
+                if (abs(currentMicro) > 10_000L) abs(currentMicro) / 1000L else abs(currentMicro)
+            } else {
+                activeChargeCycle?.telemetryPoints?.lastOrNull()?.let { (it.currentA * 1000L).toLong() } ?: 2000L
+            }
+
+            val voltageV = voltageMv / 1000.0f
+            val currentA = currentMa / 1000.0f
+            val powerWatts = currentA * voltageV
+
+            val screenOffPoints = activeChargeCycle?.telemetryPoints?.filter { !it.isScreenOn }.orEmpty()
+            val avgScreenOffWatts = if (screenOffPoints.isNotEmpty()) {
+                screenOffPoints.map { it.powerWatts }.average()
+            } else {
+                powerWatts.toDouble()
+            }
+
+            val screenOnPoints = activeChargeCycle?.telemetryPoints?.filter { it.isScreenOn }.orEmpty()
+            val avgScreenOnWatts = if (screenOnPoints.isNotEmpty()) {
+                screenOnPoints.map { it.powerWatts }.average()
+            } else {
+                (powerWatts * 0.65).coerceAtLeast(4.0)
+            }
+
+            val chargeTitle = if (state.batteryLevel != null) {
+                val tempPart = if (tempText != null) " • $tempText" else ""
+                "${state.batteryLevel}% • ${String.format(Locale.US, "%.1fW", powerWatts)}$tempPart"
+            } else {
+                context.getString(R.string.drain_state_charging)
+            }
+
+            val chargeContent = "${String.format(Locale.US, "%.1fW", powerWatts)} • ${String.format(Locale.US, "%.2fV", voltageV)} • ${String.format(Locale.US, "%.2fA", currentA)} | Tela desl.: ${String.format(Locale.US, "%.1fW", avgScreenOffWatts)}"
+
+            val chargeBig = buildString {
+                appendLine("Velocidade Atual: ${String.format(Locale.US, "%.1f W (%.2f V • %.2f A)", powerWatts, voltageV, currentA)}")
+                appendLine("Média com Tela Desligada: ${String.format(Locale.US, "%.1f W", avgScreenOffWatts)}")
+                appendLine("Média com Tela Ligada: ${String.format(Locale.US, "%.1f W", avgScreenOnWatts)}")
+                if (activeChargeCycle != null) {
+                    appendLine("Carga Recebida: +${activeChargeCycle.batteryDeltaPercent}% (+${activeChargeCycle.totalMah.toInt()} mAh) em ${formatDuration(activeChargeCycle.durationMs)}")
+                    appendLine("Ciclos de Bateria Gastos: ${String.format(Locale.US, "%.2f ciclos", activeChargeCycle.totalCyclesDelta)}")
+                }
+                if (currentTemp != null) {
+                    append("Temperatura da Bateria: ${Math.round(currentTemp)}°C")
+                }
+            }.trimEnd()
+
+            Triple(chargeTitle, chargeContent, chargeBig)
         } else {
-            if (currentStateText.isNotBlank()) {
-                context.getString(R.string.battery_level_unknown, currentStateText)
+            val currentStateText = when {
+                state.isDeepSleep -> {
+                    val sleepText = context.getString(R.string.drain_state_deep_sleep)
+                    if (tempText != null) "$tempText • $sleepText" else sleepText
+                }
+                state.isDozing -> {
+                    val dozeText = context.getString(R.string.drain_state_dozing)
+                    if (tempText != null) "$tempText • $dozeText" else dozeText
+                }
+                state.isScreenOn -> {
+                    tempText ?: ""
+                }
+                else -> {
+                    val offText = context.getString(R.string.drain_state_screen_off)
+                    if (tempText != null) "$tempText • $offText" else offText
+                }
+            }.removeEmojis()
+
+            val title = if (state.batteryLevel != null) {
+                if (currentStateText.isNotBlank()) {
+                    "${state.batteryLevel}% • $currentStateText"
+                } else {
+                    "${state.batteryLevel}%"
+                }
             } else {
-                context.getString(R.string.battery_level_unknown, "")
-            }
-        }.removeEmojis()
+                if (currentStateText.isNotBlank()) {
+                    context.getString(R.string.battery_level_unknown, currentStateText)
+                } else {
+                    context.getString(R.string.battery_level_unknown, "")
+                }
+            }.removeEmojis()
 
-        val contentText = context.getString(
-            R.string.drain_on_off_sleep,
-            formatDrainPercentage(state.screenOnDrainRatePercent),
-            formatDrainPercentage(state.screenOffDrainRatePercent),
-            formatDrainPercentage(state.deepSleepDrainRatePercent)
-        ).removeEmojis()
+            val contentText = context.getString(
+                R.string.drain_on_off_sleep,
+                formatDrainPercentage(state.screenOnDrainRatePercent),
+                formatDrainPercentage(state.screenOffDrainRatePercent),
+                formatDrainPercentage(state.deepSleepDrainRatePercent)
+            ).removeEmojis()
 
-        val screenOnStr = context.getString(
-            R.string.drain_screen_on_line,
-            formatDrainPercentage(state.screenOnDrainRatePercent),
-            formatDuration(state.screenOnTimeMs)
-        ).removeEmojis()
-        val screenOffStr = context.getString(
-            R.string.drain_screen_off_line,
-            formatDrainPercentage(state.screenOffDrainRatePercent),
-            formatDuration(state.screenOffTimeMs)
-        ).removeEmojis()
-        val deepSleepStr = context.getString(
-            R.string.drain_deep_sleep_line,
-            formatDrainPercentage(state.deepSleepDrainRatePercent),
-            formatDuration(state.deepSleepTimeMs),
-            String.format(Locale.getDefault(), "%.0f%%", state.deepSleepPercentage)
-        ).removeEmojis()
-        val awakeStr = context.getString(
-            R.string.drain_awake_line,
-            formatDrainPercentage(state.awakeDrainRatePercent),
-            formatDuration(state.awakeTimeMs)
-        ).removeEmojis()
-        val activeStr = context.getString(
-            R.string.drain_active_line,
-            formatDrainPercentage(state.activeDrainRatePercent),
-            formatDuration(state.activeTimeMs)
-        ).removeEmojis()
-        val idleStr = context.getString(
-            R.string.drain_idle_line,
-            formatDrainPercentage(state.idleDrainRatePercent),
-            formatDuration(state.idleTimeMs)
-        ).removeEmojis()
-        val totalStr = context.getString(
-            R.string.drain_total_line,
-            String.format(Locale.getDefault(), "%.1f mAh", state.totalDrainMah),
-            formatDuration(state.totalTimeMs)
-        ).removeEmojis()
-        val avgStr = context.getString(
-            R.string.drain_average_line,
-            formatDrainPercentage(state.averageDrainRatePercent)
-        ).removeEmojis()
-        val netStr = context.getString(
-            R.string.drain_network_line,
-            android.text.format.Formatter.formatFileSize(context, state.networkRxBytes),
-            android.text.format.Formatter.formatFileSize(context, state.networkTxBytes)
-        ).removeEmojis()
+            val screenOnStr = context.getString(
+                R.string.drain_screen_on_line,
+                formatDrainPercentage(state.screenOnDrainRatePercent),
+                formatDuration(state.screenOnTimeMs)
+            ).removeEmojis()
+            val screenOffStr = context.getString(
+                R.string.drain_screen_off_line,
+                formatDrainPercentage(state.screenOffDrainRatePercent),
+                formatDuration(state.screenOffTimeMs)
+            ).removeEmojis()
+            val deepSleepStr = context.getString(
+                R.string.drain_deep_sleep_line,
+                formatDrainPercentage(state.deepSleepDrainRatePercent),
+                formatDuration(state.deepSleepTimeMs),
+                String.format(Locale.getDefault(), "%.0f%%", state.deepSleepPercentage)
+            ).removeEmojis()
+            val awakeStr = context.getString(
+                R.string.drain_awake_line,
+                formatDrainPercentage(state.awakeDrainRatePercent),
+                formatDuration(state.awakeTimeMs)
+            ).removeEmojis()
+            val activeStr = context.getString(
+                R.string.drain_active_line,
+                formatDrainPercentage(state.activeDrainRatePercent),
+                formatDuration(state.activeTimeMs)
+            ).removeEmojis()
+            val idleStr = context.getString(
+                R.string.drain_idle_line,
+                formatDrainPercentage(state.idleDrainRatePercent),
+                formatDuration(state.idleTimeMs)
+            ).removeEmojis()
+            val totalStr = context.getString(
+                R.string.drain_total_line,
+                String.format(Locale.getDefault(), "%.1f mAh", state.totalDrainMah),
+                formatDuration(state.totalTimeMs)
+            ).removeEmojis()
+            val avgStr = context.getString(
+                R.string.drain_average_line,
+                formatDrainPercentage(state.averageDrainRatePercent)
+            ).removeEmojis()
+            val netStr = context.getString(
+                R.string.drain_network_line,
+                android.text.format.Formatter.formatFileSize(context, state.networkRxBytes),
+                android.text.format.Formatter.formatFileSize(context, state.networkTxBytes)
+            ).removeEmojis()
 
-        val bigText = buildString {
-            if (showRates) {
-                appendLine("$screenOnStr • $screenOffStr")
-            }
-            if (showDeepSleep) {
-                appendLine("$deepSleepStr • $awakeStr")
-            }
-            if (showActiveIdle) {
-                appendLine("$activeStr • $idleStr")
-            }
-            if (showTotalAvg) {
-                appendLine("$totalStr • $avgStr")
-            }
-            if (showNetwork) {
-                append("$netStr")
-            }
-        }.trimEnd()
+            val bigText = buildString {
+                if (showRates) {
+                    appendLine("$screenOnStr • $screenOffStr")
+                }
+                if (showDeepSleep) {
+                    appendLine("$deepSleepStr • $awakeStr")
+                }
+                if (showActiveIdle) {
+                    appendLine("$activeStr • $idleStr")
+                }
+                if (showTotalAvg) {
+                    appendLine("$totalStr • $avgStr")
+                }
+                if (showNetwork) {
+                    append("$netStr")
+                }
+            }.trimEnd()
+
+            Triple(title, contentText, bigText)
+        }
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_charging)
-            .setContentTitle(title)
-            .setContentText(contentText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+            .setContentTitle(finalTitle)
+            .setContentText(finalContentText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(finalBigText))
             .setContentIntent(contentIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

@@ -84,6 +84,8 @@ class BatteryCycleRepository private constructor(private val context: Context) {
                 Intent.ACTION_BATTERY_CHANGED -> handleBatteryChanged(intent)
                 Intent.ACTION_POWER_CONNECTED -> handlePowerChanged(isCharging = true)
                 Intent.ACTION_POWER_DISCONNECTED -> handlePowerChanged(isCharging = false)
+                Intent.ACTION_SCREEN_ON -> sampleCurrentTelemetryPoint()
+                Intent.ACTION_SCREEN_OFF -> sampleCurrentTelemetryPoint()
             }
         }
     }
@@ -92,7 +94,6 @@ class BatteryCycleRepository private constructor(private val context: Context) {
         loadFromDiskOrBootstrap()
         registerReceiver()
         readHardwareCycleCount()
-        startPeriodicSampling()
     }
 
     private fun registerReceiver() {
@@ -101,19 +102,15 @@ class BatteryCycleRepository private constructor(private val context: Context) {
                 addAction(Intent.ACTION_BATTERY_CHANGED)
                 addAction(Intent.ACTION_POWER_CONNECTED)
                 addAction(Intent.ACTION_POWER_DISCONNECTED)
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
             }
             context.registerReceiver(batteryReceiver, filter)
         }
     }
 
     private fun startPeriodicSampling() {
-        samplingJob?.cancel()
-        samplingJob = scope.launch {
-            while (isActive) {
-                delay(30_000L) // Sample telemetry point every 30 seconds
-                sampleCurrentTelemetryPoint()
-            }
-        }
+        // Replaced with event-driven sampling to prevent idle deep sleep wakeups
     }
 
     private fun readHardwareCycleCount() {

@@ -254,11 +254,16 @@ fun TaskManagerScreen(
         }
     }
 
-    LaunchedEffect(isAutoRefreshEnabled) {
+    LaunchedEffect(isAutoRefreshEnabled, pagerState.currentPage) {
         while (isActive) {
-            refreshAll(showSpinner = false)
+            val currentTab = tabs.getOrNull(pagerState.currentPage)
+            if (currentTab == TaskManagerTab.PROCESSES || currentTab == TaskManagerTab.PERFORMANCE) {
+                refreshAll(showSpinner = false)
+                delay(1500L)
+            } else {
+                delay(4000L)
+            }
             if (!isAutoRefreshEnabled) break
-            delay(1500L)
         }
     }
 
