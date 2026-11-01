@@ -51,7 +51,7 @@
 - **Ergonomia com Uma Mão:** Lista vertical rápida e scrubber alfabético com física de curva gaussiana e feedback tátil.
 - **Monitor de Velocidade de Rede em Tempo Real:** Notificação na barra de status com velocidade instantânea (download/upload), limite mínimo configurável (B, KB, MB), intervalos de atualização personalizáveis (1s a 10s) e identificação precisa em tempo real de quais apps estão consumindo tráfego.
 - **Agenda & Sincronização Inteligente:** Gerenciamento integrado de tarefas e compromissos com suporte a repetições, lembretes pontuais e sincronização bidirecional resiliente com calendários externos e arquivos locais.
-- **Catálogo Oficial de Wallpapers & Live Wallpapers:** Papéis de parede em alta definição via Wallhaven, suporte a vídeos como papel de parede animado e rotação diária automática.
+- **Catálogo Oficial de Wallpapers & Live Wallpapers:** Papéis de parede em alta definição, suporte a vídeos como papel de parede animado e rotação diária automática.
 - **Temas & Cores Dinâmicas:** Material You integrado, OLED Preto Puro, efeitos de vidro fosco translúcido (*Glassmorphism*) via shaders AGSL e adaptação imediata às cores do wallpaper.
 - **Notificações Integradas:** Prévias sob os apps e pop-up expansível translúcido com histórico de mensagens.
 - **Widgets & Now Playing:** Suporte a widgets do Android e controle multimídia integrado com suporte a visualizador de áudio reativo.
@@ -97,7 +97,6 @@ Para detalhes sobre arquitetura, design de componentes e desenvolvimento, consul
 ## 🤝 Créditos / Credits
 
 - **[Niagara Launcher](https://niagaralauncher.app)** — Inspiração do conceito ergonômico em lista vertical.
-- **[Wallhaven](https://wallhaven.cc)** e seus artistas — Coleção oficial de papéis de parede.
 - **[LogFox](https://github.com/F0x1d/LogFox)** — Sistema de captura de logs e diagnóstico.
 - **[BatStats](https://github.com/mlm-games/BatStats)** — Telemetria e análise de bateria.
 - **[Grace Launcher](https://github.com/Galaxy-rio/GraceLauncher)** — Inspiração e referência para a tela de edição e personalização do widget de relógio.

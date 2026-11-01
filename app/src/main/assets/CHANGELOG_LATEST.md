@@ -1,7 +1,7 @@
-### 🚀 Novidades da Versão v0.60.90 (Beta)
+### 🚀 Novidades da Versão v0.60.91 (Beta)
 
-- **Versão Beta:** Introdução experimental do novo sistema de histórico diário e telemetria unificada no Gerenciador de Tarefas para testes.
-- **Histórico Diário do Mês:** Cards compactos com consumo de bateria, apps gastadores, tempo de tela, vezes que cada app foi aberto, reinicializações, média de RAM e gráfico interativo 24h de internet.
-- **Monitor de Segundo Plano:** Aba dedicada com métricas e ranking de apps flagrados consumindo dados com tela apagada e impedindo o sono profundo.
-- **Gerenciador de Tarefas Unificado:** Navegação horizontal suave integrando Processos, Desempenho, Histórico, Segundo Plano, Rede e Bateria em uma barra de abas compacta.
-- **Backup & Restauração Completa:** Histórico diário e anomalias integrados ao sistema de backup `.viagarabackup`.
+- **Versão Beta:** Correções e aprimoramentos para as novas telas do Gerenciador de Tarefas.
+- **Efeito Vidro Aprimorado:** Container `GlassCard` com suporte completo ao shader de refração líquida em todas as abas.
+- **Filtro de Launchers:** Moto App Launcher e telas iniciais do sistema devidamente excluídos da contagem de aberturas de apps.
+- **Rolagem Vertical:** Corrigido o cálculo de layout e restrições nas listas de histórico, segundo plano, rede e bateria.
+- **Créditos Atualizados:** Removidas menções a Wallhaven e adicionados créditos a Grace Launcher.
