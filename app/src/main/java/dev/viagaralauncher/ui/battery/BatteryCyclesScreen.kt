@@ -12,6 +12,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -253,7 +254,11 @@ private fun CycleFilterPill(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
             .background(bgColor)
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
             .padding(vertical = 5.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -282,7 +287,6 @@ private fun CycleItemCard(
         cornerRadiusDp = 14.dp,
         fallbackColor = dynamicSurfaceColor(alpha = 0.70f, tintFraction = 0.18f),
         border = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.22f, tintFraction = 0.25f)),
-        onClick = onToggleExpand,
     ) {
         Column(
             modifier = Modifier
@@ -291,7 +295,14 @@ private fun CycleItemCard(
         ) {
             // Header summary row
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onToggleExpand,
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
@@ -768,7 +779,11 @@ private fun UnitPickerButton(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
             .background(bgColor)
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
             .padding(horizontal = 7.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
