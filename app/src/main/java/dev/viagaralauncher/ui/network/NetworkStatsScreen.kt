@@ -105,6 +105,7 @@ import java.util.Locale
 @Composable
 fun NetworkStatsScreen(
     onNavigateBack: () -> Unit,
+    showHeader: Boolean = true,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -138,13 +139,15 @@ fun NetworkStatsScreen(
     }
 
     Scaffold(
-        containerColor = dynamicSurfaceColor(),
+        containerColor = if (showHeader) dynamicSurfaceColor() else Color.Transparent,
         topBar = {
-            CleanNetworkTopBar(
-                title = "Monitor de Rede por App",
-                onNavigateBack = onNavigateBack,
-                onRefresh = { loadData(selectedPeriod) },
-            )
+            if (showHeader) {
+                CleanNetworkTopBar(
+                    title = "Monitor de Rede por App",
+                    onNavigateBack = onNavigateBack,
+                    onRefresh = { loadData(selectedPeriod) },
+                )
+            }
         },
     ) { paddingValues ->
         Box(

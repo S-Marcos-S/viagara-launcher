@@ -10,6 +10,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.widget.Toast
 import dev.viagaralauncher.R
+import dev.viagaralauncher.history.DailyHistoryRepository
 import dev.viagaralauncher.root.AppRootInspector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +55,7 @@ class BackgroundAnomalyReceiver : BroadcastReceiver() {
 
             Intent.ACTION_BOOT_COMPLETED -> {
                 BackgroundAnomalyWatcher.getInstance(context).start()
+                DailyHistoryRepository.getInstance(context).recordRebootToday()
             }
         }
     }

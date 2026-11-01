@@ -35,6 +35,8 @@ data class BackupMeta(
     val type: BackupType,
     val preferenceCount: Int,
     val agendaCount: Int = 0,
+    val dailyHistoryCount: Int = 0,
+    val anomalyCount: Int = 0,
 )
 
 data class BackupItem(

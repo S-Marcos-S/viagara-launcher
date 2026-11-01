@@ -78,6 +78,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun BatteryStatsScreen(
     onBack: () -> Unit,
+    showHeader: Boolean = true,
     vm: BatteryStatsViewModel = viewModel()
 ) {
     var showAppNames by remember { mutableStateOf(true) }
@@ -179,78 +180,80 @@ fun BatteryStatsScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = dynamicSurfaceColor(alpha = 0.40f, tintFraction = 0.16f),
+        containerColor = if (showHeader) dynamicSurfaceColor(alpha = 0.40f, tintFraction = 0.16f) else Color.Transparent,
         topBar = {
-            LargeTopAppBar(
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = dynamicSurfaceColor(alpha = 0.70f, tintFraction = 0.18f),
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-                title = {
-                    Column {
-                        Text(stringResource(R.string.detailed_stats))
-                        AnimatedVisibility(visible = lastRefresh > 0) {
-                            val timeFormatter = remember(Locale.getDefault()) {
-                                DateTimeFormatter.ofPattern("HH:mm:ss", Locale.getDefault())
+            if (showHeader) {
+                LargeTopAppBar(
+                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = dynamicSurfaceColor(alpha = 0.70f, tintFraction = 0.18f),
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    title = {
+                        Column {
+                            Text(stringResource(R.string.detailed_stats))
+                            AnimatedVisibility(visible = lastRefresh > 0) {
+                                val timeFormatter = remember(Locale.getDefault()) {
+                                    DateTimeFormatter.ofPattern("HH:mm:ss", Locale.getDefault())
+                                }
+                                val formatted = remember(lastRefresh) {
+                                    Instant.ofEpochMilli(lastRefresh)
+                                        .atZone(ZoneId.systemDefault())
+                                        .format(timeFormatter)
+                                }
+                                val via = when (advMode) {
+                                    ShellRunner.Mode.NONE -> ""
+                                    else -> stringResource(R.string.via_mode, advMode.name.lowercase())
+                                }
+                                Text(
+                                    stringResource(R.string.updated, formatted + via),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                            val formatted = remember(lastRefresh) {
-                                Instant.ofEpochMilli(lastRefresh)
-                                    .atZone(ZoneId.systemDefault())
-                                    .format(timeFormatter)
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
+                        }
+                    },
+                    actions = {
+                        if (isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            IconButton(onClick = { scope.launch { vm.refresh() } }) {
+                                Icon(Icons.Outlined.Refresh, stringResource(R.string.refresh))
                             }
-                            val via = when (advMode) {
-                                ShellRunner.Mode.NONE -> ""
-                                else -> stringResource(R.string.via_mode, advMode.name.lowercase())
+                        }
+                        IconButton(onClick = {
+                            scope.launch {
+                                if (vm.resetStats()) {
+                                    snackbarHost.showSnackbar(statsResetSuccessMsg)
+                                    vm.refresh()
+                                } else {
+                                    snackbarHost.showSnackbar(statsResetFailedMsg)
+                                }
                             }
-                            Text(
-                                stringResource(R.string.updated, formatted + via),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        }) {
+                            Icon(Icons.Outlined.RestartAlt, stringResource(R.string.reset_stats))
+                        }
+                        IconButton(onClick = { showAnomalySettingsDialog = true }) {
+                            Icon(
+                                imageVector = if (anomalyConfig.isEnabled) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
+                                contentDescription = stringResource(R.string.anomaly_dialog_title),
+                                tint = if (anomalyConfig.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
-                    }
-                },
-                actions = {
-                    if (isRefreshing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        IconButton(onClick = { scope.launch { vm.refresh() } }) {
-                            Icon(Icons.Outlined.Refresh, stringResource(R.string.refresh))
-                        }
-                    }
-                    IconButton(onClick = {
-                        scope.launch {
-                            if (vm.resetStats()) {
-                                snackbarHost.showSnackbar(statsResetSuccessMsg)
-                                vm.refresh()
-                            } else {
-                                snackbarHost.showSnackbar(statsResetFailedMsg)
-                            }
-                        }
-                    }) {
-                        Icon(Icons.Outlined.RestartAlt, stringResource(R.string.reset_stats))
-                    }
-                    IconButton(onClick = { showAnomalySettingsDialog = true }) {
-                        Icon(
-                            imageVector = if (anomalyConfig.isEnabled) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
-                            contentDescription = stringResource(R.string.anomaly_dialog_title),
-                            tint = if (anomalyConfig.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-                scrollBehavior = scrollBehavior
-            )
+                    },
+                    scrollBehavior = scrollBehavior
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHost) }
     ) { padding ->

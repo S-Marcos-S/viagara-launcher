@@ -36,7 +36,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -49,6 +51,8 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BatteryStd
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
@@ -69,6 +73,10 @@ import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.filled.Wifi
+import dev.viagaralauncher.history.DailyHistoryRepository
+import dev.viagaralauncher.ui.network.NetworkStatsScreen
+import dev.viagaralauncher.ui.battery.BatteryStatsScreen
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -134,6 +142,10 @@ import java.util.Locale
 private enum class TaskManagerTab {
     PROCESSES,
     PERFORMANCE,
+    HISTORY,
+    BACKGROUND,
+    NETWORK,
+    BATTERY,
 }
 
 /**
@@ -219,6 +231,7 @@ fun TaskManagerScreen(
 
             if (ramHistory.size >= 30) ramHistory.removeAt(0)
             ramHistory.add(ramVal)
+            DailyHistoryRepository.getInstance(context).recordRamSample(ramVal.toDouble())
 
             if (netRxHistory.size >= 30) netRxHistory.removeAt(0)
             netRxHistory.add(rxKb)
@@ -269,6 +282,7 @@ fun TaskManagerScreen(
         containerColor = dynamicSurfaceColor(alpha = 0.40f, tintFraction = 0.16f),
         topBar = {
             CleanTaskManagerTopBar(
+                tabs = tabs,
                 selectedTab = tabs.getOrElse(pagerState.currentPage) { TaskManagerTab.PROCESSES },
                 onTabSelect = { targetTab ->
                     scope.launch {
@@ -349,8 +363,56 @@ fun TaskManagerScreen(
                             netRxHistory = netRxHistory,
                             netTxHistory = netTxHistory,
                             batteryHistory = batteryDischargeHistory,
-                            onNavigateToNetworkStats = onNavigateToNetworkStats,
-                            onNavigateToBatteryStats = onNavigateToBatteryStats,
+                            onNavigateToNetworkStats = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(TaskManagerTab.NETWORK.ordinal)
+                                }
+                            },
+                            onNavigateToBatteryStats = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(TaskManagerTab.BATTERY.ordinal)
+                                }
+                            },
+                        )
+                    }
+
+                    TaskManagerTab.HISTORY -> {
+                        DailyHistoryScreen(
+                            allApps = allApps,
+                            onNavigateToBackgroundTab = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(TaskManagerTab.BACKGROUND.ordinal)
+                                }
+                            },
+                        )
+                    }
+
+                    TaskManagerTab.BACKGROUND -> {
+                        BackgroundWatcherScreen(
+                            allApps = allApps,
+                            onInspectApp = { app -> inspectingApp = app },
+                        )
+                    }
+
+                    TaskManagerTab.NETWORK -> {
+                        NetworkStatsScreen(
+                            onNavigateBack = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(TaskManagerTab.PERFORMANCE.ordinal)
+                                }
+                            },
+                            showHeader = false,
+                        )
+                    }
+
+                    TaskManagerTab.BATTERY -> {
+                        BatteryStatsScreen(
+                            onBack = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(TaskManagerTab.PERFORMANCE.ordinal)
+                                }
+                            },
+                            showHeader = false,
                         )
                     }
                 }
@@ -385,6 +447,7 @@ fun TaskManagerScreen(
 
 @Composable
 private fun CleanTaskManagerTopBar(
+    tabs: List<TaskManagerTab>,
     selectedTab: TaskManagerTab,
     onTabSelect: (TaskManagerTab) -> Unit,
     onNavigateBack: () -> Unit,
@@ -392,6 +455,14 @@ private fun CleanTaskManagerTopBar(
     isWatcherActive: Boolean,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedTab) {
+        val idx = tabs.indexOf(selectedTab)
+        if (idx >= 0) {
+            listState.animateScrollToItem(idx)
+        }
+    }
 
     Surface(
         color = dynamicSurfaceColor(alpha = 0.65f, tintFraction = 0.18f),
@@ -418,8 +489,9 @@ private fun CleanTaskManagerTopBar(
 
             Spacer(Modifier.width(6.dp))
 
-            // Cabeçalho com os nomes Processos e Desempenho
-            Row(
+            // Cabeçalho rolável compacto com todas as 6 abas
+            LazyRow(
+                state = listState,
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(16.dp))
@@ -427,21 +499,24 @@ private fun CleanTaskManagerTopBar(
                     .border(1.dp, colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
                     .padding(3.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                ExpressiveTabPill(
-                    title = stringResource(R.string.task_manager_tab_processes),
-                    icon = Icons.Filled.ViewList,
-                    selected = selectedTab == TaskManagerTab.PROCESSES,
-                    onClick = { onTabSelect(TaskManagerTab.PROCESSES) },
-                    modifier = Modifier.weight(1f),
-                )
-                ExpressiveTabPill(
-                    title = stringResource(R.string.task_manager_tab_performance),
-                    icon = Icons.Filled.Speed,
-                    selected = selectedTab == TaskManagerTab.PERFORMANCE,
-                    onClick = { onTabSelect(TaskManagerTab.PERFORMANCE) },
-                    modifier = Modifier.weight(1f),
-                )
+                items(tabs, key = { it.name }) { tab ->
+                    val (title, icon) = when (tab) {
+                        TaskManagerTab.PROCESSES -> stringResource(R.string.task_manager_tab_processes) to Icons.Filled.ViewList
+                        TaskManagerTab.PERFORMANCE -> stringResource(R.string.task_manager_tab_performance) to Icons.Filled.Speed
+                        TaskManagerTab.HISTORY -> stringResource(R.string.task_manager_tab_history) to Icons.Filled.CalendarMonth
+                        TaskManagerTab.BACKGROUND -> stringResource(R.string.task_manager_tab_background) to Icons.Filled.Bedtime
+                        TaskManagerTab.NETWORK -> stringResource(R.string.task_manager_tab_network) to Icons.Filled.Wifi
+                        TaskManagerTab.BATTERY -> stringResource(R.string.task_manager_tab_battery) to Icons.Filled.BatteryChargingFull
+                    }
+                    ExpressiveTabPill(
+                        title = title,
+                        icon = icon,
+                        selected = selectedTab == tab,
+                        onClick = { onTabSelect(tab) },
+                    )
+                }
             }
 
             Spacer(Modifier.width(6.dp))
@@ -480,10 +555,10 @@ private fun ExpressiveTabPill(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp, horizontal = 12.dp),
+            .padding(vertical = 6.dp, horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -491,13 +566,13 @@ private fun ExpressiveTabPill(
                 imageVector = icon,
                 contentDescription = null,
                 tint = contentColor,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(15.dp),
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(5.dp))
             Text(
                 text = title,
                 color = contentColor,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             )
         }

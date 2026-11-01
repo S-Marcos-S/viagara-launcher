@@ -176,6 +176,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
 
     fun clearAnomalies() {
         _anomalies.value = emptyList()
+        AnomalyHistoryRepository.getInstance(context).clearAll()
     }
 
     @Synchronized
@@ -807,6 +808,7 @@ class BackgroundAnomalyWatcher private constructor(private val context: Context)
             current.removeAt(current.size - 1)
         }
         _anomalies.value = current
+        AnomalyHistoryRepository.getInstance(context).recordAnomaly(anomaly)
     }
 
     private fun getForegroundPackage(): String? {
