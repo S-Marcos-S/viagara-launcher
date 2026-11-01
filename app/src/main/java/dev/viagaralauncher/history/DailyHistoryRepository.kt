@@ -17,6 +17,10 @@ import android.os.Build
 import dev.viagaralauncher.root.AppRootInspector
 import dev.viagaralauncher.root.anomaly.AnomalyHistoryRepository
 import dev.viagaralauncher.root.anomaly.AnomalyType
+import dev.viagaralauncher.battery.AdvancedDrainTracker
+import dev.viagaralauncher.battery.BatteryCycleRepository
+import dev.viagaralauncher.battery.CycleType
+import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -94,7 +98,7 @@ class DailyHistoryRepository private constructor(private val context: Context) {
     }
 
     init {
-        loadRecordsFromDisk()
+        loadRecordsFromDiskSync()
         registerBatteryMonitor()
         // Compute today's telemetry on initialization
         scope.launch {
@@ -121,11 +125,16 @@ class DailyHistoryRepository private constructor(private val context: Context) {
         val prevStatus = internalPrefs.getInt(KEY_LAST_BATTERY_STATUS, -1)
 
         val isDischarging = status == BatteryManager.BATTERY_STATUS_DISCHARGING ||
-            status == BatteryManager.BATTERY_STATUS_NOT_CHARGING
+            status == BatteryManager.BATTERY_STATUS_NOT_CHARGING ||
+            status == BatteryManager.BATTERY_STATUS_UNKNOWN
 
-        if (prevLevel != -1 && isDischarging && prevStatus == status && level < prevLevel) {
+        val wasDischarging = prevStatus == BatteryManager.BATTERY_STATUS_DISCHARGING ||
+            prevStatus == BatteryManager.BATTERY_STATUS_NOT_CHARGING ||
+            prevStatus == BatteryManager.BATTERY_STATUS_UNKNOWN
+
+        if (prevLevel != -1 && isDischarging && wasDischarging && level < prevLevel) {
             val delta = prevLevel - level
-            if (delta in 1..20) {
+            if (delta in 1..25) {
                 recordBatteryDrainToday(delta)
             }
         }
@@ -136,16 +145,14 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             .apply()
     }
 
-    private fun loadRecordsFromDisk() {
-        scope.launch {
-            if (!dataFile.exists()) return@launch
-            val content = runCatching { dataFile.readText(Charsets.UTF_8) }.getOrNull() ?: return@launch
-            val map = parseRecordsJson(content)
-            val ignored = getIgnoredLauncherPackages()
-            val sanitized = map.mapValues { (_, rec) -> sanitizeRecord(rec, ignored) }
-            memoryRecords.putAll(sanitized)
-            _recordsFlow.value = HashMap(memoryRecords)
-        }
+    private fun loadRecordsFromDiskSync() {
+        if (!dataFile.exists()) return
+        val content = runCatching { dataFile.readText(Charsets.UTF_8) }.getOrNull() ?: return
+        val map = parseRecordsJson(content)
+        val ignored = getIgnoredLauncherPackages()
+        val sanitized = map.mapValues { (_, rec) -> sanitizeRecord(rec, ignored) }
+        memoryRecords.putAll(sanitized)
+        _recordsFlow.value = HashMap(memoryRecords)
     }
 
     private fun saveRecordsToDisk() {
@@ -163,8 +170,11 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             dateKey = todayKey,
             timestamp = System.currentTimeMillis(),
         )
+        val capacity = runCatching { AdvancedDrainTracker.getInstance(context).drainState.value.batteryCapacityMah }.getOrDefault(4000.0)
+        val newDrain = existing.batteryDrainPercent + deltaPercent
         val updated = existing.copy(
-            batteryDrainPercent = existing.batteryDrainPercent + deltaPercent,
+            batteryDrainPercent = newDrain,
+            batteryDrainMah = ((newDrain / 100.0) * capacity).toLong(),
         )
         memoryRecords[todayKey] = updated
         _recordsFlow.value = HashMap(memoryRecords)
@@ -243,14 +253,35 @@ class DailyHistoryRepository private constructor(private val context: Context) {
         val anomalyCount = anomaliesForDay.size
         val deepSleepCount = anomaliesForDay.count { it.type == AnomalyType.DEEP_SLEEP }
 
-        // 5. Merge with existing recorded battery drain and RAM samples
-        val battDrain = if (existing != null && existing.batteryDrainPercent > 0) {
-            existing.batteryDrainPercent
-        } else {
-            // Fallback estimation based on battery consumer proportions or SOT
-            val estimatedDrain = (eventStats.screenOnTimeMs / (1000L * 60L * 4L)).toInt().coerceIn(10, 100)
-            if (isToday) 0 else estimatedDrain
+        // 5. Merge with recorded battery drain, cycles repository, and tracker telemetry
+        val cyclesRepo = runCatching { BatteryCycleRepository.getInstance(context) }.getOrNull()
+        val todayCycles = cyclesRepo?.cyclesFlow?.value?.filter {
+            it.type == CycleType.DISCHARGE &&
+                ((it.startTimeMs in startOfDay..endOfDay) || (it.endTimeMs in startOfDay..endOfDay) || (it.isActive && it.startTimeMs <= endOfDay))
         }
+        val todayCyclesDrain = todayCycles?.sumOf {
+            if (it.batteryDeltaPercent > 0) it.batteryDeltaPercent
+            else abs(it.startBatteryLevel - it.endBatteryLevel)
+        } ?: 0
+
+        val drainTracker = runCatching { AdvancedDrainTracker.getInstance(context) }.getOrNull()
+        val trackerDrainMah = drainTracker?.drainState?.value?.totalDrainMah ?: 0.0
+        val capacity = drainTracker?.drainState?.value?.batteryCapacityMah ?: 4000.0
+        val trackerDrainPct = if (capacity > 0 && trackerDrainMah > 0) ((trackerDrainMah / capacity) * 100.0).toInt() else 0
+
+        val sotHours = eventStats.screenOnTimeMs / 3600000.0
+        val soffHours = eventStats.screenOffTimeMs / 3600000.0
+        val estimatedDrain = ((sotHours * 12.0) + (soffHours * 1.0)).toInt().coerceIn(0, 100)
+
+        val existingDrain = existing?.batteryDrainPercent ?: 0
+        val calculatedDrain = maxOf(
+            existingDrain,
+            todayCyclesDrain,
+            trackerDrainPct,
+            if (eventStats.screenOnTimeMs > 60_000L) estimatedDrain else 0
+        )
+        val battDrain = if (calculatedDrain > 0) calculatedDrain else existingDrain
+        val battMah = existing?.batteryDrainMah ?: ((battDrain / 100.0) * capacity).toLong()
 
         val ramAvg = if (existing != null && existing.ramSamplesCount > 0) {
             existing.averageRamPercent
@@ -262,7 +293,7 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             dateKey = dateKey,
             timestamp = startOfDay,
             batteryDrainPercent = battDrain,
-            batteryDrainMah = existing?.batteryDrainMah,
+            batteryDrainMah = battMah,
             screenOnTimeMs = eventStats.screenOnTimeMs,
             screenOffTimeMs = eventStats.screenOffTimeMs,
             rebootCount = maxOf(existing?.rebootCount ?: 0, eventStats.rebootCount),

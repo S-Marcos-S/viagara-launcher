@@ -1,4 +1,5 @@
-### 🚀 Novidades da Versão v0.60.93 (Beta)
+### 🚀 Novidades da Versão v0.60.94 (Beta)
 
-- **Remoção de Artefato de Clique:** Eliminado o efeito de onda circular (ripple) gigante ao clicar/expandir os cards de carga e descarga.
-- **Interação Otimizada:** Toque suave e direto no cabeçalho dos cards com feedback visual limpo e sem distrações visuais.
+- **Histórico de Bateria:** Correção no cálculo de consumo diário no Histórico, integrando ciclos acumulados e telemetria para não zerar após recarga.
+- **Ciclos em Tempo Real:** Atualização dinâmica da porcentagem e mAh consumidos/recarregados durante ciclos ativos.
+- **Persistência Confiável:** Sincronização imediata dos registros diários em disco eliminando condições de corrida.

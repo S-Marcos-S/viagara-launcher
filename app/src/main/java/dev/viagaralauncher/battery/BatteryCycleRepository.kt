@@ -255,6 +255,7 @@ class BatteryCycleRepository private constructor(private val context: Context) {
         activeCycle = current.copy(
             endTimeMs = now,
             endBatteryLevel = level,
+            batteryDeltaPercent = deltaPercent,
             totalMah = totalMah,
             totalCyclesDelta = totalCyclesDelta,
             deepSleepTimeMs = updatedDeepSleepMs,
