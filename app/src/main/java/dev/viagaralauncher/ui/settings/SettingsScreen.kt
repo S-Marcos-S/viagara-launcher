@@ -70,7 +70,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.platform.LocalContext
-import dev.viagaralauncher.battery.RootBatteryStatsCollector
 import dev.viagaralauncher.update.RootInstaller
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -179,14 +178,7 @@ fun SettingsScreen(
         surface
     }
     val topBarColor = if (isGlassActive) Color.Transparent else surface
-    var isRootAvailable by remember {
-        mutableStateOf(RootBatteryStatsCollector.isRootCached == true || RootInstaller.isRootAvailable())
-    }
-    LaunchedEffect(Unit) {
-        if (!isRootAvailable) {
-            isRootAvailable = RootBatteryStatsCollector.isRootAvailable()
-        }
-    }
+    val isRootAvailable = remember { RootInstaller.isRootAvailable() }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -541,35 +533,6 @@ fun SettingsScreen(
                             contentDescription = null,
                             modifier = Modifier.padding(4.dp),
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                        )
-                    }
-                    RowDivider()
-                    var showRestoreDialog by remember { mutableStateOf(false) }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showRestoreDialog = true }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Restaurar Apps do Sistema", style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                "Recuperar aplicativos de sistema desinstalados",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            )
-                        }
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowForwardIos,
-                            contentDescription = null,
-                            modifier = Modifier.padding(4.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                        )
-                    }
-                    if (showRestoreDialog) {
-                        dev.viagaralauncher.ui.settings.SystemAppRestoreDialog(
-                            onDismiss = { showRestoreDialog = false }
                         )
                     }
                     RowDivider()

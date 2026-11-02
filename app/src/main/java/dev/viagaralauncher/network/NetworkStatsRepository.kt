@@ -13,8 +13,6 @@ import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Process
 import androidx.core.graphics.drawable.toBitmap
-import dev.viagaralauncher.root.AppRootInspector
-import dev.viagaralauncher.update.RootInstaller
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -42,25 +40,7 @@ class NetworkStatsRepository(private val context: Context) {
             appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
         }
 
-        if (mode == AppOpsManager.MODE_ALLOWED) {
-            return@withContext true
-        }
-
-        // Auto-grant via root if device is rooted
-        if (RootInstaller.isRootAvailable()) {
-            val cmd = "pm grant ${context.packageName} android.permission.PACKAGE_USAGE_STATS 2>/dev/null; appops set ${context.packageName} GET_USAGE_STATS allow 2>/dev/null"
-            AppRootInspector.runSuCommand(cmd)
-
-            val newMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
-            } else {
-                @Suppress("DEPRECATION")
-                appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
-            }
-            return@withContext newMode == AppOpsManager.MODE_ALLOWED
-        }
-
-        false
+        mode == AppOpsManager.MODE_ALLOWED
     }
 
     private fun getAppDetails(packageName: String, uid: Int): AppDetails {

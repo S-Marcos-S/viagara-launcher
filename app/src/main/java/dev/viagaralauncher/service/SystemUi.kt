@@ -2,7 +2,6 @@
 package dev.viagaralauncher.service
 
 import android.content.Context
-import dev.viagaralauncher.battery.RootBatteryStatsCollector
 
 object SystemUi {
     /**
@@ -31,18 +30,11 @@ object SystemUi {
     fun canExpandShade(): Boolean = ViagaraAccessibilityService.isConnected
 
     /**
-     * Locks or turns off the screen.
-     *
-     * If root access is available, executes `input keyevent 26` via root shell to turn off
-     * the display while preserving the system's smooth display sleep animation.
-     * If root is unavailable or fails, falls back transparently to [ViagaraAccessibilityService.lockScreen].
+     * Locks or turns off the screen using [ViagaraAccessibilityService.lockScreen].
      *
      * @return true if the screen was turned off / locked successfully.
      */
     suspend fun lockScreen(): Boolean {
-        if (RootBatteryStatsCollector.lockScreen()) {
-            return true
-        }
         return ViagaraAccessibilityService.lockScreen()
     }
 

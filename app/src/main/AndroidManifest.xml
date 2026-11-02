@@ -9,7 +9,6 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
@@ -33,9 +32,6 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.DUMP"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.READ_LOGS"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
@@ -135,15 +131,6 @@
             </intent-filter>
         </receiver>
 
-        <service
-            android:name=".root.AppLogCaptureService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
-
-        <receiver
-            android:name=".root.LogNotificationReceiver"
-            android:exported="false" />
-
         <receiver
             android:name=".battery.DrainNotificationReceiver"
             android:exported="true">
@@ -152,16 +139,6 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
                 <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
-            </intent-filter>
-        </receiver>
-
-        <receiver
-            android:name=".root.anomaly.BackgroundAnomalyReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="dev.viagaralauncher.action.ANOMALY_FORCE_STOP" />
-                <action android:name="dev.viagaralauncher.action.ANOMALY_MUTE_APP" />
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

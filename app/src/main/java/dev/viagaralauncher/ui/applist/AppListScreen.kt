@@ -64,9 +64,7 @@ import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VisibilityOff
 import android.widget.Toast
-import dev.viagaralauncher.root.AppLogCaptureService
-import dev.viagaralauncher.root.AppUninstallManager
-import dev.viagaralauncher.ui.common.ConfirmUninstallDialog
+import dev.viagaralauncher.util.AppUninstallManager
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -194,11 +192,6 @@ fun AppListScreen(
 ) {
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.viagaralauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
-    var rootInspectorFor by remember { mutableStateOf<AppInfo?>(null) }
-    var logViewerFor by remember { mutableStateOf<AppInfo?>(null) }
-    var confirmUninstallFor by remember { mutableStateOf<AppInfo?>(null) }
-    val capturingPackages by AppLogCaptureService.capturingPackages.collectAsState()
-    val capturingPackage by AppLogCaptureService.capturingPackage.collectAsState()
     val context = LocalContext.current
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
@@ -787,7 +780,6 @@ fun AppListScreen(
 
         appMenuFor?.let { app ->
             val isFavorite = favoriteKeys.contains(app.key)
-            val isRootAvailable = remember { dev.viagaralauncher.update.RootInstaller.isRootAvailable() }
             val menuItems = buildList {
                 add(
                     dev.viagaralauncher.ui.common.AppMenuItem(
@@ -796,38 +788,6 @@ fun AppListScreen(
                         onClick = { onSetFavorite(app, !isFavorite) },
                     )
                 )
-                if (isRootAvailable || dev.viagaralauncher.root.log.TerminalEngine.hasReadLogsPermission(context)) {
-                    add(
-                        dev.viagaralauncher.ui.common.AppMenuItem(
-                            title = stringResource(R.string.action_inspect_logs),
-                            icon = Icons.Filled.BugReport,
-                            onClick = { logViewerFor = app },
-                        )
-                    )
-                }
-                if (isRootAvailable) {
-                    add(
-                        dev.viagaralauncher.ui.common.AppMenuItem(
-                            title = stringResource(R.string.action_root_inspect_app),
-                            icon = Icons.Filled.Terminal,
-                            onClick = { rootInspectorFor = app },
-                        )
-                    )
-                    val isCurrentlyCapturing = capturingPackages.contains(app.packageName) || capturingPackage == app.packageName
-                    add(
-                        dev.viagaralauncher.ui.common.AppMenuItem(
-                            title = stringResource(if (isCurrentlyCapturing) R.string.action_stop_save_logs else R.string.action_capture_logs),
-                            icon = Icons.Filled.FiberManualRecord,
-                            onClick = {
-                                if (isCurrentlyCapturing) {
-                                    AppLogCaptureService.saveLog(context)
-                                } else {
-                                    AppLogCaptureService.startCapture(context, app.packageName, displayName(app))
-                                }
-                            },
-                        )
-                    )
-                }
                 add(
                     dev.viagaralauncher.ui.common.AppMenuItem(
                         title = stringResource(R.string.action_edit_icon_and_name),
@@ -863,27 +823,7 @@ fun AppListScreen(
                             title = stringResource(R.string.action_uninstall),
                             icon = Icons.Filled.DeleteForever,
                             onClick = {
-                                val isRoot = AppUninstallManager.isRootAvailable()
-                                val isSystem = AppUninstallManager.isSystemApp(context, app.packageName)
-                                if (isRoot) {
-                                    if (isSystem) {
-                                        confirmUninstallFor = app
-                                    } else {
-                                        val appName = displayName(app)
-                                        Toast.makeText(context, context.getString(R.string.uninstall_toast_progress, appName), Toast.LENGTH_SHORT).show()
-                                        scope.launch {
-                                            val result = AppUninstallManager.uninstallViaRoot(app.packageName)
-                                            if (result.isSuccess) {
-                                                Toast.makeText(context, context.getString(R.string.uninstall_toast_success, appName), Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                val error = result.exceptionOrNull()?.message ?: ""
-                                                Toast.makeText(context, context.getString(R.string.uninstall_toast_failed, appName, error), Toast.LENGTH_LONG).show()
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    AppUninstallManager.uninstallStandard(context, app.packageName)
-                                }
+                                AppUninstallManager.uninstallStandard(context, app.packageName)
                             },
                             isDestructive = true,
                         )
@@ -896,53 +836,6 @@ fun AppListScreen(
                 displayName = displayName(app),
                 onDismissRequest = { appMenuFor = null },
                 items = menuItems,
-            )
-        }
-
-        confirmUninstallFor?.let { target ->
-            val isSystem = remember(target.packageName) { AppUninstallManager.isSystemApp(context, target.packageName) }
-            val isRoot = remember { AppUninstallManager.isRootAvailable() }
-            ConfirmUninstallDialog(
-                app = target,
-                displayName = displayName(target),
-                isSystemApp = isSystem,
-                onDismissRequest = { confirmUninstallFor = null },
-                onConfirm = {
-                    confirmUninstallFor = null
-                    val appName = displayName(target)
-                    if (isRoot) {
-                        Toast.makeText(context, context.getString(R.string.uninstall_toast_progress, appName), Toast.LENGTH_SHORT).show()
-                        scope.launch {
-                            val result = AppUninstallManager.uninstallViaRoot(target.packageName)
-                            if (result.isSuccess) {
-                                Toast.makeText(context, context.getString(R.string.uninstall_toast_success, appName), Toast.LENGTH_SHORT).show()
-                            } else {
-                                val error = result.exceptionOrNull()?.message ?: ""
-                                Toast.makeText(context, context.getString(R.string.uninstall_toast_failed, appName, error), Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    } else {
-                        AppUninstallManager.uninstallStandard(context, target.packageName)
-                    }
-                },
-            )
-        }
-
-        rootInspectorFor?.let { target ->
-            LaunchedEffect(target) {
-                dev.viagaralauncher.ui.root.FloatingAppInspectorOverlayManager.show(
-                    context = context,
-                    app = target,
-                    displayName = displayName(target),
-                )
-                rootInspectorFor = null
-            }
-        }
-
-        logViewerFor?.let { target ->
-            dev.viagaralauncher.ui.root.AppLogViewerDialog(
-                initialApp = target,
-                onDismissRequest = { logViewerFor = null },
             )
         }
 

@@ -54,7 +54,6 @@ import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Widgets
 import android.widget.Toast
-import dev.viagaralauncher.root.AppUninstallManager
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -106,7 +105,6 @@ fun HomeOptionsBottomSheet(
     visible: Boolean,
     onDismiss: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenTaskManager: () -> Unit = {},
     onManageFavorites: () -> Unit,
     onAddWidget: () -> Unit,
     onOpenClockStyle: () -> Unit = {},
@@ -451,15 +449,6 @@ fun HomeOptionsBottomSheet(
                     label = stringResource(R.string.settings_title),
                     onClick = { onDismiss(); onOpenSettings() },
                 )
-
-                val isRoot = remember { AppUninstallManager.isRootAvailable() }
-                if (isRoot) {
-                    OptionItem(
-                        icon = Icons.Filled.Speed,
-                        label = stringResource(R.string.task_manager_title),
-                        onClick = { onDismiss(); onOpenTaskManager() },
-                    )
-                }
 
                 OptionItem(
                     icon = Icons.Filled.Image,

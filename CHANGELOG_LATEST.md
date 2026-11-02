@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.60.95 (Beta)
+### 🚀 Novidades da Versão v0.60.96 (Beta)
 
-- **Reset de Bateria:** Correção no reset automático ao carregar até o alvo configurado ou 100%, com suporte a exportação de eventos do sistema.
-- **Opções de Inicialização:** Escolha pelo usuário de resetar estatísticas ao carregar e/ou ao reiniciar o celular.
-- **Gráfico no Histórico:** Gráfico de linha compacto nas 24h com cores distintas para tela ligada, sono profundo e celular desligado.
+- **Desacoplamento do Gerenciador de Tarefas:** Migração completa do Task Manager, Inspetor Root, Anomaly Watcher e telemetria avançada para o app independente MAY Task Manager.
+- **Launcher Mais Leve e Rápido:** Remoção de serviços pesados em segundo plano, mantendo o launcher focado em fluidez, personalização e minimalismo.
+- **Instalação Root e Visualizador Preservados:** Mantido o instalador root direto para atualizações do launcher e o daemon root do visualizador de áudio.

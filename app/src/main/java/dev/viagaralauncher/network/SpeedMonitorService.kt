@@ -31,7 +31,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.IconCompat
 import dev.viagaralauncher.MainActivity
 import dev.viagaralauncher.R
-import dev.viagaralauncher.update.RootInstaller
 import java.util.Calendar
 import java.util.Locale
 
@@ -436,20 +435,8 @@ class SpeedMonitorService : Service() {
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    private fun tryAutoGrantUsagePermission() {
-        if (RootInstaller.isRootAvailable()) {
-            Thread {
-                try {
-                    val cmd = "pm grant $packageName android.permission.PACKAGE_USAGE_STATS 2>/dev/null; cmd appops set $packageName GET_USAGE_STATS allow 2>/dev/null; appops set $packageName GET_USAGE_STATS allow 2>/dev/null"
-                    Runtime.getRuntime().exec(arrayOf("su", "-c", cmd)).waitFor()
-                } catch (_: Exception) {}
-            }.start()
-        }
-    }
-
     private fun takeAppsBaselineSnapshot() {
         if (!hasUsageStatsPermission()) {
-            tryAutoGrantUsagePermission()
             return
         }
         val nsm = getSystemService(Context.NETWORK_STATS_SERVICE) as? NetworkStatsManager ?: return

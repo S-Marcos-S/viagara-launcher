@@ -92,16 +92,6 @@ class DrainNotificationManager private constructor(
             drainTracker.start()
         }
 
-        if (Build.VERSION.SDK_INT >= 33) {
-            if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                scope.launch {
-                    if (RootBatteryStatsCollector.isRootAvailable()) {
-                        RootBatteryStatsCollector.runAsRoot("pm grant ${context.packageName} android.permission.POST_NOTIFICATIONS")
-                    }
-                }
-            }
-        }
-        
         updateNow()
 
         updateJob = scope.launch {

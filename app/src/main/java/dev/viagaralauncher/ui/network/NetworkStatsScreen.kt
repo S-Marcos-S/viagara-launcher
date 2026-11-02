@@ -95,7 +95,6 @@ import dev.viagaralauncher.network.SpeedMonitorService
 import dev.viagaralauncher.network.StatsPeriod
 import dev.viagaralauncher.network.StatsUiState
 import dev.viagaralauncher.network.TimePeriodStats
-import dev.viagaralauncher.root.AppRootInspector
 import dev.viagaralauncher.ui.theme.LocalGlassThemeActive
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
 import dev.viagaralauncher.ui.theme.glass.GlassCard
@@ -179,15 +178,6 @@ fun NetworkStatsScreen(
 
                     is StatsUiState.NoPermission -> {
                         PermissionRequestCard(
-                            onGrantRoot = {
-                                scope.launch {
-                                    AppRootInspector.runSuCommand(
-                                        "pm grant ${context.packageName} android.permission.PACKAGE_USAGE_STATS 2>/dev/null; " +
-                                            "appops set ${context.packageName} GET_USAGE_STATS allow 2>/dev/null",
-                                    )
-                                    loadData(selectedPeriod)
-                                }
-                            },
                             onOpenSettings = {
                                 context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                             },
@@ -1231,7 +1221,6 @@ private fun AppNetworkUsageItem(
 
 @Composable
 private fun PermissionRequestCard(
-    onGrantRoot: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -1271,15 +1260,6 @@ private fun PermissionRequestCard(
         Spacer(Modifier.height(24.dp))
 
         Button(
-            onClick = onGrantRoot,
-            modifier = Modifier.fillMaxWidth(0.85f),
-        ) {
-            Text("Conceder via Root")
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedButton(
             onClick = onOpenSettings,
             modifier = Modifier.fillMaxWidth(0.85f),
         ) {

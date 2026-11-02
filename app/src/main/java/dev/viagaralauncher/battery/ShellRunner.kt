@@ -30,7 +30,7 @@ class ShellRunner(private val context: Context) {
         }
     }
 
-    enum class Mode { ROOT, ADB, NONE }
+    enum class Mode { ADB, NONE }
 
     data class ShellResult(
         val output: String,
@@ -57,36 +57,8 @@ class ShellRunner(private val context: Context) {
         (exec(cmd) as? Outcome.Success)?.let { ShellResult(it.output, it.mode) }
 
     suspend fun exec(cmd: String, allowEmpty: Boolean = false): Outcome = withContext(Dispatchers.IO) {
-        var lastFailure: Outcome.Failure? = null
-
         fun usable(out: String?): Boolean =
             out != null && (allowEmpty || out.isNotBlank()) && !isErrorOutput(out)
-
-        val isRoot = RootBatteryStatsCollector.isRootAvailable()
-
-        // If root is available, ensure DUMP / BATTERY_STATS are granted to this app for direct fast access
-        if (isRoot && !hasAttemptedPermissionGrant) {
-            hasAttemptedPermissionGrant = true
-            try {
-                val pkg = context.packageName
-                RootBatteryStatsCollector.runAsRoot("pm grant $pkg android.permission.DUMP")
-                RootBatteryStatsCollector.runAsRoot("pm grant $pkg android.permission.BATTERY_STATS")
-                RootBatteryStatsCollector.runAsRoot("pm grant $pkg android.permission.PACKAGE_USAGE_STATS")
-                if (android.os.Build.VERSION.SDK_INT >= 33) {
-                    RootBatteryStatsCollector.runAsRoot("pm grant $pkg android.permission.POST_NOTIFICATIONS")
-                }
-            } catch (_: Exception) {}
-        }
-
-        // If root is available, execute via su
-        if (isRoot) {
-            val rootOut = RootBatteryStatsCollector.runAsRoot(cmd)
-            if (usable(rootOut)) {
-                Log.d(TAG, "Ran via ROOT: $cmd (${rootOut!!.length} chars)")
-                return@withContext Outcome.Success(rootOut, Mode.ROOT)
-            }
-            lastFailure = Outcome.Failure(Mode.ROOT, "Root command returned empty or unusable output")
-        }
 
         // Try direct ADB/dump if permissions are granted
         if (hasDumpPermission(context) || hasBatteryStatsPermission(context)) {
@@ -104,7 +76,7 @@ class ShellRunner(private val context: Context) {
         }
 
         Log.w(TAG, "All runners failed for: $cmd")
-        lastFailure ?: Outcome.Failure(Mode.NONE, "Acesso privilegiado (Root ou DUMP via ADB) não disponível.")
+        Outcome.Failure(Mode.NONE, "Acesso via DUMP/ADB não disponível.")
     }
 
     private fun runDirect(cmd: String): String? {
@@ -149,7 +121,6 @@ class ShellRunner(private val context: Context) {
     }
 
     private suspend fun probeMode(): Mode = withContext(Dispatchers.IO) {
-        if (RootBatteryStatsCollector.isRootAvailable()) return@withContext Mode.ROOT
         if (hasDumpPermission(context) || hasBatteryStatsPermission(context)) {
             val out = runDirect("dumpsys battery")
             if (!out.isNullOrBlank() && !isErrorOutput(out)) return@withContext Mode.ADB
@@ -160,7 +131,6 @@ class ShellRunner(private val context: Context) {
     fun invalidateMode() {
         cachedMode = null
         cachedModeAt = 0L
-        RootBatteryStatsCollector.invalidateRootCache()
     }
 
     suspend fun hasAnyPrivilegedAccess(): Boolean = detectMode() != Mode.NONE

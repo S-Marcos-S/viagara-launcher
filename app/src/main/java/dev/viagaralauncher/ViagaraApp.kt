@@ -59,19 +59,6 @@ class ViagaraApp : Application() {
         if (dev.viagaralauncher.network.NetSpeedSettings(this).isEnabled) {
             dev.viagaralauncher.network.SpeedMonitorService.start(this)
         }
-        val anomalyWatcher = dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(this)
-        if (anomalyWatcher.config.value.isEnabled) {
-            anomalyWatcher.start()
-        }
-        val enforceDoze = dev.viagaralauncher.battery.EnforceDozeController.getInstance(this)
-        if (enforceDoze.isEnabled.value) {
-            // Already automatically registered receiver in controller init
-        }
-    }
-
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(this).onSystemTrimMemory(level)
     }
 
     companion object {

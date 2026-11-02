@@ -49,7 +49,6 @@ import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.glass.GlassCard
 import dev.viagaralauncher.R
 import dev.viagaralauncher.battery.BatteryStatsParser
-import dev.viagaralauncher.battery.RootBatteryStatsCollector
 import dev.viagaralauncher.battery.ShellRunner
 import dev.viagaralauncher.battery.LocalShowAppNames
 import dev.viagaralauncher.battery.rememberAppLabel
@@ -68,8 +67,6 @@ import dev.viagaralauncher.battery.DrainState
 import dev.viagaralauncher.battery.formatDuration
 import dev.viagaralauncher.battery.formatDrainRate
 import dev.viagaralauncher.battery.formatDrainPercentage
-import dev.viagaralauncher.root.SystemTaskInspector
-import dev.viagaralauncher.ui.root.RealtimeTelemetryGraph
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.Dispatchers
@@ -91,16 +88,9 @@ fun BatteryStatsScreen(
     val error by vm.error.collectAsStateWithLifecycle()
     val drainState by vm.drainState.collectAsStateWithLifecycle()
     val isDrainNotificationEnabled by vm.isDrainNotificationEnabled.collectAsStateWithLifecycle()
-    val anomalyConfig by vm.anomalyConfig.collectAsStateWithLifecycle()
-    var showAnomalySettingsDialog by remember { mutableStateOf(false) }
-    val hasRoot by vm.hasRoot.collectAsStateWithLifecycle()
     val hasAdb by vm.hasAdb.collectAsStateWithLifecycle()
     val hasAdvanced by vm.hasAdvanced.collectAsStateWithLifecycle()
     val advMode by vm.advMode.collectAsStateWithLifecycle()
-    val kernelBattery by vm.kernelBattery.collectAsStateWithLifecycle()
-    val kernelWakelocksFlow by vm.kernelWakelocks.collectAsStateWithLifecycle()
-    val isEnforceDozeEnabled by vm.isEnforceDozeEnabled.collectAsStateWithLifecycle()
-    val isEnforcingDoze by vm.isEnforcingDoze.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -116,7 +106,6 @@ fun BatteryStatsScreen(
             StatsTab(R.string.tab_network, Icons.Outlined.Wifi),
             StatsTab(R.string.tab_alarms, Icons.Outlined.Schedule),
             StatsTab(R.string.tab_system, Icons.Outlined.SettingsApplications),
-            StatsTab(R.string.tab_root, Icons.Outlined.AdminPanelSettings),
             StatsTab(R.string.settings, Icons.Outlined.Settings)
         )
     }
@@ -147,36 +136,8 @@ fun BatteryStatsScreen(
         }
     }
 
-    var liveBatteryInfo by remember { mutableStateOf<SystemTaskInspector.BatteryInfoSample?>(null) }
-    val batteryDischargeHistory = remember { mutableStateListOf<Float>() }
-
     LaunchedEffect(Unit) {
         vm.refresh()
-    }
-
-    LaunchedEffect(isDrainNotificationEnabled) {
-        val initial = withContext(Dispatchers.IO) {
-            SystemTaskInspector.sampleBatteryInfo(context)
-        }
-        liveBatteryInfo = initial
-        val initMa = kotlin.math.abs(initial.currentNowMa ?: 0L).toFloat()
-        if (batteryDischargeHistory.isEmpty()) {
-            batteryDischargeHistory.add(initMa)
-        }
-        if (isDrainNotificationEnabled) {
-            while (isActive) {
-                delay(1500L)
-                val sample = withContext(Dispatchers.IO) {
-                    SystemTaskInspector.sampleBatteryInfo(context)
-                }
-                liveBatteryInfo = sample
-                val battMa = kotlin.math.abs(sample.currentNowMa ?: 0L).toFloat()
-                if (batteryDischargeHistory.size >= 30) {
-                    batteryDischargeHistory.removeAt(0)
-                }
-                batteryDischargeHistory.add(battMa)
-            }
-        }
     }
 
     Scaffold(
@@ -244,13 +205,6 @@ fun BatteryStatsScreen(
                         }) {
                             Icon(Icons.Outlined.RestartAlt, stringResource(R.string.reset_stats))
                         }
-                        IconButton(onClick = { showAnomalySettingsDialog = true }) {
-                            Icon(
-                                imageVector = if (anomalyConfig.isEnabled) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
-                                contentDescription = stringResource(R.string.anomaly_dialog_title),
-                                tint = if (anomalyConfig.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
                     },
                     scrollBehavior = scrollBehavior
                 )
@@ -266,7 +220,6 @@ fun BatteryStatsScreen(
             if (!hasAdvanced) {
                 PrivilegeRequiredCard(
                     hasAdb = hasAdb,
-                    hasRoot = hasRoot,
                     onRecheck = { vm.refresh(forceRefresh = true) }
                 )
             } else {
@@ -328,42 +281,17 @@ fun BatteryStatsScreen(
                                 isDrainNotificationEnabled = isDrainNotificationEnabled,
                                 onToggleDrainNotification = { vm.toggleDrainNotification(it) },
                                 onResetDrainSession = { vm.resetDrainSession() },
-                                batteryLiveInfo = liveBatteryInfo,
-                                batteryDischargeHistory = batteryDischargeHistory,
-                                anomalyConfig = anomalyConfig,
-                                onToggleAnomalyNotification = { vm.toggleAnomalyNotification(it) },
-                                onOpenAnomalySettings = { showAnomalySettingsDialog = true },
-                                isEnforceDozeEnabled = isEnforceDozeEnabled,
-                                isEnforcingDoze = isEnforcingDoze,
-                                onToggleEnforceDoze = { vm.setEnforceDozeEnabled(it) },
-                                onConfigureEnforceDoze = { scope.launch { pagerState.animateScrollToPage(7) } },
                             )
                             1 -> AppsTab(
                                 apps = snapshot?.apps ?: emptyList(),
                                 estimatedCapacityMah = snapshot?.estimatedCapacityMah ?: 0,
                                 totalDischargePercent = (snapshot?.screenOnDischargePercent ?: 0f) + (snapshot?.screenOffDischargePercent ?: 0f),
                             )
-                            2 -> {
-                                val kwl = if (snapshot?.kernelWakelocks.isNullOrEmpty()) {
-                                    kernelWakelocksFlow.map { 
-                                        BatteryStatsParser.KernelWakelockStats(
-                                            name = it.name,
-                                            count = it.count,
-                                            totalTimeMs = it.totalTime / 1_000_000L,
-                                            activeCount = it.activeCount,
-                                            maxTimeMs = it.maxTime / 1_000_000L
-                                        )
-                                    }
-                                } else {
-                                    snapshot?.kernelWakelocks ?: emptyList()
-                                }
-                                WakelocksTab(snapshot?.wakelocks ?: emptyList(), kwl)
-                            }
+                            2 -> WakelocksTab(snapshot?.wakelocks ?: emptyList(), snapshot?.kernelWakelocks ?: emptyList())
                             3 -> NetworkTab(snapshot?.network ?: emptyList())
                             4 -> AlarmsJobsTab(snapshot?.alarms ?: emptyList(), snapshot?.jobs ?: emptyList(), snapshot?.syncs ?: emptyList())
                             5 -> SystemTab(snapshot, deviceIdle, powerManager)
-                            6 -> RootTab(hasRoot, kernelBattery, onRefresh = { vm.refreshRootStats() })
-                            7 -> BatterySettingsTab(vm)
+                            6 -> BatterySettingsTab(vm)
                         }
                     }
                 }
@@ -409,11 +337,6 @@ fun BatteryStatsScreen(
         }
     }
 
-    if (showAnomalySettingsDialog) {
-        dev.viagaralauncher.ui.root.BackgroundAnomalySettingsDialog(
-            onDismissRequest = { showAnomalySettingsDialog = false },
-        )
-    }
 }
 
 private data class StatsTab(val titleRes: Int, val icon: ImageVector)
@@ -421,7 +344,6 @@ private data class StatsTab(val titleRes: Int, val icon: ImageVector)
 @Composable
 private fun PrivilegeRequiredCard(
     hasAdb: Boolean,
-    hasRoot: Boolean,
     onRecheck: () -> Unit
 ) {
     val context = LocalContext.current
@@ -449,7 +371,6 @@ private fun PrivilegeRequiredCard(
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                         StatusChip(stringResource(R.string.adb_dump), hasAdb)
-                        StatusChip(stringResource(R.string.root), hasRoot)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = onRecheck) { Text(stringResource(R.string.recheck)) }
@@ -742,15 +663,6 @@ private fun OverviewTab(
     isDrainNotificationEnabled: Boolean,
     onToggleDrainNotification: (Boolean) -> Unit,
     onResetDrainSession: () -> Unit,
-    batteryLiveInfo: SystemTaskInspector.BatteryInfoSample?,
-    batteryDischargeHistory: List<Float>,
-    anomalyConfig: dev.viagaralauncher.root.anomaly.AnomalyWatcherConfig,
-    onToggleAnomalyNotification: (Boolean) -> Unit,
-    onOpenAnomalySettings: () -> Unit,
-    isEnforceDozeEnabled: Boolean,
-    isEnforcingDoze: Boolean,
-    onToggleEnforceDoze: (Boolean) -> Unit,
-    onConfigureEnforceDoze: () -> Unit,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -764,410 +676,12 @@ private fun OverviewTab(
                 onResetSession = onResetDrainSession
             )
         }
-        item {
-            AnimatedVisibility(
-                visible = isDrainNotificationEnabled,
-                enter = expandVertically(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMediumLow
-                    )
-                ) + fadeIn(),
-                exit = shrinkVertically(
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessMediumLow
-                    )
-                ) + fadeOut()
-            ) {
-                LiveBatteryChartsCard(
-                    batteryInfo = batteryLiveInfo,
-                    history = batteryDischargeHistory,
-                )
-            }
-        }
-        item {
-            BackgroundAnomalyCard(
-                config = anomalyConfig,
-                onToggle = onToggleAnomalyNotification,
-                onOpenSettings = onOpenAnomalySettings,
-            )
-        }
-        item {
-            EnforceDozeCard(
-                isEnabled = isEnforceDozeEnabled,
-                isEnforcing = isEnforcingDoze,
-                onToggle = onToggleEnforceDoze,
-                onConfigure = onConfigureEnforceDoze,
-            )
-        }
         item { SummaryCard(snapshot) }
         item { DischargeBreakdownCard(snapshot) }
         item { SignalQualityCard(snapshot) }
         item { DozeStatsCard(snapshot?.doze, deviceIdle) }
         item { BluetoothCard(snapshot?.bluetooth) }
         item { CurrentStateCard(deviceIdle, powerManager) }
-    }
-}
-
-@Composable
-private fun LiveBatteryChartsCard(
-    batteryInfo: SystemTaskInspector.BatteryInfoSample?,
-    history: List<Float>,
-    modifier: Modifier = Modifier,
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val battPct = batteryInfo?.percent ?: 0
-    val isCharging = batteryInfo?.isCharging ?: false
-    val currentMa = batteryInfo?.currentNowMa
-    val powerWatts = batteryInfo?.powerWatts
-    val voltageMv = batteryInfo?.voltageMv
-    val tempC = batteryInfo?.tempCelsius ?: 0f
-    val health = batteryInfo?.health ?: "Boa"
-
-    val battAccent = when {
-        isCharging -> Color(0xFF10B981) // Green
-        battPct <= 20 -> Color(0xFFEF4444) // Red
-        battPct <= 40 -> Color(0xFFF59E0B) // Amber
-        else -> Color(0xFF10B981) // Green
-    }
-
-    val headline = "$battPct% · ${if (isCharging) stringResource(R.string.task_manager_battery_charging) else stringResource(R.string.task_manager_battery_discharging)}"
-    val subHeadline = if (currentMa != null && currentMa != 0L) {
-        val sign = if (currentMa > 0 && isCharging) "+" else if (!isCharging && currentMa > 0) "-" else ""
-        val wattStr = if (powerWatts != null) " (${String.format(Locale.US, "%.2f", powerWatts)} W)" else ""
-        "$sign${currentMa} mA$wattStr"
-    } else {
-        stringResource(R.string.task_manager_battery_power_supply)
-    }
-
-    FrostedCard(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(2.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Card Title Header Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ShowChart,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.live_battery_charts_title),
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorScheme.onSurface
-                    )
-                }
-
-                // Live Pulse Badge
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF10B981).copy(alpha = 0.15f),
-                    border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.35f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF10B981))
-                        )
-                        Text(
-                            text = stringResource(R.string.task_manager_live_badge),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981)
-                        )
-                    }
-                }
-            }
-
-            // Section: "Bateria & Energia" Live Telemetry Graph
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(battAccent.copy(alpha = 0.16f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = if (isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.BatteryStd,
-                        contentDescription = null,
-                        tint = battAccent,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-                Spacer(Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.task_manager_battery_title),
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = subHeadline,
-                        fontSize = 11.sp,
-                        color = colorScheme.onSurface.copy(alpha = 0.60f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = headline,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = battAccent,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    maxLines = 1,
-                )
-            }
-
-            // Interactive Expressive Telemetry Chart
-            RealtimeTelemetryGraph(
-                history = history,
-                color = battAccent,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(95.dp),
-            )
-
-            HorizontalDivider(
-                color = colorScheme.outline.copy(alpha = 0.10f),
-                thickness = 1.dp,
-            )
-
-            // Specs Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                ChartSpecItem(
-                    label = stringResource(R.string.task_manager_battery_voltage),
-                    value = if (voltageMv != null && voltageMv > 0L) "${String.format(Locale.US, "%.2f", voltageMv / 1000.0)} V" else "—",
-                )
-                ChartSpecItem(
-                    label = stringResource(R.string.task_manager_battery_temp),
-                    value = if (tempC > 0f) "${String.format(Locale.US, "%.1f", tempC)} °C" else "—",
-                )
-                ChartSpecItem(
-                    label = stringResource(R.string.task_manager_battery_health),
-                    value = health,
-                )
-                ChartSpecItem(
-                    label = stringResource(R.string.power_label),
-                    value = if (powerWatts != null) "${String.format(Locale.US, "%.2f", powerWatts)} W" else "—",
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ChartSpecItem(
-    label: String,
-    value: String,
-) {
-    Column {
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
-        )
-        Spacer(Modifier.height(1.dp))
-        Text(
-            text = value,
-            fontSize = 12.5.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-        )
-    }
-}
-
-@Composable
-private fun BackgroundAnomalyCard(
-    config: dev.viagaralauncher.root.anomaly.AnomalyWatcherConfig,
-    onToggle: (Boolean) -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    FrostedCard(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(2.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = if (config.isEnabled) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
-                        contentDescription = null,
-                        tint = if (config.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.battery_anomaly_card_title),
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    IconButton(
-                        onClick = onOpenSettings,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Outlined.Tune,
-                            contentDescription = stringResource(R.string.battery_anomaly_configure),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Switch(
-                        checked = config.isEnabled,
-                        onCheckedChange = onToggle,
-                        modifier = Modifier.scale(0.80f)
-                    )
-                }
-            }
-
-            Text(
-                text = stringResource(R.string.battery_anomaly_card_desc),
-                fontSize = 11.sp,
-                lineHeight = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun EnforceDozeCard(
-    isEnabled: Boolean,
-    isEnforcing: Boolean,
-    onToggle: (Boolean) -> Unit,
-    onConfigure: () -> Unit,
-) {
-    FrostedCard(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(2.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = if (isEnabled) Icons.Filled.PowerSettingsNew else Icons.Outlined.PowerSettingsNew,
-                        contentDescription = null,
-                        tint = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.enforce_doze_title),
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    IconButton(
-                        onClick = onConfigure,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Outlined.Tune,
-                            contentDescription = stringResource(R.string.battery_anomaly_configure),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Switch(
-                        checked = isEnabled,
-                        onCheckedChange = onToggle,
-                        modifier = Modifier.scale(0.80f)
-                    )
-                }
-            }
-
-            Text(
-                text = stringResource(R.string.enforce_doze_desc),
-                fontSize = 11.sp,
-                lineHeight = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (isEnabled) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.padding(top = 2.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isEnforcing) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
-                            )
-                    )
-                    Text(
-                        text = if (isEnforcing) "Forçando Sono Profundo (Ativo)" else "Pronto (Aguardando tela desligar)",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -2379,474 +1893,6 @@ private fun SystemTab(
 }
 
 @Composable
-private fun RootTab(
-    hasRoot: Boolean,
-    kernelBattery: RootBatteryStatsCollector.KernelBatteryInfo?,
-    onRefresh: () -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    var cpuInfo by remember { mutableStateOf<List<RootBatteryStatsCollector.CpuInfo>>(emptyList()) }
-    var thermalZones by remember { mutableStateOf<List<RootBatteryStatsCollector.ThermalZone>>(emptyList()) }
-    var kernelWakelocks by remember { mutableStateOf<List<RootBatteryStatsCollector.KernelWakelockInfo>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(false) }
-
-    LaunchedEffect(hasRoot) {
-        if (hasRoot) {
-            isLoading = true
-            cpuInfo = RootBatteryStatsCollector.getCpuInfo()
-            thermalZones = RootBatteryStatsCollector.getThermalZones()
-            kernelWakelocks = RootBatteryStatsCollector.getKernelWakelocks()
-            isLoading = false
-        }
-    }
-
-    if (!hasRoot) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            FrostedCard(
-                modifier = Modifier.padding(24.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Icon(
-                        Icons.Outlined.AdminPanelSettings,
-                        null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Text(
-                        stringResource(R.string.root_access_required),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        stringResource(R.string.root_access_desc),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)),
-                        color = dynamicSurfaceColor(alpha = 0.50f, tintFraction = 0.20f),
-                        border = BorderStroke(1.dp, dynamicBorderColor(alpha = 0.25f)),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(stringResource(R.string.root_only), style = MaterialTheme.typography.labelMedium)
-                            Spacer(Modifier.height(4.dp))
-                            listOf<Int>(
-                                R.string.root_feature_cycles,
-                                R.string.root_feature_capacity,
-                                R.string.root_feature_health,
-                                R.string.root_feature_wakelocks,
-                                R.string.root_feature_cpu,
-                                R.string.root_feature_thermal,
-                                R.string.root_feature_sysfs
-                            ).forEach { feature: Int ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(vertical = 2.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Check,
-                                        null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(feature), style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Root Statistics",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                isLoading = true
-                                onRefresh()
-                                cpuInfo = RootBatteryStatsCollector.getCpuInfo()
-                                thermalZones = RootBatteryStatsCollector.getThermalZones()
-                                kernelWakelocks = RootBatteryStatsCollector.getKernelWakelocks()
-                                isLoading = false
-                            }
-                        },
-                        enabled = !isLoading
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                        } else {
-                            Icon(Icons.Outlined.Refresh, "Refresh")
-                        }
-                    }
-                }
-            }
-
-            // Battery Health Card
-            item {
-                BatteryHealthCard(kernelBattery)
-            }
-
-            // CPU Frequency Card
-            item {
-                CpuFrequencyCard(cpuInfo)
-            }
-
-            // Thermal Zones Card
-            item {
-                ThermalZonesCard(thermalZones)
-            }
-
-            // Kernel Wakelocks Card
-            item {
-                KernelWakelocksCard(kernelWakelocks)
-            }
-        }
-    }
-}
-
-@Composable
-private fun BatteryHealthCard(battery: RootBatteryStatsCollector.KernelBatteryInfo?) {
-    StatsCard(titleRes = R.string.battery_health_kernel, icon = Icons.Outlined.BatteryFull) {
-        if (battery == null) {
-            Text(stringResource(R.string.no_battery_info), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            battery.cycleCount?.let { cycles ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(stringResource(R.string.cycle_count), style = MaterialTheme.typography.labelMedium)
-                        Text(
-                            stringResource(R.string.cycles_value, cycles),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = when {
-                                cycles < 300 -> MaterialTheme.colorScheme.primary
-                                cycles < 500 -> MaterialTheme.colorScheme.tertiary
-                                else -> MaterialTheme.colorScheme.error
-                            }
-                        )
-                    }
-
-                    val healthPercent = when {
-                        cycles < 100 -> 100
-                        cycles < 300 -> 90
-                        cycles < 500 -> 75
-                        cycles < 800 -> 60
-                        else -> 40
-                    }
-                    CircularProgressIndicator(
-                        progress = { healthPercent / 100f },
-                        modifier = Modifier.size(48.dp),
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
-            }
-
-            // Capacity comparison
-            if (battery.chargeFullDesign != null && battery.chargeFull != null) {
-                val designMah = battery.chargeFullDesign / 1000
-                val actualMah = battery.chargeFull / 1000
-                val healthPct = battery.batteryAge ?: 0.0
-
-                Text(stringResource(R.string.capacity), style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.height(4.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(stringResource(R.string.design), style = MaterialTheme.typography.labelSmall)
-                        Text("$designMah mAh", style = MaterialTheme.typography.bodyMedium)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(R.string.current), style = MaterialTheme.typography.labelSmall)
-                        Text("$actualMah mAh", style = MaterialTheme.typography.bodyMedium)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(stringResource(R.string.health), style = MaterialTheme.typography.labelSmall)
-                        Text(
-                            String.format(Locale.getDefault(), "%.1f%%", healthPct),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = when {
-                                healthPct >= 80 -> MaterialTheme.colorScheme.primary
-                                healthPct >= 60 -> MaterialTheme.colorScheme.tertiary
-                                else -> MaterialTheme.colorScheme.error
-                            }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
-                LinearProgressIndicator(
-                    progress = { (healthPct / 100f).toFloat().coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                    color = when {
-                        healthPct >= 80 -> MaterialTheme.colorScheme.primary
-                        healthPct >= 60 -> MaterialTheme.colorScheme.tertiary
-                        else -> MaterialTheme.colorScheme.error
-                    },
-                )
-
-                Spacer(Modifier.height(12.dp))
-            }
-
-            // Other stats
-            battery.technology?.let { StatRow(R.string.technology, it) }
-            battery.health?.let { StatRow(R.string.health_status, it) }
-            battery.status?.let { StatRow(R.string.status, it) }
-            battery.currentNow?.let {
-                StatRow(R.string.current_kernel, "${it / 1000} mA")
-            }
-            battery.voltageNow?.let {
-                StatRow(R.string.voltage_kernel, "${it / 1000} mV")
-            }
-            battery.tempNow?.let {
-                StatRow(R.string.temperature, stringResource(R.string.temperature_value, String.format(Locale.getDefault(), "%.1f", it / 10.0)))
-            }
-            battery.timeToEmptyNow?.let {
-                if (it > 0) StatRow(R.string.time_to_empty, formatDuration(it * 1000))
-            }
-            battery.timeToFullNow?.let {
-                if (it > 0) StatRow(R.string.time_to_full, formatDuration(it * 1000))
-            }
-        }
-    }
-}
-
-@Composable
-private fun CpuFrequencyCard(cpuInfo: List<RootBatteryStatsCollector.CpuInfo>) {
-    StatsCard(titleRes = R.string.cpu_frequency, icon = Icons.Outlined.Speed) {
-        if (cpuInfo.isEmpty()) {
-            Text(stringResource(R.string.no_cpu_info), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            cpuInfo.forEachIndexed { index, cpu ->
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    val clusterTitle = buildString {
-                        append(stringResource(R.string.cluster_n, index))
-                        if (cpu.cores.isNotEmpty()) {
-                            if (cpu.cores.size == 1) {
-                                append(" (Core ${cpu.cores.first()})")
-                            } else {
-                                append(" (Cores ${cpu.cores.first()}-${cpu.cores.last()})")
-                            }
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = clusterTitle,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (cpu.governor.isNotBlank() && cpu.governor != "unknown") {
-                            AssistChip(
-                                onClick = {},
-                                label = { Text(cpu.governor) }
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        StatColumn(R.string.current, if (cpu.currentFreq > 0) "${cpu.currentFreq / 1000} MHz" else "—")
-                        StatColumn(R.string.min, if (cpu.minFreq > 0) "${cpu.minFreq / 1000} MHz" else "—")
-                        StatColumn(R.string.max, if (cpu.maxFreq > 0) "${cpu.maxFreq / 1000} MHz" else "—")
-                    }
-
-                    // Time in state visualization
-                    if (cpu.timeInState.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(stringResource(R.string.time_in_state), style = MaterialTheme.typography.labelSmall)
-                        Spacer(Modifier.height(4.dp))
-
-                        val totalTime = cpu.timeInState.values.sum().toFloat().coerceAtLeast(1f)
-                        val topStates = cpu.timeInState.entries
-                            .sortedByDescending { it.value }
-                            .take(5)
-
-                        topStates.forEach { (freq, time) ->
-                            val percent = time / totalTime
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    "${freq / 1000} MHz",
-                                    modifier = Modifier.width(80.dp),
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                                LinearProgressIndicator(
-                                    progress = { percent },
-                                    modifier = Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(3.dp)),
-                                )
-                                Text(
-                                    String.format(Locale.getDefault(), "%.1f%%", percent * 100),
-                                    modifier = Modifier.width(50.dp),
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-                            Spacer(Modifier.height(2.dp))
-                        }
-                    }
-
-                    if (cpuInfo.indexOf(cpu) < cpuInfo.lastIndex) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ThermalZonesCard(thermalZones: List<RootBatteryStatsCollector.ThermalZone>) {
-    StatsCard(titleRes = R.string.thermal_zones, icon = Icons.Outlined.Thermostat) {
-        if (thermalZones.isEmpty()) {
-            Text(stringResource(R.string.no_thermal_data), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            thermalZones.forEach { zone ->
-                val tempC = zone.tempMilliC / 1000.0
-                val tempColor = when {
-                    tempC < 40 -> MaterialTheme.colorScheme.primary
-                    tempC < 50 -> MaterialTheme.colorScheme.tertiary
-                    else -> MaterialTheme.colorScheme.error
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            zone.type,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            zone.name,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Text(
-                        String.format(Locale.getDefault(), "%.1fÂ°C", tempC),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = tempColor
-                    )
-                }
-
-                // Show trip points if any
-                if (zone.tripPoints.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        zone.tripPoints.take(3).forEach { trip ->
-                            Text(
-                                "${trip.type}: ${trip.tempMilliC / 1000}Â°",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                if (thermalZones.indexOf(zone) < thermalZones.lastIndex) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun KernelWakelocksCard(wakelocks: List<RootBatteryStatsCollector.KernelWakelockInfo>) {
-    StatsCard(titleRes = R.string.kernel_wakelocks, icon = Icons.Outlined.Lock) {
-        if (wakelocks.isEmpty()) {
-            Text(
-                stringResource(R.string.could_not_read_wakelocks),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            val topCount = wakelocks.size.coerceAtMost(15)
-            Text(
-                pluralStringResource(R.plurals.top_wakelocks_count, topCount, topCount),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(8.dp))
-
-            wakelocks.take(15).forEach { wl ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            wl.name,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            stringResource(R.string.count_active, wl.count, wl.activeCount),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Text(
-                        formatDuration(wl.totalTime / 1_000_000), // ns to ms
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun FrostedCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
@@ -3073,74 +2119,6 @@ fun BatterySettingsTab(vm: BatteryStatsViewModel) {
                         Switch(checked = notifShowNetwork, onCheckedChange = { vm.setNotifShowNetwork(it) }, modifier = Modifier.scale(0.80f))
                     }
 
-                    HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
-
-                    Text(stringResource(R.string.enforce_doze_title), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
-
-                    val isEnforceDozeEnabled by vm.isEnforceDozeEnabled.collectAsStateWithLifecycle()
-                    val disableMotion by vm.enforceDozeDisableMotion.collectAsStateWithLifecycle()
-                    val delaySeconds by vm.enforceDozeDelaySeconds.collectAsStateWithLifecycle()
-                    val notifOnWake by vm.enforceDozeNotifOnWake.collectAsStateWithLifecycle()
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Ativar Enforce Doze", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                            Text(stringResource(R.string.enforce_doze_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(
-                            checked = isEnforceDozeEnabled,
-                            onCheckedChange = { vm.setEnforceDozeEnabled(it) },
-                            modifier = Modifier.scale(0.80f)
-                        )
-                    }
-
-                    if (isEnforceDozeEnabled) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(stringResource(R.string.enforce_doze_disable_motion_title), style = MaterialTheme.typography.bodyMedium)
-                                Text(stringResource(R.string.enforce_doze_disable_motion_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Switch(
-                                checked = disableMotion,
-                                onCheckedChange = { vm.setEnforceDozeDisableMotion(it) },
-                                modifier = Modifier.scale(0.80f)
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(stringResource(R.string.enforce_doze_notif_title_pref), style = MaterialTheme.typography.bodyMedium)
-                                Text(stringResource(R.string.enforce_doze_notif_desc_pref), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Switch(
-                                checked = notifOnWake,
-                                onCheckedChange = { vm.setEnforceDozeNotifOnWake(it) },
-                                modifier = Modifier.scale(0.80f)
-                            )
-                        }
-
-                        Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                            Text(stringResource(R.string.enforce_doze_delay_desc, delaySeconds), style = MaterialTheme.typography.bodySmall)
-                            Slider(
-                                value = delaySeconds.toFloat(),
-                                onValueChange = { vm.setEnforceDozeDelaySeconds(it.toInt()) },
-                                valueRange = 0f..300f,
-                                steps = 29
-                            )
-                        }
-                    }
                 }
             }
         }

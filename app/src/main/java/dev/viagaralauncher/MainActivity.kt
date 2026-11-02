@@ -38,10 +38,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
-        handleLogViewerIntent(intent)
         handleBatteryStatsIntent(intent)
         handleNetworkStatsIntent(intent)
-        handleAnomalyInspectIntent(intent)
         handleWallpaperIntent(intent)
         handleClockIntent(intent)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -109,10 +107,7 @@ class MainActivity : ComponentActivity() {
             intent.action == dev.viagaralauncher.battery.DrainNotificationManager.ACTION_OPEN_BATTERY_STATS ||
             intent.getBooleanExtra(dev.viagaralauncher.battery.DrainNotificationManager.EXTRA_OPEN_BATTERY_STATS, false) ||
             intent.action == "dev.viagaralauncher.action.OPEN_NETWORK_STATS" ||
-            intent.getBooleanExtra("open_network_stats", false) ||
-            intent.action == dev.viagaralauncher.root.anomaly.BackgroundAnomalyNotificationManager.ACTION_INSPECT_APP ||
-            intent.hasExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_OPEN_CRASH_ID) ||
-            intent.hasExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_CRASH_PACKAGE)
+            intent.getBooleanExtra("open_network_stats", false)
 
         if (!isExplicitAction) {
             // Pressing HOME re-delivers the intent to us; treat it as "go back to the home screen".
@@ -120,10 +115,8 @@ class MainActivity : ComponentActivity() {
         }
         dev.viagaralauncher.ui.transition.AppLaunchTransitionManager.handleGestureContract(this, intent)
         handleUpdateIntent(intent)
-        handleLogViewerIntent(intent)
         handleBatteryStatsIntent(intent)
         handleNetworkStatsIntent(intent)
-        handleAnomalyInspectIntent(intent)
         handleWallpaperIntent(intent)
         handleClockIntent(intent)
     }
@@ -164,14 +157,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun handleAnomalyInspectIntent(intent: Intent?) {
-        if (intent == null) return
-        if (intent.action == dev.viagaralauncher.root.anomaly.BackgroundAnomalyNotificationManager.ACTION_INSPECT_APP) {
-            val pkg = intent.getStringExtra(dev.viagaralauncher.root.anomaly.BackgroundAnomalyNotificationManager.EXTRA_PACKAGE_NAME)
-            dev.viagaralauncher.root.TaskManagerEvents.open(pkg)
-        }
-    }
-
     private fun handleUpdateIntent(intent: Intent?) {
         if (intent == null) return
         if (intent.action == dev.viagaralauncher.update.UpdateManager.ACTION_OPEN_UPDATE_CHANGELOG ||
@@ -201,15 +186,6 @@ class MainActivity : ComponentActivity() {
             intent.getBooleanExtra("open_network_stats", false)
         ) {
             dev.viagaralauncher.ui.network.NetworkStatsEvents.open()
-        }
-    }
-
-    private fun handleLogViewerIntent(intent: Intent?) {
-        if (intent == null) return
-        val crashId = intent.getStringExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_OPEN_CRASH_ID)
-        val crashPkg = intent.getStringExtra(dev.viagaralauncher.root.log.CrashManager.EXTRA_CRASH_PACKAGE)
-        if (crashId != null || crashPkg != null) {
-            dev.viagaralauncher.root.log.LogViewerEvents.open(crashPkg, "crashes")
         }
     }
 

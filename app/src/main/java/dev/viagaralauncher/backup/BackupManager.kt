@@ -14,8 +14,6 @@ import androidx.core.content.FileProvider
 import dev.viagaralauncher.BuildConfig
 import dev.viagaralauncher.agenda.AgendaRepository
 import dev.viagaralauncher.data.Prefs
-import dev.viagaralauncher.history.DailyHistoryRepository
-import dev.viagaralauncher.root.anomaly.AnomalyHistoryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -155,15 +153,7 @@ object BackupManager {
             val agendaRepo = AgendaRepository(context)
             val agendaJson = agendaRepo.exportAgendaJson()
 
-            // 3. Export Daily History to JSON
-            val dailyHistoryRepo = DailyHistoryRepository.getInstance(context)
-            val dailyHistoryJson = dailyHistoryRepo.exportJson()
-
-            // 4. Export Anomaly History to JSON
-            val anomalyHistoryRepo = AnomalyHistoryRepository.getInstance(context)
-            val anomalyHistoryJson = anomalyHistoryRepo.exportJson()
-
-            // 5. Extract wallpaper if requested
+            // 3. Extract wallpaper if requested
             val wallpaperBitmap = if (includeWallpaper) extractWallpaperBitmap(context) else null
             val hasWallpaper = wallpaperBitmap != null
 
@@ -204,17 +194,7 @@ object BackupManager {
                     zos.write(agendaJson.toByteArray(Charsets.UTF_8))
                     zos.closeEntry()
 
-                    // Entry 4: daily_history.json
-                    zos.putNextEntry(ZipEntry(DAILY_HISTORY_ENTRY))
-                    zos.write(dailyHistoryJson.toByteArray(Charsets.UTF_8))
-                    zos.closeEntry()
-
-                    // Entry 5: anomaly_history.json
-                    zos.putNextEntry(ZipEntry(ANOMALY_HISTORY_ENTRY))
-                    zos.write(anomalyHistoryJson.toByteArray(Charsets.UTF_8))
-                    zos.closeEntry()
-
-                    // Entry 6: wallpaper.png
+                    // Entry 4: wallpaper.png
                     if (wallpaperBitmap != null) {
                         zos.putNextEntry(ZipEntry(WALLPAPER_ENTRY))
                         val baos = ByteArrayOutputStream()
@@ -371,16 +351,6 @@ object BackupManager {
         if (agendaJson != null) {
             val agendaRepo = AgendaRepository(context)
             importedAgendaCount = agendaRepo.importAgendaJson(agendaJson)
-        }
-
-        // Apply daily history if present
-        if (dailyHistoryJson != null) {
-            DailyHistoryRepository.getInstance(context).importJson(dailyHistoryJson)
-        }
-
-        // Apply anomaly history if present
-        if (anomalyHistoryJson != null) {
-            AnomalyHistoryRepository.getInstance(context).importJson(anomalyHistoryJson)
         }
 
         if (meta != null) {

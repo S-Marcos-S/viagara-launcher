@@ -33,19 +33,6 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     )
     val isDrainNotificationEnabled: StateFlow<Boolean> = _isDrainNotificationEnabled.asStateFlow()
 
-    private val anomalyWatcher = dev.viagaralauncher.root.anomaly.BackgroundAnomalyWatcher.getInstance(context)
-    val anomalyConfig: StateFlow<dev.viagaralauncher.root.anomaly.AnomalyWatcherConfig> = anomalyWatcher.config
-
-    private val enforceDozeController = EnforceDozeController.getInstance(context)
-    val isEnforceDozeEnabled: StateFlow<Boolean> = enforceDozeController.isEnabled
-    val enforceDozeDisableMotion: StateFlow<Boolean> = enforceDozeController.disableMotion
-    val enforceDozeDelaySeconds: StateFlow<Int> = enforceDozeController.delaySeconds
-    val enforceDozeNotifOnWake: StateFlow<Boolean> = enforceDozeController.notifOnWake
-    val isEnforcingDoze: StateFlow<Boolean> = enforceDozeController.isEnforcing
-
-    private val _hasRoot = MutableStateFlow(false)
-    val hasRoot: StateFlow<Boolean> = _hasRoot.asStateFlow()
-
     private val _hasAdb = MutableStateFlow(false)
     val hasAdb: StateFlow<Boolean> = _hasAdb.asStateFlow()
 
@@ -54,18 +41,6 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
 
     private val _advMode = MutableStateFlow<ShellRunner.Mode>(ShellRunner.Mode.NONE)
     val advMode: StateFlow<ShellRunner.Mode> = _advMode.asStateFlow()
-
-    private val _kernelBattery = MutableStateFlow<RootBatteryStatsCollector.KernelBatteryInfo?>(null)
-    val kernelBattery: StateFlow<RootBatteryStatsCollector.KernelBatteryInfo?> = _kernelBattery.asStateFlow()
-
-    private val _kernelWakelocks = MutableStateFlow<List<RootBatteryStatsCollector.KernelWakelockInfo>>(emptyList())
-    val kernelWakelocks: StateFlow<List<RootBatteryStatsCollector.KernelWakelockInfo>> = _kernelWakelocks.asStateFlow()
-
-    private val _thermalZones = MutableStateFlow<List<RootBatteryStatsCollector.ThermalZone>>(emptyList())
-    val thermalZones: StateFlow<List<RootBatteryStatsCollector.ThermalZone>> = _thermalZones.asStateFlow()
-
-    private val _cpuInfo = MutableStateFlow<List<RootBatteryStatsCollector.CpuInfo>>(emptyList())
-    val cpuInfo: StateFlow<List<RootBatteryStatsCollector.CpuInfo>> = _cpuInfo.asStateFlow()
 
     init {
         if (!drainTracker.isRunning()) {
@@ -92,35 +67,18 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
         viewModelScope.launch {
             if (forceRefresh) shellRunner.invalidateMode()
 
-            val rootAvailable = RootBatteryStatsCollector.isRootAvailable()
             val adbAvailable = ShellRunner.hasDumpPermission(context) || ShellRunner.hasBatteryStatsPermission(context)
             val mode = shellRunner.detectMode(forceRefresh)
 
-            _hasRoot.value = rootAvailable
             _hasAdb.value = adbAvailable
             _advMode.value = mode
-            _hasAdvanced.value = mode != ShellRunner.Mode.NONE || rootAvailable || adbAvailable
+            _hasAdvanced.value = mode != ShellRunner.Mode.NONE || adbAvailable
 
             if (_hasAdvanced.value) {
                 collector.refresh()
             }
 
-            if (rootAvailable) {
-                refreshRootStats()
-            }
-
             drainTracker.updateDrainState()
-        }
-    }
-
-    fun refreshRootStats() {
-        viewModelScope.launch {
-            if (RootBatteryStatsCollector.isRootAvailable()) {
-                _kernelBattery.value = RootBatteryStatsCollector.getKernelBatteryInfo()
-                _kernelWakelocks.value = RootBatteryStatsCollector.getKernelWakelocks()
-                _thermalZones.value = RootBatteryStatsCollector.getThermalZones()
-                _cpuInfo.value = RootBatteryStatsCollector.getCpuInfo()
-            }
         }
     }
 
@@ -156,10 +114,6 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
 
     override fun onCleared() {
         super.onCleared()
-    }
-
-    fun toggleAnomalyNotification(enabled: Boolean) {
-        anomalyWatcher.updateConfig(anomalyWatcher.config.value.copy(isEnabled = enabled))
     }
 
     fun resetDrainSession() {
@@ -256,21 +210,5 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
         prefs.edit().putBoolean("notif_show_network", show).apply()
         _notifShowNetwork.value = show
         DrainNotificationManager.getInstance(context).updateNow()
-    }
-
-    fun setEnforceDozeEnabled(enabled: Boolean) {
-        enforceDozeController.setEnabled(enabled)
-    }
-
-    fun setEnforceDozeDisableMotion(disable: Boolean) {
-        enforceDozeController.setDisableMotion(disable)
-    }
-
-    fun setEnforceDozeDelaySeconds(seconds: Int) {
-        enforceDozeController.setDelaySeconds(seconds)
-    }
-
-    fun setEnforceDozeNotifOnWake(enabled: Boolean) {
-        enforceDozeController.setNotifOnWake(enabled)
     }
 }

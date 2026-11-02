@@ -150,17 +150,6 @@ fun ViagaraNavHost(
         }
     }
 
-    val openTaskManagerRequested by dev.viagaralauncher.root.TaskManagerEvents.openRequested.collectAsState()
-    LaunchedEffect(openTaskManagerRequested) {
-        if (openTaskManagerRequested) {
-            if (navController.currentDestination?.route != "task_manager") {
-                navController.navigate("task_manager") {
-                    launchSingleTop = true
-                }
-            }
-        }
-    }
-
     var allApps by remember { mutableStateOf(emptyList<AppInfo>()) }
     suspend fun reloadApps() {
         allApps = withContext(Dispatchers.Default) { app.appRepository.queryAllApps() }
@@ -754,20 +743,6 @@ fun ViagaraNavHost(
                     navController.popBackStack()
                 },
                 onBack = { navController.popBackStack() },
-            )
-        }
-
-        composable(
-            route = "task_manager",
-            enterTransition = { fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 8 } },
-            exitTransition = { fadeOut(tween(200)) },
-            popExitTransition = { fadeOut(tween(200)) + slideOutVertically(tween(250)) { it / 8 } },
-        ) {
-            dev.viagaralauncher.ui.root.TaskManagerScreen(
-                allApps = allApps,
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToNetworkStats = { navController.navigate("network_monitor") },
-                onNavigateToBatteryStats = { navController.navigate("battery_stats") },
             )
         }
 
