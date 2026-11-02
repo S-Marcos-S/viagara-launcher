@@ -100,7 +100,7 @@ object AudioVisualizerManager {
     // Equal-loudness spectral tilt compensation (Pink noise 1/f acoustic curve)
     // Organic acoustic profile with subtle, balanced sensitivity across mids, highs and sub-bass
     private val SPECTRAL_WEIGHTS = floatArrayOf(
-        0.84f, // Band 0:  25 - 65 Hz   (Deep Sub / Subgrave)
+        0.88f, // Band 0:  25 - 65 Hz   (Deep Sub / Subgrave)
         0.86f, // Band 1:  65 - 115 Hz  (Kick Drum / Bumbo)
         0.88f, // Band 2:  115 - 175 Hz (Punch / Ataque)
         0.91f, // Band 3:  175 - 260 Hz (Bassline / Contrabaixo)
@@ -465,8 +465,8 @@ object AudioVisualizerManager {
                         0 -> {
                             // Band 0 (Subgrave - 25-65 Hz): Clean sustain floor subtraction with natural curve.
                             // Drops cleanly between rapid bass kicks without getting stuck or feeling hypersensitive.
-                            val cleaned = ((rawTarget - 0.14f) / 0.86f).coerceIn(0f, 1f)
-                            (cleaned.pow(1.30f) * 0.84f).coerceIn(0f, 1f)
+                            val cleaned = ((rawTarget - 0.11f) / 0.89f).coerceIn(0f, 1f)
+                            (cleaned.pow(1.25f) * 0.88f).coerceIn(0f, 1f)
                         }
                         1 -> {
                             // Band 1 (Bumbo / Kick - 65-115 Hz): Punchy beat response with controlled headroom.
