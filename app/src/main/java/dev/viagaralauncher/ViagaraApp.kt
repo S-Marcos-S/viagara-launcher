@@ -51,6 +51,7 @@ class ViagaraApp : Application() {
         widgetHost = ViagaraAppWidgetHost(this, HOST_ID)
         dev.viagaralauncher.backup.BackupAlarmReceiver.schedulePeriodicCheck(this)
         dev.viagaralauncher.wallpaper.WallpaperCheckAlarmReceiver.scheduleNextCheck(this)
+        dev.viagaralauncher.battery.AdvancedDrainTracker.getInstance(this).start()
         if (dev.viagaralauncher.battery.DrainNotificationManager.isNotificationEnabled(this)) {
             dev.viagaralauncher.battery.DrainNotificationManager.getInstance(this).startNotification()
         }

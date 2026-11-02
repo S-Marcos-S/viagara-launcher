@@ -14,6 +14,7 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.os.BatteryManager
 import android.os.Build
+import android.os.PowerManager
 import dev.viagaralauncher.root.AppRootInspector
 import dev.viagaralauncher.root.anomaly.AnomalyHistoryRepository
 import dev.viagaralauncher.root.anomaly.AnomalyType
@@ -93,6 +94,12 @@ class DailyHistoryRepository private constructor(private val context: Context) {
                 Intent.ACTION_SHUTDOWN -> {
                     recordShutdownToday()
                 }
+                Intent.ACTION_SCREEN_ON -> {
+                    sampleBatteryTimelinePoint(isScreenOn = true)
+                }
+                Intent.ACTION_SCREEN_OFF -> {
+                    sampleBatteryTimelinePoint(isScreenOn = false)
+                }
             }
         }
     }
@@ -111,15 +118,45 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             val filter = IntentFilter().apply {
                 addAction(Intent.ACTION_BATTERY_CHANGED)
                 addAction(Intent.ACTION_SHUTDOWN)
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
             }
-            context.registerReceiver(batteryReceiver, filter)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(batteryReceiver, filter, Context.RECEIVER_EXPORTED)
+            } else {
+                context.registerReceiver(batteryReceiver, filter)
+            }
         }
+    }
+
+    private fun getCurrentBatteryLevel(): Int {
+        val intent = runCatching {
+            context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        }.getOrNull()
+        val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+        return if (level >= 0 && scale > 0) (level * 100) / scale else 50
+    }
+
+    private fun sampleBatteryTimelinePoint(isScreenOn: Boolean) {
+        val level = getCurrentBatteryLevel()
+        val state = if (isScreenOn) BatteryTimelinePoint.STATE_SCREEN_ON else BatteryTimelinePoint.STATE_DEEP_SLEEP
+        recordBatteryTimelinePoint(level, state)
     }
 
     private fun handleBatteryChanged(intent: Intent) {
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
         val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
         if (level < 0) return
+
+        val pct = if (scale > 0 && level >= 0) (level * 100) / scale else level
+        val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        val isScreenOn = pm?.isInteractive ?: false
+        val state = if (isScreenOn) BatteryTimelinePoint.STATE_SCREEN_ON else BatteryTimelinePoint.STATE_DEEP_SLEEP
+        if (pct in 0..100) {
+            recordBatteryTimelinePoint(pct, state)
+        }
 
         val prevLevel = internalPrefs.getInt(KEY_LAST_BATTERY_LEVEL, -1)
         val prevStatus = internalPrefs.getInt(KEY_LAST_BATTERY_STATUS, -1)
@@ -216,10 +253,36 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             dateKey = todayKey,
             timestamp = System.currentTimeMillis(),
         )
+        val level = getCurrentBatteryLevel()
+        recordBatteryTimelinePoint(level, BatteryTimelinePoint.STATE_OFF)
         val updated = existing.copy(shutdownCount = existing.shutdownCount + 1)
         memoryRecords[todayKey] = updated
         _recordsFlow.value = HashMap(memoryRecords)
         saveRecordsToDisk()
+    }
+
+    fun recordBatteryTimelinePoint(level: Int, state: Int, timestamp: Long = System.currentTimeMillis()) {
+        val todayKey = LocalDate.now().format(DATE_FORMATTER)
+        val existing = memoryRecords[todayKey] ?: DailyUsageRecord(
+            dateKey = todayKey,
+            timestamp = timestamp,
+        )
+        val currentTimeline = existing.batteryTimeline.toMutableList()
+        val lastPoint = currentTimeline.lastOrNull()
+
+        val shouldAdd = lastPoint == null ||
+            lastPoint.state != state ||
+            lastPoint.batteryLevel != level ||
+            (timestamp - lastPoint.timestamp) >= 180_000L
+
+        if (shouldAdd) {
+            currentTimeline.add(BatteryTimelinePoint(timestamp, level.coerceIn(0, 100), state))
+            val trimmed = if (currentTimeline.size > 288) currentTimeline.takeLast(288) else currentTimeline
+            val updated = existing.copy(batteryTimeline = trimmed)
+            memoryRecords[todayKey] = updated
+            _recordsFlow.value = HashMap(memoryRecords)
+            saveRecordsToDisk()
+        }
     }
 
     /**
@@ -289,6 +352,14 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             readCurrentSystemRamPercent()
         }
 
+        val batteryTimeline = computeBatteryTimelineForDay(
+            date = date,
+            startOfDay = startOfDay,
+            endOfDay = endOfDay,
+            existingTimeline = existing?.batteryTimeline.orEmpty(),
+            calculatedDrain = battDrain,
+        )
+
         val record = DailyUsageRecord(
             dateKey = dateKey,
             timestamp = startOfDay,
@@ -307,12 +378,147 @@ class DailyHistoryRepository private constructor(private val context: Context) {
             topBatteryConsumers = batteryConsumers,
             backgroundAnomaliesCount = maxOf(existing?.backgroundAnomaliesCount ?: 0, anomalyCount),
             deepSleepDisruptionsCount = maxOf(existing?.deepSleepDisruptionsCount ?: 0, deepSleepCount),
+            batteryTimeline = batteryTimeline,
         )
 
         memoryRecords[dateKey] = record
         _recordsFlow.value = HashMap(memoryRecords)
         saveRecordsToDisk()
         record
+    }
+
+    private fun computeBatteryTimelineForDay(
+        date: LocalDate,
+        startOfDay: Long,
+        endOfDay: Long,
+        existingTimeline: List<BatteryTimelinePoint>,
+        calculatedDrain: Int,
+    ): List<BatteryTimelinePoint> {
+        val points = mutableListOf<BatteryTimelinePoint>()
+
+        data class StateInterval(val start: Long, val end: Long, val state: Int)
+        val stateIntervals = mutableListOf<StateInterval>()
+
+        val usm = usageStatsManager
+        if (usm != null) {
+            runCatching {
+                val events = usm.queryEvents(startOfDay, endOfDay)
+                val event = UsageEvents.Event()
+                var lastInteractiveTime = -1L
+                var lastShutdownTime = -1L
+
+                while (events.hasNextEvent()) {
+                    events.getNextEvent(event)
+                    val time = event.timeStamp
+                    when (event.eventType) {
+                        UsageEvents.Event.SCREEN_INTERACTIVE, 15 -> {
+                            if (lastShutdownTime > 0) {
+                                stateIntervals.add(StateInterval(lastShutdownTime, time, BatteryTimelinePoint.STATE_OFF))
+                                lastShutdownTime = -1L
+                            }
+                            lastInteractiveTime = time
+                        }
+                        UsageEvents.Event.SCREEN_NON_INTERACTIVE, 16 -> {
+                            if (lastInteractiveTime > 0) {
+                                stateIntervals.add(StateInterval(lastInteractiveTime, time, BatteryTimelinePoint.STATE_SCREEN_ON))
+                                lastInteractiveTime = -1L
+                            }
+                        }
+                        UsageEvents.Event.DEVICE_SHUTDOWN, 26 -> {
+                            if (lastInteractiveTime > 0) {
+                                stateIntervals.add(StateInterval(lastInteractiveTime, time, BatteryTimelinePoint.STATE_SCREEN_ON))
+                                lastInteractiveTime = -1L
+                            }
+                            lastShutdownTime = time
+                        }
+                        UsageEvents.Event.DEVICE_STARTUP, 27 -> {
+                            if (lastShutdownTime > 0) {
+                                stateIntervals.add(StateInterval(lastShutdownTime, time, BatteryTimelinePoint.STATE_OFF))
+                                lastShutdownTime = -1L
+                            }
+                        }
+                    }
+                }
+
+                if (lastInteractiveTime > 0) {
+                    stateIntervals.add(StateInterval(lastInteractiveTime, endOfDay, BatteryTimelinePoint.STATE_SCREEN_ON))
+                }
+                if (lastShutdownTime > 0) {
+                    stateIntervals.add(StateInterval(lastShutdownTime, endOfDay, BatteryTimelinePoint.STATE_OFF))
+                }
+            }
+        }
+
+        fun stateAt(time: Long): Int {
+            for (interval in stateIntervals) {
+                if (time in interval.start..interval.end) {
+                    return interval.state
+                }
+            }
+            return BatteryTimelinePoint.STATE_DEEP_SLEEP
+        }
+
+        val validExisting = existingTimeline.filter { it.timestamp in startOfDay..endOfDay }
+        for (pt in validExisting) {
+            val s = stateAt(pt.timestamp)
+            val finalState = if (s == BatteryTimelinePoint.STATE_OFF) BatteryTimelinePoint.STATE_OFF else pt.state
+            points.add(pt.copy(state = finalState))
+        }
+
+        val cyclesRepo = runCatching { BatteryCycleRepository.getInstance(context) }.getOrNull()
+        val cycles = cyclesRepo?.cyclesFlow?.value?.filter {
+            (it.startTimeMs in startOfDay..endOfDay) || (it.endTimeMs in startOfDay..endOfDay) || (it.isActive && it.startTimeMs <= endOfDay)
+        }.orEmpty()
+
+        for (cycle in cycles) {
+            for (tp in cycle.telemetryPoints) {
+                if (tp.timestamp in startOfDay..endOfDay) {
+                    val s = stateAt(tp.timestamp)
+                    val state = if (s == BatteryTimelinePoint.STATE_OFF) BatteryTimelinePoint.STATE_OFF
+                    else if (tp.isScreenOn) BatteryTimelinePoint.STATE_SCREEN_ON
+                    else s
+                    points.add(BatteryTimelinePoint(tp.timestamp, tp.batteryLevel, state))
+                }
+            }
+        }
+
+        points.sortBy { it.timestamp }
+
+        val deduped = mutableListOf<BatteryTimelinePoint>()
+        for (p in points) {
+            val last = deduped.lastOrNull()
+            if (last == null || p.timestamp - last.timestamp >= 60_000L || last.state != p.state || abs(last.batteryLevel - p.batteryLevel) >= 2) {
+                deduped.add(p)
+            }
+        }
+
+        if (deduped.size >= 2) {
+            val first = deduped.first()
+            if (first.timestamp > startOfDay + 300_000L) {
+                deduped.add(0, BatteryTimelinePoint(startOfDay, first.batteryLevel, stateAt(startOfDay)))
+            }
+            val last = deduped.last()
+            if (last.timestamp < endOfDay - 300_000L) {
+                deduped.add(BatteryTimelinePoint(endOfDay, last.batteryLevel, stateAt(endOfDay)))
+            }
+            return deduped
+        }
+
+        val synthesized = mutableListOf<BatteryTimelinePoint>()
+        val startLevel = 100
+        val endLevel = (100 - calculatedDrain).coerceIn(5, 100)
+        val stepMs = 30 * 60_000L
+        var curTime = startOfDay
+
+        while (curTime <= endOfDay) {
+            val ratio = ((curTime - startOfDay).toDouble() / (endOfDay - startOfDay).coerceAtLeast(1L)).coerceIn(0.0, 1.0)
+            val currentLevel = (startLevel - (ratio * (startLevel - endLevel))).toInt().coerceIn(0, 100)
+            val state = stateAt(curTime)
+            synthesized.add(BatteryTimelinePoint(curTime, currentLevel, state))
+            curTime += stepMs
+        }
+
+        return synthesized
     }
 
     /**
@@ -378,7 +584,7 @@ class DailyHistoryRepository private constructor(private val context: Context) {
 
             val dateKey = date.format(DATE_FORMATTER)
             val existing = memoryRecords[dateKey]
-            if (existing != null && !date.isEqual(now) && existing.appLaunches.isNotEmpty()) {
+            if (existing != null && !date.isEqual(now) && existing.appLaunches.isNotEmpty() && existing.batteryTimeline.isNotEmpty()) {
                 val sanitized = sanitizeRecord(existing, ignoredPkgs)
                 list.add(sanitized)
             } else {

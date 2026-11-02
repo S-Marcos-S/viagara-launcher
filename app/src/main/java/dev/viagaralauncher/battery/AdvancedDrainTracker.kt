@@ -168,33 +168,8 @@ class AdvancedDrainTracker private constructor(
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON -> onScreenStateChanged(true)
                 Intent.ACTION_SCREEN_OFF -> onScreenStateChanged(false)
-                Intent.ACTION_POWER_CONNECTED -> {
-                    hasResetForCurrentChargeCycle = false
-                    scope.launch {
-                        takeSnapshot()?.let { snapshot ->
-                            lastSnapshot = snapshot
-                            updateDrainState()
-                        }
-                    }
-                }
-                Intent.ACTION_POWER_DISCONNECTED -> {
-                    val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
-                    val autoResetEnabled = prefs.getBoolean("auto_reset_enabled", false)
-                    val target = if (autoResetEnabled) prefs.getInt("auto_reset_percent", 100) else 100
-
-                    scope.launch {
-                        val level = takeSnapshot()?.batteryLevel ?: getBatteryLevel()
-                        if (level != null && level >= target && !hasResetForCurrentChargeCycle) {
-                            hasResetForCurrentChargeCycle = true
-                            resetSession()
-                        }
-                        hasResetForCurrentChargeCycle = false
-                        takeSnapshot()?.let { snapshot ->
-                            lastSnapshot = snapshot
-                            updateDrainState()
-                        }
-                    }
-                }
+                Intent.ACTION_POWER_CONNECTED -> onPowerConnected()
+                Intent.ACTION_POWER_DISCONNECTED -> onPowerDisconnected()
                 Intent.ACTION_BATTERY_CHANGED -> {
                     val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
                     val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
@@ -205,20 +180,53 @@ class AdvancedDrainTracker private constructor(
                         val pct = if (scale > 0 && level >= 0) (level * 100) / scale else level
 
                         val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
-                        val autoResetEnabled = prefs.getBoolean("auto_reset_enabled", false)
-                        val target = if (autoResetEnabled) prefs.getInt("auto_reset_percent", 100) else 100
+                        val autoResetCharging = prefs.getBoolean("auto_reset_charging_enabled", prefs.getBoolean("auto_reset_enabled", true))
+                        val target = prefs.getInt("auto_reset_percent", 100).coerceIn(50, 100)
 
-                        if (pct >= target && !hasResetForCurrentChargeCycle) {
-                            hasResetForCurrentChargeCycle = true
-                            scope.launch {
-                                resetSession()
-                                updateDrainState()
+                        if (autoResetCharging && (pct >= target || pct >= 100 || status == BatteryManager.BATTERY_STATUS_FULL)) {
+                            if (!hasResetForCurrentChargeCycle) {
+                                hasResetForCurrentChargeCycle = true
+                                scope.launch {
+                                    resetSession()
+                                    updateDrainState()
+                                }
                             }
                         }
                     } else {
                         hasResetForCurrentChargeCycle = false
                     }
                 }
+            }
+        }
+    }
+
+    fun onPowerConnected() {
+        hasResetForCurrentChargeCycle = false
+        scope.launch {
+            takeSnapshot()?.let { snapshot ->
+                lastSnapshot = snapshot
+                updateDrainState()
+            }
+        }
+    }
+
+    fun onPowerDisconnected() {
+        val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
+        val autoResetCharging = prefs.getBoolean("auto_reset_charging_enabled", prefs.getBoolean("auto_reset_enabled", true))
+        val target = prefs.getInt("auto_reset_percent", 100).coerceIn(50, 100)
+
+        scope.launch {
+            val level = takeSnapshot()?.batteryLevel ?: getBatteryLevel() ?: 0
+            if (autoResetCharging && (level >= target || level >= 100)) {
+                if (!hasResetForCurrentChargeCycle) {
+                    hasResetForCurrentChargeCycle = true
+                    resetSession()
+                }
+            }
+            hasResetForCurrentChargeCycle = false
+            takeSnapshot()?.let { snapshot ->
+                lastSnapshot = snapshot
+                updateDrainState()
             }
         }
     }
@@ -337,10 +345,18 @@ class AdvancedDrainTracker private constructor(
             return false
         }
 
-        if (isRebootDetected(prefs)) {
-            Log.i(TAG, "Device reboot detected since last session. Clearing saved session.")
-            clearSavedSession()
-            return false
+        val batteryPrefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
+        val resetOnReboot = batteryPrefs.getBoolean("auto_reset_reboot_enabled", true)
+        val isReboot = isRebootDetected(prefs)
+
+        if (isReboot) {
+            if (resetOnReboot) {
+                Log.i(TAG, "Device reboot detected and auto_reset_reboot_enabled is true. Clearing saved session.")
+                clearSavedSession()
+                return false
+            } else {
+                Log.i(TAG, "Device reboot detected but auto_reset_reboot_enabled is false. Preserving session across reboot.")
+            }
         }
 
         return try {
@@ -349,8 +365,8 @@ class AdvancedDrainTracker private constructor(
             val savedLastSaveRealtime = prefs.getLong(KEY_LAST_SAVE_REALTIME, nowRealtime)
 
             sessionStartTime = prefs.getLong(KEY_SESSION_START_TIME, now)
-            sessionStartRealtime = prefs.getLong(KEY_SESSION_START_REALTIME, nowRealtime)
-            sessionStartUptime = prefs.getLong(KEY_SESSION_START_UPTIME, SystemClock.uptimeMillis())
+            sessionStartRealtime = if (isReboot) nowRealtime - (now - sessionStartTime).coerceAtLeast(0L) else prefs.getLong(KEY_SESSION_START_REALTIME, nowRealtime)
+            sessionStartUptime = if (isReboot) SystemClock.uptimeMillis() else prefs.getLong(KEY_SESSION_START_UPTIME, SystemClock.uptimeMillis())
 
             var screenOnTime = prefs.getLong(KEY_CUMULATIVE_SCREEN_ON_TIME, 0L)
             var screenOffTime = prefs.getLong(KEY_CUMULATIVE_SCREEN_OFF_TIME, 0L)
@@ -548,12 +564,15 @@ class AdvancedDrainTracker private constructor(
                 addAction(Intent.ACTION_POWER_DISCONNECTED)
                 addAction(Intent.ACTION_BATTERY_CHANGED)
             }
-            ContextCompat.registerReceiver(
-                context,
-                screenReceiver,
-                screenFilter,
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(
+                    screenReceiver,
+                    screenFilter,
+                    Context.RECEIVER_EXPORTED
+                )
+            } else {
+                context.registerReceiver(screenReceiver, screenFilter)
+            }
             receiverRegistered = true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to register screen receivers", e)

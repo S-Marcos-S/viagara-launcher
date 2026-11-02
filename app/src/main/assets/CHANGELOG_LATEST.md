@@ -1,5 +1,5 @@
-### 🚀 Novidades da Versão v0.60.94 (Beta)
+### 🚀 Novidades da Versão v0.60.95 (Beta)
 
-- **Histórico de Bateria:** Correção no cálculo de consumo diário no Histórico, integrando ciclos acumulados e telemetria para não zerar após recarga.
-- **Ciclos em Tempo Real:** Atualização dinâmica da porcentagem e mAh consumidos/recarregados durante ciclos ativos.
-- **Persistência Confiável:** Sincronização imediata dos registros diários em disco eliminando condições de corrida.
+- **Reset de Bateria:** Correção no reset automático ao carregar até o alvo configurado ou 100%, com suporte a exportação de eventos do sistema.
+- **Opções de Inicialização:** Escolha pelo usuário de resetar estatísticas ao carregar e/ou ao reiniciar o celular.
+- **Gráfico no Histórico:** Gráfico de linha compacto nas 24h com cores distintas para tela ligada, sono profundo e celular desligado.

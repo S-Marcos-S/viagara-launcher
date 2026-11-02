@@ -2962,8 +2962,9 @@ private fun formatBytes(bytes: Long): String {
 
 @Composable
 fun BatterySettingsTab(vm: BatteryStatsViewModel) {
-    val autoResetEnabled by vm.autoResetEnabled.collectAsStateWithLifecycle()
+    val autoResetChargingEnabled by vm.autoResetChargingEnabled.collectAsStateWithLifecycle()
     val autoResetPercent by vm.autoResetPercent.collectAsStateWithLifecycle()
+    val autoResetRebootEnabled by vm.autoResetRebootEnabled.collectAsStateWithLifecycle()
     val notifShowRates by vm.notifShowRates.collectAsStateWithLifecycle()
     val notifShowDeepSleep by vm.notifShowDeepSleep.collectAsStateWithLifecycle()
     val notifShowActiveIdle by vm.notifShowActiveIdle.collectAsStateWithLifecycle()
@@ -2978,25 +2979,39 @@ fun BatterySettingsTab(vm: BatteryStatsViewModel) {
         item {
             FrostedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.battery_auto_reset_title), fontWeight = FontWeight.Bold)
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Auto Reset Monitoramento", fontWeight = FontWeight.Bold)
-                            Text("Resetar estatísticas ao carregar até porcentagem específica", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.battery_reset_on_charging_title), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.battery_reset_on_charging_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
-                            checked = autoResetEnabled,
-                            onCheckedChange = { vm.setAutoResetEnabled(it) },
+                            checked = autoResetChargingEnabled,
+                            onCheckedChange = { vm.setAutoResetChargingEnabled(it) },
                             modifier = Modifier.scale(0.80f)
                         )
                     }
 
-                    if (autoResetEnabled) {
-                        Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                            Text("Porcentagem Alvo: $autoResetPercent%", style = MaterialTheme.typography.bodySmall)
+                    if (autoResetChargingEnabled) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(stringResource(R.string.battery_reset_target_percent, autoResetPercent), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                Text(
+                                    if (autoResetPercent >= 100) stringResource(R.string.battery_reset_full_charge)
+                                    else stringResource(R.string.battery_reset_target_label, autoResetPercent),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                             Slider(
                                 value = autoResetPercent.toFloat(),
                                 onValueChange = { vm.setAutoResetPercent(it.toInt()) },
@@ -3008,30 +3023,53 @@ fun BatterySettingsTab(vm: BatteryStatsViewModel) {
 
                     HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
 
-                    Text("Personalizar Notificação Ao Vivo", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.battery_reset_on_reboot_title), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                if (autoResetRebootEnabled) stringResource(R.string.battery_reset_on_reboot_enabled_desc)
+                                else stringResource(R.string.battery_reset_on_reboot_disabled_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = autoResetRebootEnabled,
+                            onCheckedChange = { vm.setAutoResetRebootEnabled(it) },
+                            modifier = Modifier.scale(0.80f)
+                        )
+                    }
+
+                    HorizontalDivider(color = dynamicBorderColor(alpha = 0.20f))
+
+                    Text(stringResource(R.string.notif_customize_title), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Taxas On/Off", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.notif_opt_rates), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = notifShowRates, onCheckedChange = { vm.setNotifShowRates(it) }, modifier = Modifier.scale(0.80f))
                     }
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Sono Profundo", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.notif_opt_deep_sleep), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = notifShowDeepSleep, onCheckedChange = { vm.setNotifShowDeepSleep(it) }, modifier = Modifier.scale(0.80f))
                     }
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Ativo/Ocioso", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.notif_opt_active_idle), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = notifShowActiveIdle, onCheckedChange = { vm.setNotifShowActiveIdle(it) }, modifier = Modifier.scale(0.80f))
                     }
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Total e Média", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.notif_opt_total_avg), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = notifShowTotalAvg, onCheckedChange = { vm.setNotifShowTotalAvg(it) }, modifier = Modifier.scale(0.80f))
                     }
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Temperatura", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.notif_opt_temperature), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = notifShowTemperature, onCheckedChange = { vm.setNotifShowTemperature(it) }, modifier = Modifier.scale(0.80f))
                     }
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Uso de Rede", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.notif_opt_network), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = notifShowNetwork, onCheckedChange = { vm.setNotifShowNetwork(it) }, modifier = Modifier.scale(0.80f))
                     }
 

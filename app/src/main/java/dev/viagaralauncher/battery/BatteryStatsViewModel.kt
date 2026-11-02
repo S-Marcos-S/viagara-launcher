@@ -68,15 +68,8 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     val cpuInfo: StateFlow<List<RootBatteryStatsCollector.CpuInfo>> = _cpuInfo.asStateFlow()
 
     init {
-        // Start drain tracker in background ONLY if real-time drain monitoring is enabled
-        if (DrainNotificationManager.isNotificationEnabled(context)) {
-            if (!drainTracker.isRunning()) {
-                drainTracker.start()
-            }
-        } else {
-            if (drainTracker.isRunning()) {
-                drainTracker.stop()
-            }
+        if (!drainTracker.isRunning()) {
+            drainTracker.start()
         }
         refresh(forceRefresh = true)
 
@@ -163,11 +156,6 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
 
     override fun onCleared() {
         super.onCleared()
-        if (!DrainNotificationManager.isNotificationEnabled(context)) {
-            if (drainTracker.isRunning()) {
-                drainTracker.stop()
-            }
-        }
     }
 
     fun toggleAnomalyNotification(enabled: Boolean) {
@@ -181,11 +169,19 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
 
     private val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
 
-    private val _autoResetEnabled = MutableStateFlow(prefs.getBoolean("auto_reset_enabled", false))
-    val autoResetEnabled: StateFlow<Boolean> = _autoResetEnabled.asStateFlow()
+    private val _autoResetChargingEnabled = MutableStateFlow(
+        prefs.getBoolean("auto_reset_charging_enabled", prefs.getBoolean("auto_reset_enabled", true))
+    )
+    val autoResetChargingEnabled: StateFlow<Boolean> = _autoResetChargingEnabled.asStateFlow()
+
+    // Backward compatibility for autoResetEnabled
+    val autoResetEnabled: StateFlow<Boolean> = _autoResetChargingEnabled.asStateFlow()
 
     private val _autoResetPercent = MutableStateFlow(prefs.getInt("auto_reset_percent", 100))
     val autoResetPercent: StateFlow<Int> = _autoResetPercent.asStateFlow()
+
+    private val _autoResetRebootEnabled = MutableStateFlow(prefs.getBoolean("auto_reset_reboot_enabled", true))
+    val autoResetRebootEnabled: StateFlow<Boolean> = _autoResetRebootEnabled.asStateFlow()
 
     private val _notifShowRates = MutableStateFlow(prefs.getBoolean("notif_show_rates", true))
     val notifShowRates: StateFlow<Boolean> = _notifShowRates.asStateFlow()
@@ -205,14 +201,25 @@ class BatteryStatsViewModel(application: Application) : AndroidViewModel(applica
     private val _notifShowNetwork = MutableStateFlow(prefs.getBoolean("notif_show_network", true))
     val notifShowNetwork: StateFlow<Boolean> = _notifShowNetwork.asStateFlow()
 
-    fun setAutoResetEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean("auto_reset_enabled", enabled).apply()
-        _autoResetEnabled.value = enabled
+    fun setAutoResetChargingEnabled(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean("auto_reset_charging_enabled", enabled)
+            .putBoolean("auto_reset_enabled", enabled)
+            .apply()
+        _autoResetChargingEnabled.value = enabled
     }
 
+    fun setAutoResetEnabled(enabled: Boolean) = setAutoResetChargingEnabled(enabled)
+
     fun setAutoResetPercent(percent: Int) {
-        prefs.edit().putInt("auto_reset_percent", percent).apply()
-        _autoResetPercent.value = percent
+        val coerced = percent.coerceIn(50, 100)
+        prefs.edit().putInt("auto_reset_percent", coerced).apply()
+        _autoResetPercent.value = coerced
+    }
+
+    fun setAutoResetRebootEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("auto_reset_reboot_enabled", enabled).apply()
+        _autoResetRebootEnabled.value = enabled
     }
 
     fun setNotifShowRates(show: Boolean) {

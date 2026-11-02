@@ -27,11 +27,27 @@ class DrainNotificationReceiver : BroadcastReceiver() {
                     DrainNotificationManager.getInstance(context).updateNow()
                 }
             }
+            Intent.ACTION_POWER_CONNECTED -> {
+                val tracker = AdvancedDrainTracker.getInstance(context)
+                tracker.onPowerConnected()
+            }
+            Intent.ACTION_POWER_DISCONNECTED -> {
+                val tracker = AdvancedDrainTracker.getInstance(context)
+                tracker.onPowerDisconnected()
+                DrainNotificationManager.getInstance(context).updateNow()
+            }
             Intent.ACTION_BOOT_COMPLETED -> {
                 CoroutineScope(Dispatchers.Default).launch {
                     val tracker = AdvancedDrainTracker.getInstance(context)
-                    tracker.clearSavedSession()
-                    tracker.resetSession()
+                    val prefs = context.getSharedPreferences("battery_prefs", Context.MODE_PRIVATE)
+                    val resetOnReboot = prefs.getBoolean("auto_reset_reboot_enabled", true)
+                    if (resetOnReboot) {
+                        tracker.clearSavedSession()
+                        tracker.resetSession()
+                    } else {
+                        tracker.restoreSession()
+                    }
+                    DrainNotificationManager.getInstance(context).updateNow()
                 }
                 if (NetSpeedSettings(context).isEnabled) {
                     SpeedMonitorService.start(context)

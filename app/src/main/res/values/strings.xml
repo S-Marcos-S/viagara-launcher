@@ -1163,4 +1163,42 @@
     <string name="net_speed_action_grant_permission">Permission</string>
     <string name="net_speed_interval_title">Update interval</string>
     <string name="net_speed_interval_desc">Frequency of real-time speed updates (longer interval = less battery usage)</string>
+
+    <!-- Battery Auto Reset Settings -->
+    <string name="battery_auto_reset_title">Auto Reset</string>
+    <string name="battery_reset_on_charging_title">Reset when charging</string>
+    <string name="battery_reset_on_charging_desc">Reset statistics when charging reaches target level or 100%</string>
+    <string name="battery_reset_target_percent">Target percentage: %1$d%%</string>
+    <string name="battery_reset_full_charge">Full charge (100%)</string>
+    <string name="battery_reset_target_label">&gt;= %1$d%% or 100%</string>
+    <string name="battery_reset_on_reboot_title">Reset on reboot</string>
+    <string name="battery_reset_on_reboot_enabled_desc">Reset statistics and start new cycle on phone reboot</string>
+    <string name="battery_reset_on_reboot_disabled_desc">Preserve history and accumulated data across phone reboots</string>
+
+    <!-- Daily Battery Timeline Chart -->
+    <string name="history_day_battery_chart">24h Battery Usage</string>
+    <string name="history_battery_legend_screen_on">Screen on</string>
+    <string name="history_battery_legend_deep_sleep">Deep sleep</string>
+    <string name="history_battery_legend_off">Off</string>
+    <string name="history_battery_state_screen_on">Screen on</string>
+    <string name="history_battery_state_deep_sleep">Deep sleep</string>
+    <string name="history_battery_state_off">Device turned off</string>
+    <string name="history_battery_tooltip_format">%1$s • %2$d%% • %3$s</string>
+    <string name="history_no_high_drain">No heavy drain</string>
+    <string name="history_screen_off_format">Screen off: %1$s</string>
+    <string name="history_system_ram_title">System &amp; RAM</string>
+    <string name="history_reboots_cycles_format">%1$d reboots/cycles</string>
+    <string name="history_no_apps_opened">No apps</string>
+    <string name="history_app_launches_count">%1$d opens</string>
+    <string name="history_network_wifi_mobile">Wi-Fi: %1$s • Mobile: %2$s</string>
+    <string name="history_anomalies_summary_format">%1$d background alerts • %2$d deep sleep disruptions</string>
+
+    <!-- Battery Live Notification Customization -->
+    <string name="notif_customize_title">Customize Live Notification</string>
+    <string name="notif_opt_rates">On/Off Rates</string>
+    <string name="notif_opt_deep_sleep">Deep Sleep</string>
+    <string name="notif_opt_active_idle">Active/Idle</string>
+    <string name="notif_opt_total_avg">Total &amp; Average</string>
+    <string name="notif_opt_temperature">Temperature</string>
+    <string name="notif_opt_network">Network Usage</string>
 </resources>

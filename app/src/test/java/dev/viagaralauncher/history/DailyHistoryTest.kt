@@ -62,6 +62,21 @@ class DailyHistoryTest {
     }
 
     @Test
+    fun testBatteryTimelinePointJson() {
+        val point = BatteryTimelinePoint(
+            timestamp = 1793503600000L,
+            batteryLevel = 92,
+            state = BatteryTimelinePoint.STATE_SCREEN_ON,
+        )
+        val json = point.toJson()
+        val restored = BatteryTimelinePoint.fromJson(json)
+
+        assertEquals(1793503600000L, restored.timestamp)
+        assertEquals(92, restored.batteryLevel)
+        assertEquals(BatteryTimelinePoint.STATE_SCREEN_ON, restored.state)
+    }
+
+    @Test
     fun testDailyUsageRecordFullSerialization() {
         val record = DailyUsageRecord(
             dateKey = "2026-11-01",
@@ -89,6 +104,11 @@ class DailyHistoryTest {
             ),
             backgroundAnomaliesCount = 3,
             deepSleepDisruptionsCount = 2,
+            batteryTimeline = listOf(
+                BatteryTimelinePoint(1793500000000L, 100, BatteryTimelinePoint.STATE_DEEP_SLEEP),
+                BatteryTimelinePoint(1793503600000L, 95, BatteryTimelinePoint.STATE_SCREEN_ON),
+                BatteryTimelinePoint(1793507200000L, 90, BatteryTimelinePoint.STATE_OFF),
+            ),
         )
 
         assertEquals(2671771648L, record.totalInternetBytes)
@@ -120,5 +140,13 @@ class DailyHistoryTest {
         assertEquals(45, restored.appLaunches[0].launchCount)
         assertEquals(1, restored.topBatteryConsumers.size)
         assertEquals("WhatsApp", restored.topBatteryConsumers[0].appName)
+
+        assertEquals(3, restored.batteryTimeline.size)
+        assertEquals(100, restored.batteryTimeline[0].batteryLevel)
+        assertEquals(BatteryTimelinePoint.STATE_DEEP_SLEEP, restored.batteryTimeline[0].state)
+        assertEquals(95, restored.batteryTimeline[1].batteryLevel)
+        assertEquals(BatteryTimelinePoint.STATE_SCREEN_ON, restored.batteryTimeline[1].state)
+        assertEquals(90, restored.batteryTimeline[2].batteryLevel)
+        assertEquals(BatteryTimelinePoint.STATE_OFF, restored.batteryTimeline[2].state)
     }
 }

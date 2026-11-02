@@ -1138,4 +1138,42 @@
     <string name="net_speed_action_grant_permission">Permissão</string>
     <string name="net_speed_interval_title">Intervalo de atualização</string>
     <string name="net_speed_interval_desc">Frequência de atualização em tempo real (maior intervalo = menos bateria)</string>
+
+    <!-- Battery Auto Reset Settings -->
+    <string name="battery_auto_reset_title">Redefinição Automática (Auto Reset)</string>
+    <string name="battery_reset_on_charging_title">Resetar ao carregar</string>
+    <string name="battery_reset_on_charging_desc">Resetar estatísticas ao carregar até o nível alvo ou 100%</string>
+    <string name="battery_reset_target_percent">Porcentagem Alvo: %1$d%%</string>
+    <string name="battery_reset_full_charge">Carga completa (100%)</string>
+    <string name="battery_reset_target_label">&gt;= %1$d%% ou 100%</string>
+    <string name="battery_reset_on_reboot_title">Resetar ao reiniciar o celular</string>
+    <string name="battery_reset_on_reboot_enabled_desc">Zerar estatísticas e iniciar novo ciclo ao reiniciar</string>
+    <string name="battery_reset_on_reboot_disabled_desc">Preservar histórico e dados acumulados após reiniciar</string>
+
+    <!-- Daily Battery Timeline Chart -->
+    <string name="history_day_battery_chart">Uso da Bateria nas 24h</string>
+    <string name="history_battery_legend_screen_on">Tela ligada</string>
+    <string name="history_battery_legend_deep_sleep">Sono profundo</string>
+    <string name="history_battery_legend_off">Desligado</string>
+    <string name="history_battery_state_screen_on">Tela ligada</string>
+    <string name="history_battery_state_deep_sleep">Sono profundo</string>
+    <string name="history_battery_state_off">Aparelho desligado</string>
+    <string name="history_battery_tooltip_format">%1$s • %2$d%% • %3$s</string>
+    <string name="history_no_high_drain">Sem alto consumo</string>
+    <string name="history_screen_off_format">Apagada: %1$s</string>
+    <string name="history_system_ram_title">Sistema &amp; RAM</string>
+    <string name="history_reboots_cycles_format">%1$d reinícios/ciclos</string>
+    <string name="history_no_apps_opened">Nenhum app</string>
+    <string name="history_app_launches_count">%1$d aberturas</string>
+    <string name="history_network_wifi_mobile">Wi-Fi: %1$s • Móvel: %2$s</string>
+    <string name="history_anomalies_summary_format">%1$d alertas em 2º plano • %2$d quebras de sono profundo</string>
+
+    <!-- Battery Live Notification Customization -->
+    <string name="notif_customize_title">Personalizar Notificação Ao Vivo</string>
+    <string name="notif_opt_rates">Taxas On/Off</string>
+    <string name="notif_opt_deep_sleep">Sono Profundo</string>
+    <string name="notif_opt_active_idle">Ativo/Ocioso</string>
+    <string name="notif_opt_total_avg">Total e Média</string>
+    <string name="notif_opt_temperature">Temperatura</string>
+    <string name="notif_opt_network">Uso de Rede</string>
 </resources>

@@ -70,6 +70,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -82,6 +83,7 @@ import androidx.compose.ui.unit.sp
 import dev.viagaralauncher.R
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.history.AppDailyLaunchStat
+import dev.viagaralauncher.history.BatteryTimelinePoint
 import dev.viagaralauncher.history.DailyBatteryConsumer
 import dev.viagaralauncher.history.DailyHistoryRepository
 import dev.viagaralauncher.history.DailyUsageRecord
@@ -92,7 +94,9 @@ import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
 import dev.viagaralauncher.ui.theme.glass.GlassCard
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
@@ -519,7 +523,7 @@ private fun CompactDayCard(
                         secondaryText = if (record.topBatteryConsumers.isNotEmpty()) {
                             record.topBatteryConsumers.take(2).joinToString(" • ") { "${it.appName} ${it.drainPercent.toInt()}%" }
                         } else {
-                            "Sem alto consumo"
+                            stringResource(R.string.history_no_high_drain)
                         },
                         accentColor = colorScheme.error,
                     )
@@ -530,10 +534,16 @@ private fun CompactDayCard(
                         icon = Icons.Filled.TouchApp,
                         title = stringResource(R.string.history_day_screen_time),
                         primaryValue = formatDuration(record.screenOnTimeMs),
-                        secondaryText = "Apagada: ${formatDuration(record.screenOffTimeMs)}",
+                        secondaryText = stringResource(R.string.history_screen_off_format, formatDuration(record.screenOffTimeMs)),
                         accentColor = colorScheme.primary,
                     )
                 }
+
+                // Compact 24h Battery Usage Line Chart (same compact size as internet chart)
+                BatteryUsageTimelineCard(
+                    date = date,
+                    timelinePoints = record.batteryTimeline,
+                )
 
                 // Row 2: Reboots / RAM Average & Top App Launches
                 Row(
@@ -544,9 +554,9 @@ private fun CompactDayCard(
                     BentoBox(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Filled.Memory,
-                        title = "Sistema & RAM",
+                        title = stringResource(R.string.history_system_ram_title),
                         primaryValue = "${record.averageRamPercent}% RAM",
-                        secondaryText = "${record.totalRebootsAndShutdowns} reinícios/ciclos",
+                        secondaryText = stringResource(R.string.history_reboots_cycles_format, record.totalRebootsAndShutdowns),
                         accentColor = colorScheme.tertiary,
                         extraContent = {
                             Spacer(Modifier.height(4.dp))
@@ -569,8 +579,8 @@ private fun CompactDayCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Filled.RestartAlt,
                         title = stringResource(R.string.history_day_app_launches),
-                        primaryValue = "$totalOpens aberturas",
-                        secondaryText = if (topApp != null) "${topApp.appName} (${topApp.launchCount}x)" else "Nenhum app",
+                        primaryValue = stringResource(R.string.history_app_launches_count, totalOpens),
+                        secondaryText = if (topApp != null) "${topApp.appName} (${topApp.launchCount}x)" else stringResource(R.string.history_no_apps_opened),
                         accentColor = colorScheme.secondary,
                     )
                 }
@@ -605,7 +615,11 @@ private fun CompactDayCard(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                text = "${record.backgroundAnomaliesCount} alertas em 2º plano • ${record.deepSleepDisruptionsCount} quebras de sono profundo",
+                                text = stringResource(
+                                    R.string.history_anomalies_summary_format,
+                                    record.backgroundAnomaliesCount,
+                                    record.deepSleepDisruptionsCount
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = colorScheme.onErrorContainer,
@@ -857,7 +871,7 @@ private fun InternetUsageHourlyCard(
                 }
 
                 Text(
-                    text = "Wi-Fi: ${AppRootInspector.formatBytes(totalWifi)} • Móvel: ${AppRootInspector.formatBytes(totalMobile)}",
+                    text = stringResource(R.string.history_network_wifi_mobile, AppRootInspector.formatBytes(totalWifi), AppRootInspector.formatBytes(totalMobile)),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                     color = colorScheme.outline,
                 )
@@ -947,6 +961,265 @@ private fun InternetUsageHourlyCard(
                             size = Size(barWidth, barHeight),
                             cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx()),
                         )
+                    }
+                }
+            }
+
+            // Hour labels (00h, 06h, 12h, 18h, 23h)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "00h", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colorScheme.outline)
+                Text(text = "06h", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colorScheme.outline)
+                Text(text = "12h", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colorScheme.outline)
+                Text(text = "18h", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colorScheme.outline)
+                Text(text = "23h", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colorScheme.outline)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BatteryUsageTimelineCard(
+    date: LocalDate,
+    timelinePoints: List<BatteryTimelinePoint>,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    var selectedPointIndex by remember(timelinePoints) { mutableIntStateOf(-1) }
+
+    val colorScreenOn = Color(0xFF4CAF50)
+    val colorDeepSleep = Color(0xFF29B6F6)
+    val colorOff = Color(0xFFEF5350)
+
+    val zoneId = remember { ZoneId.systemDefault() }
+    val startOfDay = remember(date) { date.atStartOfDay(zoneId).toInstant().toEpochMilli() }
+    val endOfDay = remember(date) { date.plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli() - 1L }
+
+    GlassCard(
+        fallbackColor = dynamicSurfaceColor(alpha = 0.50f, tintFraction = 0.08f),
+        cornerRadiusDp = 12.dp,
+        border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.10f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(10.dp)) {
+            // Header: Title & Compact Legend
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.BatteryChargingFull,
+                        contentDescription = null,
+                        tint = colorScheme.primary,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.history_day_battery_chart),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onSurface,
+                    )
+                }
+
+                // Legend dots
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(colorScreenOn))
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            text = stringResource(R.string.history_battery_legend_screen_on),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = colorScheme.outline,
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(colorDeepSleep))
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            text = stringResource(R.string.history_battery_legend_deep_sleep),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = colorScheme.outline,
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(colorOff))
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            text = stringResource(R.string.history_battery_legend_off),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = colorScheme.outline,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // Tooltip if user tapped/scrubbed
+            if (selectedPointIndex in timelinePoints.indices) {
+                val pt = timelinePoints[selectedPointIndex]
+                val timeStr = remember(pt.timestamp) {
+                    DateTimeFormatter.ofPattern("HH:mm").withZone(zoneId).format(Instant.ofEpochMilli(pt.timestamp))
+                }
+                val stateText = when (pt.state) {
+                    BatteryTimelinePoint.STATE_SCREEN_ON -> stringResource(R.string.history_battery_state_screen_on)
+                    BatteryTimelinePoint.STATE_OFF -> stringResource(R.string.history_battery_state_off)
+                    else -> stringResource(R.string.history_battery_state_deep_sleep)
+                }
+                val stateColor = when (pt.state) {
+                    BatteryTimelinePoint.STATE_SCREEN_ON -> colorScreenOn
+                    BatteryTimelinePoint.STATE_OFF -> colorOff
+                    else -> colorDeepSleep
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(colorScheme.primaryContainer.copy(alpha = 0.5f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.history_battery_tooltip_format, timeStr, pt.batteryLevel, stateText),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onPrimaryContainer,
+                    )
+                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(stateColor))
+                }
+                Spacer(Modifier.height(6.dp))
+            }
+
+            // Compact 24-Hour Line Chart Canvas (Height 52.dp - same as internet chart)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+            ) {
+                val trackColor = colorScheme.surfaceVariant.copy(alpha = 0.35f)
+
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(timelinePoints) {
+                            detectTapGestures { offset ->
+                                if (timelinePoints.isNotEmpty()) {
+                                    val w = size.width
+                                    val tapRatio = (offset.x / w).coerceIn(0f, 1f)
+                                    val tapTimestamp = startOfDay + (tapRatio * (endOfDay - startOfDay)).toLong()
+                                    var closestIndex = 0
+                                    var minDiff = Long.MAX_VALUE
+                                    for (i in timelinePoints.indices) {
+                                        val diff = kotlin.math.abs(timelinePoints[i].timestamp - tapTimestamp)
+                                        if (diff < minDiff) {
+                                            minDiff = diff
+                                            closestIndex = i
+                                        }
+                                    }
+                                    selectedPointIndex = if (selectedPointIndex == closestIndex) -1 else closestIndex
+                                }
+                            }
+                        },
+                ) {
+                    val w = size.width
+                    val h = size.height
+                    val verticalPadding = 6.dp.toPx()
+                    val chartHeight = h - (verticalPadding * 2)
+
+                    // Draw subtle horizontal guide lines (0%, 50%, 100%)
+                    val y100 = verticalPadding
+                    val y50 = verticalPadding + (chartHeight / 2f)
+                    val y0 = verticalPadding + chartHeight
+
+                    drawLine(
+                        color = trackColor,
+                        start = Offset(0f, y100),
+                        end = Offset(w, y100),
+                        strokeWidth = 1.dp.toPx(),
+                    )
+                    drawLine(
+                        color = trackColor.copy(alpha = 0.2f),
+                        start = Offset(0f, y50),
+                        end = Offset(w, y50),
+                        strokeWidth = 1.dp.toPx(),
+                    )
+                    drawLine(
+                        color = trackColor,
+                        start = Offset(0f, y0),
+                        end = Offset(w, y0),
+                        strokeWidth = 1.dp.toPx(),
+                    )
+
+                    if (timelinePoints.size >= 2) {
+                        val duration = (endOfDay - startOfDay).toFloat().coerceAtLeast(1f)
+
+                        fun pointOffset(pt: BatteryTimelinePoint): Offset {
+                            val x = (((pt.timestamp - startOfDay).toFloat() / duration).coerceIn(0f, 1f)) * w
+                            val y = verticalPadding + ((100f - pt.batteryLevel.toFloat().coerceIn(0f, 100f)) / 100f) * chartHeight
+                            return Offset(x, y)
+                        }
+
+                        // Draw colored segments
+                        for (i in 0 until timelinePoints.size - 1) {
+                            val p1 = timelinePoints[i]
+                            val p2 = timelinePoints[i + 1]
+                            val off1 = pointOffset(p1)
+                            val off2 = pointOffset(p2)
+
+                            val segColor = when (p1.state) {
+                                BatteryTimelinePoint.STATE_SCREEN_ON -> colorScreenOn
+                                BatteryTimelinePoint.STATE_OFF -> colorOff
+                                else -> colorDeepSleep
+                            }
+
+                            drawLine(
+                                color = segColor,
+                                start = off1,
+                                end = off2,
+                                strokeWidth = 2.5.dp.toPx(),
+                                cap = StrokeCap.Round,
+                            )
+                        }
+
+                        // Highlight selected point if any
+                        if (selectedPointIndex in timelinePoints.indices) {
+                            val selPt = timelinePoints[selectedPointIndex]
+                            val selOff = pointOffset(selPt)
+                            val selColor = when (selPt.state) {
+                                BatteryTimelinePoint.STATE_SCREEN_ON -> colorScreenOn
+                                BatteryTimelinePoint.STATE_OFF -> colorOff
+                                else -> colorDeepSleep
+                            }
+
+                            // Vertical indicator line
+                            drawLine(
+                                color = selColor.copy(alpha = 0.5f),
+                                start = Offset(selOff.x, verticalPadding),
+                                end = Offset(selOff.x, verticalPadding + chartHeight),
+                                strokeWidth = 1.dp.toPx(),
+                            )
+
+                            // Outer ring
+                            drawCircle(
+                                color = selColor,
+                                radius = 4.5.dp.toPx(),
+                                center = selOff,
+                            )
+                            // Inner dot
+                            drawCircle(
+                                color = Color.White,
+                                radius = 2.dp.toPx(),
+                                center = selOff,
+                            )
+                        }
                     }
                 }
             }

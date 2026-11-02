@@ -92,6 +92,35 @@ data class DailyBatteryConsumer(
 }
 
 /**
+ * Timeline point of battery level and device state throughout a day.
+ */
+data class BatteryTimelinePoint(
+    val timestamp: Long, // epoch ms
+    val batteryLevel: Int, // 0 - 100
+    val state: Int, // 0 = DEEP_SLEEP, 1 = SCREEN_ON, 2 = OFF
+) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("timestamp", timestamp)
+        put("batteryLevel", batteryLevel)
+        put("state", state)
+    }
+
+    companion object {
+        const val STATE_DEEP_SLEEP = 0
+        const val STATE_SCREEN_ON = 1
+        const val STATE_OFF = 2
+
+        fun fromJson(json: JSONObject): BatteryTimelinePoint {
+            return BatteryTimelinePoint(
+                timestamp = json.optLong("timestamp", 0L),
+                batteryLevel = json.optInt("batteryLevel", 0),
+                state = json.optInt("state", STATE_DEEP_SLEEP),
+            )
+        }
+    }
+}
+
+/**
  * Consolidated daily usage record containing all metrics for a given date.
  * dateKey format: "yyyy-MM-dd" (e.g., "2026-11-01")
  */
@@ -113,6 +142,7 @@ data class DailyUsageRecord(
     val topBatteryConsumers: List<DailyBatteryConsumer> = emptyList(),
     val backgroundAnomaliesCount: Int = 0,
     val deepSleepDisruptionsCount: Int = 0,
+    val batteryTimeline: List<BatteryTimelinePoint> = emptyList(),
 ) {
     val totalInternetBytes: Long get() = totalWifiBytes + totalMobileBytes
     val totalRebootsAndShutdowns: Int get() = rebootCount + shutdownCount
@@ -144,6 +174,10 @@ data class DailyUsageRecord(
         val battArray = JSONArray()
         topBatteryConsumers.forEach { battArray.put(it.toJson()) }
         put("topBatteryConsumers", battArray)
+
+        val timelineArray = JSONArray()
+        batteryTimeline.forEach { timelineArray.put(it.toJson()) }
+        put("batteryTimeline", timelineArray)
     }
 
     companion object {
@@ -190,6 +224,15 @@ data class DailyUsageRecord(
                 }
             }
 
+            val timelineList = mutableListOf<BatteryTimelinePoint>()
+            val timelineArray = json.optJSONArray("batteryTimeline")
+            if (timelineArray != null) {
+                for (i in 0 until timelineArray.length()) {
+                    val obj = timelineArray.optJSONObject(i)
+                    if (obj != null) timelineList.add(BatteryTimelinePoint.fromJson(obj))
+                }
+            }
+
             return DailyUsageRecord(
                 dateKey = dateKey,
                 timestamp = timestamp,
@@ -208,6 +251,7 @@ data class DailyUsageRecord(
                 topBatteryConsumers = battList,
                 backgroundAnomaliesCount = anomCount,
                 deepSleepDisruptionsCount = deepSleepCount,
+                batteryTimeline = timelineList,
             )
         }
     }
