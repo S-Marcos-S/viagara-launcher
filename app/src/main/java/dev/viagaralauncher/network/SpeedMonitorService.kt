@@ -461,7 +461,6 @@ class SpeedMonitorService : Service() {
 
     private fun getActiveAppsSpeed(deltaTime: Double, totalDeviceSpeed: Double): List<ActiveAppSpeed> {
         if (!hasUsageStatsPermission()) {
-            tryAutoGrantUsagePermission()
             return emptyList()
         }
 
