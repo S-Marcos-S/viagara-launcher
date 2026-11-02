@@ -27,6 +27,7 @@
 <p align="center">
   <a href="#-destaques--features">Destaques</a> •
   <a href="#-recursos-para-superusuário">Superusuário</a> •
+  <a href="#-may-task-manager">MAY Task Manager</a> •
   <a href="#-download">Download</a> •
   <a href="#-documentação-técnica">Documentação</a> •
   <a href="#-créditos--credits">Créditos</a> •
@@ -36,12 +37,10 @@
 ---
 
 <p align="center">
-  <img src="docs/screenshots/screenshot_home.png" width="32%" alt="Tela Inicial" />
-  <img src="docs/screenshots/screenshot_search.png" width="32%" alt="Pesquisa Universal" />
-  <img src="docs/screenshots/screenshot_widgets.png" width="32%" alt="Widgets & Now Playing" />
-  <img src="docs/screenshots/screenshot_processes.png" width="32%" alt="Gerenciador de Processos" />
-  <img src="docs/screenshots/screenshot_performance.png" width="32%" alt="Monitor de Desempenho" />
-  <img src="docs/screenshots/screenshot_battery.png" width="32%" alt="Diagnóstico do Sistema" />
+  <img src="docs/screenshots/screenshot_home.png" width="24%" alt="Tela Inicial" />
+  <img src="docs/screenshots/screenshot_search.png" width="24%" alt="Pesquisa Universal" />
+  <img src="docs/screenshots/screenshot_widgets.png" width="24%" alt="Widgets & Now Playing" />
+  <img src="docs/screenshots/screenshot_battery.png" width="24%" alt="Diagnóstico do Sistema" />
 </p>
 
 ---
@@ -62,13 +61,20 @@
 
 ## ⚡ Recursos para Superusuário
 
-*(Ferramentas extras para usuários avançados; o launcher funciona 100% sem root)*
+*(O launcher funciona 100% sem root; recursos adicionais são ativados caso o dispositivo possua permissões de superusuário)*
 
-- **Gerenciador de Processos & Tarefas:** Inspeção detalhada de memória (PSS/RAM), CPU, threads, conexões de socket ativas e encerramento forçado de processos em segundo plano.
-- **Terminal Integrado & Visualizador de Logs ao Vivo:** Terminal de comandos shell/su (`TerminalEngine`) e janela flutuante sobreposta de Logcat com filtros avançados e gravação de logs.
-- **Diagnóstico do Sistema & Bateria:** Análise profunda de bateria (`dumpsys batterystats`), histórico de descargas, wakelocks, estimativas precisas e controle de Doze agressivo.
-- **Detector de Anomalias em Segundo Plano (`BackgroundAnomalyWatcher`):** Monitoramento inteligente em repouso com alertas proativos contra apps vilões consumindo bateria ou dados sem permissão.
-- **Desinstalação Silenciosa de Apps de Sistema:** Remoção ou congelamento profundo de bloatware diretamente pela interface do launcher.
+- **Instalação Silenciosa de Atualizações:** Atualização do launcher com um único toque via root shell (`RootInstaller`), sem prompts adicionais do sistema.
+- **Visualizador de Áudio Reativo:** Captura de áudio nativa por daemon de sistema via root (`AudioVisualizerManager`) em harmonia com o widget Now Playing.
+
+---
+
+## 🛠️ MAY Task Manager
+
+As funcionalidades avançadas de **Gerenciador de Tarefas**, **Inspetor de Processos & Memória (PSS/RAM)**, **Visualizador de Logs ao Vivo (Logcat / Terminal)** e **Detector de Anomalias em Segundo Plano** foram completamente desacopladas e migradas para o aplicativo dedicado e independente:
+
+👉 **[MAY Task Manager](https://github.com/S-Marcos-S/MAY---Task-Manager)**
+
+Essa separação garante que o **Viagara Launcher** permaneça extremamente enxuto, rápido e focado na melhor experiência de uso como tela inicial, enquanto o **MAY** cuida do monitoramento profundo e telemetria avançada de todo o sistema operacional.
 
 ---
 

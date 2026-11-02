@@ -19,7 +19,6 @@ flowchart TD
         NetUI[NetworkStatsScreen]
         AgendaUI[AgendaBottomSheet & CreateAgendaSheet]
         BatteryUI[BatteryStatsScreen]
-        RootUI[TaskManagerScreen & AppLogViewerDialog]
         WallUI[WallpaperPickerScreen]
     end
 
@@ -154,35 +153,17 @@ dev.viagaralauncher
 │   └── StatsModels.kt                   Network usage data models and speed metrics
 ├── notification/
 │   └── NotificationBus.kt               Notification bus bridging active messages to the UI layer
-├── root/
-│   ├── AppLogCaptureService.kt          Foreground service capturing logcat buffers in real-time
-│   ├── AppRootInspector.kt              Deep process inspector (memory maps, PSS, open sockets, UID info)
-│   ├── AppUninstallManager.kt           Root silent system and user app uninstaller
-│   ├── LogNotificationReceiver.kt       Notification controller for log recording sessions
-│   ├── SystemTaskTelemetry.kt           Live CPU, thread, and process monitoring engine
-│   ├── TaskManagerEvents.kt             Process manager UI events
-│   ├── anomaly/
-│   │   ├── BackgroundAnomalyModels.kt   Anomaly alerts, sleep drain thresholds, and app flags
-│   │   ├── BackgroundAnomalyNotificationManager.kt High background activity alert notifications
-│   │   ├── BackgroundAnomalyReceiver.kt Broadcast receiver for one-tap force-stop from anomaly alerts
-│   │   └── BackgroundAnomalyWatcher.kt  Sleep monitor detecting rogue apps draining battery or network
-│   ├── log/
-│   │   ├── CrashManager.kt              Uncaught crash interceptor and stacktrace collector
-│   │   ├── FilterStorage.kt             Saved filter presets and regex rules persistence
-│   │   ├── LogFilterEngine.kt           Multi-condition filter engine (log level, PID, tag, message regex)
-│   │   ├── LogLineParser.kt             High-throughput logcat raw line parser
-│   │   ├── LogModels.kt                 Parsed log entry data structures and search indices
-│   │   ├── LogRecordingsManager.kt      Disk recording and export of log sessions
-│   │   ├── LogViewerEvents.kt           Interactive log viewer UI events
-│   │   └── TerminalEngine.kt            Interactive root/sh terminal shell engine
-│   └── overlay/
-│       └── OverlayLifecycleOwner.kt     Floating window Compose lifecycle provider
 ├── service/
 │   ├── DefaultLauncherUtil.kt           System default launcher detection and settings shortcut
 │   ├── HapticUtil.kt                    VibrationEffect tick generator respecting system feedback settings
 │   ├── StatusBarFader.kt                Window inset animator for peek status bar behavior
 │   ├── SystemUi.kt                      System UI flags and status bar visibility controls
 │   └── ViagaraAccessibilityService.kt  Sanctioned service for screen locking and shade expansion
+├── update/
+│   ├── RootInstaller.kt                 Root-based silent APK installer for launcher updates
+│   └── UpdateManager.kt                 GitHub Release update checker and APK download manager
+├── util/
+│   └── AppUninstallManager.kt           Safe standard package uninstaller helper
 ├── ui/
 │   ├── ViagaraNavHost.kt               Global navigation graph and transitions
 │   ├── applist/
@@ -222,13 +203,6 @@ dev.viagaralauncher
 │   │   └── NetworkStatsScreen.kt        Network speed configuration, live traffic graph, app usage cards
 │   ├── notification/
 │   │   └── NotificationDetailDialog.kt  Frosted-glass notification dialog with conversation thread history
-│   ├── root/
-│   │   ├── AppLogViewerDialog.kt        Full-screen logcat viewer with live streaming and search
-│   │   ├── AppRootInspectorDialog.kt    Root inspector modal (memory, socket connections, process tree)
-│   │   ├── BackgroundAnomalySettingsDialog.kt Sleep anomaly monitoring threshold preferences
-│   │   ├── FloatingLogOverlayManager.kt System overlay floating window displaying live logcat stream
-│   │   ├── LogFilterSuggestions.kt      Smart auto-completion for log tags and process names
-│   │   └── TaskManagerScreen.kt         Running process manager with PID/RAM filtering and kill buttons
 │   ├── search/
 │   │   ├── SearchModels.kt              Search result categories (apps, contacts, web, shortcuts)
 │   │   ├── SearchRepository.kt          Multi-source async search provider
@@ -344,8 +318,7 @@ On Android 13+ (API 33+), frosted glass dialogs and cards leverage hardware-acce
 | `POST_NOTIFICATIONS` | Send update alerts, agenda reminders, speed notifications, and high-drain alerts (Android 13+). | Optional (System prompt) |
 | `FOREGROUND_SERVICE` | Keep real-time speed monitoring, agenda synchronization, and log capturing active. | No |
 | `FOREGROUND_SERVICE_SPECIAL_USE` | Android 14+ classification for the speed monitor notification service. | No |
-| `FOREGROUND_SERVICE_DATA_SYNC` | Android 14+ classification for agenda synchronization and log capture services. | No |
-| `PACKAGE_USAGE_STATS` | Read per-UID cumulative network consumption deltas without root. | Optional (Settings prompt) |
+| `PACKAGE_USAGE_STATS` | Read per-UID cumulative network consumption deltas. | Optional (Settings prompt) |
 | `RECEIVE_BOOT_COMPLETED` | Restore scheduled alarms, daily wallpapers, and speed monitor across device reboots. | No |
 | `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` | Fire exact-time notifications for agenda reminders and scheduled backups. | Optional |
 | `REQUEST_INSTALL_PACKAGES` | Trigger the Android PackageInstaller to install downloaded APK updates. | Optional (Granted per install) |
@@ -353,10 +326,9 @@ On Android 13+ (API 33+), frosted glass dialogs and cards leverage hardware-acce
 | `EXPAND_STATUS_BAR` | Expand the notification shade via gesture. | No |
 | `BIND_ACCESSIBILITY_SERVICE` | Sanctioned API to lock the screen (double-tap) and expand notifications without reflection. | Optional (Accessibility settings) |
 | `BIND_NOTIFICATION_LISTENER_SERVICE` | Read active media playback for Now Playing and capture unread message notifications. | Optional (Settings prompt) |
-| `SYSTEM_ALERT_WINDOW` | Display the floating logcat overlay window over other applications. | Optional (Granted per overlay) |
 | `SET_WALLPAPER` | Apply chosen wallpapers directly to system and lock screens. | Optional |
 | `MANAGE_EXTERNAL_STORAGE` / `READ_EXTERNAL_STORAGE` | SAF backup export and custom offline file access. | Optional |
-| `BATTERY_STATS` / `DUMP` / `READ_LOGS` | Superuser privileged inspection of battery and system logs (granted via root/adb). | Optional (Root / ADB) |
+| `BATTERY_STATS` / `DUMP` | Privileged inspection of battery via ADB dumpsys. | Optional (ADB) |
 
 ---
 
