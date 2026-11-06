@@ -8,9 +8,10 @@ Para evitar poluir a branch `main` com commits que possam quebrar a compilação
   1. Desenvolva as mudanças e utilize a branch de testes (`git checkout -b test` ou `git switch test`).
   2. Faça o bump de versão em `app/build.gradle.kts` e atualize `CHANGELOG_LATEST.md` (e `app/src/main/assets/CHANGELOG_LATEST.md`).
   3. Realize o commit contendo a versão na mensagem e faça o push para a branch `test` (`git push origin test --force` ou `git push origin test`).
-  4. O GitHub Actions executará automaticamente o workflow de build (compilação e testes unitários) para a branch `test`.
+  4. O GitHub Actions executará automaticamente o workflow de build (compilação e testes unitários) e publicará uma nova release de teste (`Pre-release` no GitHub, sem destaque, visível apenas para usuários que ativaram a opção de testador beta nas configurações da launcher).
   5. Acompanhe a execução da build até a conclusão (`gh run watch`). Caso ocorra qualquer falha, investigue e corrija na própria branch `test`.
-  6. **SOMENTE APÓS A BUILD PASSAR COM SUCESSO (`completed` / `success`) na branch `test`:** faça o merge para a branch `main` e envie o push para gerar a Release e APK oficial:
+  6. **PERGUNTA OBRIGATÓRIA AO USUÁRIO APÓS BUILD DE TESTE:** Após a build ser feita com sucesso na branch `test` e a release de teste estar disponível, **o agente DEVE SEMPRE perguntar ao usuário** se deseja subir as alterações para a branch `main` e lançar uma release estável oficial. NUNCA faça o merge ou push para a `main` automaticamente sem a confirmação explícita do usuário.
+  7. **SOMENTE APÓS A CONFIRMAÇÃO DO USUÁRIO:** faça o merge para a branch `main` e envie o push para gerar a Release e APK oficial estável:
      ```bash
      git checkout main
      git merge test --ff-only

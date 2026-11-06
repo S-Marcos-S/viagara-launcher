@@ -1,3 +1,4 @@
-### 🚀 Novidades da Versão v0.60.97 (Beta)
+### 🚀 Novidades da Versão v0.60.98
 
-- **Visualizador de Áudio:** Leve ajuste na sensibilidade da primeira barra (subgraves/25-65 Hz) para resposta mais nítida a graves sutis.
+- **Testador Beta:** Opção nas configurações para receber versões de teste antecipadas via branch test.
+- **Papéis de Parede:** Botão minimalista na barra superior para alternar visualização entre 2, 3 e 4 colunas.

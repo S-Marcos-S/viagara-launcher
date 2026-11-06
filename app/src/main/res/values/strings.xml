@@ -1201,4 +1201,9 @@
     <string name="notif_opt_total_avg">Total &amp; Average</string>
     <string name="notif_opt_temperature">Temperature</string>
     <string name="notif_opt_network">Network Usage</string>
+
+    <!-- Beta Tester & Wallpaper Columns -->
+    <string name="settings_beta_tester_title">Beta Tester</string>
+    <string name="settings_beta_tester_detail">Receive early test updates from the test branch</string>
+    <string name="wallpaper_columns_desc">Toggle wallpaper columns (currently %1$d)</string>
 </resources>

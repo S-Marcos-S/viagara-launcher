@@ -167,6 +167,8 @@ fun SettingsScreen(
     isDefaultLauncher: Boolean = false,
     onOpenDefaultLauncherSettings: () -> Unit = {},
     onOpenBackupSettings: () -> Unit = {},
+    isBetaTester: Boolean = false,
+    onSetIsBetaTester: (Boolean) -> Unit = {},
     onBack: () -> Unit,
 ) {
     val surface = MaterialTheme.colorScheme.surface
@@ -579,6 +581,13 @@ fun SettingsScreen(
                             modifier = Modifier.clickable { showCurrentChangelog = true }.padding(vertical = 4.dp)
                         )
                     }
+                    RowDivider()
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_beta_tester_title),
+                        detail = stringResource(R.string.settings_beta_tester_detail),
+                        checked = isBetaTester,
+                        onCheckedChange = onSetIsBetaTester,
+                    )
 
                     if (showCurrentChangelog) {
                         var changelogText by remember { mutableStateOf("") }

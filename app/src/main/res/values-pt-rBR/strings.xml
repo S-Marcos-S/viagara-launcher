@@ -1163,4 +1163,9 @@
     <string name="notif_opt_total_avg">Total e Média</string>
     <string name="notif_opt_temperature">Temperatura</string>
     <string name="notif_opt_network">Uso de Rede</string>
+
+    <!-- Beta Tester & Wallpaper Columns -->
+    <string name="settings_beta_tester_title">Testador Beta</string>
+    <string name="settings_beta_tester_detail">Receber atualizações de teste antecipadas (branch test)</string>
+    <string name="wallpaper_columns_desc">Alternar colunas de papéis de parede (atualmente %1$d)</string>
 </resources>

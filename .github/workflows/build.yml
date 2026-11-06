@@ -163,8 +163,10 @@ jobs:
         run: |
           VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
           TAG_NAME="v${VERSION_NAME}"
+          BETA_TAG_NAME="v${VERSION_NAME}-beta"
           echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_OUTPUT
           echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "BETA_TAG_NAME=${BETA_TAG_NAME}" >> $GITHUB_OUTPUT
 
           # Verifica se a tag já existe no repositório remoto
           if git ls-remote --tags origin "refs/tags/${TAG_NAME}" | grep -q "${TAG_NAME}"; then
@@ -192,6 +194,20 @@ jobs:
 
           Built automatically from commit \`${{ github.sha }}\`.
           EOF
+
+      - name: Create or Update Test Beta Release
+        if: github.ref == 'refs/heads/test'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version_check.outputs.BETA_TAG_NAME }}
+          name: "Viagara Launcher ${{ steps.version_check.outputs.TAG_NAME }} (Beta)"
+          body_path: RELEASE_NOTES.md
+          prerelease: true
+          make_latest: false
+          files: |
+            artifacts/viagara-launcher-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create or Update Version Release
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'

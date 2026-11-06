@@ -155,6 +155,7 @@ fun WallpaperPickerScreen(
     val favoriteIds by WallpaperRepository.favoriteIds.collectAsState()
     val prefs = remember { Prefs(context) }
     val isAutoDailyEnabled by prefs.autoDailyWallpaperEnabled.collectAsState(initial = false)
+    val wallpaperColumns by prefs.wallpaperColumns.collectAsState(initial = 2)
 
     LaunchedEffect(Unit) {
         WallpaperRepository.initFavorites(context)
@@ -232,6 +233,39 @@ fun WallpaperPickerScreen(
                         actions = {
                             IconButton(
                                 onClick = {
+                                    val nextColumns = when (wallpaperColumns) {
+                                        2 -> 3
+                                        3 -> 4
+                                        else -> 2
+                                    }
+                                    coroutineScope.launch {
+                                        prefs.setWallpaperColumns(nextColumns)
+                                    }
+                                }
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(30.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                                        .border(
+                                            0.8.dp,
+                                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                                            RoundedCornerShape(8.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "${wallpaperColumns}x",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 11.sp,
+                                    )
+                                }
+                            }
+                            IconButton(
+                                onClick = {
                                     try {
                                         val intent = Intent(Intent.ACTION_SET_WALLPAPER)
                                         context.startActivity(Intent.createChooser(intent, "Escolher papel de parede"))
@@ -277,23 +311,23 @@ fun WallpaperPickerScreen(
     ) { innerPadding ->
         LazyVerticalGrid(
             state = gridState,
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Fixed(wallpaperColumns),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(if (wallpaperColumns >= 4) 10.dp else if (wallpaperColumns == 3) 12.dp else 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (wallpaperColumns >= 4) 8.dp else if (wallpaperColumns == 3) 10.dp else 14.dp),
+            verticalArrangement = Arrangement.spacedBy(if (wallpaperColumns >= 4) 8.dp else if (wallpaperColumns == 3) 10.dp else 14.dp),
         ) {
             // Minimalist Search Bar (no lugar do antigo card "Fotos e Galeria")
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 WallpaperSearchBar(
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
                 )
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 DailyWallpaperToggleCard(
                     enabled = isAutoDailyEnabled,
                     onToggle = { enabled ->
@@ -305,7 +339,7 @@ fun WallpaperPickerScreen(
             }
 
             if (isLoadingCatalog && filteredWallpapers.isEmpty()) {
-                item(span = { GridItemSpan(2) }) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -316,7 +350,7 @@ fun WallpaperPickerScreen(
                     }
                 }
             } else if (filteredWallpapers.isEmpty()) {
-                item(span = { GridItemSpan(2) }) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -353,6 +387,7 @@ fun WallpaperPickerScreen(
                 items(filteredWallpapers, key = { it.id }) { item ->
                     WallpaperGridItem(
                         item = item,
+                        columns = wallpaperColumns,
                         isFavorite = favoriteIds.contains(item.id),
                         onToggleFavorite = {
                             WallpaperRepository.toggleFavorite(context, item.id)
@@ -579,13 +614,14 @@ private fun WallpaperSearchBar(
 @Composable
 private fun WallpaperGridItem(
     item: WallpaperItem,
+    columns: Int = 2,
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(if (columns >= 4) 10.dp else if (columns == 3) 14.dp else 18.dp)
 
     val fallbackColor = remember(item.primaryColorHex) {
         runCatching { Color(android.graphics.Color.parseColor(item.primaryColorHex)) }
@@ -595,6 +631,18 @@ private fun WallpaperGridItem(
     val thumbnailBitmap by produceState<Bitmap?>(initialValue = null, item.thumbnailUrl) {
         value = WallpaperRepository.getCachedOrDownloadBitmap(context, item.thumbnailUrl)
     }
+
+    val heartPadding = if (columns >= 4) 4.dp else if (columns == 3) 6.dp else 8.dp
+    val heartBoxSize = if (columns >= 4) 24.dp else if (columns == 3) 28.dp else 32.dp
+    val heartIconSize = if (columns >= 4) 13.dp else if (columns == 3) 15.dp else 18.dp
+
+    val livePadding = if (columns >= 4) 4.dp else if (columns == 3) 6.dp else 8.dp
+    val liveTextSize = if (columns >= 4) 7.sp else if (columns == 3) 8.sp else 9.sp
+    val liveCorner = if (columns >= 4) 4.dp else 6.dp
+
+    val titlePaddingH = if (columns >= 4) 6.dp else if (columns == 3) 8.dp else 12.dp
+    val titlePaddingV = if (columns >= 4) 6.dp else if (columns == 3) 8.dp else 12.dp
+    val titleFontSize = if (columns >= 4) 10.sp else if (columns == 3) 11.sp else 13.sp
 
     Box(
         modifier = Modifier
@@ -630,15 +678,15 @@ private fun WallpaperGridItem(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .padding(livePadding)
+                    .clip(RoundedCornerShape(liveCorner))
                     .background(Color.Black.copy(alpha = 0.65f))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                    .padding(horizontal = if (columns >= 4) 4.dp else 6.dp, vertical = 2.dp),
             ) {
                 Text(
                     text = "▶ LIVE",
                     color = Color.White,
-                    fontSize = 9.sp,
+                    fontSize = liveTextSize,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -648,8 +696,8 @@ private fun WallpaperGridItem(
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(8.dp)
-                .size(32.dp)
+                .padding(heartPadding)
+                .size(heartBoxSize)
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.35f))
                 .clickable { onToggleFavorite() },
@@ -660,14 +708,14 @@ private fun WallpaperGridItem(
                     imageVector = Icons.Filled.Favorite,
                     contentDescription = "Favorito",
                     tint = Color(0xFFE53935),
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(heartIconSize),
                 )
             } else {
                 Icon(
                     imageVector = Icons.Filled.FavoriteBorder,
                     contentDescription = "Favoritar",
                     tint = Color.White.copy(alpha = 0.90f),
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(heartIconSize),
                 )
             }
         }
@@ -682,13 +730,13 @@ private fun WallpaperGridItem(
                         colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f)),
                     )
                 )
-                .padding(horizontal = 12.dp, vertical = 12.dp),
+                .padding(horizontal = titlePaddingH, vertical = titlePaddingV),
         ) {
             Column {
                 Text(
                     text = item.name,
                     color = Color.White,
-                    fontSize = 13.sp,
+                    fontSize = titleFontSize,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

@@ -18,12 +18,14 @@ import androidx.core.content.ContextCompat
 import dev.viagaralauncher.BuildConfig
 import dev.viagaralauncher.MainActivity
 import dev.viagaralauncher.R
+import dev.viagaralauncher.data.Prefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -79,7 +81,7 @@ object UpdateManager {
     private const val KEY_DOWNLOADED_COMMIT_SHA = "downloaded_commit_sha"
 
     private const val GITHUB_REPO = "S-Marcos-S/viagara-launcher"
-    private const val RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=5"
+    private const val RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=10"
     private const val FALLBACK_RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases/tags/latest"
 
     private var appContext: Context? = null
@@ -269,18 +271,46 @@ object UpdateManager {
 
                     if (releasesList.isNotEmpty()) {
                         val currentVersion = BuildConfig.VERSION_NAME
+                        val currentSha = BuildConfig.GIT_SHA
+                        val currentIsBeta = BuildConfig.IS_BETA_BUILD
 
-                        // Procura primeiro uma release oficial com versão maior que a atual
+                        val isBetaTester = try {
+                            appContext?.let { Prefs(it).isBetaTester.first() } ?: false
+                        } catch (_: Exception) {
+                            false
+                        }
+
+                        // Procura uma release aplicável para o usuário
                         var higherVersionRelease: JSONObject? = null
                         var chosenVersion: String? = null
 
                         for (rel in releasesList) {
+                            val isPrerelease = rel.optBoolean("prerelease", false)
                             val tag = rel.optString("tag_name", "")
+                            val isBetaRelease = isPrerelease || tag.contains("beta", ignoreCase = true)
+
+                            // Se a release for beta e o usuário não for testador beta, ignorar
+                            if (isBetaRelease && !isBetaTester) {
+                                continue
+                            }
+
                             val name = rel.optString("name", "")
-                            val v = extractVersion(tag, name)
-                            if (v != null && isVersionGreater(v, currentVersion)) {
+                            val v = extractVersion(tag, name) ?: continue
+
+                            val isGreater = isVersionGreater(v, currentVersion)
+                            val isPromotionToStable = !isBetaRelease && currentIsBeta && isVersionEqual(v, currentVersion)
+
+                            val body = rel.optString("body", "")
+                            val shaRegex = Regex("""commit [`']?([a-f0-9]{7,40})""", RegexOption.IGNORE_CASE)
+                            val remoteSha = shaRegex.find(body)?.groupValues?.get(1)?.trim()
+                            val isNewerBetaCommit = isBetaTester && isBetaRelease && currentIsBeta &&
+                                isVersionEqual(v, currentVersion) &&
+                                !remoteSha.isNullOrBlank() && currentSha.isNotBlank() &&
+                                !currentSha.startsWith(remoteSha) && !remoteSha.startsWith(currentSha)
+
+                            if (isGreater || isPromotionToStable || isNewerBetaCommit) {
                                 higherVersionRelease = rel
-                                chosenVersion = v
+                                chosenVersion = if (isBetaRelease) "$v (Beta)" else v
                                 break
                             }
                         }
@@ -396,15 +426,15 @@ object UpdateManager {
         }
     }
 
-    private fun extractVersion(tagName: String, releaseName: String): String? {
+    internal fun extractVersion(tagName: String, releaseName: String): String? {
         val versionRegex = Regex("""v?([0-9]+(?:\.[0-9]+)+)""")
         return versionRegex.find(tagName)?.groupValues?.get(1)
             ?: versionRegex.find(releaseName)?.groupValues?.get(1)
     }
 
-    private fun isVersionGreater(remote: String, current: String): Boolean {
-        val cleanRemote = remote.trim().removePrefix("v").removePrefix("V")
-        val cleanCurrent = current.trim().removePrefix("v").removePrefix("V")
+    internal fun isVersionGreater(remote: String, current: String): Boolean {
+        val cleanRemote = remote.trim().removePrefix("v").removePrefix("V").substringBefore("-").substringBefore(" ")
+        val cleanCurrent = current.trim().removePrefix("v").removePrefix("V").substringBefore("-").substringBefore(" ")
         val remoteParts = cleanRemote.split(".").mapNotNull { it.toIntOrNull() }
         val currentParts = cleanCurrent.split(".").mapNotNull { it.toIntOrNull() }
         val maxLen = maxOf(remoteParts.size, currentParts.size)
@@ -415,6 +445,20 @@ object UpdateManager {
             if (r < c) return false
         }
         return false
+    }
+
+    internal fun isVersionEqual(v1: String, v2: String): Boolean {
+        val clean1 = v1.trim().removePrefix("v").removePrefix("V").substringBefore("-").substringBefore(" ")
+        val clean2 = v2.trim().removePrefix("v").removePrefix("V").substringBefore("-").substringBefore(" ")
+        val parts1 = clean1.split(".").mapNotNull { it.toIntOrNull() }
+        val parts2 = clean2.split(".").mapNotNull { it.toIntOrNull() }
+        val maxLen = maxOf(parts1.size, parts2.size)
+        for (i in 0 until maxLen) {
+            val p1 = parts1.getOrElse(i) { 0 }
+            val p2 = parts2.getOrElse(i) { 0 }
+            if (p1 != p2) return false
+        }
+        return true
     }
 
     fun startDownload(

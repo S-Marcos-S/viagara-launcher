@@ -73,6 +73,7 @@ import dev.viagaralauncher.ui.settings.SettingsScreen
 import dev.viagaralauncher.ui.settings.ThemesScreen
 import dev.viagaralauncher.ui.wallpaper.WallpaperPickerScreen
 import dev.viagaralauncher.ui.theme.rememberContentColor
+import dev.viagaralauncher.update.UpdateManager
 import dev.viagaralauncher.widget.WidgetPickerActivity
 import dev.viagaralauncher.widget.WidgetSlotActions
 import kotlinx.coroutines.Dispatchers
@@ -250,6 +251,7 @@ fun ViagaraNavHost(
     val lastAutoBackupTimestamp by app.prefs.lastAutoBackupTimestamp.collectAsState(initial = 0L)
     val backupFolderUri by app.prefs.backupFolderUri.collectAsState(initial = null)
     val backupFolderName by app.prefs.backupFolderName.collectAsState(initial = null)
+    val isBetaTester by app.prefs.isBetaTester.collectAsState(initial = false)
 
     val searchConfig = remember(
         searchButtonEnabled,
@@ -531,6 +533,13 @@ fun ViagaraNavHost(
                     dev.viagaralauncher.service.DefaultLauncherUtil.requestSetDefaultLauncher(context)
                 },
                 onOpenBackupSettings = { navController.navigate("settings/backup") },
+                isBetaTester = isBetaTester,
+                onSetIsBetaTester = { enabled ->
+                    scope.launch {
+                        app.prefs.setIsBetaTester(enabled)
+                        UpdateManager.checkForUpdates(scope, force = true, context = context)
+                    }
+                },
                 onBack = { navController.popBackStack() },
             )
         }

@@ -21,6 +21,14 @@ val gitCommitSha: String = providers.environmentVariable("GITHUB_SHA").orNull?.i
     }.standardOutput.asText.get().trim()
 }.getOrDefault("")
 
+val gitBranchName: String = providers.environmentVariable("GITHUB_REF_NAME").orNull?.ifBlank { null } ?: runCatching {
+    providers.exec {
+        commandLine("git", "rev-parse", "--abbrev-ref", "HEAD")
+    }.standardOutput.asText.get().trim()
+}.getOrDefault("")
+
+val isBetaBuild: Boolean = gitBranchName == "test" || gitBranchName.startsWith("test/") || gitBranchName.contains("beta")
+
 val buildTimeMillis: Long = System.currentTimeMillis()
 
 android {
@@ -30,11 +38,12 @@ android {
     defaultConfig {
         applicationId = "dev.viagaralauncher"
         minSdk = 26
-        versionCode = 271
-        versionName = "0.60.97"
+        versionCode = 272
+        versionName = "0.60.98"
 
         buildConfigField("String", "GIT_SHA", "\"$gitCommitSha\"")
         buildConfigField("Long", "BUILD_TIME_MILLIS", "${buildTimeMillis}L")
+        buildConfigField("Boolean", "IS_BETA_BUILD", "$isBetaBuild")
     }
 
     signingConfigs {

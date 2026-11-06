@@ -158,6 +158,8 @@ class Prefs(private val context: Context) {
         val DAILY_WALLPAPER_LAST_TIMESTAMP = longPreferencesKey("daily_wallpaper_last_timestamp")
         val DAILY_WALLPAPER_CURRENT_ID = stringPreferencesKey("daily_wallpaper_current_id")
         val DAILY_WALLPAPER_INDEX = intPreferencesKey("daily_wallpaper_index")
+        val IS_BETA_TESTER = booleanPreferencesKey("is_beta_tester")
+        val WALLPAPER_COLUMNS = intPreferencesKey("wallpaper_columns")
     }
 
     private val data get() = context.dataStore.data
@@ -322,6 +324,8 @@ class Prefs(private val context: Context) {
     val dailyWallpaperLastTimestamp: Flow<Long> = data.map { it[Keys.DAILY_WALLPAPER_LAST_TIMESTAMP] ?: 0L }.distinctUntilChanged()
     val dailyWallpaperCurrentId: Flow<String> = data.map { it[Keys.DAILY_WALLPAPER_CURRENT_ID] ?: "" }.distinctUntilChanged()
     val dailyWallpaperIndex: Flow<Int> = data.map { it[Keys.DAILY_WALLPAPER_INDEX] ?: 0 }.distinctUntilChanged()
+    val isBetaTester: Flow<Boolean> = data.map { it[Keys.IS_BETA_TESTER] ?: false }.distinctUntilChanged()
+    val wallpaperColumns: Flow<Int> = data.map { it[Keys.WALLPAPER_COLUMNS] ?: 2 }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->
@@ -832,6 +836,14 @@ class Prefs(private val context: Context) {
 
     suspend fun setDailyWallpaperIndex(v: Int) {
         context.dataStore.edit { it[Keys.DAILY_WALLPAPER_INDEX] = v }
+    }
+
+    suspend fun setIsBetaTester(v: Boolean) {
+        context.dataStore.edit { it[Keys.IS_BETA_TESTER] = v }
+    }
+
+    suspend fun setWallpaperColumns(v: Int) {
+        context.dataStore.edit { it[Keys.WALLPAPER_COLUMNS] = v.coerceIn(2, 4) }
     }
 
     private val EXCLUDED_BACKUP_KEYS = setOf(
