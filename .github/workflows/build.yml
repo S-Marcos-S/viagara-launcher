@@ -187,10 +187,15 @@ jobs:
             echo "Atualizações e melhorias de estabilidade." >> RELEASE_NOTES.md
           fi
 
+          DOWNLOAD_TAG="latest"
+          if [ "${{ github.ref }}" = "refs/heads/test" ]; then
+            DOWNLOAD_TAG="${{ steps.version_check.outputs.BETA_TAG_NAME }}"
+          fi
+
           cat >> RELEASE_NOTES.md <<EOF
 
           ### Direct APK Download
-          - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/viagara-launcher-release.apk)
+          - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/${DOWNLOAD_TAG}/viagara-launcher-release.apk)
 
           Built automatically from commit \`${{ github.sha }}\`.
           EOF
@@ -200,6 +205,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version_check.outputs.BETA_TAG_NAME }}
+          target_commitish: ${{ github.sha }}
           name: "Viagara Launcher ${{ steps.version_check.outputs.TAG_NAME }} (Beta)"
           body_path: RELEASE_NOTES.md
           prerelease: true
@@ -214,6 +220,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version_check.outputs.TAG_NAME }}
+          target_commitish: ${{ github.sha }}
           name: "Viagara Launcher ${{ steps.version_check.outputs.TAG_NAME }}"
           body_path: RELEASE_NOTES.md
           prerelease: false
@@ -227,6 +234,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
+          target_commitish: ${{ github.sha }}
           name: "Viagara Launcher - Latest APKs (${{ steps.version_check.outputs.TAG_NAME }})"
           body_path: RELEASE_NOTES.md
           prerelease: false

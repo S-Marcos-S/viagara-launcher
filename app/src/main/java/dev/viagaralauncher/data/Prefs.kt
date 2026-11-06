@@ -325,7 +325,7 @@ class Prefs(private val context: Context) {
     val dailyWallpaperCurrentId: Flow<String> = data.map { it[Keys.DAILY_WALLPAPER_CURRENT_ID] ?: "" }.distinctUntilChanged()
     val dailyWallpaperIndex: Flow<Int> = data.map { it[Keys.DAILY_WALLPAPER_INDEX] ?: 0 }.distinctUntilChanged()
     val isBetaTester: Flow<Boolean> = data.map { it[Keys.IS_BETA_TESTER] ?: false }.distinctUntilChanged()
-    val wallpaperColumns: Flow<Int> = data.map { it[Keys.WALLPAPER_COLUMNS] ?: 2 }.distinctUntilChanged()
+    val wallpaperColumns: Flow<Int> = data.map { (it[Keys.WALLPAPER_COLUMNS] ?: 2).coerceIn(2, 4) }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->

@@ -134,6 +134,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -231,8 +233,11 @@ fun WallpaperPickerScreen(
                             }
                         },
                         actions = {
+                            val haptic = LocalHapticFeedback.current
+                            val columnsDesc = stringResource(R.string.wallpaper_columns_desc, wallpaperColumns)
                             IconButton(
                                 onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     val nextColumns = when (wallpaperColumns) {
                                         2 -> 3
                                         3 -> 4
@@ -241,7 +246,8 @@ fun WallpaperPickerScreen(
                                     coroutineScope.launch {
                                         prefs.setWallpaperColumns(nextColumns)
                                     }
-                                }
+                                },
+                                modifier = Modifier.semantics { contentDescription = columnsDesc },
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -640,9 +646,10 @@ private fun WallpaperGridItem(
     val liveTextSize = if (columns >= 4) 7.sp else if (columns == 3) 8.sp else 9.sp
     val liveCorner = if (columns >= 4) 4.dp else 6.dp
 
-    val titlePaddingH = if (columns >= 4) 6.dp else if (columns == 3) 8.dp else 12.dp
-    val titlePaddingV = if (columns >= 4) 6.dp else if (columns == 3) 8.dp else 12.dp
-    val titleFontSize = if (columns >= 4) 10.sp else if (columns == 3) 11.sp else 13.sp
+    val titlePaddingH = if (columns >= 4) 5.dp else if (columns == 3) 8.dp else 12.dp
+    val titlePaddingV = if (columns >= 4) 4.dp else if (columns == 3) 6.dp else 10.dp
+    val titleFontSize = if (columns >= 4) 9.sp else if (columns == 3) 11.sp else 13.sp
+    val authorFontSize = if (columns >= 4) 8.sp else if (columns == 3) 9.sp else 11.sp
 
     Box(
         modifier = Modifier
@@ -741,13 +748,15 @@ private fun WallpaperGridItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = item.author,
-                    color = Color.White.copy(alpha = 0.70f),
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (columns < 4 || (item.author.isNotBlank() && item.author != "Viagara")) {
+                    Text(
+                        text = item.author,
+                        color = Color.White.copy(alpha = 0.70f),
+                        fontSize = authorFontSize,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }

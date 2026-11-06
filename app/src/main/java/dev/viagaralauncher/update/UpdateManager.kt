@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
@@ -280,40 +281,16 @@ object UpdateManager {
                             false
                         }
 
-                        // Procura uma release aplicável para o usuário
-                        var higherVersionRelease: JSONObject? = null
-                        var chosenVersion: String? = null
-
-                        for (rel in releasesList) {
-                            val isPrerelease = rel.optBoolean("prerelease", false)
-                            val tag = rel.optString("tag_name", "")
-                            val isBetaRelease = isPrerelease || tag.contains("beta", ignoreCase = true)
-
-                            // Se a release for beta e o usuário não for testador beta, ignorar
-                            if (isBetaRelease && !isBetaTester) {
-                                continue
-                            }
-
-                            val name = rel.optString("name", "")
-                            val v = extractVersion(tag, name) ?: continue
-
-                            val isGreater = isVersionGreater(v, currentVersion)
-                            val isPromotionToStable = !isBetaRelease && currentIsBeta && isVersionEqual(v, currentVersion)
-
-                            val body = rel.optString("body", "")
-                            val shaRegex = Regex("""commit [`']?([a-f0-9]{7,40})""", RegexOption.IGNORE_CASE)
-                            val remoteSha = shaRegex.find(body)?.groupValues?.get(1)?.trim()
-                            val isNewerBetaCommit = isBetaTester && isBetaRelease && currentIsBeta &&
-                                isVersionEqual(v, currentVersion) &&
-                                !remoteSha.isNullOrBlank() && currentSha.isNotBlank() &&
-                                !currentSha.startsWith(remoteSha) && !remoteSha.startsWith(currentSha)
-
-                            if (isGreater || isPromotionToStable || isNewerBetaCommit) {
-                                higherVersionRelease = rel
-                                chosenVersion = if (isBetaRelease) "$v (Beta)" else v
-                                break
-                            }
-                        }
+                        // Procura a melhor release aplicável para o usuário
+                        val bestUpdate = findBestUpdate(
+                            releasesList = releasesList,
+                            currentVersion = currentVersion,
+                            currentSha = currentSha,
+                            currentIsBeta = currentIsBeta,
+                            isBetaTester = isBetaTester,
+                        )
+                        val higherVersionRelease = bestUpdate?.first
+                        val chosenVersion = bestUpdate?.second
 
                         lastCheckTimeMs = now
                         if (higherVersionRelease != null && chosenVersion != null) {
@@ -432,22 +409,7 @@ object UpdateManager {
             ?: versionRegex.find(releaseName)?.groupValues?.get(1)
     }
 
-    internal fun isVersionGreater(remote: String, current: String): Boolean {
-        val cleanRemote = remote.trim().removePrefix("v").removePrefix("V").substringBefore("-").substringBefore(" ")
-        val cleanCurrent = current.trim().removePrefix("v").removePrefix("V").substringBefore("-").substringBefore(" ")
-        val remoteParts = cleanRemote.split(".").mapNotNull { it.toIntOrNull() }
-        val currentParts = cleanCurrent.split(".").mapNotNull { it.toIntOrNull() }
-        val maxLen = maxOf(remoteParts.size, currentParts.size)
-        for (i in 0 until maxLen) {
-            val r = remoteParts.getOrElse(i) { 0 }
-            val c = currentParts.getOrElse(i) { 0 }
-            if (r > c) return true
-            if (r < c) return false
-        }
-        return false
-    }
-
-    internal fun isVersionEqual(v1: String, v2: String): Boolean {
+    internal fun compareVersions(v1: String, v2: String): Int {
         val clean1 = v1.trim().removePrefix("v").removePrefix("V").substringBefore("-").substringBefore(" ")
         val clean2 = v2.trim().removePrefix("v").removePrefix("V").substringBefore("-").substringBefore(" ")
         val parts1 = clean1.split(".").mapNotNull { it.toIntOrNull() }
@@ -456,9 +418,86 @@ object UpdateManager {
         for (i in 0 until maxLen) {
             val p1 = parts1.getOrElse(i) { 0 }
             val p2 = parts2.getOrElse(i) { 0 }
-            if (p1 != p2) return false
+            if (p1 > p2) return 1
+            if (p1 < p2) return -1
         }
-        return true
+        return 0
+    }
+
+    internal fun isVersionGreater(remote: String, current: String): Boolean =
+        compareVersions(remote, current) > 0
+
+    internal fun isVersionEqual(v1: String, v2: String): Boolean =
+        compareVersions(v1, v2) == 0
+
+    internal data class UpdateCandidate(
+        val release: JSONObject,
+        val rawVersion: String,
+        val isBeta: Boolean,
+        val remoteSha: String?,
+    )
+
+    internal fun findBestUpdate(
+        releasesList: List<JSONObject>,
+        currentVersion: String,
+        currentSha: String,
+        currentIsBeta: Boolean,
+        isBetaTester: Boolean,
+    ): Pair<JSONObject, String>? {
+        val candidates = mutableListOf<UpdateCandidate>()
+
+        for (rel in releasesList) {
+            val isPrerelease = rel.optBoolean("prerelease", false)
+            val tag = rel.optString("tag_name", "")
+            val name = rel.optString("name", "")
+            val isBetaRelease = isPrerelease || tag.contains("beta", ignoreCase = true) || name.contains("beta", ignoreCase = true)
+
+            // Se a release for beta e o usuário não for testador beta, ignorar
+            if (isBetaRelease && !isBetaTester) {
+                continue
+            }
+
+            val v = extractVersion(tag, name) ?: continue
+
+            val body = rel.optString("body", "")
+            val shaRegex = Regex("""commit [`']?([a-f0-9]{7,40})""", RegexOption.IGNORE_CASE)
+            val remoteSha = shaRegex.find(body)?.groupValues?.get(1)?.trim()
+
+            val isGreater = isVersionGreater(v, currentVersion)
+            val isPromotionToStable = !isBetaRelease && currentIsBeta && isVersionEqual(v, currentVersion)
+            val isNewerBetaCommit = isBetaTester && isBetaRelease && currentIsBeta &&
+                isVersionEqual(v, currentVersion) &&
+                !remoteSha.isNullOrBlank() && currentSha.isNotBlank() &&
+                !currentSha.startsWith(remoteSha) && !remoteSha.startsWith(currentSha)
+
+            if (isGreater || isPromotionToStable || isNewerBetaCommit) {
+                candidates.add(
+                    UpdateCandidate(
+                        release = rel,
+                        rawVersion = v,
+                        isBeta = isBetaRelease,
+                        remoteSha = remoteSha,
+                    )
+                )
+            }
+        }
+
+        if (candidates.isEmpty()) return null
+
+        // Encontrar a melhor opção:
+        // 1. Maior versão semântica (compareVersions)
+        // 2. Se a versão for a mesma, preferir release estável (!isBeta) sobre beta
+        // 3. Se empatar, manter a ordem retornada pela API (mais recente)
+        val best = candidates.maxWithOrNull { c1, c2 ->
+            val vComp = compareVersions(c1.rawVersion, c2.rawVersion)
+            if (vComp != 0) return@maxWithOrNull vComp
+            if (!c1.isBeta && c2.isBeta) return@maxWithOrNull 1
+            if (c1.isBeta && !c2.isBeta) return@maxWithOrNull -1
+            0
+        } ?: return null
+
+        val chosenDisplayVersion = if (best.isBeta) "${best.rawVersion} (Beta)" else best.rawVersion
+        return Pair(best.release, chosenDisplayVersion)
     }
 
     fun startDownload(
@@ -754,7 +793,7 @@ object UpdateManager {
 
                 val wasUpdated = force ||
                         (downloadedVerCode != -1 && currentVerCode > downloadedVerCode) ||
-                        (!downloadedVerName.isNullOrBlank() && (isVersionGreater(currentVerName, downloadedVerName) || currentVerName == downloadedVerName)) ||
+                        (!downloadedVerName.isNullOrBlank() && (isVersionGreater(currentVerName, downloadedVerName) || isVersionEqual(currentVerName, downloadedVerName))) ||
                         (!downloadedSha.isNullOrBlank() && currentSha.isNotBlank() && currentSha.startsWith(downloadedSha, ignoreCase = true))
 
                 if (!wasUpdated) {
