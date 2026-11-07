@@ -35,7 +35,7 @@
 ---
 
 <a id="personalizacao"></a>
-## 🎨 Personalize do Jeito que Quiser
+##  No seu Estilo
 
 <p align="center">
   <img src="docs/screenshots/screenshot_customization_1.png" width="48%" alt="Personalização Estilo Artístico" />
@@ -50,7 +50,7 @@
 ---
 
 <a id="pesquisa"></a>
-## 🔍 Sistema de Pesquisa Universal
+##  Sistema de Pesquisa Universal
 
 <p align="center">
   <img src="docs/screenshots/screenshot_search.png" width="75%" alt="Sistema de Pesquisa Universal" />
@@ -63,7 +63,7 @@
 ---
 
 <a id="papeis-de-parede"></a>
-## 🖼️ Repositório de Papéis de Parede
+##  Repositório de Papéis de Parede
 
 <p align="center">
   <img src="docs/screenshots/screenshot_wallpapers.png" width="75%" alt="Repositório de Papéis de Parede" />
@@ -77,21 +77,19 @@
 ---
 
 <a id="recursos"></a>
-## ✨ Outros Recursos
+##  Outros Recursos
 
-- **Ergonomia com Uma Mão:** Lista vertical rápida e scrubber alfabético com física de curva gaussiana.
-- **Monitor de Rede:** Velocidade em tempo real na barra de status e identificação dos apps em consumo.
 - **Agenda & Tarefas:** Compromissos, tarefas com repetições e sincronização com calendários.
 - **Superusuário (Opcional):** Instalação silenciosa de atualizações e visualizador de áudio nativo via root.
 - **Backup & Restauração:** Salve e recupere suas configurações facilmente em arquivo JSON.
 - **Atualizador Embutido:** Notificação de novidades e atualização direta pelo app via GitHub Releases.
 
-> 🛠️ **Monitoramento Avançado:** Para monitor de processos, RAM e terminal de logs, utilize o app irmão [**MAY Task Manager**](https://github.com/S-Marcos-S/MAY---Task-Manager).
+>  **Monitoramento Avançado:** Para monitorar processos, RAM e terminal de logs, utilize o app irmão [**MAY Task Manager**](https://github.com/S-Marcos-S/MAY---Task-Manager).
 
 ---
 
 <a id="download"></a>
-## 📥 Download
+##  Download
 
 Baixe o APK da versão mais recente na aba **[Releases](https://github.com/S-Marcos-S/viagra-launcher/releases)**.
 
@@ -100,7 +98,7 @@ Baixe o APK da versão mais recente na aba **[Releases](https://github.com/S-Mar
 ---
 
 <a id="documentacao"></a>
-## 📚 Documentação & Créditos
+##  Documentação & Créditos
 
 - **Documentação:** [Arquitetura](docs/ARCHITECTURE.md) • [Funcionalidades](docs/FEATURES_GUIDE.md) • [Theming](docs/THEMING_AND_UI.md) • [Contribuição](docs/CONTRIBUTING.md)
 - **Créditos:** Inspirado nos conceitos de lista do [Niagara Launcher](https://niagaralauncher.app), [LogFox](https://github.com/F0x1d/LogFox), [BatStats](https://github.com/mlm-games/BatStats) e [Grace Launcher](https://github.com/Galaxy-rio/GraceLauncher).
