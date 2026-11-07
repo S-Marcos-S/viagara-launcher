@@ -25,32 +25,77 @@
 </p>
 
 <p align="center">
-  <a href="#-destaques--features">Destaques</a> •
-  <a href="#-recursos-para-superusuário">Superusuário</a> •
-  <a href="#-may-task-manager">MAY Task Manager</a> •
-  <a href="#-download">Download</a> •
-  <a href="#-documentação-técnica">Documentação</a> •
-  <a href="#-créditos--credits">Créditos</a> •
-  <a href="#-licença--license">Licença</a>
+  <a href="#personalizacao">Personalização</a> •
+  <a href="#pesquisa">Pesquisa</a> •
+  <a href="#papeis-de-parede">Papéis de Parede</a> •
+  <a href="#destaques">Outros Recursos</a> •
+  <a href="#superusuario">Superusuário</a> •
+  <a href="#may-task-manager">MAY Task Manager</a> •
+  <a href="#download">Download</a> •
+  <a href="#documentacao">Documentação</a> •
+  <a href="#creditos">Créditos</a> •
+  <a href="#licenca">Licença</a>
 </p>
 
 ---
+
+<a id="personalizacao"></a>
+## 🎨 Personalize do Jeito que Quiser
+
+Crie uma experiência visual verdadeiramente sua. O **Viagara Launcher** oferece liberdade de ponta a ponta para você customizar a tela inicial de acordo com seu estilo, rotina e preferências visuais:
 
 <p align="center">
-  <img src="docs/screenshots/screenshot_home.png" width="24%" alt="Tela Inicial" />
-  <img src="docs/screenshots/screenshot_search.png" width="24%" alt="Pesquisa Universal" />
-  <img src="docs/screenshots/screenshot_widgets.png" width="24%" alt="Widgets & Now Playing" />
-  <img src="docs/screenshots/screenshot_battery.png" width="24%" alt="Diagnóstico do Sistema" />
+  <img src="docs/screenshots/screenshot_customization_1.png" width="42%" alt="Personalização Estilo Artístico com Livros Recentes" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/screenshot_customization_2.png" width="42%" alt="Personalização com Previsão do Tempo e Ícones Monocromáticos" />
 </p>
+
+- **Tipografia & Estilos de Relógio:** Escolha entre diversos estilos de relógio e datas — desde tipografias manuscritas e artísticas até formatos digitais 3D modernos ou layouts minimalistas.
+- **Widgets Informativos e Elegantes:** Inclua previsões meteorológicas detalhadas (com temperatura, sensação térmica, vento, humidade e estimativas horárias/períodos), carrossel de leituras e livros recentes, citações inspiradoras do dia e controles multimídia.
+- **Ícones Temáticos & Pacotes Externos:** Compatibilidade total com pacotes de ícones de terceiros (*Icon Packs*), ícones com fundo translúcido em efeito de vidro fosco (*Squircle Glass*) ou ícones monocromáticos dinâmicos que herdam a paleta do wallpaper via Material You.
+- **Harmonia Visual Total:** Ajuste tamanhos, espaçamentos e elementos visuais para criar desde uma tela inicial limpa e focada até um painel de bordo rico em informações diárias.
 
 ---
 
-## ✨ Destaques / Features
+<a id="pesquisa"></a>
+## 🔍 Sistema de Pesquisa Universal
+
+Encontre tudo o que precisa em instantes sem perder tempo navegando por menus complexos, com ergonomia pensada para uso fluido com apenas uma mão:
+
+<p align="center">
+  <img src="docs/screenshots/screenshot_search.png" width="42%" alt="Sistema de Pesquisa Universal" />
+</p>
+
+- **Busca Unificada e Instantânea:** Encontre aplicativos instalados, contatos da sua lista telefônica e atalhos rápidos para configurações do sistema operacional (como Wi-Fi, Bluetooth, Bateria e muito mais) a partir de um único campo.
+- **Filtros Rápidos por Categorias:** Refine os resultados rapidamente através dos chips de filtro (**Todos**, **Apps**, **Contatos**, **Configurações**).
+- **Pesquisa na Web Direta:** Digite consultas ou termos diretamente na barra e execute a busca na web sem precisar abrir o navegador previamente.
+- **Interface Translúcida com Efeito Blur:** Design moderno com desfoque de fundo em tempo real, integrando-se organicamente ao seu papel de parede ativo.
+
+---
+
+<a id="papeis-de-parede"></a>
+## 🖼️ Repositório & Sistema de Papéis de Parede
+
+Um catálogo completo de wallpapers embutido diretamente na launcher para transformar a estética do seu celular todos os dias:
+
+<p align="center">
+  <img src="docs/screenshots/screenshot_wallpapers.png" width="42%" alt="Repositório de Papéis de Parede" />
+</p>
+
+- **Catálogo Integrado em Alta Resolução:** Acesse uma galeria variada com dezenas de opções em HD e 4K, incluindo gradientes abstratos, arte minimalista, composições geométricas e paisagens.
+- **Live Wallpapers & Vídeos Animados:** Suporte nativo a papéis de parede animados em vídeo com execução suave e baixo consumo de energia.
+- **Papel de Parede Diário Automático:** Mude o wallpaper automaticamente a cada dia! O sistema seleciona e aplica uma nova imagem do catálogo a cada 24 horas para manter seu aparelho sempre renovado.
+- **Busca e Categorização:** Navegue pelas abas *Todos*, *Favoritos*, *Live Wallpapers* e localize estilos específicos através do campo de pesquisa por títulos, tags ou IDs.
+- **Extração Dinâmica de Cores:** Integração nativa com o motor de cores do Material You — alterne o wallpaper e veja a paleta de cores dos ícones, botões e elementos da launcher se transformar instantaneamente.
+
+---
+
+<a id="destaques"></a>
+## ✨ Mais Destaques & Recursos
 
 - **Ergonomia com Uma Mão:** Lista vertical rápida e scrubber alfabético com física de curva gaussiana e feedback tátil.
 - **Monitor de Velocidade de Rede em Tempo Real:** Notificação na barra de status com velocidade instantânea (download/upload), limite mínimo configurável (B, KB, MB), intervalos de atualização personalizáveis (1s a 10s) e identificação precisa em tempo real de quais apps estão consumindo tráfego.
 - **Agenda & Sincronização Inteligente:** Gerenciamento integrado de tarefas e compromissos com suporte a repetições, lembretes pontuais e sincronização bidirecional resiliente com calendários externos e arquivos locais.
-- **Catálogo Oficial de Wallpapers & Live Wallpapers:** Papéis de parede em alta definição, suporte a vídeos como papel de parede animado e rotação diária automática.
 - **Temas & Cores Dinâmicas:** Material You integrado, OLED Preto Puro, efeitos de vidro fosco translúcido (*Glassmorphism*) via shaders AGSL e adaptação imediata às cores do wallpaper.
 - **Notificações Integradas:** Prévias sob os apps e pop-up expansível translúcido com histórico de mensagens.
 - **Widgets & Now Playing:** Suporte a widgets do Android e controle multimídia integrado com suporte a visualizador de áudio reativo.
@@ -59,6 +104,7 @@
 
 ---
 
+<a id="superusuario"></a>
 ## ⚡ Recursos para Superusuário
 
 *(O launcher funciona 100% sem root; recursos adicionais são ativados caso o dispositivo possua permissões de superusuário)*
@@ -68,6 +114,7 @@
 
 ---
 
+<a id="may-task-manager"></a>
 ## 🛠️ MAY Task Manager
 
 As funcionalidades avançadas de **Gerenciador de Tarefas**, **Inspetor de Processos & Memória (PSS/RAM)**, **Visualizador de Logs ao Vivo (Logcat / Terminal)** e **Detector de Anomalias em Segundo Plano** foram completamente desacopladas e migradas para o aplicativo dedicado e independente:
@@ -78,6 +125,7 @@ Essa separação garante que o **Viagara Launcher** permaneça extremamente enxu
 
 ---
 
+<a id="download"></a>
 ## 📥 Download
 
 Baixe o APK da versão mais recente diretamente na aba **[Releases](https://github.com/S-Marcos-S/viagra-launcher/releases)**.
@@ -87,6 +135,7 @@ Baixe o APK da versão mais recente diretamente na aba **[Releases](https://gith
 
 ---
 
+<a id="documentacao"></a>
 ## 📚 Documentação Técnica
 
 Para detalhes sobre arquitetura, design de componentes e desenvolvimento, consulte os documentos na pasta [`docs/`](docs/README.md):
@@ -100,6 +149,7 @@ Para detalhes sobre arquitetura, design de componentes e desenvolvimento, consul
 
 ---
 
+<a id="creditos"></a>
 ## 🤝 Créditos / Credits
 
 - **[Niagara Launcher](https://niagaralauncher.app)** — Inspiração do conceito ergonômico em lista vertical.
@@ -109,6 +159,7 @@ Para detalhes sobre arquitetura, design de componentes e desenvolvimento, consul
 
 ---
 
+<a id="licenca"></a>
 ## 📄 Licença / License
 
 Distribuído sob a licença [GPL-3.0-or-later](LICENSE).
