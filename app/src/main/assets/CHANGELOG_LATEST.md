@@ -1,4 +1,4 @@
-### 🚀 Novidades da Versão v0.60.100
+### 🚀 Novidades da Versão v0.60.101
 
-- **Papéis de Parede:** Correção de barras pretas ao arrastar e enquadrar imagens amplas na pré-visualização.
-- **Enquadramento Preciso:** Renderização contínua em alta resolução mantendo a proporção original completa.
+- **Animações de Wallpaper:** Abertura e fechamento suaves das imagens, retornando ao local exato de onde saíram na grade.
+- **Transição Hero Fluida:** Expansão contínua com cantos arredondados adaptativos e gesto de arrastar para fechar.

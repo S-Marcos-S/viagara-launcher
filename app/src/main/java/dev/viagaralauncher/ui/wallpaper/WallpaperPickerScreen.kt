@@ -19,6 +19,9 @@ import android.widget.Toast
 import android.widget.VideoView
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -26,6 +29,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Constraints
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,6 +148,17 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.launch
 
+private data class PreviewTransitionState(
+    val item: WallpaperItem,
+    val sourceRect: Rect,
+    val thumbnailBitmap: Bitmap?,
+    val cornerRadiusDp: Float,
+)
+
+private fun lerp(start: Float, stop: Float, fraction: Float): Float {
+    return start + (stop - start) * fraction
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WallpaperPickerScreen(
@@ -149,8 +172,11 @@ fun WallpaperPickerScreen(
     var selectedCategoryId by remember { mutableStateOf("all") }
     var searchQuery by remember { mutableStateOf("") }
     var isLoadingCatalog by remember { mutableStateOf(true) }
-    var previewingWallpaper by remember { mutableStateOf<WallpaperItem?>(null) }
+    var activePreviewState by remember { mutableStateOf<PreviewTransitionState?>(null) }
+    var isClosing by remember { mutableStateOf(false) }
     var isApplying by remember { mutableStateOf(false) }
+    val animProgress = remember { Animatable(0f) }
+    var rootCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     val favoriteIds by WallpaperRepository.favoriteIds.collectAsState()
     val prefs = remember { Prefs(context) }
@@ -191,8 +217,25 @@ fun WallpaperPickerScreen(
         }
     }
 
-    BackHandler(enabled = previewingWallpaper != null) {
-        if (!isApplying) previewingWallpaper = null
+    val dismissPreview: () -> Unit = {
+        if (!isClosing && !isApplying && activePreviewState != null) {
+            isClosing = true
+            coroutineScope.launch {
+                animProgress.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(
+                        durationMillis = 280,
+                        easing = FastOutSlowInEasing,
+                    )
+                )
+                activePreviewState = null
+                isClosing = false
+            }
+        }
+    }
+
+    BackHandler(enabled = activePreviewState != null) {
+        if (!isApplying) dismissPreview()
     }
 
     val gridState = rememberLazyGridState()
@@ -202,9 +245,14 @@ fun WallpaperPickerScreen(
         }
     }
 
-    Scaffold(
-        containerColor = surface,
-        topBar = {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { rootCoordinates = it }
+    ) {
+        Scaffold(
+            containerColor = surface,
+            topBar = {
             Surface(
                 color = surface,
                 tonalElevation = if (isScrolled) 2.dp else 0.dp,
@@ -389,44 +437,73 @@ fun WallpaperPickerScreen(
                 }
             } else {
                 items(filteredWallpapers, key = { it.id }) { item ->
+                    val isBeingPreviewed = activePreviewState?.item?.id == item.id
                     WallpaperGridItem(
                         item = item,
                         columns = wallpaperColumns,
                         isFavorite = favoriteIds.contains(item.id),
+                        isBeingPreviewed = isBeingPreviewed,
                         onToggleFavorite = {
                             WallpaperRepository.toggleFavorite(context, item.id)
                         },
-                        onClick = { previewingWallpaper = item }
+                        onClick = { boundsInRoot, thumb ->
+                            val root = rootCoordinates
+                            val relativeRect = if (root != null && root.isAttached && boundsInRoot.width > 0) {
+                                val rootBounds = root.boundsInRoot()
+                                boundsInRoot.translate(-rootBounds.left, -rootBounds.top)
+                            } else {
+                                boundsInRoot
+                            }
+                            val cornerRadius = when {
+                                wallpaperColumns >= 4 -> 10f
+                                wallpaperColumns == 3 -> 14f
+                                else -> 18f
+                            }
+                            activePreviewState = PreviewTransitionState(
+                                item = item,
+                                sourceRect = relativeRect,
+                                thumbnailBitmap = thumb,
+                                cornerRadiusDp = cornerRadius,
+                            )
+                            isClosing = false
+                            coroutineScope.launch {
+                                animProgress.snapTo(0f)
+                                animProgress.animateTo(
+                                    targetValue = 1f,
+                                    animationSpec = tween(
+                                        durationMillis = 340,
+                                        easing = FastOutSlowInEasing,
+                                    )
+                                )
+                            }
+                        }
                     )
                 }
             }
         }
-    }
 
-    // Full-screen Wallpaper Preview & Application Dialog/Overlay
-    AnimatedVisibility(
-        visible = previewingWallpaper != null,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        previewingWallpaper?.let { item ->
+        // Full-screen Wallpaper Preview & Application Overlay with opening and closing transition
+        activePreviewState?.let { previewState ->
             WallpaperPreviewOverlay(
-                item = item,
-                isFavorite = favoriteIds.contains(item.id),
-                onToggleFavorite = { WallpaperRepository.toggleFavorite(context, item.id) },
+                item = previewState.item,
+                sourceRect = previewState.sourceRect,
+                initialBitmap = previewState.thumbnailBitmap,
+                cornerRadiusDp = previewState.cornerRadiusDp,
+                animProgress = animProgress.value,
+                isClosing = isClosing,
+                isFavorite = favoriteIds.contains(previewState.item.id),
+                onToggleFavorite = { WallpaperRepository.toggleFavorite(context, previewState.item.id) },
                 isApplying = isApplying,
-                onDismiss = {
-                    if (!isApplying) previewingWallpaper = null
-                },
+                onDismiss = dismissPreview,
                 onApply = { flags, customBitmap ->
                     isApplying = true
                     coroutineScope.launch {
                         if (flags == -1) {
                             // Live Wallpaper application
-                            val videoFile = WallpaperRepository.getCachedOrDownloadFile(context, item.fullUrl)
+                            val videoFile = WallpaperRepository.getCachedOrDownloadFile(context, previewState.item.fullUrl)
                             isApplying = false
                             if (videoFile != null && VideoLiveWallpaperService.setVideoFile(context, videoFile)) {
-                                DailyWallpaperManager.onWallpaperApplied(context, item.id)
+                                DailyWallpaperManager.onWallpaperApplied(context, previewState.item.id)
                                 runCatching {
                                     val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
                                         putExtra(
@@ -435,7 +512,7 @@ fun WallpaperPickerScreen(
                                         )
                                     }
                                     context.startActivity(intent)
-                                    previewingWallpaper = null
+                                    activePreviewState = null
                                     onBack()
                                 }.onFailure {
                                     Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
@@ -445,15 +522,15 @@ fun WallpaperPickerScreen(
                             }
                         } else {
                             val result = if (customBitmap != null) {
-                                WallpaperRepository.applyWallpaper(context, item, customBitmap, flags)
+                                WallpaperRepository.applyWallpaper(context, previewState.item, customBitmap, flags)
                             } else {
-                                WallpaperRepository.applyWallpaper(context, item, flags)
+                                WallpaperRepository.applyWallpaper(context, previewState.item, flags)
                             }
                             isApplying = false
                             if (result.isSuccess) {
-                                DailyWallpaperManager.onWallpaperApplied(context, item.id)
+                                DailyWallpaperManager.onWallpaperApplied(context, previewState.item.id)
                                 Toast.makeText(context, R.string.wallpaper_applied_success, Toast.LENGTH_SHORT).show()
-                                previewingWallpaper = null
+                                activePreviewState = null
                                 onBack()
                             } else {
                                 Toast.makeText(context, R.string.wallpaper_apply_error, Toast.LENGTH_SHORT).show()
@@ -620,8 +697,9 @@ private fun WallpaperGridItem(
     item: WallpaperItem,
     columns: Int = 2,
     isFavorite: Boolean,
+    isBeingPreviewed: Boolean,
     onToggleFavorite: () -> Unit,
-    onClick: () -> Unit,
+    onClick: (Rect, Bitmap?) -> Unit,
 ) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
@@ -635,6 +713,8 @@ private fun WallpaperGridItem(
     val thumbnailBitmap by produceState<Bitmap?>(initialValue = null, item.thumbnailUrl) {
         value = WallpaperRepository.getCachedOrDownloadBitmap(context, item.thumbnailUrl)
     }
+
+    var itemCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     val heartPadding = if (columns >= 4) 4.dp else if (columns == 3) 6.dp else 8.dp
     val heartBoxSize = if (columns >= 4) 24.dp else if (columns == 3) 28.dp else 32.dp
@@ -653,10 +733,22 @@ private fun WallpaperGridItem(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.52f)
+            .onGloballyPositioned { itemCoordinates = it }
+            .graphicsLayer {
+                alpha = if (isBeingPreviewed) 0f else 1f
+            }
             .clip(shape)
             .background(fallbackColor)
             .border(1.dp, colorScheme.outlineVariant.copy(alpha = 0.35f), shape)
-            .clickable(onClick = onClick),
+            .clickable(onClick = {
+                val coords = itemCoordinates
+                val rect = if (coords != null && coords.isAttached) {
+                    coords.boundsInRoot()
+                } else {
+                    Rect.Zero
+                }
+                onClick(rect, thumbnailBitmap)
+            }),
     ) {
         if (thumbnailBitmap != null) {
             Image(
@@ -763,6 +855,11 @@ private fun WallpaperGridItem(
 @Composable
 private fun WallpaperPreviewOverlay(
     item: WallpaperItem,
+    sourceRect: Rect,
+    initialBitmap: Bitmap?,
+    cornerRadiusDp: Float,
+    animProgress: Float,
+    isClosing: Boolean,
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
     isApplying: Boolean,
@@ -770,7 +867,9 @@ private fun WallpaperPreviewOverlay(
     onApply: (Int, Bitmap?) -> Unit,
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val colorScheme = MaterialTheme.colorScheme
+    val density = LocalDensity.current
 
     val isVideo = item.isLive || item.type == "video"
 
@@ -789,116 +888,281 @@ private fun WallpaperPreviewOverlay(
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
+    var dragOffsetY by remember { mutableStateOf(0f) }
     var viewportSize by remember { mutableStateOf(IntSize.Zero) }
     var showClassifyDialog by remember { mutableStateOf(false) }
+
+    val fallbackColor = remember(item.primaryColorHex) {
+        runCatching { Color(android.graphics.Color.parseColor(item.primaryColorHex)) }
+            .getOrDefault(Color(0xFF1E1E1E))
+    }
+
+    val cornerRadiusPx = remember(cornerRadiusDp, density) {
+        with(density) { cornerRadiusDp.dp.toPx() }
+    }
+
+    val p = animProgress.coerceIn(0f, 1f)
+
+    // Calculate effective scale and offset (reverting zoom smoothly during closing)
+    val effectiveScale = if (isClosing) 1f + (scale - 1f) * p else scale
+    val effectiveOffsetX = if (isClosing) offsetX * p else offsetX
+    val effectiveOffsetY = if (isClosing) offsetY * p else offsetY
+
+    val dragDismissFraction = (dragOffsetY / 500f).coerceIn(0f, 0.7f)
+    val scrimAlpha = (p * (1f - dragDismissFraction)).coerceIn(0f, 1f)
+    val controlsAlpha = if (isClosing) {
+        p.coerceIn(0f, 1f)
+    } else {
+        (((p - 0.40f) / 0.60f).coerceIn(0f, 1f) * (1f - (dragOffsetY / 200f).coerceIn(0f, 1f))).coerceIn(0f, 1f)
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
-            .onSizeChanged { viewportSize = it },
-    ) {
-        // High-res preview background (Image or Video)
-        if (isVideo) {
-            if (videoFile != null) {
-                AndroidView(
-                    factory = { ctx ->
-                        VideoView(ctx).apply {
-                            layoutParams = FrameLayout.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            setOnPreparedListener { mp ->
-                                mp.isLooping = true
-                                mp.setVolume(0f, 0f)
-                                mp.start()
+            .onSizeChanged { viewportSize = it }
+            .pointerInput(scale, isApplying, isClosing) {
+                if (scale <= 1.05f && !isApplying && !isClosing) {
+                    detectVerticalDragGestures(
+                        onDragEnd = {
+                            if (dragOffsetY > 140f) {
+                                onDismiss()
+                            } else {
+                                coroutineScope.launch {
+                                    val anim = Animatable(dragOffsetY)
+                                    anim.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)
+                                    ) {
+                                        dragOffsetY = value
+                                    }
+                                }
                             }
-                            setVideoPath(videoFile!!.absolutePath)
+                        },
+                        onDragCancel = {
+                            coroutineScope.launch {
+                                val anim = Animatable(dragOffsetY)
+                                anim.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)
+                                ) {
+                                    dragOffsetY = value
+                                }
+                            }
+                        },
+                        onVerticalDrag = { change, dragAmount ->
+                            if (dragAmount > 0 || dragOffsetY > 0f) {
+                                change.consume()
+                                dragOffsetY = (dragOffsetY + dragAmount).coerceAtLeast(0f)
+                            }
                         }
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = Color.White)
-                        Spacer(Modifier.height(14.dp))
-                        Text(
-                            text = stringResource(R.string.wallpaper_loading),
-                            color = Color.White,
-                            fontSize = 14.sp,
+                    )
+                }
+            },
+    ) {
+        // Scrim background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = scrimAlpha }
+                .background(Color.Black)
+        )
+
+        // Media hero container
+        Box(
+            modifier = Modifier
+                .layout { measurable, constraints ->
+                    val sRect = if (sourceRect.width > 0 && sourceRect.height > 0) {
+                        sourceRect
+                    } else {
+                        Rect(
+                            constraints.maxWidth * 0.2f,
+                            constraints.maxHeight * 0.2f,
+                            constraints.maxWidth * 0.8f,
+                            constraints.maxHeight * 0.8f
                         )
                     }
-                }
-            }
-        } else if (fullBitmap != null) {
-            val bmp = fullBitmap!!
-            val bmpW = bmp.width.toFloat()
-            val bmpH = bmp.height.toFloat()
-            val imageBmp = remember(bmp) { bmp.asImageBitmap() }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(bmp) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            val newScale = (scale * zoom).coerceIn(1f, 4f)
-                            scale = newScale
+                    val targetW = constraints.maxWidth.toFloat()
+                    val targetH = constraints.maxHeight.toFloat()
 
-                            val vw = if (viewportSize.width > 0) viewportSize.width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()
-                            val vh = if (viewportSize.height > 0) viewportSize.height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
-                            if (vw > 0f && vh > 0f && bmpW > 0f && bmpH > 0f) {
-                                val baseScale = maxOf(vw / bmpW, vh / bmpH)
-                                val currentRenderedW = bmpW * baseScale * newScale
-                                val currentRenderedH = bmpH * baseScale * newScale
-                                val maxOffsetX = maxOf(0f, (currentRenderedW - vw) / 2f)
-                                val maxOffsetY = maxOf(0f, (currentRenderedH - vh) / 2f)
-                                offsetX = (offsetX + pan.x).coerceIn(-maxOffsetX, maxOffsetX)
-                                offsetY = (offsetY + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
-                            } else {
-                                offsetX += pan.x
-                                offsetY += pan.y
-                            }
-                        }
-                    },
-            ) {
-                Canvas(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    val vw = size.width
-                    val vh = size.height
-                    if (vw <= 0f || vh <= 0f || bmpW <= 0f || bmpH <= 0f || bmp.isRecycled) return@Canvas
+                    val currentLeft = lerp(sRect.left, 0f, p).roundToInt()
+                    val currentTop = (lerp(sRect.top, 0f, p) + dragOffsetY * p).roundToInt()
+                    val currentW = lerp(sRect.width, targetW, p).roundToInt().coerceAtLeast(1)
+                    val currentH = lerp(sRect.height, targetH, p).roundToInt().coerceAtLeast(1)
 
-                    val baseScale = maxOf(vw / bmpW, vh / bmpH)
-                    val totalScale = baseScale * scale
-                    val cx = vw / 2f + offsetX
-                    val cy = vh / 2f + offsetY
+                    val placeable = measurable.measure(Constraints.fixed(currentW, currentH))
 
-                    withTransform({
-                        translate(left = cx, top = cy)
-                        scale(scaleX = totalScale, scaleY = totalScale, pivot = Offset.Zero)
-                        translate(left = -bmpW / 2f, top = -bmpH / 2f)
-                    }) {
-                        drawImage(imageBmp)
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        placeable.place(currentLeft, currentTop)
                     }
                 }
-            }
-        } else {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = Color.White)
-                    Spacer(Modifier.height(14.dp))
-                    Text(
-                        text = stringResource(R.string.wallpaper_loading),
-                        color = Color.White,
-                        fontSize = 14.sp,
+                .graphicsLayer {
+                    val currentRadiusPx = lerp(cornerRadiusPx, 0f, p)
+                    shape = RoundedCornerShape(currentRadiusPx)
+                    clip = true
+                }
+                .background(fallbackColor)
+        ) {
+            // Media content: Canvas for images, VideoView for video
+            if (isVideo) {
+                if (videoFile != null) {
+                    AndroidView(
+                        factory = { ctx ->
+                            VideoView(ctx).apply {
+                                layoutParams = FrameLayout.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                                setOnPreparedListener { mp ->
+                                    mp.isLooping = true
+                                    mp.setVolume(0f, 0f)
+                                    mp.start()
+                                }
+                                setVideoPath(videoFile!!.absolutePath)
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize(),
                     )
+                } else if (initialBitmap != null) {
+                    val bmp = initialBitmap
+                    val bmpW = bmp.width.toFloat()
+                    val bmpH = bmp.height.toFloat()
+                    val imageBmp = remember(bmp) { bmp.asImageBitmap() }
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val vw = size.width
+                        val vh = size.height
+                        if (vw > 0f && vh > 0f && bmpW > 0f && bmpH > 0f && !bmp.isRecycled) {
+                            val baseScale = maxOf(vw / bmpW, vh / bmpH)
+                            withTransform({
+                                translate(left = vw / 2f, top = vh / 2f)
+                                scale(scaleX = baseScale, scaleY = baseScale, pivot = Offset.Zero)
+                                translate(left = -bmpW / 2f, top = -bmpH / 2f)
+                            }) {
+                                drawImage(imageBmp)
+                            }
+                        }
+                    }
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(32.dp),
+                            strokeWidth = 2.5.dp,
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = Color.White)
+                            Spacer(Modifier.height(14.dp))
+                            Text(
+                                text = stringResource(R.string.wallpaper_loading),
+                                color = Color.White,
+                                fontSize = 14.sp,
+                            )
+                        }
+                    }
+                }
+            } else {
+                val currentBitmap = fullBitmap ?: initialBitmap
+                if (currentBitmap != null) {
+                    val bmp = currentBitmap
+                    val bmpW = bmp.width.toFloat()
+                    val bmpH = bmp.height.toFloat()
+                    val imageBmp = remember(bmp) { bmp.asImageBitmap() }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(bmp, p) {
+                                if (p >= 0.95f) {
+                                    detectTransformGestures { _, pan, zoom, _ ->
+                                        val newScale = (scale * zoom).coerceIn(1f, 4f)
+                                        scale = newScale
+
+                                        val vw = if (viewportSize.width > 0) viewportSize.width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()
+                                        val vh = if (viewportSize.height > 0) viewportSize.height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
+                                        if (vw > 0f && vh > 0f && bmpW > 0f && bmpH > 0f) {
+                                            val baseScale = maxOf(vw / bmpW, vh / bmpH)
+                                            val currentRenderedW = bmpW * baseScale * newScale
+                                            val currentRenderedH = bmpH * baseScale * newScale
+                                            val maxOffsetX = maxOf(0f, (currentRenderedW - vw) / 2f)
+                                            val maxOffsetY = maxOf(0f, (currentRenderedH - vh) / 2f)
+                                            offsetX = (offsetX + pan.x).coerceIn(-maxOffsetX, maxOffsetX)
+                                            offsetY = (offsetY + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
+                                        } else {
+                                            offsetX += pan.x
+                                            offsetY += pan.y
+                                        }
+                                    }
+                                }
+                            },
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val vw = size.width
+                            val vh = size.height
+                            if (vw <= 0f || vh <= 0f || bmpW <= 0f || bmpH <= 0f || bmp.isRecycled) return@Canvas
+
+                            val baseScale = maxOf(vw / bmpW, vh / bmpH)
+                            val totalScale = baseScale * effectiveScale
+                            val cx = vw / 2f + effectiveOffsetX
+                            val cy = vh / 2f + effectiveOffsetY
+
+                            withTransform({
+                                translate(left = cx, top = cy)
+                                scale(scaleX = totalScale, scaleY = totalScale, pivot = Offset.Zero)
+                                translate(left = -bmpW / 2f, top = -bmpH / 2f)
+                            }) {
+                                drawImage(imageBmp)
+                            }
+                        }
+
+                        if (fullBitmap == null && p >= 0.90f) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .statusBarsPadding()
+                                    .padding(top = 70.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color.Black.copy(alpha = 0.55f))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.size(12.dp),
+                                        strokeWidth = 1.5.dp,
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(R.string.wallpaper_loading),
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = Color.White)
+                            Spacer(Modifier.height(14.dp))
+                            Text(
+                                text = stringResource(R.string.wallpaper_loading),
+                                color = Color.White,
+                                fontSize = 14.sp,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -908,7 +1172,11 @@ private fun WallpaperPreviewOverlay(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(16.dp),
+                .padding(16.dp)
+                .graphicsLayer {
+                    alpha = controlsAlpha
+                    translationY = -(1f - controlsAlpha) * 30f
+                },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -952,7 +1220,7 @@ private fun WallpaperPreviewOverlay(
             ) {
                 IconButton(
                     onClick = onToggleFavorite,
-                    enabled = !isApplying,
+                    enabled = !isApplying && controlsAlpha > 0.5f,
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.55f)),
@@ -967,7 +1235,7 @@ private fun WallpaperPreviewOverlay(
 
                 IconButton(
                     onClick = onDismiss,
-                    enabled = !isApplying,
+                    enabled = !isApplying && controlsAlpha > 0.5f,
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.55f)),
@@ -985,7 +1253,11 @@ private fun WallpaperPreviewOverlay(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter),
+                .align(Alignment.BottomCenter)
+                .graphicsLayer {
+                    alpha = controlsAlpha
+                    translationY = (1f - controlsAlpha) * 60f
+                },
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             color = Color.Black.copy(alpha = 0.80f),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
@@ -1073,9 +1345,10 @@ private fun WallpaperPreviewOverlay(
                         )
                     }
 
-                    if (fullBitmap != null) {
-                        val w = fullBitmap!!.width
-                        val h = fullBitmap!!.height
+                    val resBmp = fullBitmap ?: initialBitmap
+                    if (resBmp != null) {
+                        val w = resBmp.width
+                        val h = resBmp.height
                         val label = when {
                             w >= 3840 || h >= 3840 -> "4K UHD"
                             w >= 2560 || h >= 2560 -> "2K QHD"
@@ -1154,7 +1427,7 @@ private fun WallpaperPreviewOverlay(
                     }
                 } else {
                     val getFinalFramedBitmap: () -> Bitmap? = {
-                        val src = fullBitmap
+                        val src = fullBitmap ?: initialBitmap
                         if (src != null) {
                             val vw = if (viewportSize.width > 0) viewportSize.width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()
                             val vh = if (viewportSize.height > 0) viewportSize.height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
