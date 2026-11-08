@@ -837,17 +837,26 @@ private fun WallpaperPreviewOverlay(
                 }
             }
         } else if (fullBitmap != null) {
+            val bmp = fullBitmap!!
+            val bmpW = bmp.width.toFloat()
+            val bmpH = bmp.height.toFloat()
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
+                    .pointerInput(bmp) {
                         detectTransformGestures { _, pan, zoom, _ ->
-                            val newScale = (scale * zoom).coerceIn(1f, 3.5f)
+                            val newScale = (scale * zoom).coerceIn(1f, 4f)
                             scale = newScale
 
-                            if (viewportSize.width > 0 && viewportSize.height > 0) {
-                                val maxOffsetX = (viewportSize.width * (newScale - 1f)) / 2f
-                                val maxOffsetY = (viewportSize.height * (newScale - 1f)) / 2f
+                            val vw = viewportSize.width.toFloat()
+                            val vh = viewportSize.height.toFloat()
+                            if (vw > 0f && vh > 0f && bmpW > 0f && bmpH > 0f) {
+                                val baseScale = maxOf(vw / bmpW, vh / bmpH)
+                                val currentRenderedW = bmpW * baseScale * newScale
+                                val currentRenderedH = bmpH * baseScale * newScale
+                                val maxOffsetX = maxOf(0f, (currentRenderedW - vw) / 2f)
+                                val maxOffsetY = maxOf(0f, (currentRenderedH - vh) / 2f)
                                 offsetX = (offsetX + pan.x).coerceIn(-maxOffsetX, maxOffsetX)
                                 offsetY = (offsetY + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
                             } else {
