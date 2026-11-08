@@ -8,11 +8,9 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.Rect
-import android.graphics.RectF
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.withTransform
 import android.net.Uri
 import android.os.Build
 import android.view.ViewGroup
@@ -840,6 +838,7 @@ private fun WallpaperPreviewOverlay(
             val bmp = fullBitmap!!
             val bmpW = bmp.width.toFloat()
             val bmpH = bmp.height.toFloat()
+            val imageBmp = remember(bmp) { bmp.asImageBitmap() }
 
             Box(
                 modifier = Modifier
@@ -849,8 +848,8 @@ private fun WallpaperPreviewOverlay(
                             val newScale = (scale * zoom).coerceIn(1f, 4f)
                             scale = newScale
 
-                            val vw = viewportSize.width.toFloat()
-                            val vh = viewportSize.height.toFloat()
+                            val vw = if (viewportSize.width > 0) viewportSize.width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()
+                            val vh = if (viewportSize.height > 0) viewportSize.height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
                             if (vw > 0f && vh > 0f && bmpW > 0f && bmpH > 0f) {
                                 val baseScale = maxOf(vw / bmpW, vh / bmpH)
                                 val currentRenderedW = bmpW * baseScale * newScale
@@ -865,21 +864,27 @@ private fun WallpaperPreviewOverlay(
                             }
                         }
                     },
-                contentAlignment = Alignment.Center,
             ) {
-                Image(
-                    bitmap = fullBitmap!!.asImageBitmap(),
-                    contentDescription = item.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                            translationX = offsetX
-                            translationY = offsetY
-                        },
-                )
+                Canvas(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    val vw = size.width
+                    val vh = size.height
+                    if (vw <= 0f || vh <= 0f || bmpW <= 0f || bmpH <= 0f || bmp.isRecycled) return@Canvas
+
+                    val baseScale = maxOf(vw / bmpW, vh / bmpH)
+                    val totalScale = baseScale * scale
+                    val cx = vw / 2f + offsetX
+                    val cy = vh / 2f + offsetY
+
+                    withTransform({
+                        translate(left = cx, top = cy)
+                        scale(scaleX = totalScale, scaleY = totalScale, pivot = Offset.Zero)
+                        translate(left = -bmpW / 2f, top = -bmpH / 2f)
+                    }) {
+                        drawImage(imageBmp)
+                    }
+                }
             }
         } else {
             Box(
@@ -1151,14 +1156,16 @@ private fun WallpaperPreviewOverlay(
                     val getFinalFramedBitmap: () -> Bitmap? = {
                         val src = fullBitmap
                         if (src != null) {
+                            val vw = if (viewportSize.width > 0) viewportSize.width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()
+                            val vh = if (viewportSize.height > 0) viewportSize.height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
                             WallpaperRepository.frameBitmapToDisplay(
                                 context = context,
                                 src = src,
                                 scale = scale,
                                 offsetX = offsetX,
                                 offsetY = offsetY,
-                                viewportWidth = viewportSize.width.toFloat(),
-                                viewportHeight = viewportSize.height.toFloat(),
+                                viewportWidth = vw,
+                                viewportHeight = vh,
                             )
                         } else {
                             null

@@ -459,7 +459,7 @@ object WallpaperRepository {
             val cx = viewW / 2f + offsetX
             val cy = viewH / 2f + offsetY
 
-            val targetH = maxOf(1920, src.height).coerceAtMost(3840)
+            val targetH = maxOf(screenH.toInt(), src.height).coerceAtMost(3840)
             val targetW = ((targetH.toFloat() / viewH) * viewW).toInt().coerceAtLeast(1)
 
             val resultBmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
@@ -501,11 +501,7 @@ object WallpaperRepository {
         flags: Int,
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val effectiveBitmap = if (isBitmapFramedToDisplay(context, bitmap)) {
-                bitmap
-            } else {
-                frameBitmapToDisplay(context, bitmap)
-            }
+            val effectiveBitmap = bitmap
             val wm = WallpaperManager.getInstance(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 try {
