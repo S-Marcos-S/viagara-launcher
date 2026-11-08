@@ -446,11 +446,16 @@ fun WallpaperPickerScreen(
                         onToggleFavorite = {
                             WallpaperRepository.toggleFavorite(context, item.id)
                         },
-                        onClick = { boundsInRoot, thumb ->
+                        onClick = { boundsInRoot: Rect, thumb: Bitmap? ->
                             val root = rootCoordinates
-                            val relativeRect = if (root != null && root.isAttached && boundsInRoot.width > 0) {
+                            val relativeRect = if (root != null && root.isAttached && boundsInRoot.width > 0f) {
                                 val rootBounds = root.boundsInRoot()
-                                boundsInRoot.translate(-rootBounds.left, -rootBounds.top)
+                                Rect(
+                                    left = boundsInRoot.left - rootBounds.left,
+                                    top = boundsInRoot.top - rootBounds.top,
+                                    right = boundsInRoot.right - rootBounds.left,
+                                    bottom = boundsInRoot.bottom - rootBounds.top,
+                                )
                             } else {
                                 boundsInRoot
                             }
@@ -481,6 +486,7 @@ fun WallpaperPickerScreen(
                 }
             }
         }
+    }
 
         // Full-screen Wallpaper Preview & Application Overlay with opening and closing transition
         activePreviewState?.let { previewState ->
@@ -495,7 +501,7 @@ fun WallpaperPickerScreen(
                 onToggleFavorite = { WallpaperRepository.toggleFavorite(context, previewState.item.id) },
                 isApplying = isApplying,
                 onDismiss = dismissPreview,
-                onApply = { flags, customBitmap ->
+                onApply = { flags: Int, customBitmap: Bitmap? ->
                     isApplying = true
                     coroutineScope.launch {
                         if (flags == -1) {
