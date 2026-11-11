@@ -1,4 +1,3 @@
-### 🚀 Novidades da Versão v0.60.101
+### 🚀 Novidades da Versão v0.60.102
 
-- **Animações de Wallpaper:** Abertura e fechamento suaves das imagens, retornando ao local exato de onde saíram na grade.
-- **Transição Hero Fluida:** Expansão contínua com cantos arredondados adaptativos e gesto de arrastar para fechar.
+- **Downloads de Wallpapers:** Adicionados recursos de texto e notificações para o gerenciador de downloads de papéis de parede.

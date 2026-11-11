@@ -501,7 +501,7 @@ object WallpaperDownloadManager {
             }
 
             val text = if (batchTotal > 1) {
-                "${item.name} ($batchIndex de $batchTotal) • $progressPercent%"
+                "${item.name} ($batchIndex/$batchTotal) • $progressPercent%"
             } else {
                 "${item.name} • $progressPercent%"
             }
