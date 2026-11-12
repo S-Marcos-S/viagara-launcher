@@ -67,6 +67,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -134,6 +135,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.viagaralauncher.wallpaper.WallpaperCatalog
 import dev.viagaralauncher.wallpaper.WallpaperCategory
+import dev.viagaralauncher.wallpaper.WallpaperDownloadManager
 import dev.viagaralauncher.wallpaper.WallpaperItem
 import dev.viagaralauncher.wallpaper.WallpaperRepository
 import dev.viagaralauncher.wallpaper.VideoLiveWallpaperService
@@ -1224,6 +1226,23 @@ private fun WallpaperPreviewOverlay(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                IconButton(
+                    onClick = {
+                        WallpaperDownloadManager.downloadWallpaper(context, item)
+                    },
+                    enabled = !isApplying && controlsAlpha > 0.5f,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.55f)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Download,
+                        contentDescription = stringResource(R.string.wallpaper_download),
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+
                 IconButton(
                     onClick = onToggleFavorite,
                     enabled = !isApplying && controlsAlpha > 0.5f,

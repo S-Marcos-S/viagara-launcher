@@ -87,6 +87,10 @@
     <string name="wallpaper_new_notification_title">New wallpapers available!</string>
     <string name="wallpaper_new_notification_single">1 new wallpaper has been added to the catalog.</string>
     <string name="wallpaper_new_notification_multiple">%1$d new wallpapers have been added to the catalog.</string>
+    <string name="wallpaper_download">Download</string>
+    <string name="wallpaper_downloading">Downloading…</string>
+    <string name="wallpaper_download_success">Wallpaper downloaded to gallery</string>
+    <string name="wallpaper_download_error">Download failed</string>
     <string name="wallpaper_download_already_queued">This wallpaper is already queued for download.</string>
     <string name="wallpaper_download_starting">Starting download of %1$s…</string>
     <string name="wallpaper_download_failed">Failed to download %1$s.</string>

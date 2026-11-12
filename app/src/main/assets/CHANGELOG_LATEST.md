@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.102
+### 🚀 Novidades da Versão v0.60.103
 
-- **Downloads de Wallpapers:** Adicionados recursos de texto e notificações para o gerenciador de downloads de papéis de parede.
+- **Download de Papéis de Parede:** Adicionado botão de download no preview para salvar imagens e vídeos diretamente na galeria com notificações de progresso.
