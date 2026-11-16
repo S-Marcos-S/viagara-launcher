@@ -50,3 +50,8 @@ Sempre que qualquer arquivo de código for criado ou editado e utilizar qualquer
 
 ## Regra Obrigatória: Acompanhamento de Builds do GitHub Actions
 Sempre que for realizado um commit/push que inicie uma build no GitHub Actions, a execução do workflow **DEVE OBRIGATORIAMENTE ser acompanhada até o final** (via API do GitHub ou logs de workflow runs) para verificar se a compilação, os testes unitários e a geração da Release/APK foram concluídos com sucesso (`completed` / `success`). Caso ocorra qualquer falha (`failure`), a causa do erro deve ser inspecionada e corrigida imediatamente.
+
+## Regra Obrigatória: Idioma Padrão em Workflows, Commits e Comentários de Código (Somente em Inglês)
+- **Workflows do GitHub Actions:** Nomes de workflows, jobs, steps, variáveis e descrições nos arquivos `.github/workflows/*.yml` devem ser escritos estritamente em inglês.
+- **Mensagens de Commit:** Todas as mensagens de commit (incluindo escopos convencionais como `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `ci:`) devem ser escritas obrigatoriamente e exclusivamente em inglês.
+- **Comentários no Código:** Todos os comentários em arquivos de código-fonte (Kotlin, Java, Gradle scripts, etc.) devem ser escritos unicamente em inglês técnico.
