@@ -21,3 +21,6 @@ build-*.sh
 # OS
 .DS_Store
 Thumbs.db
+
+# AI Assistant
+GEMINI.md
