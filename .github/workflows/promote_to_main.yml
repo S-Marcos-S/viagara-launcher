@@ -1,12 +1,12 @@
-name: Promover Test para Main (Release Pública)
+name: Promote Test to Main (Public Release)
 
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Digite "aprovar" para confirmar o merge da test na main e publicar a release oficial'
+        description: 'Type "approve" or "yes" to confirm promoting test branch to main and publishing official release'
         required: true
-        default: 'aprovar'
+        default: 'approve'
 
 permissions:
   contents: write
@@ -14,9 +14,9 @@ permissions:
 
 jobs:
   promote:
-    name: Promover Última Versão para Main
+    name: Promote Latest Changes to Main
     runs-on: ubuntu-latest
-    if: github.event.inputs.confirm == 'aprovar' || github.event.inputs.confirm == 'sim'
+    if: github.event.inputs.confirm == 'approve' || github.event.inputs.confirm == 'aprovar' || github.event.inputs.confirm == 'yes' || github.event.inputs.confirm == 'sim'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,12 +24,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configurar Git
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Analisar commits e identificar última versão
+      - name: Analyze commits and determine new public version
         id: analyze
         run: |
           git fetch origin test:refs/remotes/origin/test
@@ -38,54 +38,86 @@ jobs:
           git checkout main
 
           COMMITS_BEHIND=$(git rev-list --count main..origin/test)
-          echo "Commits da branch test pendentes de merge: $COMMITS_BEHIND"
+          echo "Commits from test branch pending merge: $COMMITS_BEHIND"
 
           if [ "$COMMITS_BEHIND" -eq 0 ]; then
-            echo "A branch main já está perfeitamente sincronizada com a test. Nenhuma alteração a promover."
+            echo "Main branch is already up to date with test. No changes to promote."
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
 
-          # Lê a versão na ponta mais recente da branch test (app/build.gradle.kts)
-          VERSION_NAME=$(git show origin/test:app/build.gradle.kts | grep -oP 'versionName\s*=\s*"\K[^"]+')
-          TAG_NAME="v${VERSION_NAME}"
+          MAIN_VERSION=$(git show main:app/build.gradle.kts | grep -oP 'versionName\s*=\s*"\K[^"]+')
+          MAIN_CODE=$(git show main:app/build.gradle.kts | grep -oP 'versionCode\s*=\s*\K[0-9]+')
+          TEST_CODE=$(git show origin/test:app/build.gradle.kts | grep -oP 'versionCode\s*=\s*\K[0-9]+')
 
-          echo "VERSION_NAME=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Current main version: $MAIN_VERSION (code $MAIN_CODE)"
+          echo "Current test versionCode: $TEST_CODE"
+
+          NEW_CODE=$(( (TEST_CODE > MAIN_CODE ? TEST_CODE : MAIN_CODE) + 1 ))
+
+          # Parse MAJOR.MINOR from main version
+          # Pattern: X.Y.Z -> next public release is X.(Y+1).0 or (X+1).0.0 if Y >= 9
+          MAJOR=$(echo "$MAIN_VERSION" | cut -d'.' -f1)
+          MINOR=$(echo "$MAIN_VERSION" | cut -d'.' -f2)
+          MAJOR=${MAJOR:-0}
+          MINOR=${MINOR:-60}
+
+          if [ "$MINOR" -ge 9 ] && [ "$MAJOR" -ge 1 ]; then
+            NEW_MAJOR=$((MAJOR + 1))
+            NEW_MINOR=0
+          else
+            NEW_MAJOR=$MAJOR
+            NEW_MINOR=$((MINOR + 1))
+          fi
+
+          NEW_VERSION="${NEW_MAJOR}.${NEW_MINOR}.0"
+          TAG_NAME="v${NEW_VERSION}"
+
+          echo "Calculated next public version: $NEW_VERSION (code $NEW_CODE)"
+          echo "NEW_VERSION=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "NEW_CODE=${NEW_CODE}" >> "$GITHUB_OUTPUT"
           echo "TAG_NAME=${TAG_NAME}" >> "$GITHUB_OUTPUT"
           echo "COMMITS_BEHIND=${COMMITS_BEHIND}" >> "$GITHUB_OUTPUT"
 
-          echo "Última versão detectada na branch test: ${TAG_NAME}"
-
-      - name: Merge test na main (Fast-Forward)
-        if: steps.analyze.outputs.has_changes == 'true'
-        run: |
-          git checkout main
-          git merge origin/test --ff-only
-          git push origin main
-
-      - name: Disparar Build e Release Pública Oficial
+      - name: Merge test and apply release version bump
         if: steps.analyze.outputs.has_changes == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ steps.analyze.outputs.NEW_VERSION }}
+          NEW_CODE: ${{ steps.analyze.outputs.NEW_CODE }}
           TAG_NAME: ${{ steps.analyze.outputs.TAG_NAME }}
         run: |
-          echo "Disparando workflow build.yml na branch main para publicar a release oficial ${TAG_NAME}..."
-          gh workflow run build.yml --ref main
+          git checkout main
+          git merge origin/test --no-commit || git merge origin/test -X theirs --no-commit
 
-      - name: Gerar Resumo da Promoção
+          # Update version in app/build.gradle.kts
+          sed -i -E "s/versionCode = [0-9]+/versionCode = ${NEW_CODE}/" app/build.gradle.kts
+          sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"${NEW_VERSION}\"/" app/build.gradle.kts
+
+          git add app/build.gradle.kts CHANGELOG_LATEST.md
+          if [ -f app/src/main/assets/CHANGELOG_LATEST.md ]; then
+            cp CHANGELOG_LATEST.md app/src/main/assets/CHANGELOG_LATEST.md
+            git add app/src/main/assets/CHANGELOG_LATEST.md
+          fi
+
+          git commit -m "release: ${TAG_NAME}"
+          git push origin main
+
+          # Sync test branch with main so test has the latest release commit
+          git push origin main:test
+
+      - name: Generate Promotion Summary
         if: always()
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
-          # 🚀 Promoção para Main (Release Pública)
+          # 🚀 Promotion to Main (Public Release)
 
-          | Detalhe | Valor |
+          | Detail | Value |
           |---|---|
-          | **Status** | ${{ steps.analyze.outputs.has_changes == 'true' && '✅ Promovido com Sucesso' || 'ℹ️ Nenhuma alteração pendente' }} |
-          | **Versão Oficial Promovida** | \`${{ steps.analyze.outputs.TAG_NAME || 'N/A' }}\` |
-          | **Commits Integrados** | \`${{ steps.analyze.outputs.COMMITS_BEHIND || 0 }}\` |
-          | **Workflow de Build Disparado** | \`build.yml\` (branch \`main\`) |
-
-          > Apenas a última versão da branch test é compilada e publicada como release oficial pública estável.
+          | **Status** | ${{ steps.analyze.outputs.has_changes == 'true' && '✅ Successfully Promoted' || 'ℹ️ No pending changes' }} |
+          | **Official Release Version** | \`${{ steps.analyze.outputs.TAG_NAME || 'N/A' }}\` |
+          | **Version Code** | \`${{ steps.analyze.outputs.NEW_CODE || 'N/A' }}\` |
+          | **Integrated Commits** | \`${{ steps.analyze.outputs.COMMITS_BEHIND || 0 }}\` |
+          | **Triggered Workflow** | Automatic via push on \`main\` (\`build.yml\`) |
           EOF

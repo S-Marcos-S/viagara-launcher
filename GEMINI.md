@@ -11,12 +11,39 @@ Para evitar poluir a branch `main` com commits que possam quebrar a compilação
   4. O GitHub Actions executará automaticamente o workflow de build (compilação e testes unitários) e publicará uma nova release de teste (`Pre-release` no GitHub, sem destaque, visível apenas para usuários que ativaram a opção de testador beta nas configurações da launcher).
   5. Acompanhe a execução da build até a conclusão (`gh run watch`). Caso ocorra qualquer falha, investigue e corrija na própria branch `test`.
   6. **PERGUNTA OBRIGATÓRIA AO USUÁRIO APÓS BUILD DE TESTE:** Após a build ser feita com sucesso na branch `test` e a release de teste estar disponível, **o agente DEVE SEMPRE perguntar ao usuário** se deseja subir as alterações para a branch `main` e lançar uma release estável oficial. NUNCA faça o merge ou push para a `main` automaticamente sem a confirmação explícita do usuário.
-  7. **SOMENTE APÓS A CONFIRMAÇÃO DO USUÁRIO:** faça o merge para a branch `main` e envie o push para gerar a Release e APK oficial estável:
+  7. **SOMENTE APÓS A CONFIRMAÇÃO DO USUÁRIO:** promova as alterações para a branch `main`, incremente para a próxima versão pública oficial `X.(Y+1).0` (ou `(X+1).0.0` se Y=9), incremente o `versionCode`, consolide o `CHANGELOG_LATEST.md` e envie o push para gerar a Release e APK oficial estável:
      ```bash
      git checkout main
-     git merge test --ff-only
+     git merge test
+     # Definir próximo versionName X.Y.0 e incrementar versionCode em app/build.gradle.kts
+     # Atualizar CHANGELOG_LATEST.md (e app/src/main/assets/CHANGELOG_LATEST.md)
+     git commit -am "release: vX.Y.0"
      git push origin main
+     # Sincronizar branch test com main
+     git checkout test
+     git merge main --ff-only
+     git push origin test
      ```
+
+## Regra Obrigatória: Estratégia Padronizada de Versionamento (Releases Públicas vs. Builds de Teste)
+Para garantir clareza entre releases estáveis para o público e builds de teste beta, adota-se rigorosamente a convenção:
+- **Releases Públicas na Branch `main` (Sempre terminadas em `.0`):**
+  - Formato estrito: `X.Y.0` (exemplo: `1.1.0`, `1.2.0`, `1.3.0`, etc.).
+  - A cada nova release pública na `main`, incrementa-se o dígito menor (*minor*): `1.1.0` -> `1.2.0` -> `1.3.0` ... -> `1.9.0`.
+  - **Virada para Versão Maior (*major*):** Ao atingir a versão `1.9.0`, a próxima release pública salta obrigatoriamente para `2.0.0` (reiniciando minor e patch para `0`). E assim sucessivamente (`2.9.0` -> `3.0.0`).
+  - Releases na `main` geram tags como `vX.Y.0` e a tag flutuante `latest`, sendo publicadas como releases oficiais (`prerelease: false`).
+- **Builds de Teste na Branch `test` (Sempre incrementando o patch `Z >= 1`):**
+  - Formato estrito: `X.Y.Z` onde $Z \ge 1$ (exemplo: partindo da pública `1.2.0`, as builds de teste em `test` serão `1.2.1`, `1.2.2`, `1.2.3`, etc.).
+  - As tags no GitHub Actions na branch `test` recebem o sufixo `-beta` (exemplo: `v1.2.1-beta`) e são marcadas como `prerelease: true`.
+  - NUNCA use terminação `.0` para builds na branch `test`.
+- **Transição e Promoção de `test` para `main` (Release Oficial):**
+  1. Quando as builds de teste forem validadas e o usuário aprovar a publicação oficial:
+  2. Calcula-se a próxima versão pública na `main`: se a última foi `X.Y.0`, a nova será `X.(Y+1).0` (ou `(X+1).0.0` se $Y = 9$).
+  3. Incrementa-se o `versionCode` (`versionCode = max(main, test) + 1`).
+  4. Consolida-se o `CHANGELOG_LATEST.md` (e `app/src/main/assets/CHANGELOG_LATEST.md`).
+  5. Commita-se com a mensagem contendo a versão (ex: `release: vX.Y.0`) e faz-se o push para a branch `main`.
+  6. Acompanha-se a execução do workflow `build.yml` na `main` até a publicação com sucesso.
+  7. Sincroniza-se a branch `test` com a `main` (`git checkout test && git merge main --ff-only && git push origin test`) para que o próximo ciclo de testes parta de `X.Y.0` e sua primeira build de teste seja `X.Y.1`.
 
 ## Regra Obrigatória: Bump de Versão/Release Apenas para Mudanças Relevantes (Proibido para Mudanças Bestas/Triviais)
 - **Mudanças Bestas / Triviais (NÃO gerar build):**
