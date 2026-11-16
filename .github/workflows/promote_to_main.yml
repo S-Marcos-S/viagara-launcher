@@ -1,0 +1,91 @@
+name: Promover Test para Main (Release Pública)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Digite "aprovar" para confirmar o merge da test na main e publicar a release oficial'
+        required: true
+        default: 'aprovar'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  promote:
+    name: Promover Última Versão para Main
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'aprovar' || github.event.inputs.confirm == 'sim'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Analisar commits e identificar última versão
+        id: analyze
+        run: |
+          git fetch origin test:refs/remotes/origin/test
+          git fetch origin main:refs/remotes/origin/main
+
+          git checkout main
+
+          COMMITS_BEHIND=$(git rev-list --count main..origin/test)
+          echo "Commits da branch test pendentes de merge: $COMMITS_BEHIND"
+
+          if [ "$COMMITS_BEHIND" -eq 0 ]; then
+            echo "A branch main já está perfeitamente sincronizada com a test. Nenhuma alteração a promover."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+
+          # Lê a versão na ponta mais recente da branch test (app/build.gradle.kts)
+          VERSION_NAME=$(git show origin/test:app/build.gradle.kts | grep -oP 'versionName\s*=\s*"\K[^"]+')
+          TAG_NAME="v${VERSION_NAME}"
+
+          echo "VERSION_NAME=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "TAG_NAME=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "COMMITS_BEHIND=${COMMITS_BEHIND}" >> "$GITHUB_OUTPUT"
+
+          echo "Última versão detectada na branch test: ${TAG_NAME}"
+
+      - name: Merge test na main (Fast-Forward)
+        if: steps.analyze.outputs.has_changes == 'true'
+        run: |
+          git checkout main
+          git merge origin/test --ff-only
+          git push origin main
+
+      - name: Disparar Build e Release Pública Oficial
+        if: steps.analyze.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.analyze.outputs.TAG_NAME }}
+        run: |
+          echo "Disparando workflow build.yml na branch main para publicar a release oficial ${TAG_NAME}..."
+          gh workflow run build.yml --ref main
+
+      - name: Gerar Resumo da Promoção
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          # 🚀 Promoção para Main (Release Pública)
+
+          | Detalhe | Valor |
+          |---|---|
+          | **Status** | ${{ steps.analyze.outputs.has_changes == 'true' && '✅ Promovido com Sucesso' || 'ℹ️ Nenhuma alteração pendente' }} |
+          | **Versão Oficial Promovida** | \`${{ steps.analyze.outputs.TAG_NAME || 'N/A' }}\` |
+          | **Commits Integrados** | \`${{ steps.analyze.outputs.COMMITS_BEHIND || 0 }}\` |
+          | **Workflow de Build Disparado** | \`build.yml\` (branch \`main\`) |
+
+          > Apenas a última versão da branch test é compilada e publicada como release oficial pública estável.
+          EOF
