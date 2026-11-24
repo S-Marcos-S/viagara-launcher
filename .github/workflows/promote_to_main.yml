@@ -95,6 +95,9 @@ jobs:
           sed -i -E "s/versionCode = [0-9]+/versionCode = ${NEW_CODE}/" app/build.gradle.kts
           sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"${NEW_VERSION}\"/" app/build.gradle.kts
 
+          # Update changelog header to official stable version title
+          sed -i -E "1s/^### .*/### 🚀 Novidades da Versão ${TAG_NAME}/" CHANGELOG_LATEST.md
+
           git add app/build.gradle.kts CHANGELOG_LATEST.md
           if [ -f app/src/main/assets/CHANGELOG_LATEST.md ]; then
             cp CHANGELOG_LATEST.md app/src/main/assets/CHANGELOG_LATEST.md
@@ -106,6 +109,14 @@ jobs:
 
           # Sync test branch with main so test has the latest release commit
           git push origin main:test
+
+      - name: Trigger Build APK Workflow
+        if: steps.analyze.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Dispatching build.yml on main branch..."
+          gh workflow run build.yml --ref main
 
       - name: Generate Promotion Summary
         if: always()
@@ -119,5 +130,5 @@ jobs:
           | **Official Release Version** | \`${{ steps.analyze.outputs.TAG_NAME || 'N/A' }}\` |
           | **Version Code** | \`${{ steps.analyze.outputs.NEW_CODE || 'N/A' }}\` |
           | **Integrated Commits** | \`${{ steps.analyze.outputs.COMMITS_BEHIND || 0 }}\` |
-          | **Triggered Workflow** | Automatic via push on \`main\` (\`build.yml\`) |
+          | **Triggered Workflow** | Dispatched via \`gh workflow run build.yml --ref main\` |
           EOF
