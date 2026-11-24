@@ -1,3 +1,3 @@
-### 🚀 Novidades da Versão v0.60.103
+### 🚀 Novidades da Versão v0.60.104
 
-- **Download de Papéis de Parede:** Adicionado botão de download no preview para salvar imagens e vídeos diretamente na galeria com notificações de progresso.
+- **Menu de Opções na Pesquisa:** Ao clicar e segurar em um aplicativo na tela de pesquisa, o menu de opções é exibido sem fechar a pesquisa.

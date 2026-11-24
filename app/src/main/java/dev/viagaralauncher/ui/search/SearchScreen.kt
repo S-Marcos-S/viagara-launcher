@@ -29,8 +29,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -81,6 +83,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -104,16 +107,32 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import dev.viagaralauncher.R
 import dev.viagaralauncher.data.AppInfo
+import dev.viagaralauncher.data.Folder
 import dev.viagaralauncher.ui.common.AppIcon
+import dev.viagaralauncher.ui.common.AppMenuDialog
+import dev.viagaralauncher.ui.common.EditAppDialog
+import dev.viagaralauncher.ui.common.FolderPickerDialog
+import dev.viagaralauncher.ui.common.appListMenuItems
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen(
     allApps: List<AppInfo>,
     nameOverrides: Map<String, String>,
+    favoriteKeys: Set<String> = emptySet(),
+    hiddenApps: Set<String> = emptySet(),
+    folders: List<Folder> = emptyList(),
     config: SearchConfig,
     onLaunchApp: (AppInfo, Rect?) -> Unit,
+    onSetFavorite: (AppInfo, Boolean) -> Unit = { _, _ -> },
+    onSetName: (AppInfo, String?) -> Unit = { _, _ -> },
+    onChangeIcon: (AppInfo) -> Unit = {},
+    onAppInfo: (AppInfo) -> Unit = {},
+    onHideApp: (AppInfo) -> Unit = {},
+    onAddAppToFolder: (Folder, AppInfo) -> Unit = { _, _ -> },
+    onCreateFolderWithApp: (String, AppInfo) -> Unit = { _, _ -> },
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -122,8 +141,13 @@ fun SearchScreen(
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
 
-    var query by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(SearchCategory.ALL) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var selectedCategory by rememberSaveable { mutableStateOf(SearchCategory.ALL) }
+    var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
+    var editDialogFor by remember { mutableStateOf<AppInfo?>(null) }
+    var folderPickerFor by remember { mutableStateOf<AppInfo?>(null) }
+
+    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     var hasContactsPermission by remember {
         mutableStateOf(
@@ -528,6 +552,7 @@ fun SearchScreen(
                             SearchAppRow(
                                 item = appItem,
                                 onClick = { bounds -> onLaunchApp(appItem.app, bounds) },
+                                onLongClick = { appMenuFor = appItem.app },
                             )
                         }
                     }
@@ -611,6 +636,58 @@ fun SearchScreen(
                 }
             }
         }
+
+        // Render contextual dialogs inside SearchScreen so none of the options dismiss the search screen.
+        appMenuFor?.let { app ->
+            val menuItems = appListMenuItems(
+                app = app,
+                isFavorite = favoriteKeys.contains(app.key),
+                onSetFavorite = { add -> onSetFavorite(app, add) },
+                onEdit = { editDialogFor = app },
+                onAppInfo = { onAppInfo(app) },
+                onMoveToFolder = { folderPickerFor = app },
+                onHideApp = { onHideApp(app) },
+                showHideOption = app.key !in hiddenApps,
+            )
+
+            AppMenuDialog(
+                app = app,
+                displayName = displayName(app),
+                onDismissRequest = { appMenuFor = null },
+                items = menuItems,
+            )
+        }
+
+        editDialogFor?.let { target ->
+            EditAppDialog(
+                currentName = displayName(target),
+                onConfirmName = { name ->
+                    onSetName(target, name)
+                    editDialogFor = null
+                },
+                onChangeIcon = {
+                    onChangeIcon(target)
+                    editDialogFor = null
+                },
+                onDismiss = { editDialogFor = null },
+            )
+        }
+
+        folderPickerFor?.let { target ->
+            FolderPickerDialog(
+                appLabel = displayName(target),
+                folders = folders,
+                onPickFolder = { folder ->
+                    onAddAppToFolder(folder, target)
+                    folderPickerFor = null
+                },
+                onCreateFolder = { name ->
+                    onCreateFolderWithApp(name, target)
+                    folderPickerFor = null
+                },
+                onDismiss = { folderPickerFor = null },
+            )
+        }
     }
 }
 
@@ -647,10 +724,12 @@ private fun SearchSectionHeader(title: String, count: Int?) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SearchAppRow(
     item: SearchResult.AppItem,
     onClick: (Rect?) -> Unit,
+    onLongClick: () -> Unit,
 ) {
     var iconBounds by remember { mutableStateOf<Rect?>(null) }
     val interaction = remember { MutableInteractionSource() }
@@ -671,12 +750,18 @@ private fun SearchAppRow(
                 scaleX = pressScale
                 scaleY = pressScale
             }
-            .clickable(
+            .padding(horizontal = 10.dp)
+            .background(
+                color = if (pressed) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f) else Color.Transparent,
+                shape = RoundedCornerShape(18.dp),
+            )
+            .combinedClickable(
                 interactionSource = interaction,
                 indication = null,
                 onClick = { onClick(iconBounds) },
+                onLongClick = onLongClick,
             )
-            .padding(horizontal = 18.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AppIcon(

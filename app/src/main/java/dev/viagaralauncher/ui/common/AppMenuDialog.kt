@@ -20,6 +20,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,10 +51,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import dev.viagaralauncher.R
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.ui.theme.dynamicBorderColor
 import dev.viagaralauncher.ui.theme.dynamicSurfaceColor
 import dev.viagaralauncher.ui.theme.glass.GlassDialogContainer
+import dev.viagaralauncher.util.AppUninstallManager
 
 data class AppMenuItem(
     val title: String,
@@ -52,6 +64,75 @@ data class AppMenuItem(
     val onClick: () -> Unit,
     val isDestructive: Boolean = false,
 )
+
+/**
+ * Builds the standard contextual menu items for an app in the app list and search results.
+ */
+@Composable
+fun appListMenuItems(
+    app: AppInfo,
+    isFavorite: Boolean,
+    onSetFavorite: (Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onAppInfo: () -> Unit,
+    onMoveToFolder: () -> Unit,
+    onHideApp: () -> Unit,
+    showHideOption: Boolean = true,
+): List<AppMenuItem> {
+    val context = LocalContext.current
+    return buildList {
+        add(
+            AppMenuItem(
+                title = stringResource(if (isFavorite) R.string.applist_remove_favorite else R.string.applist_add_favorite),
+                icon = if (isFavorite) Icons.Filled.StarBorder else Icons.Filled.Star,
+                onClick = { onSetFavorite(!isFavorite) },
+            )
+        )
+        add(
+            AppMenuItem(
+                title = stringResource(R.string.action_edit_icon_and_name),
+                icon = Icons.Filled.Tune,
+                onClick = onEdit,
+            )
+        )
+        add(
+            AppMenuItem(
+                title = stringResource(R.string.action_app_info),
+                icon = Icons.Filled.Info,
+                onClick = onAppInfo,
+            )
+        )
+        add(
+            AppMenuItem(
+                title = stringResource(R.string.action_move_to_folder),
+                icon = Icons.Filled.Folder,
+                onClick = onMoveToFolder,
+            )
+        )
+        if (showHideOption) {
+            add(
+                AppMenuItem(
+                    title = stringResource(R.string.applist_hide),
+                    icon = Icons.Filled.VisibilityOff,
+                    onClick = onHideApp,
+                    isDestructive = true,
+                )
+            )
+        }
+        if (app.packageName != context.packageName) {
+            add(
+                AppMenuItem(
+                    title = stringResource(R.string.action_uninstall),
+                    icon = Icons.Filled.DeleteForever,
+                    onClick = {
+                        AppUninstallManager.uninstallStandard(context, app.packageName)
+                    },
+                    isDestructive = true,
+                )
+            )
+        }
+    }
+}
 
 /**
  * A modern floating popup menu for an individual app with rounded corners and frosted glass blur.

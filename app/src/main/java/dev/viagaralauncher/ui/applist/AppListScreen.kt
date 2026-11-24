@@ -49,22 +49,14 @@ import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.FiberManualRecord
-import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VisibilityOff
 import android.widget.Toast
-import dev.viagaralauncher.util.AppUninstallManager
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -779,57 +771,15 @@ fun AppListScreen(
       }
 
         appMenuFor?.let { app ->
-            val isFavorite = favoriteKeys.contains(app.key)
-            val menuItems = buildList {
-                add(
-                    dev.viagaralauncher.ui.common.AppMenuItem(
-                        title = stringResource(if (isFavorite) R.string.applist_remove_favorite else R.string.applist_add_favorite),
-                        icon = if (isFavorite) Icons.Filled.StarBorder else Icons.Filled.Star,
-                        onClick = { onSetFavorite(app, !isFavorite) },
-                    )
-                )
-                add(
-                    dev.viagaralauncher.ui.common.AppMenuItem(
-                        title = stringResource(R.string.action_edit_icon_and_name),
-                        icon = Icons.Filled.Tune,
-                        onClick = { editDialogFor = app },
-                    )
-                )
-                add(
-                    dev.viagaralauncher.ui.common.AppMenuItem(
-                        title = stringResource(R.string.action_app_info),
-                        icon = Icons.Filled.Info,
-                        onClick = { onAppInfo(app) },
-                    )
-                )
-                add(
-                    dev.viagaralauncher.ui.common.AppMenuItem(
-                        title = stringResource(R.string.action_move_to_folder),
-                        icon = Icons.Filled.Folder,
-                        onClick = { onMoveToFolder(app) },
-                    )
-                )
-                add(
-                    dev.viagaralauncher.ui.common.AppMenuItem(
-                        title = stringResource(R.string.applist_hide),
-                        icon = Icons.Filled.VisibilityOff,
-                        onClick = { onHideApp(app) },
-                        isDestructive = true,
-                    )
-                )
-                if (app.packageName != context.packageName) {
-                    add(
-                        dev.viagaralauncher.ui.common.AppMenuItem(
-                            title = stringResource(R.string.action_uninstall),
-                            icon = Icons.Filled.DeleteForever,
-                            onClick = {
-                                AppUninstallManager.uninstallStandard(context, app.packageName)
-                            },
-                            isDestructive = true,
-                        )
-                    )
-                }
-            }
+            val menuItems = dev.viagaralauncher.ui.common.appListMenuItems(
+                app = app,
+                isFavorite = favoriteKeys.contains(app.key),
+                onSetFavorite = { add -> onSetFavorite(app, add) },
+                onEdit = { editDialogFor = app },
+                onAppInfo = { onAppInfo(app) },
+                onMoveToFolder = { onMoveToFolder(app) },
+                onHideApp = { onHideApp(app) },
+            )
 
             dev.viagaralauncher.ui.common.AppMenuDialog(
                 app = app,

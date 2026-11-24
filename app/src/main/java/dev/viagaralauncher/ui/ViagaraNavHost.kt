@@ -47,12 +47,14 @@ import dev.viagaralauncher.data.AppFont
 import dev.viagaralauncher.data.AppInfo
 import dev.viagaralauncher.data.ClockStyle
 import dev.viagaralauncher.data.EdgeSide
+import dev.viagaralauncher.data.Folder
 import dev.viagaralauncher.data.IconShape
 import dev.viagaralauncher.data.CustomClockStyle
 import dev.viagaralauncher.data.HomePaddings
 import dev.viagaralauncher.data.ThemedIconStyle
 import dev.viagaralauncher.data.TextColorMode
 import dev.viagaralauncher.data.folderIdFromToken
+import dev.viagaralauncher.data.folderToken
 import dev.viagaralauncher.media.isListenerEnabled
 import dev.viagaralauncher.service.SystemUi
 import dev.viagaralauncher.ui.common.IconPickerScreen
@@ -573,10 +575,46 @@ fun ViagaraNavHost(
             SearchScreen(
                 allApps = allApps,
                 nameOverrides = nameOverrides,
+                favoriteKeys = remember(favoriteKeys) { favoriteKeys.toSet() },
+                hiddenApps = hiddenApps,
+                folders = folders,
                 config = searchConfig,
                 onLaunchApp = { appInfo, bounds ->
                     app.appRepository.launch(appInfo.componentName, sourceBounds = bounds, sourceView = view)
                     navController.popBackStack()
+                },
+                onSetFavorite = { appInfo, add ->
+                    scope.launch {
+                        if (add) app.prefs.addFavorite(appInfo.key) else app.prefs.removeFavorite(appInfo.key)
+                    }
+                },
+                onSetName = { appInfo, name ->
+                    scope.launch { app.prefs.setNameOverride(appInfo.key, name) }
+                },
+                onChangeIcon = { appInfo ->
+                    navController.navigate("iconpicker/" + Uri.encode(appInfo.key))
+                },
+                onAppInfo = { appInfo ->
+                    app.appRepository.openAppInfo(appInfo.packageName, sourceView = view)
+                },
+                onHideApp = { appInfo ->
+                    scope.launch { app.prefs.setHidden(appInfo.key, true) }
+                },
+                onAddAppToFolder = { folder, appInfo ->
+                    scope.launch { app.prefs.addAppToFolder(folder.id, appInfo.key) }
+                },
+                onCreateFolderWithApp = { name, appInfo ->
+                    scope.launch {
+                        val folder = Folder(
+                            id = System.currentTimeMillis().toString(36),
+                            name = name,
+                            apps = listOf(appInfo.key),
+                        )
+                        app.prefs.upsertFolder(folder)
+                        // Drop the app's own row and give the folder one in its place.
+                        app.prefs.removeFavorite(appInfo.key)
+                        app.prefs.addFavorite(folderToken(folder.id))
+                    }
                 },
                 onBack = { navController.popBackStack() },
             )
