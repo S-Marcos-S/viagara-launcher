@@ -16,8 +16,13 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+
+
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -81,6 +86,9 @@ enum class IconShape {
 private val Context.dataStore by preferencesDataStore(name = "viagara_prefs")
 
 class Prefs(private val context: Context) {
+    // CoroutineScope for DataStore writes; using IO dispatcher.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
 
     fun setAppInspectorEnabled(enabled: Boolean) {
         scope.launch {
@@ -114,6 +122,7 @@ class Prefs(private val context: Context) {
         val DIM_HOME_ALPHA = floatPreferencesKey("dim_home_alpha")
         val SHOW_FAVORITE_LABELS = booleanPreferencesKey("show_favorite_labels")
         val TEXT_COLOR_MODE = stringPreferencesKey("text_color_mode")
+        val APP_INSPECTOR_ENABLED = booleanPreferencesKey("app_inspector_enabled")
         val DOUBLE_TAP_TO_LOCK = booleanPreferencesKey("double_tap_to_lock")
         val EDGE_SIDE = stringPreferencesKey("edge_side")
         val ALWAYS_SHOW_AZ = booleanPreferencesKey("always_show_az")
