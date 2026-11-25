@@ -1,3 +1,7 @@
+### 🚀 Novidades da Versão v0.60.106
+
+- Fix build errors (scope, imports, overlay manager stub).
+
 ### 🚀 Novidades da Versão v0.60.105
 
 - Add root‑only app inspector (drag‑down UI) showing real‑time CPU, RAM, Network and ROM usage.
