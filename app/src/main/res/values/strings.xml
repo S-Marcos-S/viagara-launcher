@@ -189,6 +189,7 @@
     <!-- Settings -->
     <string name="settings_title">Viagara Launcher settings</string>
     <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_behavior">Behavior</string>
     <string name="settings_theme_colors">Colors</string>
     <string name="settings_app_inspector_title">App inspector (root)</string>
     <string name="settings_app_inspector_summary">Show live CPU, RAM, Network and ROM usage for any app (root only)</string>

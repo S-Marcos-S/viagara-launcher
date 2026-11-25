@@ -86,6 +86,8 @@ import dev.viagaralauncher.data.IconPackRepository
 import dev.viagaralauncher.data.IconShape
 import dev.viagaralauncher.data.TextColorMode
 import dev.viagaralauncher.data.ThemedIconStyle
+import dev.viagaralauncher.data.Prefs
+import androidx.compose.runtime.collectAsState
 import dev.viagaralauncher.ui.common.AppIcon
 import dev.viagaralauncher.ui.theme.toFontFamily
 import dev.viagaralauncher.R

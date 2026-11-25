@@ -1,3 +1,7 @@
+### 🚀 Novidades da Versão v0.60.109
+
+- Fix remaining build errors: missing string resource, Compose scope fixes, missing imports.
+
 ### 🚀 Novidades da Versão v0.60.106
 
 - Fix build errors (scope, imports, overlay manager stub).

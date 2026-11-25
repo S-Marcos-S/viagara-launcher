@@ -17,8 +17,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.ui.input.pointer.awaitPointerEventScope
-import androidx.compose.ui.input.pointer.awaitPointerEvent
 
 
 
@@ -669,7 +667,10 @@ fun AppListScreen(
                         val latestNotification = appNotifications.firstOrNull()
 
                         // Wrapper to detect drag‑down gesture for root‑only app inspector
-                        Box(modifier = Modifier.pointerInput(LocalContext.current) {
+                        val inspectorContext = LocalContext.current
+                        val density = LocalDensity.current
+                        Box(modifier = Modifier.pointerInput(row.app.key) {
+                            val thresholdPx = with(density) { 30.dp.toPx() }
                             awaitEachGesture {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 var dragDetected = false
@@ -678,10 +679,10 @@ fun AppListScreen(
                                     val change = event.changes.firstOrNull() ?: break
                                     if (!change.pressed) break
                                     val dy = change.position.y - down.position.y
-                                    if (dy > with(LocalDensity.current) { 30.dp.toPx() }) {
+                                    if (dy > thresholdPx) {
                                         // Trigger inspector overlay
                                         FloatingAppInspectorOverlayManager.show(
-                                            LocalContext.current,
+                                            inspectorContext,
                                             row.app,
                                             displayName(row.app)
                                         )
@@ -691,7 +692,7 @@ fun AppListScreen(
                                 }
                                 if (dragDetected) {
                                     // consume remaining events
-                                    awaitPointerEventScope { awaitPointerEvent(PointerEventPass.Initial) }
+                                    awaitPointerEvent(PointerEventPass.Initial)
                                 }
                             }
                         }) {
