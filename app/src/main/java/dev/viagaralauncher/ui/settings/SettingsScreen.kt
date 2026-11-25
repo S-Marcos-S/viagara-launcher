@@ -181,6 +181,7 @@ fun SettingsScreen(
     }
     val topBarColor = if (isGlassActive) Color.Transparent else surface
     val isRootAvailable = remember { RootInstaller.isRootAvailable() }
+    val prefs = remember { Prefs(LocalContext.current) }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -321,7 +322,17 @@ fun SettingsScreen(
                     RowDivider()
                     EdgeSideRow(edgeSide, onSetEdgeSide)
                     RowDivider()
-                    val canLockScreen = remember(shadeGestureReady, isRootAvailable) {
+                                    // App Inspector toggle (root only)
+                SwitchRowWithDetail(
+                    label = stringResource(R.string.settings_app_inspector_title),
+                    detail = stringResource(R.string.settings_app_inspector_summary),
+                    checked = prefs.appInspectorEnabled.collectAsState(initial = false).value,
+                    onCheckedChange = { enabled ->
+                        prefs.setAppInspectorEnabled(enabled)
+                    },
+                )
+                RowDivider()
+                val canLockScreen = remember(shadeGestureReady, isRootAvailable) {
                         shadeGestureReady || isRootAvailable
                     }
                     SwitchRowWithDetail(

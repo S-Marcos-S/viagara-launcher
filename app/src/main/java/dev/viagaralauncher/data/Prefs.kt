@@ -82,6 +82,13 @@ private val Context.dataStore by preferencesDataStore(name = "viagara_prefs")
 
 class Prefs(private val context: Context) {
 
+    fun setAppInspectorEnabled(enabled: Boolean) {
+        scope.launch {
+            context.dataStore.edit { it[Keys.APP_INSPECTOR_ENABLED] = enabled }
+        }
+    }
+
+
     private object Keys {
         val HIDDEN_APPS = stringSetPreferencesKey("hidden_apps")
         val FAVORITES = stringPreferencesKey("favorites_order")
@@ -174,6 +181,10 @@ class Prefs(private val context: Context) {
 
     val hiddenApps: Flow<Set<String>> =
         data.map { it[Keys.HIDDEN_APPS] ?: emptySet() }.distinctUntilChanged()
+
+    /** Returns whether the app‑inspector overlay is enabled for root users. */
+    val appInspectorEnabled: Flow<Boolean> =
+        data.map { it[Keys.APP_INSPECTOR_ENABLED] ?: false }.distinctUntilChanged()
 
     val favorites: Flow<List<String>> =
         data.map { pref -> readFavorites(pref) }.distinctUntilChanged()

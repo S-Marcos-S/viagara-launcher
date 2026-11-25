@@ -17,6 +17,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import dev.viagaralauncher.ui.applist.FloatingAppInspectorOverlayManager
+import dev.may.taskmanager.data.AppInfo
+import dev.viagaralauncher.ui.applist.FloatingAppInspectorOverlayManager
+import dev.may.taskmanager.data.AppInfo
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -662,25 +666,53 @@ fun AppListScreen(
                         } else emptyList()
                         val latestNotification = appNotifications.firstOrNull()
 
-                        AppRow(
-                            contentColor = contentColor,
-                            alignRight = alignRight,
-                            app = row.app,
-                            label = displayName(row.app),
-                            iconSizeDp = iconSizeDp,
-                            labelSizeSp = labelSizeSp,
-                            isFavorite = favoriteKeys.contains(row.app.key),
-                            notification = latestNotification,
-                            onNotificationClick = { notif ->
-                                activeDialogNotification = notif to row.app
-                            },
-                            touchPosition = touchPosition,
-                            onLaunch = { bounds -> onLaunch(row.app, bounds) },
-                            onLongPress = { _ -> appMenuFor = row.app },
-                            startPadding = rowStart,
-                            endPadding = rowEnd,
-                            enabled = !scrub.active,
-                        )
+                        // Wrapper to detect drag‑down gesture for root‑only app inspector
+                        Box(modifier = Modifier.pointerInput(LocalContext.current) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown(requireUnconsumed = false)
+                                var dragDetected = false
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    val change = event.changes.firstOrNull() ?: break
+                                    if (!change.pressed) break
+                                    val dy = change.position.y - down.position.y
+                                    if (dy > with(LocalDensity.current) { 30.dp.toPx() }) {
+                                        // Trigger inspector overlay
+                                        FloatingAppInspectorOverlayManager.show(
+                                            LocalContext.current,
+                                            row.app,
+                                            displayName(row.app)
+                                        )
+                                        dragDetected = true
+                                        break
+                                    }
+                                }
+                                if (dragDetected) {
+                                    // consume remaining events
+                                    awaitPointerEventScope { awaitPointerEvent(PointerEventPass.Initial) }
+                                }
+                            }
+                        }) {
+                            AppRow(
+                                contentColor = contentColor,
+                                alignRight = alignRight,
+                                app = row.app,
+                                label = displayName(row.app),
+                                iconSizeDp = iconSizeDp,
+                                labelSizeSp = labelSizeSp,
+                                isFavorite = favoriteKeys.contains(row.app.key),
+                                notification = latestNotification,
+                                onNotificationClick = { notif ->
+                                    activeDialogNotification = notif to row.app
+                                },
+                                touchPosition = touchPosition,
+                                onLaunch = { bounds -> onLaunch(row.app, bounds) },
+                                onLongPress = { _ -> appMenuFor = row.app },
+                                startPadding = rowStart,
+                                endPadding = rowEnd,
+                                enabled = !scrub.active,
+                            )
+                        }
                     }
                 }
                 }
