@@ -12,7 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import dev.may.taskmanager.ui.root.AppRootInspectorDialog
-import dev.may.taskmanager.data.AppInfo
+import dev.viagaralauncher.data.AppInfo
 
 object FloatingAppInspectorOverlayManager {
     private var windowManager: WindowManager? = null

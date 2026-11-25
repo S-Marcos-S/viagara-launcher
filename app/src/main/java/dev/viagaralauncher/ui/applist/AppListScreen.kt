@@ -17,10 +17,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.ui.input.pointer.awaitPointerEventScope
+import androidx.compose.ui.input.pointer.awaitPointerEvent
 import dev.viagaralauncher.ui.applist.FloatingAppInspectorOverlayManager
-import dev.may.taskmanager.data.AppInfo
+
 import dev.viagaralauncher.ui.applist.FloatingAppInspectorOverlayManager
-import dev.may.taskmanager.data.AppInfo
+
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
